@@ -1,0 +1,6295 @@
+CounterAlign: Counterfactual Supervision for Vision-Language-Action Models
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+1
+Introduction
+2
+Related Work
+3
+Method
+3.1
+Problem Setting
+3.2
+Learning Observation–Instruction–Action Alignment Reward
+3.3
+Policy Training via Offline RL with Relabeling
+4
+Experiments
+4.1
+Simulation Setup
+4.2
+Simulation Experiments
+4.3
+Ablation
+4.4
+Real World Setup
+4.5
+Real World Experiments
+4.6
+Qualitative Results
+5
+Conclusion
+References
+1
+Similarity Functions for Relabeling
+Observation similarity
+S
+o
+S_{o}
+and action similarity
+S
+a
+S_{a}
+.
+Instruction similarity
+S
+l
+S_{l}
+.
+Observation-grounded instruction similarity
+S
+l
+o
+S^{o}_{l}
+.
+Proprioceptive similarity
+S
+p
+S_{p}
+.
+2
+Details of Relabeling Strategies
+Instruction Relabeling (Algorithm
+).
+Action Relabeling (Algorithm
+).
+Joint Relabeling (Algorithm
+).
+3
+Actor-Side Relabeling (Ablation Variant)
+4
+Complete Algorithm of the Proposed Method
+5
+Theoretical Justification of the Advantage-Weighted Flow Matching Objective
+AWR Optimal Policy.
+Derivation of the Advantage-Weighted Flow Matching Objective.
+Discussion.
+6
+Model Architecture and Parameter Counts of BC and the Proposed Method
+7
+Training Configuration
+8
+Detailed Ablation Analysis
+9
+Real-world Datasets
+10
+Additional Experiments
+License: arXiv.org perpetual non-exclusive license
+arXiv:2608.21740v1 [cs.RO] 22 Aug 2026
+CounterAlign: Counterfactual Supervision for Vision-Language-Action Models
+CounterAlign: Counterfactual Supervision for Vision-Language-Action Models
+Haru Kondoh
+Kei Ota
+Asako Kanezaki
+Yueh-Hua Wu
+June 2026
+Figure 1:
+Overview of
+CounterAlign
+. Through adversarial and relabeling-based discriminator training, CounterAlign converts expert demonstrations into an instruction-grounded reward. Relabeling creates counterfactual negative or unlabeled tuples that teach the reward model which instruction–action pairings are semantically inconsistent. The learned reward is then used to train a VLA policy with offline RL, improving robustness to object position and task perturbations without additional data collection or annotation.
+1. Introduction
+Recent progress in Vision-Language-Action (VLA) models has largely followed a simple recipe: collect more expert demonstrations and train larger policies with behavior cloning (BC)
+[
+21
+,
+3
+,
+2
+,
+6
+,
+5
+,
+12
+]
+. Although effective, this recipe encounters two problems in robotics. First, robot data collection is expensive, embodiment-specific, and difficult to scale: unlike text or image corpora, every increase in coverage requires additional physical interaction under sensing, control, and safety constraints. Second, BC provides only positive supervision. It tells the policy what the expert did, but not which alternative behaviors would be wrong for the same instruction and observation. As a result, even strong VLAs remain brittle under paraphrases, object-position shifts, and scene variations
+[
+63
+,
+8
+]
+. If robot data are the bottleneck, then the key question is not only how to collect more demonstrations, but also how to extract more supervision from each one.
+Reinforcement learning (RL), offline RL, and adversarial imitation learning provide a natural remedy because they can teach a model to distinguish desirable behavior from suboptimal behavior. In robotics, however, the supervision required for such learning is difficult to construct. Online RL requires informative rewards, diverse rollouts, and substantial simulator or hardware time, while remaining vulnerable to reward misspecification and reward hacking
+[
+11
+,
+57
+,
+16
+,
+54
+]
+. Offline RL avoids additional interaction, but it still depends on a reward that faithfully captures instruction satisfaction and on a dataset with sufficiently informative behavioral support
+[
+15
+,
+65
+,
+33
+,
+59
+]
+. Because offline RL cannot explore, policy improvement is constrained by the quality, diversity, and mixture of logged behavior; poor or weakly informative data can even degrade the learned policy. Thus, constructing the right mixture of expert and non-expert trajectories becomes a delicate dataset design problem. In practice, collecting and curating such suboptimal, failed, or corrective robot trajectories is itself expensive, and recent human-in-the-loop improvement pipelines still rely on substantial on-robot data collection together with expert interventions during deployment
+[
+16
+]
+.
+To address this issue, we propose
+CounterAlign
+, an offline RL framework that turns successful expert demonstrations into a source of corrective supervision through counterfactual relabeling.
+The key observation behind CounterAlign is simple: a successful action chunk becomes informative about failure when paired with a semantically inappropriate instruction.
+Concretely, by taking an expert action chunk and pairing it with a different instruction, we can synthesize mismatched instruction–observation–action tuples that reveal when a behavior is semantically inconsistent with the commanded task, without additional environment interaction, reward annotation, or corrective demonstrations.
+We then extend this basic idea with action-side and jointly relabeled samples using similarity-based constraints, so that the reward model learns from nontrivial semantic near-misses rather than only easy mismatches.
+However, relabeling is inherently ambiguous because different instructions can legitimately share similar or partially valid action chunks; treating all relabeled samples as negatives would inject systematic label noise and distort the reward. To address this, we train the relabeling discriminator using non-negative positive-unlabeled (nnPU) learning
+[
+22
+]
+, treating jointly relabeled samples as mixed unlabeled data rather than forcing them to be incorrect.
+In addition, we incorporate an adversarial learning objective that contrasts expert and policy-generated actions, encouraging the policy to remain close to expert-supported behaviors while improving semantic alignment.
+Combined with an adversarial discriminator that contrasts expert and policy actions, this yields a dense reward that measures semantic alignment among language, observation, and action.
+We then alternate between refining the discriminators and optimizing the VLA policy with offline RL using the reward induced by their outputs (see Fig.
+1
+). The resulting framework requires no additional robot data collection or annotation, and increases the amount of useful supervisory signal extracted from each demonstration. Empirically, it improves robustness to object position and task perturbations and transfers to real robots, outperforming strong baselines on real systems.
+The main contributions of this paper are summarized as follows.
+•
+We propose a framework that converts expert demonstrations into informative counterfactual supervision for offline RL, without additional rollouts, annotations, or reward labels.
+•
+We introduce an nnPU-based discriminator objective that explicitly handles the ambiguity of relabeled instruction-action pairs and produces a dense instruction-grounded reward.
+•
+We integrate this reward into offline RL for VLA policy training and show improved robustness and generalization under object position and task perturbations while maintaining performance on the original training distribution and outperforming strong baselines in both simulation and real-robot experiments.
+2. Related Work
+Vision-Language-Action Models.
+Recent VLAs have made substantial progress in robotic manipulation by jointly learning from visual observations, language instructions, and actions
+[
+21
+,
+3
+,
+2
+,
+38
+]
+. However, recent benchmarks show that they remain brittle under paraphrased, compositionally novel, or semantically varied instructions
+[
+63
+,
+8
+,
+18
+,
+47
+]
+. We argue that this limitation stems not only from data scarcity, but also from how language is used in behavior cloning (BC): language conditions the policy, yet it does not serve as an explicit semantic constraint on the generated actions.
+Recent work has therefore investigated reinforcement learning (RL) for VLA training. Simulation-based RL
+[
+31
+,
+26
+,
+30
+,
+56
+]
+suffers from sim-to-real gaps; world-model-based RL
+[
+52
+,
+41
+,
+27
+,
+7
+]
+can optimize over unrealistic states due to model errors; and real-world online RL
+[
+11
+,
+57
+,
+16
+,
+54
+]
+incurs high data-collection costs and safety risks. Offline RL avoids additional interaction and enables policy improvement from fixed datasets
+[
+15
+,
+65
+,
+33
+,
+59
+]
+, but existing approaches primarily rely on task-level or progress-oriented signals and do not directly address language grounding.
+Several studies are more closely related to our goal of improving language-conditioned behavior. Glossop et al.
+[
+10
+]
+and Lee et al.
+[
+25
+]
+generate counterfactual instructions, but this requires costly large-model relabeling and inherits the limitations of VLMs in spatial and physical reasoning. Kwok et al.
+[
+24
+]
+align instructions and behaviors using contrastive learning, but in-batch negatives can become false negatives when instructions or behaviors are semantically similar. In contrast, our method filters highly similar negatives, treats jointly relabeled samples as unlabeled data within a positive-unlabeled learning framework, and integrates the learned reward into offline RL rather than using it only for test-time ranking.
+Reward Definition for VLAs.
+A central challenge in RL-based VLA training is how to define rewards that are informative and scalable. Many studies use binary success/failure rewards
+[
+14
+,
+58
+,
+11
+,
+45
+,
+61
+,
+54
+,
+37
+,
+15
+,
+26
+]
+or sparse episode-level rewards with intermediate values
+[
+16
+,
+46
+]
+. These rewards are simple, but they are inefficient and often require human annotation in real-world settings. Learned success classifiers
+[
+53
+,
+4
+]
+reduce the need for manual reward design, but they still capture task success rather than instruction–action semantic alignment, making them vulnerable to out-of-distribution instructions. Task-specific reward engineering is another option, but it does not scale to the broad task diversity targeted by VLAs
+[
+34
+,
+59
+,
+48
+,
+32
+,
+42
+]
+.
+To obtain denser rewards without additional annotation, prior work has used demonstration-derived progress signals
+[
+43
+,
+60
+,
+57
+,
+29
+,
+1
+,
+33
+,
+17
+,
+44
+]
+. However, such signals assume that later states are more valuable and can be unreliable when demonstrations are suboptimal. Other methods rely on VLMs or video models to evaluate trajectories
+[
+65
+,
+51
+,
+40
+,
+25
+]
+, but they typically omit actions and inherit VLM weaknesses in spatial reasoning and semantic consistency
+[
+64
+]
+. Still others use discrepancies between world-model predictions and real trajectories
+[
+27
+]
+or token-level differences from ground-truth actions
+[
+19
+]
+, but these signals are not trained to measure instruction–action alignment.
+In this work, we instead learn a reward function that explicitly evaluates the semantic alignment between instructions and actions.
+3. Method
+Figure 2:
+The two discriminators share the same architecture but are trained on different types of samples.
+(a) The adversarial discriminator is trained on original expert samples and samples whose actions are replaced with policy-generated actions.
+(b) The relabeling discriminator is trained on samples whose instructions or actions are replaced with other instructions or actions from the dataset.
+3.1. Problem Setting
+We consider sequential decision-making with observations
+o
+o
+(e.g., visual inputs, robot proprioceptions), language instructions
+l
+l
+, and actions
+a
+∈
+ℝ
+d
+a\in\mathbb{R}^{d}
+. We are given an dataset
+𝒟
+=
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}=\{(l^{i},o^{i}_{t},a^{i}_{t:t+h})\}
+.
+Our goal is to learn a VLA policy
+π
+(
+a
+t
+:
+t
++
+h
+|
+o
+t
+,
+l
+)
+\pi(a_{t:t+h}|o_{t},l)
+that produces action trajectories semantically aligned with a given instruction
+l
+l
+, without additional environment interaction.
+3.2. Learning Observation–Instruction–Action Alignment Reward
+We propose to train two discriminators (Fig.
+2
+): an adversarial discriminator
+D
+ϕ
+adv
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+D^{\mathrm{adv}}_{\phi}(l,o_{t},a_{t:t+h})
+and a relabeling discriminator
+D
+ψ
+rel
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+D^{\mathrm{rel}}_{\psi}(l,o_{t},a_{t:t+h})
+, parameterized by
+ϕ
+\phi
+and
+ψ
+\psi
+, respectively. Both discriminators take as input an observation
+o
+t
+o_{t}
+, a language instruction
+l
+l
+, and an action chunk
+a
+t
+:
+t
++
+h
+a_{t:t+h}
+.
+Discriminator for Adversarial Training:
+The adversarial discriminator
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+(Fig.
+2
+(a)) determines whether a given action chunk comes from the expert or from the policy, as in GAIL
+[
+13
+]
+. This discriminator can be interpreted as focusing on low-level action fidelity and evaluating whether the action faithfully follows the given instruction. In other words, it is sensitive even to slight deviations in the action.
+A key difference from GAIL is that our method is trained entirely offline. We do not collect any additional data during training. As positive samples for training the discriminator, we use dataset samples
+𝒟
+expert
+=
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}_{\mathrm{expert}}=\{(l^{i},o^{i}_{t},a^{i}_{t:t+h})\}
+. As negative samples, we use policy-generated actions
+𝒟
+policy
+=
+{
+(
+l
+i
+,
+o
+t
+i
+,
+π
+(
+a
+t
+:
+t
++
+h
+∣
+l
+i
+,
+o
+t
+i
+)
+)
+}
+\mathcal{D}_{\mathrm{policy}}=\{(l^{i},o_{t}^{i},\pi(a_{t:t+h}\mid l^{i},o_{t}^{i}))\}
+. The discriminator
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+is trained using the following loss:
+ℒ
+adv
+​
+(
+ϕ
+)
+=
+\displaystyle\mathcal{L}^{\mathrm{adv}}(\phi)=
+−
+𝔼
+𝒟
+expert
+[
+log
+D
+adv
+ϕ
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+]
+−
+𝔼
+𝒟
+policy
+[
+log
+(
+1
+−
+D
+adv
+ϕ
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+)
+]
+.
+\displaystyle-\mathbb{E}_{\mathcal{D}_{\mathrm{expert}}}\left[\log D^{\mathrm{adv}}_{\phi}(l,o_{t},a_{t:t+h})\right]-\mathbb{E}_{\mathcal{D}_{\mathrm{policy}}}\left[\log\left(1-D^{\mathrm{adv}}_{\phi}(l,o_{t},a_{t:t+h})\right)\right].
+(1)
+Discriminator for Relabeling:
+The relabeling discriminator
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+(Fig.
+2
+(b)) evaluates, at a higher semantic level, whether a given action chunk follows the provided instruction. It is designed to be insensitive to small action deviations and instead performs a coarse-grained assessment of semantic consistency between the instruction and the action.
+To train this discriminator, positive samples are drawn from the expert dataset
+𝒟
+expert
+=
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}_{\mathrm{expert}}=\{(l^{i},o^{i}_{t},a^{i}_{t:t+h})\}
+, as in the training of
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+. Here,
+i
+i
+indexes trajectories (episodes), trajectory
+i
+i
+consists of time steps
+0
+,
+…
+,
+T
+i
+0,\ldots,T_{i}
+, and
+t
+t
+denotes an arbitrary time index. For another trajectory
+j
+j
+, we use
+τ
+\tau
+to denote an arbitrary time index in trajectory
+j
+j
+. Negative samples are constructed using two strategies: (1) instruction relabeling and (2) action relabeling.
+Instruction Relabeling.
+Instruction relabeling generates negative samples by replacing the original instruction
+l
+i
+l^{i}
+in a training tuple
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+(l^{i},o^{i}_{t},a^{i}_{t:t+h})
+with a different instruction
+l
+fake
+,
+i
+l^{\mathrm{fake},i}
+, resulting in
+𝒟
+instr
+​
+_
+​
+rel
+=
+{
+(
+l
+fake
+,
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}_{\mathrm{instr\_rel}}=\{(l^{\mathrm{fake},i},o^{i}_{t},a^{i}_{t:t+h})\}
+.
+Candidate instructions are selected from the dataset
+𝒟
+\mathcal{D}
+such that
+l
+fake
+,
+i
+≠
+l
+i
+l^{\mathrm{fake},i}\neq l^{i}
+.
+Rather than selecting candidates uniformly at random, we select instructions whose similarity satisfies
+θ
+min
+l
+<
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+fake
+,
+i
+)
+<
+θ
+max
+l
+\theta_{\mathrm{min}}^{l}<S_{l}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{\mathrm{fake},i})<\theta_{\mathrm{max}}^{l}
+.
+This constraint avoids both trivial and ambiguous cases: overly similar instructions may be indistinguishable and lead to unstable training, whereas overly dissimilar instructions make the task too easy and fail to capture meaningful distinctions.
+The instruction similarity
+S
+l
+S_{l}
+, together with its building blocks—the observation similarity
+S
+o
+S_{o}
+and the action similarity
+S
+a
+S_{a}
+—is defined heuristically; we defer the precise formulations to the supplementary material.
+The overall procedure for instruction relabeling is summarized in Algorithm 1 in the supplementary material.
+Action Relabeling.
+Action relabeling generates negative samples by replacing the action chunk
+a
+i
+t
+:
+t
++
+h
+a^{i}_{t:t+h}
+with another action chunk
+a
+fake
+,
+i
+a^{\mathrm{fake},i}
+, resulting in
+𝒟
+action
+​
+_
+​
+rel
+=
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+fake
+,
+i
+)
+}
+\mathcal{D}_{\mathrm{action\_rel}}=\{(l^{i},o^{i}_{t},a^{\mathrm{fake},i})\}
+.
+Candidate action chunks are selected from the dataset
+𝒟
+\mathcal{D}
+such that
+a
+fake
+,
+i
+≠
+a
+i
+t
+:
+t
++
+h
+a^{\mathrm{fake},i}\neq a^{i}_{t:t+h}
+.
+Rather than selecting candidates uniformly at random, we select action chunks whose similarity satisfies
+θ
+min
+a
+<
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+fake
+,
+i
+)
+<
+θ
+max
+a
+\theta_{\mathrm{min}}^{a}<S_{a}(a^{i}_{t:t+h},a^{\mathrm{fake},i})<\theta_{\mathrm{max}}^{a}
+.
+The overall procedure for action relabeling is summarized in Algorithm 2 in the supplementary material.
+Joint Relabeling.
+We also construct jointly relabeled samples
+𝒟
+unlabeled
+=
+{
+(
+l
+fake
+,
+i
+,
+o
+t
+i
+,
+a
+fake
+,
+i
+)
+}
+\mathcal{D}_{\mathrm{unlabeled}}=\{(l^{\mathrm{fake},i},o^{i}_{t},a^{\mathrm{fake},i})\}
+.
+Candidate instructions are selected from the dataset
+𝒟
+\mathcal{D}
+such that
+l
+fake
+,
+i
+≠
+l
+i
+l^{\mathrm{fake},i}\neq l^{i}
+.
+Rather than selecting candidates uniformly at random, we select instructions whose similarity satisfies
+θ
+min
+l
+<
+S
+l
+o
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+fake
+,
+i
+)
+\theta_{\mathrm{min}}^{l}<S_{l}^{o}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{\mathrm{fake},i})
+.
+Here,
+S
+l
+o
+S_{l}^{o}
+denotes an observation-grounded variant of the instruction similarity that ignores the action term.
+Candidate action chunks are selected from the samples associated with
+l
+fake
+,
+i
+l^{\mathrm{fake},i}
+, i.e., from
+𝒮
+⁡
+(
+l
+fake
+,
+i
+)
+\mathcal{S}(l^{\mathrm{fake},i})
+, such that
+a
+fake
+,
+i
+≠
+a
+i
+t
+:
+t
++
+h
+a^{\mathrm{fake},i}\neq a^{i}_{t:t+h}
+.
+Rather than selecting candidates uniformly at random, we select action chunks whose proprioceptive similarity satisfies
+θ
+min
+p
+<
+S
+p
+​
+(
+p
+t
+i
+,
+p
+fake
+,
+i
+)
+\theta_{\mathrm{min}}^{p}<S_{p}(p^{i}_{t},p^{\mathrm{fake},i})
+, where
+p
+t
+i
+p^{i}_{t}
+denotes the proprioceptive observation corresponding to the robot state at time
+t
+t
+in the sample
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+(l^{i},o^{i}_{t},a^{i}_{t:t+h})
+.
+As with
+S
+l
+S_{l}
+,
+S
+o
+S_{o}
+, and
+S
+a
+S_{a}
+, both
+S
+l
+o
+S_{l}^{o}
+and
+S
+p
+S_{p}
+are defined heuristically; their precise formulations are given in the supplementary material.
+The overall procedure for joint relabeling is summarized in Algorithm 3 in the supplementary material.
+jointly relabeled samples are not guaranteed to be negative, since some instruction–action pairs may remain semantically consistent. We therefore treat them as unlabeled data and train
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+using non-negative PU learning
+[
+22
+]
+. The discriminator is trained with the following objective:
+ℒ
+rel
+​
+(
+ψ
+)
+\displaystyle\mathcal{L}^{\mathrm{rel}}(\psi)
+=
+λ
+​
+ℒ
+PN
+​
+(
+ψ
+)
++
+(
+1
+−
+λ
+)
+​
+ℒ
+nnPU
+​
+(
+ψ
+)
+−
+α
+H
+​
+ℋ
+​
+(
+D
+ψ
+rel
+)
+\displaystyle=\lambda\mathcal{L}_{\mathrm{PN}}(\psi)+(1-\lambda)\mathcal{L}_{\mathrm{nnPU}}(\psi)-\alpha_{H}\mathcal{H}(D^{\mathrm{rel}}_{\psi})
+(2)
+The last term is an entropy regularizer with coefficient
+α
+H
+>
+0
+\alpha_{H}>0
+.
+Here,
+ℋ
+⁡
+(
+D
+ψ
+rel
+)
+≜
+𝔼
+x
+∼
+𝒟
+expert
+∪
+𝒟
+neg
+​
+[
+H
+⁡
+(
+D
+ψ
+rel
+​
+(
+x
+)
+)
+]
+\mathcal{H}(D^{\mathrm{rel}}_{\psi})\triangleq\mathbb{E}_{x\sim\mathcal{D}_{\mathrm{expert}}\cup\mathcal{D}_{\mathrm{neg}}}[H(D^{\mathrm{rel}}_{\psi}(x))]
+denotes the expected output entropy of the relabeling discriminator over the labeled data, where
+H
+⁡
+(
+p
+)
+=
+−
+p
+​
+log
+⁡
+p
+−
+(
+1
+−
+p
+)
+​
+log
+⁡
+(
+1
+−
+p
+)
+H(p)=-p\log p-(1-p)\log(1-p)
+is the binary entropy function.
+Without this regularizer, the discriminator tends to overfit to the training samples and collapse to saturated outputs, yielding degenerate reward signals that impede stable and meaningful policy optimization.
+3.3. Policy Training via Offline RL with Relabeling
+Reward Definition:
+The RL reward is defined as a weighted sum of the log discriminator scores, analogous to GAIL:
+r
+t
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+=
+(
+1
+−
+w
+)
+log
+D
+ϕ
+adv
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
++
+w
+log
+D
+ψ
+rel
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+.
+r_{t}(l^{i},o_{t}^{i},a_{t:t+h}^{i})=(1-w)\log D^{\mathrm{adv}}_{\phi}(l^{i},o^{i}_{t},a^{i}_{t:t+h})+w\log D^{\mathrm{rel}}_{\psi}(l^{i},o^{i}_{t},a^{i}_{t:t+h}).
+(3)
+Here,
+w
+∈
+[
+0
+,
+1
+]
+w\in[0,1]
+controls the relative contribution of the two discriminators.
+Relabeling for Critic Training:
+We additionally construct a relabeled dataset for critic training.
+By incorporating more diverse instruction–observation–action samples into the critic objective, we aim to improve the critic’s evaluation of language-conditioned behavior.
+The construction follows the same procedure as instruction relabeling for discriminator training
+(Algorithm 1 ), but uses a different similarity threshold to select
+near-positive
+samples rather than hard negatives.
+Specifically, we construct
+𝒟
+instr
+C
+=
+{
+(
+l
+j
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}^{C}_{\mathrm{instr}}=\bigl\{(l^{j},\,o^{i}_{t},\,a^{i}_{t:t+h})\bigr\}
+, where the relabeled instruction
+l
+j
+l^{j}
+is selected such that
+θ
+max
+l
+≤
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+\theta^{l}_{\max}\leq S_{l}\!\left((l^{i},o^{i}_{t},a^{i}_{t:t+h}),\,l^{j}\right)
+.
+We restrict critic-side relabeling to instructions, omitting action relabeling.
+Because our method is trained entirely offline, replacing the action chunk
+a
+i
+t
+:
+t
++
+h
+a^{i}_{t:t+h}
+with one drawn from a different trajectory would leave the transition without a corresponding next observation
+o
+t
++
+h
++
+1
+i
+o^{i}_{t+h+1}
+, which is required to form the bootstrapped target in the critic loss (Eq.
+4
+).
+We then define the critic training dataset as
+𝒟
+critic
+=
+𝒟
+expert
+∪
+𝒟
+instr
+C
+\mathcal{D}_{\mathrm{critic}}=\mathcal{D}_{\mathrm{expert}}\cup\mathcal{D}^{C}_{\mathrm{instr}}
+.
+We also explore actor-side relabeling as an ablation.
+Further details are provided in the supplementary material.
+Training Algorithm:
+Our offline RL algorithm is based on Implicit Q-Learning (IQL)
+[
+23
+]
+.
+We parameterize the Q-function as
+Q
+θ
+Q_{\theta}
+, the value function as
+V
+ξ
+V_{\xi}
+, and the actor as
+π
+ω
+\pi_{\omega}
+.
+To stabilize training, we additionally maintain a target network
+Q
+θ
+¯
+Q_{\bar{\theta}}
+.
+In practice, we employ clipped double Q-networks
+[
+9
+]
+, using two independent Q-networks
+Q
+θ
+1
+Q_{\theta_{1}}
+and
+Q
+θ
+2
+Q_{\theta_{2}}
+and replacing
+Q
+θ
+¯
+Q_{\bar{\theta}}
+with
+min
+i
+∈
+{
+1
+,
+2
+}
+⁡
+Q
+θ
+¯
+i
+\min_{i\in\{1,2\}}Q_{\bar{\theta}_{i}}
+in the value and policy losses to mitigate overestimation bias.
+We update the critics as follows:
+ℒ
+Q
+(
+θ
+)
+=
+𝔼
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+,
+o
+t
++
+h
++
+1
+)
+∼
+𝒟
+critic
+[
+(
+r
+t
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
++
+γ
+V
+ξ
+(
+l
+,
+o
+t
++
+h
++
+1
+)
+−
+Q
+θ
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+)
+2
+]
+,
+\mathcal{L}^{\mathrm{Q}}(\theta)=\mathbb{E}_{(l,o_{t},a_{t:t+h},o_{t+h+1})\sim\mathcal{D}_{\mathrm{critic}}}\left[\left(r_{t}(l,o_{t},a_{t:t+h})+\gamma V_{\xi}(l,o_{t+h+1})-Q_{\theta}(l,o_{t},a_{t:t+h})\right)^{2}\right],
+(4)
+ℒ
+V
+(
+ξ
+)
+=
+𝔼
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+∼
+𝒟
+critic
+[
+L
+2
+τ
+(
+Q
+θ
+¯
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+−
+V
+ξ
+(
+l
+,
+o
+t
+)
+)
+]
+,
+\mathcal{L}^{\mathrm{V}}(\xi)=\mathbb{E}_{(l,o_{t},a_{t:t+h})\sim\mathcal{D}_{\mathrm{critic}}}\left[L_{2}^{\tau}\left(Q_{\bar{\theta}}(l,o_{t},a_{t:t+h})-V_{\xi}(l,o_{t})\right)\right],
+(5)
+where
+L
+2
+τ
+​
+(
+u
+)
+=
+|
+τ
+−
+𝟏
+​
+(
+u
+<
+0
+)
+|
+​
+u
+2
+.
+L_{2}^{\tau}(u)=|\tau-\mathbf{1}(u<0)|\,u^{2}.
+For policy training, since the base policy
+π
+ω
+\pi_{\omega}
+is a flow-matching model, directly evaluating
+log
+π
+ω
+(
+a
+t
+:
+t
++
+h
+∣
+l
+,
+o
+t
+)
+\log\pi_{\omega}(a_{t:t+h}\mid l,o_{t})
+is intractable for Advantage Weighted Regression (AWR)
+[
+39
+]
+.
+Instead, we optimize the flow-matching loss weighted by the exponential of the advantage:
+ℒ
+policy
+(
+ω
+)
+=
+𝔼
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+∼
+𝒟
+expert
+s
+∼
+𝒰
+⁡
+[
+0
+,
+1
+]
+,
+x
+0
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+[
+exp
+(
+β
+(
+Q
+θ
+¯
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+−
+V
+ξ
+(
+l
+,
+o
+t
+)
+)
+)
+‖
+v
+ω
+(
+x
+s
+,
+s
+∣
+l
+,
+o
+t
+)
+−
+u
+s
+‖
+2
+]
+,
+\mathcal{L}^{\mathrm{policy}}(\omega)=\mathbb{E}_{\begin{subarray}{c}(l,o_{t},a_{t:t+h})\sim\mathcal{D}_{\mathrm{expert}}\\
+s\sim\mathcal{U}[0,1],\;x_{0}\sim\mathcal{N}(0,I)\end{subarray}}\!\left[\exp\!\left(\beta(Q_{\bar{\theta}}(l,o_{t},a_{t:t+h})-V_{\xi}(l,o_{t}))\right)\left\|v_{\omega}(x_{s},s\mid l,o_{t})-u_{s}\right\|^{2}\right],
+(6)
+where
+x
+s
+=
+(
+1
+−
+s
+)
+x
+0
++
+s
+a
+t
+:
+t
++
+h
+x_{s}=(1-s)\,x_{0}+s\,a_{t:t+h}
+is the linear interpolant and
+u
+s
+=
+a
+t
+:
+t
++
+h
+−
+x
+0
+u_{s}=a_{t:t+h}-x_{0}
+.
+This objective up-weights the flow-matching loss for high-advantage actions and down-weights it for low-advantage actions, thereby biasing the policy toward higher-return behaviors without requiring likelihood evaluation.
+The theoretical justification is provided in the supplementary material.
+In CounterAlign, we iteratively train the discriminators (
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+,
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+), critic (
+Q
+θ
+Q_{\theta}
+,
+V
+ξ
+V_{\xi}
+), and actor (
+π
+ω
+\pi_{\omega}
+).
+The complete algorithm is provided in Algorithm 4 in the supplementary material.
+4. Experiments
+4.1. Simulation Setup
+Our objective is to examine whether a VLA model can go beyond simply memorizing a direct mapping from observations and language instructions to actions. Specifically, we investigate whether the model can interpret observations, understand the semantics of instructions, and determine the appropriate action accordingly. If a policy acquires such a semantically grounded action-generation capability, it is expected to exhibit robustness to perturbations in observations, object configurations, language expressions, and task settings.
+We first train policies on the LIBERO dataset
+[
+28
+]
+and evaluate them on LIBERO-PRO
+[
+63
+]
+.
+LIBERO-PRO introduces several types of perturbation to each task suite, allowing a more fine-grained evaluation of generalization. In this work, we consider four perturbation types: Obj, which changes the visual appearance of objects; Pos, which changes object positions; Sem, which paraphrases the language instruction while preserving its meaning; and Task, which modifies the task to be performed.
+As the base VLA for CounterAlign, we use
+π
+0.5
+\pi_{0.5}
+[
+2
+]
+. All models are trained using the default configuration. Further details are provided in the supplementary material. For evaluation, we run 100 trials and calculate the success rate.
+4.2. Simulation Experiments
+Table 1:
+Success rate comparisons on the LIBERO-PRO
+[
+63
+]
+.
+CounterAlign yields its largest improvements in the Pos and Task settings, where the policy cannot succeed by simply replaying actions observed in the training data.
+Method
+LIBERO-Spatial
+LIBERO-Object
+LIBERO-Goal
+LIBERO-10
+Obj
+Pos
+Sem
+Task
+Obj
+Pos
+Sem
+Task
+Obj
+Pos
+Sem
+Task
+Obj
+Pos
+Sem
+Task
+OpenVLA-OFT
+[
+20
+]
+0.30
+0.14
+0.65
+0.0
+0.67
+0.10
+0.89
+0.0
+0.85
+0.0
+0.44
+0.03
+0.06
+0.0
+0.39
+0.0
+VLA-Adapter
+[
+49
+]
+0.98
+0.0
+0.98
+0.49
+0.89
+0.0
+0.99
+0.08
+0.61
+0.0
+0.75
+0.12
+0.47
+0.0
+0.91
+0.10
+xVLA
+[
+62
+]
+0.90
+0.0
+0.69
+0.39
+0.92
+0.05
+0.98
+0.0
+0.72
+0.10
+0.94
+0.08
+0.61
+0.10
+0.71
+0.20
+π
+0.5
+\pi_{0.5}
+[
+2
+]
+0.99
+0.53
+0.97
+0.55
+0.89
+0.19
+0.95
+0.10
+0.90
+0.29
+0.95
+0.17
+0.66
+0.06
+0.91
+0.17
+CounterAlign
+0.98
+0.60
+0.97
+0.63
+0.80
+0.51
+0.99
+0.26
+0.82
+0.41
+0.94
+0.46
+0.64
+0.11
+0.97
+0.29
+The results on LIBERO-PRO are shown in Table
+1
+. In the Sem and Obj settings, we observe no substantial performance gap between the BC baseline and CounterAlign. One possible reason is that these settings tend to overestimate the performance of BC. In particular, in Sem and Obj, a policy can often achieve a high success rate simply by reproducing the same action sequences in response to observations similar to those seen during training, without necessarily understanding the semantics of the language instruction or selecting actions according to the situation.
+Therefore, the competitive performance of BC in these settings does not by itself demonstrate semantic understanding; rather, it suggests that these evaluation settings can be solved to a large extent by a simple observation-to-action mapping.
+In contrast, the Pos and Task settings require the policy to generate actions that differ from those observed during training, in response to changes in object configurations or task conditions. Therefore, these settings more directly evaluate the ability to interpret observations, understand the meaning of language instructions, and select actions appropriate to the current situation. CounterAlign yields its largest improvements in Pos and Task, demonstrating that learning a reward based on semantic alignment between language and action is effective in improving generalization under such perturbations.
+4.3. Ablation
+We conducted an ablation study to assess the contribution of each component (Table
+2
+). Even the basic offline RL configuration already outperforms behavior cloning in the most diagnostic Pos and Task settings, where the policy must adapt its actions to changes in object configurations or task requirements rather than simply replaying training trajectories. This suggests that our offline RL framework itself provides an effective policy-improvement mechanism for VLA models.
+The full ablation suggests that most components improve average performance, whereas actor-side relabeling does not consistently help. In particular, relabeling for the discriminator and critic, entropy regularization, and jointly relabeled unlabeled samples improve robustness, while directly applying relabeling to the actor does not yield additional gains. We provide a more detailed analysis in the supplementary material.
+Table 2:
+Ablation study on LIBERO-PRO
+[
+63
+]
+. Base algorithms are IQL
+[
+23
+]
+and advantage-weighted flow matching.
+Ent. denotes whether the entropy regularization is used in discriminator training, and Unlabel denotes whether unlabeled samples are used for discriminator training. D, C, and A indicate whether relabeling is applied to the discriminator, critic, and actor, respectively.
+Ent.
+Unlabel
+D
+C
+A
+LIBERO-Spatial
+LIBERO-Object
+LIBERO-Goal
+LIBERO-10
+Obj
+Pos
+Sem
+Task
+Obj
+Pos
+Sem
+Task
+Obj
+Pos
+Sem
+Task
+Obj
+Pos
+Sem
+Task
+-
+-
+×
+\times
+×
+\times
+×
+\times
+0.96
+0.56
+0.97
+0.60
+0.86
+0.49
+1.0
+0.22
+0.85
+0.36
+0.93
+0.29
+0.62
+0.09
+0.96
+0.14
+×
+\times
+×
+\times
+✓
+\checkmark
+×
+\times
+×
+\times
+1.0
+0.59
+0.96
+0.57
+0.92
+0.54
+0.99
+0.22
+0.84
+0.34
+0.98
+0.32
+0.66
+0.08
+0.92
+0.16
+✓
+\checkmark
+×
+\times
+✓
+\checkmark
+×
+\times
+×
+\times
+0.98
+0.55
+0.94
+0.65
+0.82
+0.63
+0.99
+0.18
+0.87
+0.38
+0.97
+0.41
+0.69
+0.08
+0.92
+0.19
+✓
+\checkmark
+✓
+\checkmark
+✓
+\checkmark
+×
+\times
+×
+\times
+0.94
+0.54
+0.97
+0.66
+0.87
+0.47
+0.98
+0.29
+0.83
+0.37
+0.96
+0.47
+0.63
+0.12
+0.89
+0.20
+✓
+\checkmark
+✓
+\checkmark
+✓
+\checkmark
+✓
+\checkmark
+×
+\times
+0.98
+0.60
+0.97
+0.63
+0.80
+0.51
+0.99
+0.26
+0.82
+0.41
+0.94
+0.46
+0.64
+0.11
+0.97
+0.29
+✓
+\checkmark
+✓
+\checkmark
+✓
+\checkmark
+✓
+\checkmark
+✓
+\checkmark
+0.99
+0.55
+0.97
+0.62
+0.90
+0.62
+0.97
+0.35
+0.80
+0.36
+0.97
+0.33
+0.63
+0.09
+0.95
+0.15
+BC
+0.99
+0.53
+0.97
+0.55
+0.89
+0.19
+0.95
+0.10
+0.90
+0.29
+0.95
+0.17
+0.66
+0.06
+0.91
+0.17
+4.4. Real World Setup
+Figure 3:
+TX-G2 experimental setup.
+We evaluated CounterAlign on a real robot, the TX-G2, as shown in Fig.
+3
+.
+We train models on a dataset consisting of four tasks.
+Each task is divided into 4 to 6 primitive tasks (e.g. “pick up the light blue spoon from the grey bowl”).
+For each task, we collect approximately 100 to 500 demonstrations. Further details are provided in the supplementary material.
+To evaluate robustness in a real-robot setting, we conducted 10 trials. In each trial, perturbations were applied to the initial position and orientation of the target object. Among the 10 trials, 8 involved relatively small perturbations in the object pose, while the remaining 2 trials involved larger perturbations that were substantial enough to fall outside the training distribution.
+We evaluate performance using the mean success rate across the primitive tasks in each task. Inference was run on an NVIDIA GeForce RTX 5070 GPU.
+4.5. Real World Experiments
+Table 3:
+Comparisons on the TX-G2.
+Method
+Task 1
+Task 2
+Task 3
+Task 4
+VLA-Adapter
+[
+49
+]
+0.0
+0.0
+0.0
+0.0
+xVLA
+[
+62
+]
+0.0
+0.08
+0.05
+0.05
+π
+0.5
+\pi_{0.5}
+[
+2
+]
+0.05
+0.48
+0.80
+0.60
+CounterAlign
+0.20
+0.53
+0.93
+0.85
+Table
+3
+shows that CounterAlign outperformed the baselines. In particular, even when perturbations were applied to the initial position and orientation of the object, the proposed method improved the performance. These results indicate that CounterAlign consistently achieves greater robustness than the baselines on the real robot.
+1
+1
+1
+We also attempted to evaluate OpenVLA-OFT
+[
+20
+]
+in the real-robot setting. However, due to its large number of parameters, OpenVLA-OFT exceeded the available GPU memory.
+4.6. Qualitative Results
+Figure 4:
+Trajectories from the LIBERO dataset and the TX-G2 dataset, along with the values of the learned advantage.
+Figure
+4
+visualizes the learned advantage values along representative trajectories from LIBERO and the TX-G2 experiments. In both trajectories, the advantage is relatively low at the beginning and end of the episode. One possible explanation is that the task-relevant behavior is still ambiguous in the initial phase, while the final hand-lifting motion after object placement is only weakly related to the language instruction. We also observe that the advantage tends to decrease during failure segments, shown in red, and increase when the robot correctly follows the instruction, shown in green. In LIBERO, the advantage slightly decreases after the bottle is grasped, which may be because the dataset contains trajectories that place the bottle both on the rack and in the cabinet, making the intended target ambiguous at that moment. Overall, these results indicate that the learned advantage assigns higher values to trajectory segments strongly related to the instruction, and lower values to less relevant or unsuccessful segments.
+5. Conclusion
+We introduced CounterAlign, an offline reinforcement learning framework for improving the semantic robustness of Vision-Language-Action models. CounterAlign learns a reward function that explicitly evaluates the alignment among language instructions, observations, and action chunks, using adversarial and relabeling-based discriminators trained entirely from offline data. By integrating this learned reward into an IQL-style objective with advantage-weighted flow matching, the policy is encouraged to select actions that are semantically consistent with the current instruction and scene, rather than merely imitating spurious correlations in the dataset.
+Experiments show that CounterAlign improves upon behavior cloning, particularly under position and task perturbations, where the policy must adapt its behavior to changes in the object position or task context. These gains carry over to real-robot experiments on TX-G2, where CounterAlign further outperforms competitive baselines.
+Looking ahead, CounterAlign could be further strengthened by applying it to larger and more diverse robot datasets spanning a broader range of object categories, environments, embodiments, and linguistic variations. Another promising direction is to integrate counterfactual supervision with complementary data-collection or adaptation strategies, enabling future VLA systems to benefit from both denser supervision extracted from existing demonstrations and broader dataset coverage.
+Acknowledgments
+This paper is based on results obtained from a project, JPNP25015, commissioned by the New Energy and Industrial Technology Development Organization (NEDO).
+References
+[1]
+Z. Bai, C. Gao, and M. Z. Shou
+(2025)
+EVOLVE-vla: test-time training from environment feedback for vision-language-action models
+.
+arXiv preprint arXiv:2512.14666
+.
+Cited by:
+§2
+.
+[2]
+K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. R. Equi, C. Finn, N. Fusai, M. Y. Galliker, D. Ghosh, L. Groom, K. Hausman, brian ichter, S. Jakubczak, T. Jones, L. Ke, D. LeBlanc, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, J. Tanner, Q. Vuong, H. Walke, A. Walling, H. Wang, L. Yu, and U. Zhilinsky
+(2025)
+π
+0.5
+\pi_{0.5}
+: A vision-language-action model with open-world generalization
+.
+In
+Proceedings of Conference on Robot Learning (CoRL)
+,
+Cited by:
+§1
+,
+Table 3
+,
+§2
+,
+§4.1
+,
+Table 1
+,
+Table 3
+,
+§6
+.
+[3]
+K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter,
+et al.
+(2024)
+π
+0
+\pi_{0}
+: A vision-language-action flow model for general robot control
+.
+arXiv preprint arXiv:2410.24164
+.
+Cited by:
+§1
+,
+§2
+.
+[4]
+Y. Chen, S. Tian, S. Liu, Y. Zhou, H. Li, and D. Zhao
+(2025)
+ConRFT: a reinforced fine-tuning method for vla models via consistency policy
+.
+In
+Proceedings of Robotics: Science and Systems (RSS)
+,
+Cited by:
+§2
+.
+[5]
+A. Cheng, Y. Ji, Z. Yang, Z. Gongye, X. Zou, J. Kautz, E. Bıyık, H. Yin, S. Liu, and X. Wang
+(2025)
+Navila: legged robot vision-language-action model for navigation
+.
+In
+Proceedings of Robotics: Science and Systems (RSS)
+,
+Cited by:
+§1
+.
+[6]
+P. Ding, H. Zhao, W. Zhang, W. Song, M. Zhang, S. Huang, N. Yang, and D. Wang
+(2024)
+Quar-vla: vision-language-action model for quadruped robots
+.
+In
+Proceedings of European Conference on Computer Vision (ECCV)
+,
+pp.
+352–367
+.
+Cited by:
+§1
+.
+[7]
+Z. Fangqi, Y. Zhengyang, H. Zicong, S. Quanxin, M. Xiao, and G. Song
+(2025)
+WMPO: world model-based policy optimization for vision-language-action models
+.
+arXiv preprint arXiv:2511.09515
+.
+External Links:
+Link
+Cited by:
+§2
+.
+[8]
+S. Fei, S. Wang, J. Shi, Z. Dai, J. Cai, P. Qian, L. Ji, X. He, S. Zhang, Z. Fei, J. Fu, J. Gong, and X. Qiu
+(2025)
+LIBERO-plus: in-depth robustness analysis of vision-language-action models
+.
+arXiv preprint arXiv:2510.13626
+.
+Cited by:
+§1
+,
+§2
+.
+[9]
+S. Fujimoto, H. Hoof, and D. Meger
+(2018)
+Addressing function approximation error in actor-critic methods
+.
+In
+Proceedings of International Conference on Machine Learning (ICML)
+,
+pp.
+1587–1596
+.
+Cited by:
+§3.3
+.
+[10]
+C. Glossop, W. Chen, A. Bhorkar, D. Shah, and S. Levine
+(2025)
+Cast: counterfactual labels improve instruction following in vision-language-action models
+.
+arXiv preprint arXiv:2508.13446
+.
+Cited by:
+§2
+.
+[11]
+Y. Guo, J. Zhang, X. Chen, X. Ji, Y. Wang, Y. Hu, and J. Chen
+(2025)
+Improving vision-language-action model with online reinforcement learning
+.
+In
+Proceedings of IEEE International Conference on Robotics and Automation (ICRA)
+,
+pp.
+15665–15672
+.
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[12]
+N. Hirose, C. Glossop, D. Shah, and S. Levine
+(2025)
+OmniVLA: an omni-modal vision-language-action model for robot navigation
+.
+External Links:
+2509.19480
+,
+Link
+Cited by:
+§1
+.
+[13]
+J. Ho and S. Ermon
+(2016)
+Generative adversarial imitation learning
+.
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+.
+Cited by:
+§3.2
+.
+[14]
+J. Hu, R. Hendrix, A. Farhadi, A. Kembhavi, R. Martín-Martín, P. Stone, K. Zeng, and K. Ehsani
+(2025)
+Flare: achieving masterful and adaptive robot policies with large-scale reinforcement learning fine-tuning
+.
+In
+Proceedings of IEEE International Conference on Robotics and Automation (ICRA)
+,
+pp.
+3617–3624
+.
+Cited by:
+§2
+.
+[15]
+D. Huang, Z. Fang, T. Zhang, Y. Li, L. Zhao, and C. Xia
+(2025)
+Co-rft: efficient fine-tuning of vision-language-action models through chunked offline reinforcement learning
+.
+arXiv preprint arXiv:2508.02219
+.
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[16]
+P. Intelligence, A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo,
+et al.
+(2025)
+π
+0.6
+∗
+\pi_{0.6}^{\ast}
+: A vla that learns from experience
+.
+arXiv preprint arXiv:2511.14759
+.
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[17]
+A. Jiang, Y. Gao, Y. Wang, Z. Sun, S. Wang, Y. Heng, H. Sun, S. Tang, L. Zhu, J. Chai,
+et al.
+(2025)
+Irl-vla: training an vision-language-action policy via reward world model
+.
+arXiv preprint arXiv:2508.06571
+.
+Cited by:
+§2
+.
+[18]
+C. Kim, M. Kim, M. Kang, H. Kim, and D. Jung
+(2026)
+LIBERO-para: a diagnostic benchmark and metrics for paraphrase robustness in vla models
+.
+External Links:
+2603.28301
+,
+Link
+Cited by:
+§2
+.
+[19]
+D. Kim, S. Park, W. Song, S. Kim, T. Kim, H. Jang, J. Shin, J. Kim, and Y. Seo
+(2026)
+RoboAlign: learning test-time reasoning for language-action alignment in vision-language-action models
+.
+arXiv preprint arXiv:2603.21341
+.
+Cited by:
+§2
+.
+[20]
+M. J. Kim, C. Finn, and P. Liang
+(2025)
+Fine-tuning vision-language-action models: optimizing speed and success
+.
+arXiv preprint arXiv:2502.19645
+.
+Cited by:
+Table 1
+,
+footnote 1
+.
+[21]
+M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. P. Foster, P. R. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn
+(2024)
+OpenVLA: an open-source vision-language-action model
+.
+In
+Proceedings of Conference on Robot Learning (CoRL)
+,
+Cited by:
+§1
+,
+§2
+.
+[22]
+R. Kiryo, G. Niu, M. C. Du Plessis, and M. Sugiyama
+(2017)
+Positive-unlabeled learning with non-negative risk estimator
+.
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+.
+Cited by:
+§1
+,
+§3.2
+.
+[23]
+I. Kostrikov, A. Nair, and S. Levine
+(2022)
+Offline reinforcement learning with implicit q-learning
+.
+In
+Proceedings of International Conference on Learning Representations (ICLR)
+,
+Cited by:
+§3.3
+,
+Table 2
+.
+[24]
+J. Kwok, X. Zhang, M. Xu, Y. Liu, A. Mirhoseini, C. Finn, and M. Pavone
+(2026)
+Scaling verification can be more effective than scaling policy learning for vision-language-action alignment
+.
+arXiv preprint arXiv:2602.12281
+.
+Cited by:
+§2
+.
+[25]
+T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+(2026)
+RoboReward: general-purpose vision-language reward models for robotics
+.
+arXiv preprint arXiv:2601.00675
+.
+Cited by:
+§2
+,
+§2
+.
+[26]
+H. Li, Y. Zuo, J. Yu, Y. Zhang, Y. Zhaohui, K. Zhang, X. Zhu, Y. Zhang, T. Chen, G. Cui, D. Wang, D. Luo, Y. Fan, Y. Sun, J. Zeng, J. Pang, S. Zhang, Y. Wang, Y. Mu, B. Zhou, and N. Ding
+(2026)
+SimpleVLA-RL: scaling VLA training via reinforcement learning
+.
+In
+Proceedings of International Conference on Learning Representations (ICLR)
+,
+Cited by:
+§2
+,
+§2
+.
+[27]
+H. Li, P. Ding, R. Suo, Y. Wang, Z. Ge, D. Zang, K. Yu, M. Sun, H. Zhang, D. Wang,
+et al.
+(2025)
+Vla-rft: vision-language-action reinforcement fine-tuning with verified rewards in world simulators
+.
+arXiv preprint arXiv:2510.00406
+.
+Cited by:
+§2
+,
+§2
+.
+[28]
+B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+(2023)
+Libero: benchmarking knowledge transfer for lifelong robot learning
+.
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+36
+,
+pp.
+44776–44791
+.
+Cited by:
+§4.1
+.
+[29]
+C. Liu, Y. Liu, T. Wang, Q. Zhuang, J. C. Liang, W. Yang, R. Xu, Q. Wang, D. Liu, and C. Han
+(2026)
+On-the-fly vla adaptation via test-time reinforcement learning
+.
+arXiv preprint arXiv:2601.06748
+.
+Cited by:
+§2
+.
+[30]
+J. Liu, F. Gao, B. Wei, X. Chen, Q. Liao, Y. Wu, C. Yu, and Y. Wang
+(2025)
+What can RL bring to VLA generalization? an empirical study
+.
+In
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+,
+Cited by:
+§2
+.
+[31]
+G. Lu, W. Guo, C. Zhang, Y. Zhou, H. Jiang, Z. Gao, Y. Tang, and Z. Wang
+(2025)
+VLA-rl: towards masterful and general robotic manipulation with scalable reinforcement learning
+.
+External Links:
+2505.18719
+,
+Link
+Cited by:
+§2
+.
+[32]
+M. Lyu, Y. Sun, E. Lin, H. Li, R. Chen, F. Zhao, and Y. Zeng
+(2025)
+Reinforcement fine-tuning of flow-matching policies for vision-language-action models
+.
+arXiv preprint arXiv:2510.09976
+.
+Cited by:
+§2
+.
+[33]
+Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+(2026)
+ARM: advantage reward modeling for long-horizon manipulation
+.
+arXiv preprint arXiv:2604.03037
+.
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[34]
+M. S. Mark, T. Gao, G. G. Sampaio, M. K. Srirama, A. Sharma, C. Finn, and A. Kumar
+(2024)
+Policy agnostic rl: offline rl and online rl fine-tuning of any class and backbone
+.
+arXiv preprint arXiv:2412.06685
+.
+Cited by:
+§2
+.
+[35]
+O. Mees, L. Hermann, E. Rosete-Beas, and W. Burgard
+(2022)
+Calvin: a benchmark for language-conditioned policy learning for long-horizon robot manipulation tasks
+.
+IEEE Robotics and Automation Letters
+7
+(
+3
+),
+pp.
+7327–7334
+.
+Cited by:
+Table 3
+,
+§10
+.
+[36]
+A. Nair, A. Gupta, M. Dalal, and S. Levine
+(2020)
+Awac: accelerating online reinforcement learning with offline datasets
+.
+arXiv preprint arXiv:2006.09359
+.
+Cited by:
+§5
+.
+[37]
+M. Nakamoto, O. Mees, A. Kumar, and S. Levine
+(2025)
+Steering your generalists: improving robotic foundation models via value guidance
+.
+In
+Proceedings of Conference on Robot Learning (CoRL)
+,
+pp.
+4996–5013
+.
+Cited by:
+§2
+.
+[38]
+NVIDIA, :, J. Bjorck, F. Castañeda, N. Cherniadev, X. Da, R. Ding, L. ”. Fan, Y. Fang, D. Fox, F. Hu, S. Huang, J. Jang, Z. Jiang, J. Kautz, K. Kundalia, L. Lao, Z. Li, Z. Lin, K. Lin, G. Liu, E. Llontop, L. Magne, A. Mandlekar, A. Narayan, S. Nasiriany, S. Reed, Y. L. Tan, G. Wang, Z. Wang, J. Wang, Q. Wang, J. Xiang, Y. Xie, Y. Xu, Z. Xu, S. Ye, Z. Yu, A. Zhang, H. Zhang, Y. Zhao, R. Zheng, and Y. Zhu
+(2025)
+GR00T n1: an open foundation model for generalist humanoid robots
+.
+External Links:
+2503.14734
+,
+Link
+Cited by:
+§2
+.
+[39]
+X. B. Peng, A. Kumar, G. Zhang, and S. Levine
+(2019)
+Advantage-weighted regression: simple and scalable off-policy reinforcement learning
+.
+arXiv preprint arXiv:1910.00177
+.
+Cited by:
+§3.3
+,
+§5
+,
+§5
+,
+§5
+.
+[40]
+A. K. Sharma, Y. Sun, N. Lu, Y. Zhang, J. Liu, and S. Yang
+(2026)
+World-gymnast: training robots with reinforcement learning in a world model
+.
+arXiv preprint arXiv:2602.02454
+.
+Cited by:
+§2
+.
+[41]
+A. K. Sharma, Y. Sun, N. Lu, Y. Zhang, J. Liu, and S. Yang
+(2026)
+World-gymnast: training robots with reinforcement learning in a world model
+.
+External Links:
+2602.02454
+,
+Link
+Cited by:
+§2
+.
+[42]
+L. Shi, S. Chen, F. Gao, Y. Chen, K. Chen, T. Zhang, H. Zang, W. Zhang, C. Yu, and Y. Wang
+(2026)
+Beyond imitation: reinforcement learning-based sim-real co-training for vla models
+.
+arXiv preprint arXiv:2602.12628
+.
+Cited by:
+§2
+.
+[43]
+J. Shu, Z. Lin, and Y. Wang
+(2025)
+Rftf: reinforcement fine-tuning for embodied agents with temporal feedback
+.
+arXiv preprint arXiv:2505.19767
+.
+Cited by:
+§2
+.
+[44]
+H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co,
+et al.
+(2025)
+Robo-dopamine: general process reward modeling for high-precision robotic manipulation
+.
+arXiv preprint arXiv:2512.23703
+.
+Cited by:
+§2
+.
+[45]
+S. Tan, K. Dou, Y. Zhao, and P. Kraehenbuehl
+(2025)
+Interactive post-training for vision-language-action models
+.
+In
+Workshop on Foundation Models Meet Embodied Agents at CVPR
+,
+Cited by:
+§2
+.
+[46]
+G. Team, B. Wang, B. Li, C. Ni, G. Huang, G. Zhao, H. Li, J. Li, J. Lv, J. Liu,
+et al.
+(2026)
+Gigabrain-0.5 m*: a vla that learns from world model-based reinforcement learning
+.
+arXiv preprint arXiv:2602.12099
+.
+Cited by:
+§2
+.
+[47]
+G. Wang, C. Zhang, Q. Liu, J. Zhang, J. Cai, J. Liu, and X. Liu
+(2026)
+LIBERO-x: robustness litmus for vision-language-action models
+.
+arXiv preprint arXiv:2602.06556
+.
+Cited by:
+§2
+.
+[48]
+S. Wang, T. Xiang, X. Zhou, M. Gui, X. Xie, S. Liu, S. Wang, A. Jin, and Z. Hou
+(2025)
+Vla model post-training via action-chunked ppo and self behavior cloning
+.
+arXiv preprint arXiv:2509.25718
+.
+Cited by:
+§2
+.
+[49]
+Y. Wang, P. Ding, L. Li, C. Cui, Z. Ge, X. Tong, W. Song, H. Zhao, W. Zhao, P. Hou, S. Huang, Y. Tang, W. Wang, R. Zhang, J. Liu, and D. Wang
+(2025)
+VLA-adapter: an effective paradigm for tiny-scale vision-language-action model
+.
+arXiv preprint arXiv:2509.09372
+.
+Cited by:
+Table 1
+,
+Table 3
+.
+[50]
+Z. Wang, A. Novikov, K. Zolna, J. S. Merel, J. T. Springenberg, S. E. Reed, B. Shahriari, N. Siegel, C. Gulcehre, N. Heess,
+et al.
+(2020)
+Critic regularized regression
+.
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+.
+Cited by:
+§5
+.
+[51]
+J. Xiao, Y. Yang, X. Chang, R. Chen, F. Xiong, M. Xu, W. Zheng, and Q. Zhang
+(2025)
+World-env: leveraging world model as a virtual environment for vla post-training
+.
+arXiv preprint arXiv:2509.24948
+.
+Cited by:
+§2
+.
+[52]
+J. Xiao, Y. Yang, X. Chang, R. Chen, F. Xiong, M. Xu, W. Zheng, and Q. Zhang
+(2025)
+World-env: leveraging world model as a virtual environment for vla post-training
+.
+External Links:
+2509.24948
+,
+Link
+Cited by:
+§2
+.
+[53]
+W. Xiao, H. Lin, A. Peng, H. Xue, T. He, Z. Luo, Y. Xie, F. Hu, L. Fan, G. Shi, and Y. Zhu
+(2026)
+Self-improving vision-language-action models with data generation via residual RL
+.
+In
+Proceedings of International Conference on Learning Representations (ICLR)
+,
+Cited by:
+§2
+.
+[54]
+C. Xu, J. T. Springenberg, M. Equi, A. Amin, A. Esmail, S. Levine, and L. Ke
+(2026)
+RL token: bootstrapping online RL with vision-language-action models
+.
+Technical report
+Physical Intelligence
+.
+External Links:
+Link
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[55]
+S. Xue, C. Ge, S. Zhang, Y. Li, and Z. Ma
+(2025)
+Advantage weighted matching: aligning rl with pretraining in diffusion models
+.
+arXiv preprint arXiv:2509.25050
+.
+Cited by:
+§5
+.
+[56]
+H. Zang, M. Wei, S. Xu, Y. Wu, Z. Guo, Y. Wang, H. Lin, L. Shi, Y. Xie, Z. Xu,
+et al.
+(2025)
+RLinf-vla: a unified and efficient framework for vla+ rl training
+.
+arXiv preprint arXiv:2510.06710
+.
+Cited by:
+§2
+.
+[57]
+S. Zhai, Q. Zhang, T. Zhang, F. Huang, H. Zhang, M. Zhou, S. Zhang, L. Liu, S. Lin, and J. Pang
+(2025)
+A vision-language-action-critic model for robotic real-world reinforcement learning
+.
+arXiv preprint arXiv:2509.15937
+.
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[58]
+B. Zhang, Y. Zhang, J. Ji, Y. Lei, J. Dai, Y. Chen, and Y. Yang
+(2025)
+SafeVLA: towards safety alignment of vision-language-action model via constrained learning
+.
+In
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+,
+Cited by:
+§2
+.
+[59]
+H. Zhang, S. Zhang, J. Jin, Q. Zeng, Y. Qiao, H. Lu, and D. Wang
+(2026)
+Balancing signal and variance: adaptive offline rl post-training for vla flow models
+.
+In
+Proceedings of AAAI Conference on Artificial Intelligence
+,
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+[60]
+J. Zhang, Y. Luo, A. Anwar, S. A. Sontakke, J. J. Lim, J. Thomason, E. Biyik, and J. Zhang
+(2025)
+ReWiND: language-guided rewards teach robot policies without new demonstrations
+.
+In
+Proceedings of Conference on Robot Learning (CoRL)
+,
+Cited by:
+§2
+.
+[61]
+H. Zhao, W. Song, D. Wang, X. Tong, P. Ding, X. Cheng, and Z. Ge
+(2025)
+More: unlocking scalability in reinforcement learning for quadruped vision-language-action models
+.
+In
+2025 IEEE International Conference on Robotics and Automation (ICRA)
+,
+pp.
+11212–11218
+.
+Cited by:
+§2
+.
+[62]
+J. Zheng, J. Li, Z. Wang, D. Liu, X. Kang, Y. Feng, Y. Zheng, J. Zou, Y. Chen, J. Zeng,
+et al.
+(2025)
+X-vla: soft-prompted transformer as scalable cross-embodiment vision-language-action model
+.
+arXiv preprint arXiv:2510.10274
+.
+Cited by:
+Table 1
+,
+Table 3
+.
+[63]
+X. Zhou, Y. Xu, G. Tie, Y. Chen, G. Zhang, D. Chu, P. Zhou, and L. Sun
+(2025)
+LIBERO-pro: towards robust and fair evaluation of vision-language-action models beyond memorization
+.
+[arXiv preprint arXiv:2510.03827]
+.
+Cited by:
+§1
+,
+§2
+,
+§4.1
+,
+Table 1
+,
+Table 2
+.
+[64]
+X. Zhou, X. Chen, S. Zhang, X. Li, S. Wan, X. Hu, L. Yuan, L. Gan, and D. Zhan
+(2026)
+MARVL: multi-stage guidance for robotic manipulation via vision-language models
+.
+arXiv preprint arXiv:2602.15872
+.
+Cited by:
+§2
+.
+[65]
+Y. Zhou, Y. He, Y. Su, S. Han, J. Jang, G. Bertasius, M. Bansal, and H. Yao
+(2025)
+ReAgent-v: a reward-driven multi-agent framework for video understanding
+.
+In
+Proceedings of Advances in Neural Information Processing Systems (NeurIPS)
+,
+Cited by:
+§1
+,
+§2
+,
+§2
+.
+Supplementary Material for
+CounterAlign: Counterfactual Supervision for Vision-Language-Action Models
+This supplementary material provides additional details on the following topics:
+1.
+Definitions of similarity functions for relabeling
+2.
+Details of relabeling strategies
+3.
+Actor-side relabeling, an ablation variant
+4.
+The complete algorithm for the proposed method
+5.
+Theoretical justification of the advantage-weighted flow matching objective
+6.
+Model architectures and parameter counts for BC and the proposed method
+7.
+Training configuration
+8.
+Detailed ablation analysis
+9.
+Real-world datasets
+10.
+Additional experiments
+1. Similarity Functions for Relabeling
+This section defines the similarity functions used to construct the relabeled datasets.
+All similarity scores are heuristic and are computed offline from the expert dataset
+𝒟
+expert
+\mathcal{D}_{\mathrm{expert}}
+.
+For an instruction
+l
+l
+, we first define the associated set of observation–action pairs as
+𝒮
+(
+l
+)
+=
+{
+(
+o
+t
+k
+,
+a
+t
+:
+t
++
+h
+k
+)
+∣
+l
+k
+=
+l
+,
+(
+l
+k
+,
+o
+t
+k
+,
+a
+t
+:
+t
++
+h
+k
+)
+∈
+𝒟
+expert
+}
+.
+\mathcal{S}(l)=\{(o^{k}_{t},a^{k}_{t:t+h})\mid l^{k}=l,\;(l^{k},o^{k}_{t},a^{k}_{t:t+h})\in\mathcal{D}_{\mathrm{expert}}\}.
+Observation similarity
+S
+o
+S_{o}
+and action similarity
+S
+a
+S_{a}
+.
+Let
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+(l^{i},o^{i}_{t},a^{i}_{t:t+h})
+be a reference sample, and consider another instruction
+l
+j
+≠
+l
+i
+l^{j}\neq l^{i}
+with its associated set
+𝒮
+⁡
+(
+l
+j
+)
+\mathcal{S}(l^{j})
+.
+The observation similarity
+S
+o
+S_{o}
+and action similarity
+S
+a
+S_{a}
+are defined as
+S
+o
+​
+(
+o
+t
+i
+,
+o
+τ
+j
+)
+=
+⟨
+ϕ
+o
+​
+(
+o
+t
+i
+)
+,
+ϕ
+o
+​
+(
+o
+τ
+j
+)
+⟩
+‖
+ϕ
+o
+​
+(
+o
+t
+i
+)
+‖
+​
+‖
+ϕ
+o
+​
+(
+o
+τ
+j
+)
+‖
+,
+S_{o}(o^{i}_{t},o^{j}_{\tau})=\frac{\left\langle\phi_{o}(o^{i}_{t}),\phi_{o}(o^{j}_{\tau})\right\rangle}{\left\|\phi_{o}(o^{i}_{t})\right\|\left\|\phi_{o}(o^{j}_{\tau})\right\|},
+(7)
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+=
+∏
+k
+=
+0
+h
+⟨
+a
+t
++
+k
+i
+,
+a
+τ
++
+k
+j
+⟩
+‖
+a
+t
++
+k
+i
+‖
+​
+‖
+a
+τ
++
+k
+j
+‖
+,
+S_{a}(a^{i}_{t:t+h},a^{j}_{\tau:\tau+h})=\prod_{k=0}^{h}\frac{\left\langle a^{i}_{t+k},a^{j}_{\tau+k}\right\rangle}{\left\|a^{i}_{t+k}\right\|\left\|a^{j}_{\tau+k}\right\|},
+(8)
+where
+ϕ
+o
+​
+(
+⋅
+)
+\phi_{o}(\cdot)
+denotes an observation feature extractor.
+Instruction similarity
+S
+l
+S_{l}
+.
+Given the observation and action similarities above, we define instruction similarity as
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+=
+max
+(
+o
+j
+τ
+,
+a
+j
+τ
+:
+τ
++
+h
+)
+∈
+𝒮
+(
+l
+j
+)
+S
+o
+(
+o
+t
+i
+,
+o
+τ
+j
+)
+⋅
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+.
+S_{l}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{j})=\max_{(o^{j}_{\tau},a^{j}_{\tau:\tau+h})\in\mathcal{S}(l^{j})}S_{o}(o^{i}_{t},o^{j}_{\tau})\cdot S_{a}(a^{i}_{t:t+h},a^{j}_{\tau:\tau+h}).
+(9)
+Observation-grounded instruction similarity
+S
+l
+o
+S^{o}_{l}
+.
+For joint relabeling, we also use a variant of instruction similarity that omits the action term:
+S
+l
+o
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+=
+max
+(
+o
+j
+τ
+,
+a
+j
+τ
+:
+τ
++
+h
+)
+∈
+𝒮
+(
+l
+j
+)
+S
+o
+(
+o
+t
+i
+,
+o
+τ
+j
+)
+.
+S_{l}^{o}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{j})=\max_{(o^{j}_{\tau},a^{j}_{\tau:\tau+h})\in\mathcal{S}(l^{j})}S_{o}(o^{i}_{t},o^{j}_{\tau}).
+(10)
+Proprioceptive similarity
+S
+p
+S_{p}
+.
+The proprioceptive similarity, which is used to filter candidate action chunks in joint relabeling, is defined as
+S
+p
+​
+(
+p
+i
+,
+p
+j
+)
+=
+⟨
+p
+i
+,
+p
+j
+⟩
+‖
+p
+i
+‖
+​
+‖
+p
+j
+‖
+,
+S_{p}(p^{i},p^{j})=\frac{\left\langle p^{i},p^{j}\right\rangle}{\left\|p^{i}\right\|\left\|p^{j}\right\|},
+(11)
+where
+p
+p
+denotes the proprioceptive component of the observation corresponding to the robot state.
+2. Details of Relabeling Strategies
+This section provides the full algorithmic details of the three relabeling strategies used to construct training data for the relabeling discriminator
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+.
+All three strategies are applied offline to the expert dataset
+𝒟
+expert
+\mathcal{D}_{\mathrm{expert}}
+and require no interaction with the environment.
+Instruction Relabeling (Algorithm
+1
+).
+This strategy constructs hard-negative samples by replacing the original instruction
+l
+i
+l^{i}
+with a semantically different instruction
+l
+j
+l^{j}
+drawn from the dataset, while keeping the observation and action chunk fixed.
+Candidate instructions are selected such that the instruction similarity score
+S
+l
+S_{l}
+lies within a moderate range
+(
+θ
+min
+l
+,
+θ
+max
+l
+)
+(\theta^{l}_{\min},\theta^{l}_{\max})
+.
+Instructions below
+θ
+min
+l
+\theta^{l}_{\min}
+are too dissimilar to the original task context and would yield trivial negatives, whereas those above
+θ
+max
+l
+\theta^{l}_{\max}
+are so similar that the relabeled pair may still represent a valid instruction–action alignment, leading to label noise.
+The resulting dataset
+𝒟
+instr
+​
+_
+​
+rel
+\mathcal{D}_{\mathrm{instr\_rel}}
+therefore contains samples in which a plausible-sounding but mismatched instruction is paired with an action, encouraging the discriminator to learn fine-grained semantic alignment.
+Algorithm 1
+Instruction Relabeling Strategy for Discriminator
+1:
+Expert dataset
+𝒟
+expert
+\mathcal{D}_{\text{expert}}
+,
+similarity thresholds
+θ
+min
+l
+\theta^{l}_{\min}
+,
+θ
+max
+l
+\theta^{l}_{\max}
+2:
+Instruction-relabeled dataset
+𝒟
+instr_rel
+\mathcal{D}_{\text{instr\_rel}}
+3:
+𝒟
+instr_rel
+←
+∅
+\mathcal{D}_{\text{instr\_rel}}\leftarrow\emptyset
+4:
+for
+each
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+∈
+𝒟
+expert
+(l^{i},o^{i}_{t},a^{i}_{t:t+h})\in\mathcal{D}_{\text{expert}}
+do
+5:
+for
+each
+l
+j
+∈
+𝒟
+expert
+l^{j}\in\mathcal{D}_{\text{expert}}
+such that
+l
+j
+≠
+l
+i
+l^{j}\neq l^{i}
+do
+6:
+Compute
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+S_{l}\!\left((l^{i},o^{i}_{t},a^{i}_{t:t+h}),\,l^{j}\right)
+7:
+if
+θ
+min
+l
+<
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+<
+θ
+max
+l
+\theta^{l}_{\min}<S_{l}\!\left((l^{i},o^{i}_{t},a^{i}_{t:t+h}),\,l^{j}\right)<\theta^{l}_{\max}
+then
+8:
+𝒟
+instr_rel
+←
+𝒟
+instr_rel
+∪
+{
+(
+l
+j
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}_{\text{instr\_rel}}\leftarrow\mathcal{D}_{\text{instr\_rel}}\cup\left\{(l^{j},\,o^{i}_{t},\,a^{i}_{t:t+h})\right\}
+9:
+end
+if
+10:
+end
+for
+11:
+end
+for
+12:
+return
+𝒟
+instr_rel
+\mathcal{D}_{\text{instr\_rel}}
+Action Relabeling (Algorithm
+2
+).
+This strategy constructs hard-negative samples by replacing the action chunk
+a
+i
+t
+:
+t
++
+h
+a^{i}_{t:t+h}
+with a different action chunk
+a
+j
+τ
+:
+τ
++
+h
+a^{j}_{\tau:\tau+h}
+drawn from another expert sample, while keeping the original instruction and observation fixed.
+Candidate action chunks are selected such that the action similarity score
+S
+a
+S_{a}
+lies within
+(
+θ
+min
+a
+,
+θ
+max
+a
+)
+(\theta^{a}_{\min},\theta^{a}_{\max})
+.
+This intermediate range ensures that the substituted action is physically distinguishable from the correct one, avoiding label ambiguity, yet not so dissimilar as to be trivially incorrect.
+The resulting dataset
+𝒟
+action
+​
+_
+​
+rel
+\mathcal{D}_{\mathrm{action\_rel}}
+therefore contains samples in which a plausible but incorrect action is presented for a given instruction and observation, training the discriminator to assess action-level appropriateness.
+Algorithm 2
+Action Relabeling Strategy for Discriminator
+1:
+Expert dataset
+𝒟
+expert
+\mathcal{D}_{\text{expert}}
+,
+similarity thresholds
+θ
+min
+a
+\theta^{a}_{\min}
+,
+θ
+max
+a
+\theta^{a}_{\max}
+2:
+Action-relabeled dataset
+𝒟
+action_rel
+\mathcal{D}_{\text{action\_rel}}
+3:
+𝒟
+action_rel
+←
+∅
+\mathcal{D}_{\text{action\_rel}}\leftarrow\emptyset
+4:
+for
+each
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+∈
+𝒟
+expert
+(l^{i},o^{i}_{t},a^{i}_{t:t+h})\in\mathcal{D}_{\text{expert}}
+do
+5:
+for
+each
+(
+l
+j
+,
+o
+τ
+j
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+∈
+𝒟
+expert
+(l^{j},o^{j}_{\tau},a^{j}_{\tau:\tau+h})\in\mathcal{D}_{\text{expert}}
+such that
+a
+j
+τ
+:
+τ
++
+h
+≠
+a
+i
+t
+:
+t
++
+h
+a^{j}_{\tau:\tau+h}\neq a^{i}_{t:t+h}
+do
+6:
+Compute
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+S_{a}\!\left(a^{i}_{t:t+h},\,a^{j}_{\tau:\tau+h}\right)
+7:
+if
+θ
+min
+a
+<
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+<
+θ
+max
+a
+\theta^{a}_{\min}<S_{a}\!\left(a^{i}_{t:t+h},\,a^{j}_{\tau:\tau+h}\right)<\theta^{a}_{\max}
+then
+8:
+𝒟
+action_rel
+←
+𝒟
+action_rel
+∪
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+}
+\mathcal{D}_{\text{action\_rel}}\leftarrow\mathcal{D}_{\text{action\_rel}}\cup\left\{(l^{i},\,o^{i}_{t},\,a^{j}_{\tau:\tau+h})\right\}
+9:
+end
+if
+10:
+end
+for
+11:
+end
+for
+12:
+return
+𝒟
+action_rel
+\mathcal{D}_{\text{action\_rel}}
+Joint Relabeling (Algorithm
+3
+).
+This strategy simultaneously replaces both the instruction and the action chunk, producing samples
+(
+l
+fake
+,
+i
+,
+o
+t
+i
+,
+a
+fake
+,
+i
+)
+(l^{\mathrm{fake},i},o^{i}_{t},a^{\mathrm{fake},i})
+whose labels are inherently ambiguous.
+To make the relabeled combination physically plausible—and therefore genuinely ambiguous rather than trivially negative—we first filter candidate instructions using the observation-based instruction similarity score
+S
+l
+o
+S_{l}^{o}
+, retaining only instructions whose associated demonstrations have similar robot states.
+Among the action chunks associated with each candidate instruction, further filtering is then applied using the proprioceptive similarity score
+S
+p
+S_{p}
+, ensuring that the selected action originates from a robot configuration close to the current state
+p
+t
+i
+p^{i}_{t}
+.
+Because the resulting tuples may or may not be semantically consistent, they cannot be treated as definitive negatives; instead, they are used as
+unlabeled
+data and incorporated into the non-negative PU learning objective.
+Algorithm 3
+Joint Relabeling Strategy for Discriminator
+1:
+Expert dataset
+𝒟
+expert
+\mathcal{D}_{\text{expert}}
+,
+similarity thresholds
+θ
+min
+l
+\theta^{l}_{\min}
+,
+θ
+min
+p
+\theta^{p}_{\min}
+2:
+Jointly relabeled dataset
+𝒟
+unlabeled
+\mathcal{D}_{\text{unlabeled}}
+3:
+𝒟
+unlabeled
+←
+∅
+\mathcal{D}_{\text{unlabeled}}\leftarrow\emptyset
+4:
+for
+each
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+∈
+𝒟
+expert
+(l^{i},o^{i}_{t},a^{i}_{t:t+h})\in\mathcal{D}_{\text{expert}}
+do
+5:
+𝒞
+l
+←
+∅
+\mathcal{C}_{l}\leftarrow\emptyset
+6:
+for
+each
+l
+j
+∈
+𝒟
+expert
+l^{j}\in\mathcal{D}_{\text{expert}}
+such that
+l
+j
+≠
+l
+i
+l^{j}\neq l^{i}
+do
+7:
+Compute
+S
+l
+o
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+S^{o}_{l}\!\left((l^{i},o^{i}_{t},a^{i}_{t:t+h}),\,l^{j}\right)
+8:
+if
+θ
+min
+l
+<
+S
+l
+o
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+\theta^{l}_{\min}<S^{o}_{l}\!\left((l^{i},o^{i}_{t},a^{i}_{t:t+h}),\,l^{j}\right)
+then
+9:
+𝒞
+l
+←
+𝒞
+l
+∪
+{
+l
+j
+}
+\mathcal{C}_{l}\leftarrow\mathcal{C}_{l}\cup\{l^{j}\}
+10:
+end
+if
+11:
+end
+for
+12:
+for
+each
+l
+fake
+,
+i
+∈
+𝒞
+l
+l^{\text{fake},i}\in\mathcal{C}_{l}
+do
+13:
+for
+each
+(
+o
+τ
+j
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+∈
+𝒮
+(
+l
+fake
+,
+i
+)
+(o^{j}_{\tau},a^{j}_{\tau:\tau+h})\in\mathcal{S}(l^{\text{fake},i})
+such that
+a
+j
+τ
+:
+τ
++
+h
+≠
+a
+i
+t
+:
+t
++
+h
+a^{j}_{\tau:\tau+h}\neq a^{i}_{t:t+h}
+do
+14:
+Compute
+S
+p
+​
+(
+p
+t
+i
+,
+p
+τ
+j
+)
+S_{p}\!\left(p^{i}_{t},\,p^{j}_{\tau}\right)
+15:
+if
+θ
+min
+p
+<
+S
+p
+​
+(
+p
+t
+i
+,
+p
+τ
+j
+)
+\theta^{p}_{\min}<S_{p}\!\left(p^{i}_{t},\,p^{j}_{\tau}\right)
+then
+16:
+𝒟
+unlabeled
+←
+𝒟
+unlabeled
+∪
+{
+(
+l
+fake
+,
+i
+,
+o
+t
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+}
+\mathcal{D}_{\text{unlabeled}}\leftarrow\mathcal{D}_{\text{unlabeled}}\cup\left\{(l^{\text{fake},i},\,o^{i}_{t},\,a^{j}_{\tau:\tau+h})\right\}
+17:
+end
+if
+18:
+end
+for
+19:
+end
+for
+20:
+end
+for
+21:
+return
+𝒟
+unlabeled
+\mathcal{D}_{\text{unlabeled}}
+3. Actor-Side Relabeling (Ablation Variant)
+In the main method, only the critic is trained with relabeled data,
+𝒟
+critic
+=
+𝒟
+expert
+∪
+𝒟
+instr
+C
+,
+\mathcal{D}_{\mathrm{critic}}=\mathcal{D}_{\mathrm{expert}}\cup\mathcal{D}^{C}_{\mathrm{instr}},
+(12)
+whereas the actor is trained only on the expert dataset.
+For the ablation study, we also consider an extended variant in which the actor is trained with relabeled data.
+This section describes how the relabeled datasets used in this variant are constructed.
+Following the same relabeling procedures as those used for the discriminator
+(Algorithms
+1
+and
+2
+),
+we use near-positive similarity thresholds rather than hard-negative thresholds.
+In addition to
+𝒟
+instr
+C
+\mathcal{D}^{C}_{\mathrm{instr}}
+, we construct an action-relabeled dataset
+𝒟
+act
+π
+=
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+}
+,
+\mathcal{D}^{\pi}_{\mathrm{act}}=\left\{\left(l^{i},o^{i}_{t},a^{j}_{\tau:\tau+h}\right)\right\},
+(13)
+where the relabeled action chunk
+a
+j
+τ
+:
+τ
++
+h
+a^{j}_{\tau:\tau+h}
+satisfies
+θ
+max
+a
+≤
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+.
+\theta^{a}_{\max}\leq S_{a}\left(a^{i}_{t:t+h},a^{j}_{\tau:\tau+h}\right).
+(14)
+As with instruction relabeling, this threshold complements the one used for
+𝒟
+act
+D
+\mathcal{D}^{D}_{\mathrm{act}}
+action chunks are selected to be highly similar to the original action chunk rather than moderately dissimilar.
+This provides a near-positive supervision signal for the actor.
+For this ablation variant, the actor training dataset is defined as
+𝒟
+policy
+=
+𝒟
+expert
+∪
+𝒟
+instr
+C
+∪
+𝒟
+act
+π
+.
+\mathcal{D}_{\mathrm{policy}}=\mathcal{D}_{\mathrm{expert}}\cup\mathcal{D}^{C}_{\mathrm{instr}}\cup\mathcal{D}^{\pi}_{\mathrm{act}}.
+(15)
+This dataset replaces
+𝒟
+expert
+\mathcal{D}_{\mathrm{expert}}
+in the policy loss for this ablation variant.
+4. Complete Algorithm of the Proposed Method
+Algorithm
+4
+presents the complete training procedure for the proposed method.
+The algorithm consists of two phases: offline dataset construction and iterative model training.
+In Phase 1, the expert dataset
+𝒟
+expert
+\mathcal{D}_{\mathrm{expert}}
+is augmented via instruction, action, and joint relabeling
+(Algorithms
+1
+–
+3
+)
+to produce labeled negatives and unlabeled samples for discriminator training, as well as near-positive samples for critic training.
+In Phase 2, the discriminators (
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+,
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+), critic (
+Q
+θ
+Q_{\theta}
+,
+V
+ξ
+V_{\xi}
+), and actor (
+π
+ω
+\pi_{\omega}
+) are updated alternately for
+K
+K
+iterations.
+The reward computed by the two discriminators guides the critic update, and the critic then provides the learning signal for the actor.
+Algorithm 4
+The Proposed Method
+1:
+Expert dataset
+𝒟
+expert
+\mathcal{D}_{\mathrm{expert}}
+;
+thresholds
+θ
+min
+l
+,
+θ
+max
+l
+,
+θ
+min
+a
+,
+θ
+max
+a
+,
+θ
+min
+p
+\theta^{l}_{\min},\theta^{l}_{\max},\,\theta^{a}_{\min},\theta^{a}_{\max},\,\theta^{p}_{\min}
+;
+iterations
+K
+K
+; hyperparameters
+β
+,
+γ
+,
+τ
+,
+λ
+\beta,\gamma,\tau,\lambda
+; EMA momentum
+m
+m
+2:
+Trained policy
+π
+ω
+\pi_{\omega}
+3:
+4:
+// Phase 1: Dataset Construction
+5:
+6:
+Instruction relabeling
+(see Algorithm
+1
+)
+7:
+𝒟
+instr
+D
+←
+{
+(
+l
+j
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}^{D}_{\mathrm{instr}}\leftarrow\{(l^{j},o^{i}_{t},a^{i}_{t:t+h})\}
+s.t.
+θ
+min
+l
+<
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+<
+θ
+max
+l
+\theta^{l}_{\min}<S_{l}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{j})<\theta^{l}_{\max}
+⊳
+\triangleright
+hard negatives for
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+8:
+𝒟
+instr
+C
+←
+{
+(
+l
+j
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{D}^{C}_{\mathrm{instr}}\leftarrow\{(l^{j},o^{i}_{t},a^{i}_{t:t+h})\}
+s.t.
+θ
+max
+l
+≤
+S
+l
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+j
+)
+\theta^{l}_{\max}\leq S_{l}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{j})
+⊳
+\triangleright
+near-positive samples for critic training
+9:
+10:
+Action relabeling
+(see Algorithm
+2
+)
+11:
+𝒟
+act
+D
+←
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+}
+\mathcal{D}^{D}_{\mathrm{act}}\leftarrow\{(l^{i},o^{i}_{t},a^{j}_{\tau:\tau+h})\}
+s.t.
+θ
+min
+a
+<
+S
+a
+(
+a
+t
+:
+t
++
+h
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+<
+θ
+max
+a
+\theta^{a}_{\min}<S_{a}(a^{i}_{t:t+h},a^{j}_{\tau:\tau+h})<\theta^{a}_{\max}
+⊳
+\triangleright
+hard negatives for
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+12:
+13:
+Joint relabeling
+(see Algorithm
+3
+)
+14:
+𝒟
+joint
+←
+{
+(
+l
+fake
+,
+i
+,
+o
+t
+i
+,
+a
+τ
+:
+τ
++
+h
+j
+)
+}
+\mathcal{D}_{\mathrm{joint}}\leftarrow\{(l^{\mathrm{fake},i},o^{i}_{t},a^{j}_{\tau:\tau+h})\}
+s.t.
+θ
+min
+l
+<
+S
+l
+o
+(
+(
+l
+i
+,
+o
+t
+i
+,
+a
+t
+:
+t
++
+h
+i
+)
+,
+l
+fake
+,
+i
+)
+\theta^{l}_{\min}<S^{o}_{l}((l^{i},o^{i}_{t},a^{i}_{t:t+h}),l^{\mathrm{fake},i})
+and
+θ
+min
+p
+<
+S
+p
+​
+(
+p
+t
+i
+,
+p
+τ
+j
+)
+\theta^{p}_{\min}<S_{p}(p^{i}_{t},p^{j}_{\tau})
+⊳
+\triangleright
+unlabeled samples for
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+15:
+16:
+Aggregation
+17:
+𝒟
+neg
+←
+𝒟
+instr
+D
+∪
+𝒟
+act
+D
+\mathcal{D}_{\mathrm{neg}}\leftarrow\mathcal{D}^{D}_{\mathrm{instr}}\cup\mathcal{D}^{D}_{\mathrm{act}}
+⊳
+\triangleright
+labeled negatives for
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+18:
+𝒟
+critic
+←
+𝒟
+expert
+∪
+𝒟
+instr
+C
+\mathcal{D}_{\mathrm{critic}}\leftarrow\mathcal{D}_{\mathrm{expert}}\cup\mathcal{D}^{C}_{\mathrm{instr}}
+19:
+20:
+// Phase 2: Iterative Training
+21:
+22:
+Initialize
+D
+ϕ
+adv
+,
+D
+ψ
+rel
+,
+Q
+θ
+,
+V
+ξ
+,
+π
+ω
+D^{\mathrm{adv}}_{\phi},\,D^{\mathrm{rel}}_{\psi},\,Q_{\theta},\,V_{\xi},\,\pi_{\omega}
+; set
+θ
+¯
+←
+θ
+\bar{\theta}\leftarrow\theta
+23:
+for
+k
+=
+1
+,
+…
+,
+K
+k=1,\ldots,K
+do
+24:
+Discriminator update
+25:
+Sample
+ℬ
+exp
+∼
+𝒟
+expert
+\mathcal{B}_{\mathrm{exp}}\sim\mathcal{D}_{\mathrm{expert}}
+,
+ℬ
+neg
+∼
+𝒟
+neg
+\mathcal{B}_{\mathrm{neg}}\sim\mathcal{D}_{\mathrm{neg}}
+,
+ℬ
+joint
+∼
+𝒟
+joint
+\mathcal{B}_{\mathrm{joint}}\sim\mathcal{D}_{\mathrm{joint}}
+26:
+Sample
+ℬ
+π
+←
+{
+(
+l
+i
+,
+o
+t
+i
+,
+a
+^
+t
+:
+t
++
+h
+i
+)
+}
+\mathcal{B}_{\pi}\leftarrow\{(l^{i},o^{i}_{t},\hat{a}^{i}_{t:t+h})\}
+,
+a
+^
+t
+:
+t
++
+h
+i
+∼
+π
+ω
+(
+⋅
+∣
+l
+i
+,
+o
+t
+i
+)
+\hat{a}^{i}_{t:t+h}\sim\pi_{\omega}(\cdot\mid l^{i},o^{i}_{t})
+,
+(
+l
+i
+,
+o
+t
+i
+)
+∈
+ℬ
+exp
+(l^{i},o^{i}_{t})\in\mathcal{B}_{\mathrm{exp}}
+27:
+Update
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+via
+ℒ
+adv
+​
+(
+ϕ
+)
+\mathcal{L}^{\mathrm{adv}}(\phi)
+using
+(
+ℬ
+exp
+,
+ℬ
+π
+)
+(\mathcal{B}_{\mathrm{exp}},\,\mathcal{B}_{\pi})
+28:
+Update
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+via
+ℒ
+rel
+​
+(
+ψ
+)
+\mathcal{L}^{\mathrm{rel}}(\psi)
+using
+(
+ℬ
+exp
+,
+ℬ
+neg
+,
+ℬ
+joint
+)
+(\mathcal{B}_{\mathrm{exp}},\,\mathcal{B}_{\mathrm{neg}},\,\mathcal{B}_{\mathrm{joint}})
+29:
+30:
+Critic update
+31:
+Sample
+ℬ
+critic
+∼
+𝒟
+critic
+\mathcal{B}_{\mathrm{critic}}\sim\mathcal{D}_{\mathrm{critic}}
+32:
+Compute
+r
+t
+r_{t}
+for each
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+∈
+ℬ
+critic
+(l,o_{t},a_{t:t+h})\in\mathcal{B}_{\mathrm{critic}}
+33:
+Update
+Q
+θ
+Q_{\theta}
+via
+ℒ
+Q
+​
+(
+θ
+)
+\mathcal{L}^{Q}(\theta)
+on
+ℬ
+critic
+\mathcal{B}_{\mathrm{critic}}
+34:
+Update
+V
+ξ
+V_{\xi}
+via
+ℒ
+V
+​
+(
+ξ
+)
+\mathcal{L}^{V}(\xi)
+on
+ℬ
+critic
+\mathcal{B}_{\mathrm{critic}}
+35:
+Update target network:
+θ
+¯
+←
+(
+1
+−
+m
+)
+​
+θ
+¯
++
+m
+​
+θ
+\bar{\theta}\leftarrow(1-m)\bar{\theta}+m\theta
+⊳
+\triangleright
+EMA with momentum
+m
+m
+36:
+37:
+Actor update
+38:
+Sample
+ℬ
+policy
+∼
+𝒟
+expert
+\mathcal{B}_{\mathrm{policy}}\sim\mathcal{D}_{\mathrm{expert}}
+39:
+Update
+π
+ω
+\pi_{\omega}
+via
+ℒ
+policy
+​
+(
+ω
+)
+\mathcal{L}^{\mathrm{policy}}(\omega)
+on
+ℬ
+policy
+\mathcal{B}_{\mathrm{policy}}
+40:
+41:
+end
+for
+42:
+return
+π
+ω
+\pi_{\omega}
+5. Theoretical Justification of the Advantage-Weighted Flow Matching Objective
+AWR Optimal Policy.
+We first recall the key result of Peng et al.
+[
+39
+]
+.
+Let
+μ
+(
+a
+t
+:
+t
++
+h
+∣
+l
+,
+o
+t
+)
+\mu(a_{t:t+h}\mid l,o_{t})
+denote the behavior policy that generated the offline dataset
+𝒟
+policy
+\mathcal{D}_{\mathrm{policy}}
+, and let
+d
+μ
+​
+(
+l
+,
+o
+t
+)
+d_{\mu}(l,o_{t})
+denote the marginal distribution over context–observation pairs
+(
+l
+,
+o
+t
+)
+(l,o_{t})
+induced by
+μ
+\mu
+.
+The KL-constrained policy improvement problem
+max
+π
+𝔼
+(
+l
+,
+o
+t
+)
+∼
+d
+μ
+a
+t
+:
+t
++
+h
+∼
+π
+(
+⋅
+∣
+l
+,
+o
+t
+)
+[
+A
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+]
+s.t.
+𝔼
+(
+l
+,
+o
+t
+)
+∼
+d
+μ
+[
+D
+KL
+(
+π
+(
+⋅
+∣
+l
+,
+o
+t
+)
+∥
+μ
+(
+⋅
+∣
+l
+,
+o
+t
+)
+)
+]
+≤
+ϵ
+\max_{\pi}\;\mathbb{E}_{\begin{subarray}{c}(l,o_{t})\sim d_{\mu}\\
+a_{t:t+h}\sim\pi(\cdot\mid l,o_{t})\end{subarray}}\!\Bigl[A(l,o_{t},a_{t:t+h})\Bigr]\quad\text{s.t.}\quad\mathbb{E}_{(l,o_{t})\sim d_{\mu}}\!\left[D_{\mathrm{KL}}\!\bigl(\pi(\cdot\mid l,o_{t})\,\|\,\mu(\cdot\mid l,o_{t})\bigr)\right]\leq\epsilon
+(16)
+has the following closed-form optimal solution
+[
+39
+]
+:
+π
+∗
+(
+a
+t
+:
+t
++
+h
+∣
+l
+,
+o
+t
+)
+=
+1
+Z
+⁡
+(
+l
+,
+o
+t
+)
+μ
+(
+a
+t
+:
+t
++
+h
+∣
+l
+,
+o
+t
+)
+exp
+(
+β
+A
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+)
+,
+\pi^{*}(a_{t:t+h}\mid l,o_{t})\;=\;\frac{1}{Z(l,o_{t})}\,\mu(a_{t:t+h}\mid l,o_{t})\exp\!\Bigl(\beta\,A(l,o_{t},a_{t:t+h})\Bigr),
+(17)
+where
+Z
+⁡
+(
+l
+,
+o
+t
+)
+=
+∫
+μ
+⁡
+(
+a
+∣
+l
+,
+o
+t
+)
+​
+exp
+⁡
+(
+β
+​
+A
+​
+(
+l
+,
+o
+t
+,
+a
+)
+)
+​
+𝑑
+a
+Z(l,o_{t})=\int\mu(a\mid l,o_{t})\exp\!\bigl(\beta A(l,o_{t},a)\bigr)\,da
+is the partition function and
+β
+>
+0
+\beta>0
+is the inverse temperature.
+Derivation of the Advantage-Weighted Flow Matching Objective.
+We show that
+ℒ
+policy
+​
+(
+ω
+)
+\mathcal{L}^{\mathrm{policy}}(\omega)
+naturally arises by training the flow matching policy
+π
+ω
+\pi_{\omega}
+to imitate
+π
+∗
+\pi^{*}
+using samples from the offline dataset.
+We show that
+ℒ
+policy
+​
+(
+ω
+)
+\mathcal{L}^{\mathrm{policy}}(\omega)
+arises naturally when the flow matching policy
+π
+ω
+\pi_{\omega}
+is trained to imitate
+π
+∗
+\pi^{*}
+using samples from the offline dataset.
+If samples from
+π
+∗
+\pi^{*}
+were directly available, the corresponding flow matching loss would be
+ℒ
+~
+(
+ω
+)
+=
+𝔼
+(
+l
+,
+o
+t
+)
+∼
+d
+μ
+,
+a
+t
+:
+t
++
+h
+∼
+π
+∗
+(
+⋅
+∣
+l
+,
+o
+t
+)
+s
+∼
+𝒰
+⁡
+[
+0
+,
+1
+]
+,
+x
+0
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+[
+∥
+v
+ω
+(
+x
+s
+,
+s
+∣
+l
+,
+o
+t
+)
+−
+u
+s
+∥
+2
+]
+.
+\widetilde{\mathcal{L}}(\omega)=\mathbb{E}_{\begin{subarray}{c}(l,o_{t})\sim d_{\mu},\;a_{t:t+h}\sim\pi^{*}(\cdot\mid l,o_{t})\\[2.0pt]
+s\sim\mathcal{U}[0,1],\;x_{0}\sim\mathcal{N}(0,I)\end{subarray}}\!\left[\bigl\|v_{\omega}(x_{s},s\mid l,o_{t})-u_{s}\bigr\|^{2}\right].
+(18)
+Because
+π
+∗
+\pi^{*}
+is not directly accessible, whereas samples from
+μ
+\mu
+are available in the offline dataset, we apply importance sampling to rewrite Eq. (
+18
+) as an expectation under
+μ
+\mu
+:
+ℒ
+~
+(
+ω
+)
+=
+𝔼
+(
+l
+,
+o
+t
+)
+∼
+d
+μ
+,
+a
+t
+:
+t
++
+h
+∼
+μ
+(
+⋅
+∣
+l
+,
+o
+t
+)
+s
+∼
+𝒰
+⁡
+[
+0
+,
+1
+]
+,
+x
+0
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+[
+π
+∗
+(
+a
+t
+:
+t
++
+h
+∣
+l
+,
+o
+t
+)
+μ
+(
+a
+t
+:
+t
++
+h
+∣
+l
+,
+o
+t
+)
+∥
+v
+ω
+(
+x
+s
+,
+s
+∣
+l
+,
+o
+t
+)
+−
+u
+s
+∥
+2
+]
+.
+\widetilde{\mathcal{L}}(\omega)=\mathbb{E}_{\begin{subarray}{c}(l,o_{t})\sim d_{\mu},\;a_{t:t+h}\sim\mu(\cdot\mid l,o_{t})\\[2.0pt]
+s\sim\mathcal{U}[0,1],\;x_{0}\sim\mathcal{N}(0,I)\end{subarray}}\!\left[\frac{\pi^{*}(a_{t:t+h}\mid l,o_{t})}{\mu(a_{t:t+h}\mid l,o_{t})}\bigl\|v_{\omega}(x_{s},s\mid l,o_{t})-u_{s}\bigr\|^{2}\right].
+(19)
+Substituting Eq. (
+17
+) into the importance weight cancels the behavior policy terms, leaving only the partition function:
+ℒ
+~
+(
+ω
+)
+=
+𝔼
+(
+l
+,
+o
+t
+)
+∼
+d
+μ
+,
+a
+t
+:
+t
++
+h
+∼
+μ
+(
+⋅
+∣
+l
+,
+o
+t
+)
+s
+∼
+𝒰
+⁡
+[
+0
+,
+1
+]
+,
+x
+0
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+[
+exp
+(
+β
+A
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+)
+Z
+⁡
+(
+l
+,
+o
+t
+)
+∥
+v
+ω
+(
+x
+s
+,
+s
+∣
+l
+,
+o
+t
+)
+−
+u
+s
+∥
+2
+]
+.
+\widetilde{\mathcal{L}}(\omega)=\mathbb{E}_{\begin{subarray}{c}(l,o_{t})\sim d_{\mu},\;a_{t:t+h}\sim\mu(\cdot\mid l,o_{t})\\[2.0pt]
+s\sim\mathcal{U}[0,1],\;x_{0}\sim\mathcal{N}(0,I)\end{subarray}}\!\left[\frac{\exp\!\bigl(\beta\,A(l,o_{t},a_{t:t+h})\bigr)}{Z(l,o_{t})}\bigl\|v_{\omega}(x_{s},s\mid l,o_{t})-u_{s}\bigr\|^{2}\right].
+(20)
+Since
+Z
+⁡
+(
+l
+,
+o
+t
+)
+Z(l,o_{t})
+depends only on the context–observation pair and not on the action chunk
+a
+t
+:
+t
++
+h
+a_{t:t+h}
+, it does not affect the relative weighting of action chunks for a fixed context.
+Omitting this factor therefore preserves the advantage-induced preference among actions within each context, while changing only the marginal weighting of contexts in the supervised policy extraction objective.
+Moreover, in offline continuous-control settings, explicitly estimating
+Z
+⁡
+(
+l
+,
+o
+t
+)
+=
+∫
+μ
+⁡
+(
+a
+∣
+l
+,
+o
+t
+)
+​
+exp
+⁡
+(
+β
+​
+A
+​
+(
+l
+,
+o
+t
+,
+a
+)
+)
+​
+𝑑
+a
+Z(l,o_{t})=\int\mu(a\mid l,o_{t})\exp(\beta A(l,o_{t},a))\,da
+is unreliable because the behavior policy is unknown and only a limited number of action samples is available for each context.
+Following standard advantage-weighted policy extraction methods, which similarly use unnormalized exponential advantage weights
+[
+39
+,
+36
+,
+50
+]
+, we omit
+Z
+⁡
+(
+l
+,
+o
+t
+)
+Z(l,o_{t})
+and obtain the practical surrogate
+ℒ
+~
+(
+ω
+)
+=
+𝔼
+(
+l
+,
+o
+t
+)
+∼
+d
+μ
+,
+a
+t
+:
+t
++
+h
+∼
+μ
+(
+⋅
+∣
+l
+,
+o
+t
+)
+s
+∼
+𝒰
+⁡
+[
+0
+,
+1
+]
+,
+x
+0
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+[
+exp
+(
+β
+A
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+)
+∥
+v
+ω
+(
+x
+s
+,
+s
+∣
+l
+,
+o
+t
+)
+−
+u
+s
+∥
+2
+]
+.
+\widetilde{\mathcal{L}}(\omega)=\mathbb{E}_{\begin{subarray}{c}(l,o_{t})\sim d_{\mu},\;a_{t:t+h}\sim\mu(\cdot\mid l,o_{t})\\[2.0pt]
+s\sim\mathcal{U}[0,1],\;x_{0}\sim\mathcal{N}(0,I)\end{subarray}}\!\left[\exp\!\Bigl(\beta\,A(l,o_{t},a_{t:t+h})\Bigr)\bigl\|v_{\omega}(x_{s},s\mid l,o_{t})-u_{s}\bigr\|^{2}\right].
+(21)
+Finally, approximating the expectation under
+d
+μ
+d_{\mu}
+and
+μ
+(
+⋅
+∣
+l
+,
+o
+t
+)
+\mu(\cdot\mid l,o_{t})
+by the empirical average over the offline dataset
+𝒟
+policy
+\mathcal{D}_{\mathrm{policy}}
+gives
+ℒ
+policy
+(
+ω
+)
+≈
+𝔼
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+∼
+𝒟
+policy
+s
+∼
+𝒰
+⁡
+[
+0
+,
+1
+]
+,
+x
+0
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+[
+exp
+(
+β
+A
+(
+l
+,
+o
+t
+,
+a
+t
+:
+t
++
+h
+)
+)
+‖
+v
+ω
+(
+x
+s
+,
+s
+∣
+l
+,
+o
+t
+)
+−
+u
+s
+‖
+2
+]
+.
+\mathcal{L}^{\mathrm{policy}}(\omega)\approx\mathbb{E}_{\begin{subarray}{c}(l,o_{t},a_{t:t+h})\sim\mathcal{D}_{\mathrm{policy}}\\
+s\sim\mathcal{U}[0,1],\;x_{0}\sim\mathcal{N}(0,I)\end{subarray}}\!\left[\exp\!\left(\beta A(l,o_{t},a_{t:t+h})\right)\left\|v_{\omega}(x_{s},s\mid l,o_{t})-u_{s}\right\|^{2}\right].
+Discussion.
+This objective differs from Advantage Weighted Matching (AWM)
+[
+55
+]
+, which is designed for online RL and weights the flow matching loss by the raw advantage
+A
+A
+rather than by
+exp
+⁡
+(
+β
+​
+A
+)
+\exp(\beta A)
+.
+In the online setting, negative advantage weights can be tolerated because the policy continually collects new samples and can recover from perturbations.
+In the offline setting, however, assigning a negative weight to a data sample effectively reverses the gradient direction, pushing the policy
+away
+from an in-distribution action and potentially toward out-of-distribution behavior not covered by the dataset.
+Since
+exp
+⁡
+(
+β
+​
+A
+)
+>
+0
+\exp(\beta A)>0
+for all
+A
+A
+, our weighting ensures that every update provides non-negative reinforcement of the target action, with the strength of reinforcement varying according to the advantage.
+This avoids the instability caused by negative weights in the offline setting.
+6. Model Architecture and Parameter Counts of BC and the Proposed Method
+We compare the number of trainable parameters in the BC baseline and the proposed method.
+The BC baseline contains approximately 3.4B parameters, whereas the proposed method contains approximately 12.7B parameters.
+This increase stems from the additional discriminator and critic networks introduced by our method, while the policy itself remains unchanged from the BC baseline.
+To minimize this overhead, we extensively share the VLM backbone across auxiliary networks, while keeping their lightweight expert heads separate so that each module can specialize for its own objective.
+When modules use separate VLM backbones, their token embeddings are shared.
+The detailed architectural choices are as follows:
+•
+Discriminators.
+The two discriminators
+D
+ϕ
+adv
+D^{\mathrm{adv}}_{\phi}
+and
+D
+ψ
+rel
+D^{\mathrm{rel}}_{\psi}
+share a single VLM backbone, while each maintains its own discriminator expert head.
+•
+Critic.
+The Q-network
+Q
+θ
+Q_{\theta}
+and the V-network
+V
+ξ
+V_{\xi}
+share a single VLM backbone, while each maintains its own critic expert head.
+•
+Double-Q network.
+The two Q-networks used for the double-Q estimator share the same VLM backbone and differ only in their critic expert heads.
+•
+Target network.
+In contrast, the target network maintains a fully separate VLM backbone from the online critic, as well as its own critic expert heads, so that the target estimates remain stable under EMA updates.
+•
+Policy.
+The policy network
+π
+ω
+\pi_{\omega}
+retains exactly the same architecture as the BC baseline; no structural modifications are introduced.
+Following the original
+π
+0.5
+\pi_{0.5}
+[
+2
+]
+setup, we fine-tune all parameters rather than using LoRA or other parameter-efficient adaptation methods.
+7. Training Configuration
+LIBERO:
+We train our models using the default configuration for training
+π
+0.5
+\pi_{0.5}
+on the LIBERO dataset.
+We observed that training approximately converges within 10K–15K gradient steps, and therefore train all models for 15K gradient steps.
+The batch size is set to 256.
+Training is conducted on 8 NVIDIA H200 GPUs and takes approximately 28 hours.
+The training time per gradient step is comparable to that of behavior cloning; however, because the proposed method introduces additional trainable components and substantially increases the total number of parameters, it requires correspondingly more GPU memory.
+Specifically, while the behavior cloning baseline can be trained on a single NVIDIA H200 GPU, our method requires at least five H200 GPUs due to the additional memory overhead from the discriminator and critic networks.
+TX-G2:
+For all real-robot experiments, we use a training configuration similar to that used for LIBERO.
+However, we train the models for 150K gradient steps and use the 150K-step checkpoint for evaluation.
+The batch size is set to 64.
+Training is conducted on 8 H200 GPUs and takes approximately 96 hours.
+8. Detailed Ablation Analysis
+We conduct an ablation study on LIBERO-PRO to evaluate the contribution of each component of the proposed method.
+First, the results confirm the effectiveness of the underlying offline RL framework.
+In this setting, the discriminator is trained through adversarial learning, the critic is optimized using IQL, and the actor is trained with advantage-weighted flow matching.
+Even this basic configuration yields a noticeable improvement, demonstrating that offline RL-based policy improvement is effective compared with standard BC.
+Next, the results show the importance of relabeling for the discriminator.
+By training on samples in which either the language instruction or the action is replaced while the observation is kept fixed, the discriminator learns to evaluate whether the instruction and action are semantically consistent under the current observation.
+The reward produced by this discriminator is then used to estimate the advantage, and the policy is trained to maximize this advantage.
+As a result, the policy is encouraged not merely to imitate actions based on observations, but to select actions according to the meaning of the language instruction.
+The entropy regularization term further improves performance, likely because it prevents the discriminator outputs from saturating near 0 or 1, thereby mitigating overfitting and providing a more stable and meaningful reward signal.
+In addition, using unlabeled samples yields further improvements.
+By incorporating ambiguous relabeled samples as unlabeled data rather than discarding them during discriminator training, the discriminator can better capture the semantic alignment between language and action.
+Furthermore, applying relabeling not only to the discriminator but also to the critic leads to additional performance gains.
+This suggests that the knowledge about language–action correspondence acquired through relabeling is more effectively transferred to the critic, which in turn provides more appropriate advantage signals to the actor.
+In contrast, relabeling for the actor does not provide further improvement.
+This may be because the learned advantage function is imperfect, and directly using relabeled actions as supervision for the actor can introduce noise into action-generation learning.
+This result suggests that, in the proposed method, relabeling is more effective when incorporated indirectly into policy learning through the discriminator and critic, rather than being applied directly to the actor.
+9. Real-world Datasets
+We evaluate our method on the TX-G2 dataset.
+The dataset consists of several short-horizon tasks, each of which is further decomposed into a sequence of primitive actions.
+For example, the short-horizon task “Pick up the cutleries from the bowl and place them in the other bowl” consists of primitive actions such as “Pick up the light blue spoon from the grey bowl” and “Place the light blue spoon in the yellow bowl.”
+This section reports detailed statistics for the short-horizon tasks and primitive actions in the real-world dataset.
+The TX-G2 dataset consists of four short-horizon manipulation tasks: stacking bowls, placing clothes into a basket, transferring cutleries between bowls, and placing dishes into a wooden dish rack.
+Tables
+1
+and
+2
+summarize the short-horizon task demonstrations and primitive-action instances in the dataset.
+Table 1:
+Short-horizon task statistics for the TX-G2 dataset.
+Short-horizon task
+Num. demos.
+Pick up the cutleries from the bowl and place them in the other bowl.
+206
+Pick up the bowls from the desk and stack them.
+129
+Pick up the clothes from the desk and place them into the basket.
+514
+Pick up the dishes from the desk and place them in the wooden dish rack.
+349
+Total
+1,198
+Table 2:
+Decomposition of short-horizon tasks into primitive actions for the TX-G2 dataset.
+Short-horizon task
+Primitive actions
+Pick up the cutleries from the bowl and place them in the other bowl.
+1.
+Pick up the light blue spoon from the grey bowl.
+2.
+Place the light blue spoon in the yellow bowl.
+3.
+Pick up the pink fork from the grey bowl.
+4.
+Place the pink fork in the yellow bowl.
+Pick up the bowls from the desk and stack them.
+1.
+Pick up the yellow bowl from the desk.
+2.
+Stack the yellow bowl on the grey bowl.
+3.
+Pick up the light blue bowl from the desk.
+4.
+Stack the light blue bowl on the yellow bowl.
+Pick up the clothes from the desk and place them into the basket.
+1.
+Pick up the green socks from the desk.
+2.
+Place the green socks into the basket.
+3.
+Pick up the handkerchief from the desk.
+4.
+Place the handkerchief into the basket.
+5.
+Pick up the yellow socks from the desk.
+6.
+Place the yellow socks into the basket.
+Pick up the dishes from the desk and place them in the wooden dish rack.
+1.
+Pick up the yellow dish from the desk.
+2.
+Place the yellow dish in the wooden dish rack.
+3.
+Pick up the green dish from the desk.
+4.
+Place the green dish in the wooden dish rack.
+10. Additional Experiments
+CALVIN:
+In addition to LIBERO-PRO, we evaluate the proposed method on the commonly used CALVIN benchmark
+[
+35
+]
+.
+In this setting, the policy is trained on environments A, B, and C and evaluated on unseen environment D.
+This benchmark tests whether a policy can execute known tasks involving known object categories and environmental elements in an unseen environment, where visual appearance, object arrangement, and language expressions may differ from those encountered during training.
+Thus, CALVIN serves as a complementary evaluation to LIBERO-PRO, measuring visual, linguistic, and behavioral generalization from a different perspective.
+We run 1,000 trials for CALVIN.
+The results on CALVIN are shown in Table
+3
+.
+On the CALVIN ABC
+→
+\rightarrow
+D benchmark, the proposed method consistently outperforms the BC baseline, although the margin of improvement is relatively small.
+Specifically, the average length increases from 3.93 for BC to 4.03 for our method, and slight improvements are observed at all evaluation stages in terms of the success rates for completing 1 to 5 consecutive tasks.
+These results suggest that the BC baseline already achieves strong performance on CALVIN, leaving limited room for further improvement by the proposed method.
+One possible reason for this result is that the CALVIN dataset is richer than LIBERO in terms of both scale and diversity.
+While LIBERO contains only approximately 6.8K steps on average for each of its 40 tasks, CALVIN provides approximately 41.8K steps on average for each of its 34 tasks.
+Moreover, the state-action distribution in CALVIN is also more diverse.
+With sufficiently diverse training data, BC can achieve strong performance even in the unseen environment D.
+As a result, the performance gap between BC and the proposed method, which explicitly learns semantic consistency among language, observations, and actions, becomes smaller.
+Nevertheless, this result does not undermine the effectiveness of the proposed method.
+Collecting large-scale datasets such as CALVIN, where episodes cover diverse object configurations and situations, is highly costly in real-world robot learning.
+Therefore, the ability of the proposed method to achieve strong generalization even with limited and insufficiently diverse data can be regarded as one of its important advantages.
+In this sense, the small improvement observed on CALVIN can be interpreted as a consequence of the sufficiently large and diverse dataset partially mitigating the limitations of BC.
+The proposed method remains particularly useful in settings where collecting such large-scale and diverse data is expensive or impractical.
+In the evaluation of completing 1 to 5 consecutive tasks, the success rate decreases monotonically as the number of required tasks increases.
+This is because, even if the success rate for each individual task is approximately 90%, completing multiple tasks in sequence requires the policy to avoid failure at every step, causing the overall success probability to decrease multiplicatively.
+Thus, this decrease should be interpreted not as method-specific degradation but as a natural consequence of error accumulation in long-horizon evaluation.
+Indeed, the proposed method outperforms BC at every level of consecutive task completion, indicating a small but consistent improvement in long-horizon task execution.
+Table 3:
+Comparison on the CALVIN ABC
+→
+\rightarrow
+D benchmark
+[
+35
+]
+. The base VLA model is
+π
+0.5
+\pi_{0.5}
+[
+2
+]
+.
+Algo.
+Tasks completed in a row
+Avg. len.
+1
+2
+3
+4
+5
+BC
+0.906
+0.835
+0.776
+0.733
+0.682
+3.93
+Ours
+0.913
+0.848
+0.804
+0.757
+0.703
+4.03
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

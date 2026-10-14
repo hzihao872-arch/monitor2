@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-03",
+  "purpose": "Bounded source audit for research-direction selection; no model inference",
+  "files": [
+    {
+      "path": "research/sources/direction_selection_20261003/eval_server.py",
+      "url": "https://raw.githubusercontent.com/robometer/robometer/352d160389daa964788de1ec933d1925f3a6de4f/robometer/evals/eval_server.py",
+      "revision": "352d160389daa964788de1ec933d1925f3a6de4f",
+      "bytes": 32318,
+      "sha256": "a06bb071bdcf9f7fefe590b1af31a7e4e1ebf9337e8f93e6e4c03aa98b5a7cfb"
+    },
+    {
+      "path": "research/sources/direction_selection_20261003/rbm_heads.py",
+      "url": "https://raw.githubusercontent.com/robometer/robometer/352d160389daa964788de1ec933d1925f3a6de4f/robometer/data/collators/rbm_heads.py",
+      "revision": "352d160389daa964788de1ec933d1925f3a6de4f",
+      "bytes": 32898,
+      "sha256": "78e8ce7014e97adea06585031f3d379d3a1ff1c27bb3a8da4376285a8dd102b6"
+    },
+    {
+      "path": "research/sources/direction_selection_20261003/setup_utils.py",
+      "url": "https://raw.githubusercontent.com/robometer/robometer/352d160389daa964788de1ec933d1925f3a6de4f/robometer/utils/setup_utils.py",
+      "revision": "352d160389daa964788de1ec933d1925f3a6de4f",
+      "bytes": 63028,
+      "sha256": "69ee54985262c545a4095888f6e20562c7dedee7c6295fb137580f4a2cc0caab"
+    },
+    {
+      "path": "research/sources/direction_selection_20261003/robodopamine2_v1.html",
+      "url": "https://arxiv.org/html/2608.15680v1",
+      "revision": "arXiv:2608.15680v1",
+      "bytes": 361013,
+      "sha256": "4f3975f6b87398635cdd1b0b8d0436ec5cdbe2839cd2586d51130c6050b40ee4"
+    }
+  ],
+  "reused_sources": [
+    "research/sources/prm_scope_review_20261003/source_manifest.json",
+    "research/sources/replan_r1/rbm_code_tree.json",
+    "research/sources/recovery_search_20261003/upstream_trace/source_mapping.json"
+  ],
+  "read_only_urls": [
+    "https://arxiv.org/html/2603.02115v2",
+    "https://arxiv.org/html/2608.14284v1",
+    "https://arxiv.org/html/2608.08036v1",
+    "https://arxiv.org/html/2412.04455v1",
+    "https://arxiv.org/html/2307.00329v4",
+    "https://arxiv.org/abs/2409.18794"
+  ],
+  "no_models_run": true,
+  "no_data_or_weight_download": true
+}

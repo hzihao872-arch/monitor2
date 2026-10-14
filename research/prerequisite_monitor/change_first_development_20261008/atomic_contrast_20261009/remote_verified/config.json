@@ -1,0 +1,514 @@
+{
+  "parents": [
+    {
+      "path": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_diag_20261009_v9/runs/window_v9/requests.jsonl",
+      "sha256": "a7a5904fa74d299b3c3d7c2eb08cad371b9ae95115ba47fd96b61f306c1b3cbf"
+    },
+    {
+      "path": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_atomic_20261009_v1/run/requests.jsonl",
+      "sha256": "03b2187043418ed5e3d441023ccf686cd94beb284c4341809067a8e2c53f674c"
+    }
+  ],
+  "requests": [
+    {
+      "id": "opening_00_rgb_chat_positive",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The rectangular top opening of the box is visibly uncovered.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_00_rgb_chat_opposed",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The orange panel covers the rectangular top opening of the box.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_00_rgb_raw_positive",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The rectangular top opening of the box is visibly uncovered.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_00_rgb_raw_opposed",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The orange panel covers the rectangular top opening of the box.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_00_oracle_chat_positive",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The rectangular top opening of the box is visibly uncovered.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 0 ms: The orange panel covers the rectangular top opening of the box."
+    },
+    {
+      "id": "opening_00_oracle_chat_opposed",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The orange panel covers the rectangular top opening of the box.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 0 ms: The orange panel covers the rectangular top opening of the box."
+    },
+    {
+      "id": "opening_00_oracle_raw_positive",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The rectangular top opening of the box is visibly uncovered.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 0 ms: The orange panel covers the rectangular top opening of the box."
+    },
+    {
+      "id": "opening_00_oracle_raw_opposed",
+      "probe_id": "opening_00",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0000",
+      "statement": "The orange panel covers the rectangular top opening of the box.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 0 ms: The orange panel covers the rectangular top opening of the box."
+    },
+    {
+      "id": "opening_14_rgb_chat_positive",
+      "probe_id": "opening_14",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0014",
+      "statement": "The rectangular top opening of the box is visibly uncovered.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_14_rgb_chat_opposed",
+      "probe_id": "opening_14",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0014",
+      "statement": "The orange panel covers the rectangular top opening of the box.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_14_rgb_raw_positive",
+      "probe_id": "opening_14",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0014",
+      "statement": "The rectangular top opening of the box is visibly uncovered.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "opening_14_rgb_raw_opposed",
+      "probe_id": "opening_14",
+      "query_id": "q613a0d8ddf5acc68",
+      "ref": "f0014",
+      "statement": "The orange panel covers the rectangular top opening of the box.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_00_rgb_chat_positive",
+      "probe_id": "plate_00",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0000",
+      "statement": "The yellow rectangular plate lies across the two green-marked rail sections.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_00_rgb_chat_opposed",
+      "probe_id": "plate_00",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0000",
+      "statement": "Both green-marked rail sections are fully exposed.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_00_rgb_raw_positive",
+      "probe_id": "plate_00",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0000",
+      "statement": "The yellow rectangular plate lies across the two green-marked rail sections.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_00_rgb_raw_opposed",
+      "probe_id": "plate_00",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0000",
+      "statement": "Both green-marked rail sections are fully exposed.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_14_rgb_chat_positive",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "The yellow rectangular plate lies across the two green-marked rail sections.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_14_rgb_chat_opposed",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "Both green-marked rail sections are fully exposed.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_14_rgb_raw_positive",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "The yellow rectangular plate lies across the two green-marked rail sections.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_14_rgb_raw_opposed",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "Both green-marked rail sections are fully exposed.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "plate_14_oracle_chat_positive",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "The yellow rectangular plate lies across the two green-marked rail sections.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The yellow rectangular plate is at the front. The green marked rear sections of both rails are exposed."
+    },
+    {
+      "id": "plate_14_oracle_chat_opposed",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "Both green-marked rail sections are fully exposed.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The yellow rectangular plate is at the front. The green marked rear sections of both rails are exposed."
+    },
+    {
+      "id": "plate_14_oracle_raw_positive",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "The yellow rectangular plate lies across the two green-marked rail sections.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The yellow rectangular plate is at the front. The green marked rear sections of both rails are exposed."
+    },
+    {
+      "id": "plate_14_oracle_raw_opposed",
+      "probe_id": "plate_14",
+      "query_id": "q07e7773ad34d85f6",
+      "ref": "f0014",
+      "statement": "Both green-marked rail sections are fully exposed.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The yellow rectangular plate is at the front. The green marked rear sections of both rails are exposed."
+    },
+    {
+      "id": "grasp_07_rgb_chat_positive",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly held between the robot gripper fingers.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_07_rgb_chat_opposed",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly separated from the robot gripper fingers.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_07_rgb_raw_positive",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly held between the robot gripper fingers.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_07_rgb_raw_opposed",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly separated from the robot gripper fingers.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_07_oracle_chat_positive",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly held between the robot gripper fingers.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 7000 ms: The blue cube is between the gripper fingers above the table, outside the box."
+    },
+    {
+      "id": "grasp_07_oracle_chat_opposed",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly separated from the robot gripper fingers.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 7000 ms: The blue cube is between the gripper fingers above the table, outside the box."
+    },
+    {
+      "id": "grasp_07_oracle_raw_positive",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly held between the robot gripper fingers.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 7000 ms: The blue cube is between the gripper fingers above the table, outside the box."
+    },
+    {
+      "id": "grasp_07_oracle_raw_opposed",
+      "probe_id": "grasp_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly separated from the robot gripper fingers.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 7000 ms: The blue cube is between the gripper fingers above the table, outside the box."
+    },
+    {
+      "id": "grasp_14_rgb_chat_positive",
+      "probe_id": "grasp_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly held between the robot gripper fingers.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_14_rgb_chat_opposed",
+      "probe_id": "grasp_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly separated from the robot gripper fingers.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_14_rgb_raw_positive",
+      "probe_id": "grasp_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly held between the robot gripper fingers.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "grasp_14_rgb_raw_opposed",
+      "probe_id": "grasp_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly separated from the robot gripper fingers.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_07_rgb_chat_positive",
+      "probe_id": "inside_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly inside the transparent box.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_07_rgb_chat_opposed",
+      "probe_id": "inside_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly outside the transparent box.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_07_rgb_raw_positive",
+      "probe_id": "inside_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly inside the transparent box.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_07_rgb_raw_opposed",
+      "probe_id": "inside_07",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0007",
+      "statement": "The blue cube is visibly outside the transparent box.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_14_rgb_chat_positive",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly inside the transparent box.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_14_rgb_chat_opposed",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly outside the transparent box.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_14_rgb_raw_positive",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly inside the transparent box.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_14_rgb_raw_opposed",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly outside the transparent box.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "rgb"
+    },
+    {
+      "id": "inside_14_oracle_chat_positive",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly inside the transparent box.",
+      "template": "chat",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The blue cube is inside the transparent box, below the top rim and on the visible floor."
+    },
+    {
+      "id": "inside_14_oracle_chat_opposed",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly outside the transparent box.",
+      "template": "chat",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The blue cube is inside the transparent box, below the top rim and on the visible floor."
+    },
+    {
+      "id": "inside_14_oracle_raw_positive",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly inside the transparent box.",
+      "template": "raw",
+      "polarity": "positive",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The blue cube is inside the transparent box, below the top rim and on the visible floor."
+    },
+    {
+      "id": "inside_14_oracle_raw_opposed",
+      "probe_id": "inside_14",
+      "query_id": "qf2bed1caaecc37a0",
+      "ref": "f0014",
+      "statement": "The blue cube is visibly outside the transparent box.",
+      "template": "raw",
+      "polarity": "opposed",
+      "input_kind": "oracle",
+      "fact": "At 14000 ms: The blue cube is inside the transparent box, below the top rim and on the visible floor."
+    }
+  ],
+  "authorization": "2026-10-09 user raised call cap and requested ongoing work while server is reachable. Prior frozen 80 ledger remains unchanged.",
+  "stop_rule": "Stop on connection loss, GPU occupation, backend failure; seal/download each complete block. No new global fixed request cap inferred from prior 80.",
+  "block_cap": 48,
+  "notes": "48 planned requests, not a new user-imposed global cap. Visual-first layout shared across chat/raw arms; 2 mutually opposed positive state statements. No timeline min-max."
+}

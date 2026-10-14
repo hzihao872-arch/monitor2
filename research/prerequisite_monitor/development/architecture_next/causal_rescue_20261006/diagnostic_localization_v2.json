@@ -1,0 +1,31 @@
+{
+  "version": "diagnostic_localization_v2_20261006",
+  "status": "preregistered_before_causal_rescue_model_outputs",
+  "parent_design_sha256": "0f9ddeb56eb91ef16936114825d4ba28206b8c34451c449f5d87bb970c5f70e7",
+  "scope": "conditional_second_batch_Q1_refinement; does_not_change_L1_L2_first_batch",
+  "model_visibility": "anonymous video, original task sentence, identical 15 decoded frames per probe; no condition names, simulator state, geometry dimensions, old scores, or previous probe answers",
+  "call_isolation": "Run fact, causal, and progress questions as three independent calls with identical visible frames and no answer chaining. Save verbatim prompt, response, unknown/abstention, actual frame indices and pixel hashes, checkpoint revision, tokens, elapsed time, and errors for every call.",
+  "questions": {
+    "Q1_fact": {
+      "prompt": "Use only the supplied video frames and the stated goal. At seconds 0, 7, and 14, is the red cube inside or outside the green square? Did the red cube leave the square and later return? Did the blue cube move? At second 14, is one whole face of the blue cube visibly resting directly on the tabletop? For each item answer inside, outside, yes, no, or unknown as appropriate, and cite a visible frame. Do not infer future success.",
+      "output_fields": ["red_at_0", "red_at_7", "red_at_14", "red_left_and_returned", "blue_moved", "blue_direct_tabletop_contact_at_14", "evidence", "unknown_reason"]
+    },
+    "Q1_causal": {
+      "prompt": "Use only the supplied video frames and the stated goal. Consider the visible state at second 0 and the visible state at second 14 separately. At each state, if the red cube stays where it is and is not actively moved later, can the blue cube be placed completely inside the green square with one whole face directly on the tabletop? Answer yes, no, or unknown for each state and explain using only visible geometry. Do not assume a future action was observed.",
+      "output_fields": ["legal_flat_placement_if_red_frozen_at_0", "legal_flat_placement_if_red_frozen_at_14", "reason_at_0", "reason_at_14", "unknown_reason"]
+    },
+    "Q1_progress": {
+      "prompt": "Use only the supplied video frames and the stated goal. Comparing seconds 0 and 14, did the observed action make eventual legal completion of the goal more feasible, less feasible, leave feasibility unchanged, or is the answer unknown? State one visible reason. Keep preparatory progress separate from whether the goal is already complete.",
+      "output_fields": ["direction_positive_negative_neutral_unknown", "visible_reason", "goal_complete_at_14_yes_no_unknown", "unknown_reason"]
+    }
+  },
+  "diagnostic_interpretation": [
+    "Fact errors suggest a perception or temporal-tracking bottleneck, but a question-answering failure can mimic this; compare V1 and human frame audit.",
+    "Accurate facts plus wrong causal feasibility under Q1_causal support an implicit-geometric-inference bottleneck in this explicit QA setting.",
+    "Accurate facts and causal feasibility plus wrong Q1_progress direction support a causal-to-progress-mapping bottleneck in this explicit QA setting.",
+    "All three explicit QA steps correct but native progress wrong support a mismatch between extractable information and native readout; this does not reveal the native internal computation.",
+    "A successful C1 is a prompted causal upper bound, not natural-goal success. A successful V1 identifies visual input as one repairable factor, not an exclusive cause.",
+    "The TOPReward 8B QA uses the same checkpoint in a separate language task; its answers are not a trace of native reward calculation. Base 4B QA is only corroboration for Robometer; the dedicated Robometer checkpoint exposes progress and success heads, not reliable language QA. Do not assign a Robometer internal failure layer from base 4B answers."
+  ],
+  "reporting": "Score Q1_fact, Q1_causal, and Q1_progress separately after sealing raw answers. Retain every error and unknown. Report all six seen development clips, every method/arm, exact native curves and pairwise differences. Do not equate an explicit QA success or failure with a proven internal mechanism."
+}

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ProTracer: Proprioception-Guided Failure Diagnosis in Robot Manipulation">
+  <title>ProTracer | Proprioception-Guided Failure Diagnosis</title>
+  <link rel="icon" type="image/png" href="assets/protracer-logo.png?v=2">
+  <link rel="stylesheet" href="styles.css?v=17">
+</head>
+<body>
+  <aside class="toc" aria-label="Contents">
+    <strong>CONTENTS</strong>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#method">Method</a>
+      <a href="#demos">Demos</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
+    </nav>
+  </aside>
+
+  <header class="hero">
+    <div class="container">
+      <p class="venue">PROJECT PAGE</p>
+      <h1 class="brand-title"><img class="title-logo" src="assets/protracer-logo.png?v=2" alt="ProTracer"><span class="title-copy"><span class="title-brand">ProTracer:</span> Proprioception-Guided Failure Diagnosis in Robot Manipulation</span></h1>
+      <p class="authors">Chang Dong, <a href="https://m80hz.github.io/" target="_blank" rel="noreferrer">Mehdi Hosseinzadeh</a>, King Hang Wong, <a href="https://lingqiao-adelaide.github.io/lingqiaoliu.github.io//" target="_blank" rel="noreferrer">Lingqiao Liu</a>,<br> <a href="https://researchers.adelaide.edu.au/profile/francois.fraysse" target="_blank" rel="noreferrer">Francois Fraysse</a>, <a href="https://ferasdayoub.com/" target="_blank" rel="noreferrer">Feras Dayoub</a>, and <a href="https://minhhoai.net/" target="_blank" rel="noreferrer">Minh Hoai Nguyen</a></p>
+      <p class="affiliation">Australian Institute for Machine Learning, Adelaide University</p>
+      <nav class="project-links" aria-label="Project links">
+        <a class="pill" href="paper/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v5h4M10 12h5M10 16h5"/></svg>Paper</a>
+        <a class="pill" href="https://arxiv.org/pdf/2609.21369" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>arXiv</a>
+        <a class="pill" href="https://huggingface.co/datasets/ChangUoA/FailTime" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>Data</a>
+        <a class="pill" href="https://github.com/Chang-AIML/ProTracer" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>Code</a>
+        <a class="pill" href="#bibtex"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h4v5H7c0 3-1 5-3 6M15 8h4v5h-4c0 3-1 5-3 6"/></svg>BibTeX</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="overview">
+      <h2>Overview</h2>
+      <figure class="overview-video">
+        <video controls preload="metadata" playsinline poster="assets/ProTracer_project_page_video_frame_0009.jpg?v=9s">
+          <source src="assets/ProTracer_project_page_video_female_bgm_ariv.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </figure>
+      <p class="lead overview-lead">We introduce <strong>ProTracer</strong>, a training-free framework for comprehensive robot manipulation failure analysis. It uses proprioceptive dynamics to find temporally informative action boundaries and converts robot-state signals into structured narratives that a vision-language model can reason over together with visual observations.</p>
+      <p>ProTracer supports failure detection, categorization, explanation, avoidance, and the new task of <strong>failure onset localization</strong>: identifying the earliest moment when an execution deviates from a valid task-completion trajectory and ultimately leads to failure. We also introduce <strong>FailTime</strong>, a benchmark with synchronized visual and proprioceptive observations and frame-level onset annotations.</p>
+    </section>
+
+    <section id="method">
+      <h2>Method</h2>
+      <p class="section-intro">Proprioception provides temporal precision; vision-language reasoning provides semantic understanding.</p>
+      <figure class="figure-card">
+        <img src="assets/figure2.png" alt="ProTracer combines video, proprioception, change-point detection, signal narratives, and VLM reasoning.">
+        <figcaption><strong>ProTracer framework.</strong> Proprioceptive change points select visual evidence, while structured signal narratives make robot state interpretable to an off-the-shelf VLM.</figcaption>
+      </figure>
+      <div class="method-notes">
+        <article><h3>Action-boundary localization</h3><p>Gripper and end-effector dynamics identify meaningful transitions instead of densely sampling redundant video frames.</p></article>
+        <article><h3>Structured multimodal reasoning</h3><p>Robot-state measurements become concise physical descriptions that are jointly analyzed with keyframes and task context.</p></article>
+      </div>
+    </section>
+
+    <section id="demos">
+      <h2>Demos</h2>
+      <p class="section-intro">From proprioceptive trajectories to keyframes, scene understanding, and grounded failure diagnosis.</p>
+      <div class="video-carousel" data-carousel>
+        <div class="carousel-stage">
+          <figure class="video-card" data-slide>
+            <video autoplay muted loop preload="auto" playsinline poster="assets/videos/top-drawer-controller.jpg"><source src="assets/videos/top-drawer-controller.mp4" type="video/mp4"></video>
+            <figcaption class="video-caption"><strong>Top drawer.</strong> Pull the drawer and place the controller.</figcaption>
+          </figure>
+          <figure class="video-card" data-slide hidden>
+            <video autoplay muted loop preload="auto" playsinline poster="assets/videos/bottom-drawer-can.jpg"><source src="assets/videos/bottom-drawer-can.mp4" type="video/mp4"></video>
+            <figcaption class="video-caption"><strong>Bottom drawer.</strong> Pull the drawer and place the can.</figcaption>
+          </figure>
+          <figure class="video-card" data-slide hidden>
+            <video autoplay muted loop preload="auto" playsinline poster="assets/videos/orange-block-microwave.jpg"><source src="assets/videos/orange-block-microwave.mp4" type="video/mp4"></video>
+            <figcaption class="video-caption"><strong>Microwave.</strong> Pick the orange block and place it inside.</figcaption>
+          </figure>
+          <figure class="video-card" data-slide hidden>
+            <video autoplay muted loop preload="auto" playsinline poster="assets/videos/marker-cross.jpg"><source src="assets/videos/marker-cross.mp4" type="video/mp4"></video>
+            <figcaption class="video-caption"><strong>Marker.</strong> Pick the marker and draw a cross.</figcaption>
+          </figure>
+        </div>
+        <div class="carousel-footer">
+          <div class="carousel-dots" aria-label="Choose demo">
+            <button class="active" type="button" data-dot="0" aria-label="Show demo 1"></button>
+            <button type="button" data-dot="1" aria-label="Show demo 2"></button>
+            <button type="button" data-dot="2" aria-label="Show demo 3"></button>
+            <button type="button" data-dot="3" aria-label="Show demo 4"></button>
+          </div>
+          <span class="carousel-count" data-count aria-live="polite">1 / 4</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="results">
+      <h2>Results</h2>
+      <p class="section-intro">ProTracer achieves sub-second onset localization in the zero-shot setting while improving conventional failure diagnosis.</p>
+      <div class="table-card">
+        <div class="table-title">FailTime-Short — Main Results</div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th rowspan="2">Model</th><th colspan="3">Failure Onset</th><th rowspan="2">Detection ↑</th><th rowspan="2">Type ↑</th><th rowspan="2">Reason ↑</th></tr>
+              <tr><th>MAE ↓</th><th>@0.5s ↑</th><th>@1s ↑</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ViFailback-8B</td><td>1.10</td><td>46.06</td><td>67.49</td><td>97.80</td><td>57.64</td><td>62.56</td></tr>
+              <tr><td>KITE</td><td>1.75</td><td>14.53</td><td>33.25</td><td>96.26</td><td>35.71</td><td>50.86</td></tr>
+              <tr><td>Gemini-3.1-pro</td><td>1.32</td><td>27.83</td><td>55.42</td><td>95.82</td><td>49.51</td><td>54.30</td></tr>
+              <tr><td>Gemini-3.1-pro + raw sensor</td><td>0.90</td><td>48.03</td><td>73.15</td><td>98.24</td><td>60.34</td><td>61.92</td></tr>
+              <tr class="ours"><td><strong>ProTracer</strong></td><td><strong>0.59</strong></td><td><strong>71.18</strong></td><td><strong>81.03</strong></td><td><strong>99.34</strong></td><td><strong>72.91</strong></td><td><strong>69.40</strong></td></tr>
+              <tr class="ours exp"><td><strong>ProTracer + Exp.</strong></td><td><strong>0.47</strong></td><td><strong>77.34</strong></td><td><strong>83.99</strong></td><td>98.68</td><td><strong>77.83</strong></td><td>69.20</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">Onset metrics are reported in seconds / percent. Failure diagnosis scores are percentages.</p>
+      </div>
+
+      <div class="result-block">
+        <h3 class="result-subheading">Ablation Study</h3>
+        <p class="result-description">Proprioception provides temporal grounding, vision supplies semantic context, and Sign-CPD selects the most informative action boundaries.</p>
+        <div class="result-grid">
+          <article class="analysis-card">
+            <h4>Modality Ablations</h4>
+            <div class="table-scroll compact-table">
+              <table>
+                <thead>
+                  <tr><th rowspan="2">Model</th><th colspan="3">Failure Onset</th><th rowspan="2">Detect. ↑</th><th rowspan="2">Type ↑</th></tr>
+                  <tr><th>MAE ↓</th><th>@0.5s ↑</th><th>@1s ↑</th></tr>
+                </thead>
+                <tbody>
+                  <tr class="ours"><td><strong>ProTracer (Sign-CPD)</strong></td><td><strong>0.59</strong></td><td><strong>71.18</strong></td><td><strong>81.03</strong></td><td><strong>99.34</strong></td><td><strong>72.91</strong></td></tr>
+                  <tr><td>w/o sensor</td><td>1.18</td><td>30.79</td><td>59.85</td><td>98.24</td><td>57.39</td></tr>
+                  <tr><td>w/o vision</td><td>1.88</td><td>23.65</td><td>48.52</td><td>90.33</td><td>15.02</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="analysis-card">
+            <h4>Key-frame Selectors</h4>
+            <div class="table-scroll compact-table">
+              <table>
+                <thead>
+                  <tr><th rowspan="2">Selector</th><th colspan="3">Failure Onset</th><th rowspan="2">Detect. ↑</th><th rowspan="2">Type ↑</th></tr>
+                  <tr><th>MAE ↓</th><th>@0.5s ↑</th><th>@1s ↑</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Optical Flow</td><td>0.73</td><td>66.50</td><td>76.11</td><td>98.68</td><td>64.78</td></tr>
+                  <tr><td>Continuous CPD</td><td>0.79</td><td>66.26</td><td>77.34</td><td>98.90</td><td>66.50</td></tr>
+                  <tr class="ours"><td><strong>Sign-CPD</strong></td><td><strong>0.59</strong></td><td><strong>71.18</strong></td><td><strong>81.03</strong></td><td><strong>99.34</strong></td><td><strong>72.91</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="result-block">
+        <h3 class="result-subheading">Runtime Detector Comparison</h3>
+        <p class="result-description">For causal runtime detectors, the first alarm is evaluated as a failure-onset estimate. ProTracer remains zero-shot and is not used as a policy-stopping detector.</p>
+        <div class="runtime-grid">
+            <article class="analysis-card runtime-card">
+              <div class="table-scroll compact-table">
+                <table>
+                  <thead>
+                    <tr><th rowspan="2">Detector</th><th colspan="3">Failure Detection</th><th colspan="3">Failure Onset</th></tr>
+                    <tr><th>AUROC ↑</th><th>TPR ↑</th><th>TNR ↑</th><th>MAE ↓</th><th>@0.5s ↑</th><th>@1s ↑</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>RND-OE</td><td>0.57</td><td>44.83</td><td>79.59</td><td>5.03</td><td>0.74</td><td>2.96</td></tr>
+                    <tr><td>FIDeL</td><td>0.60</td><td>34.73</td><td>95.92</td><td>5.27</td><td>0.25</td><td>1.97</td></tr>
+                    <tr><td>RynnValue-8B</td><td>0.85</td><td>38.18</td><td>93.88</td><td>2.61</td><td>1.72</td><td>5.67</td></tr>
+                    <tr><td>GRU (Onset Supervised)</td><td>0.74</td><td>71.43</td><td>65.31</td><td>2.08</td><td>18.97</td><td>33.99</td></tr>
+                    <tr class="ours"><td><strong>ProTracer (zero-shot)</strong></td><td>–</td><td><strong>99.26</strong></td><td><strong>100.00</strong></td><td><strong>0.59</strong></td><td><strong>71.18</strong></td><td><strong>81.03</strong></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+            <figure class="figure-card runtime-figure" id="runtime-error-figure">
+              <img src="assets/runtime-first-alarm-error.png" alt="Distribution of first-alarm timing error for runtime failure detectors and ProTracer.">
+              <figcaption><strong>First-alarm error relative to the annotated onset.</strong> Runtime detectors tend to fire systematically early or late, while ProTracer remains concentrated near the annotated failure onset.</figcaption>
+            </figure>
+        </div>
+      </div>
+
+      <figure class="figure-card result-figure">
+        <img src="assets/figure5.png" alt="Generalization results across Gemini, Qwen, GPT, and open-weight VLM backbones.">
+        <figcaption><strong>Generalization across VLM backbones.</strong> Structured proprioceptive evidence consistently improves onset localization, and reflective experience transfers across models.</figcaption>
+      </figure>
+    </section>
+
+    <section id="bibtex">
+      <h2>BibTeX</h2>
+      <div class="bib-card">
+        <button id="copy-button" type="button">Copy</button>
+        <pre><code id="bibtex-code">@article{dong2026protracer,
+  title     = {ProTracer: Proprioception-Guided Failure Diagnosis in Robot Manipulation},
+  author    = {Dong, Chang and Hosseinzadeh, Mehdi and Wong, King Hang and Liu, Lingqiao and Fraysse, Francois and Dayoub, Feras and Nguyen, Minh Hoai},
+  journal   = {arXiv:2609.21369},
+  year      = {2026}
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="container">Australian Institute for Machine Learning, Adelaide University · 2026</div></footer>
+  <script src="script.js?v=2"></script>
+</body>
+</html>

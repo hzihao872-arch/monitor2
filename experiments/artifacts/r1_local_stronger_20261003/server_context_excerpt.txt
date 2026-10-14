@@ -1,0 +1,8 @@
+time=2026-10-03T16:31:37.500+08:00 level=INFO source=llama_server.go:436 msg="starting llama-server" cmd="C:\\Users\\HANWANG\\AppData\\Local\\Programs\\Ollama\\lib\\ollama\\llama-server.exe --model C:\\Users\\HANWANG\\.ollama\\models\\blobs\\sha256-1329cd5ab37e5ef6faef37cd8ff8660ffc96ed5b47b34fddf8eb0912e6c82466 --port 51167 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --mmproj C:\\Users\\HANWANG\\.ollama\\models\\blobs\\sha256-1329cd5ab37e5ef6faef37cd8ff8660ffc96ed5b47b34fddf8eb0912e6c82466 --image-min-tokens 1024 --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+srv    load_model: initializing, n_slots = 1, n_ctx_slot = 4096, kv_unified = 'false'
+slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 4096, n_keep = 4, task.n_tokens = 1099
+slot   operator(): id  0 | task 26 | new prompt, n_ctx_slot = 4096, n_keep = 4, task.n_tokens = 1364
+slot   operator(): id  0 | task 97 | new prompt, n_ctx_slot = 4096, n_keep = 4, task.n_tokens = 3426
+slot init_sampler: id  0 | task 97 | init sampler, took 0.03 ms, tokens: text = 354, total = 3426
+slot   operator(): id  0 | task 173 | new prompt, n_ctx_slot = 4096, n_keep = 4, task.n_tokens = 4457
+srv    send_error: task id = 173, error: request (4457 tokens) exceeds the available context size (4096 tokens), try increasing it

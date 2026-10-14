@@ -1,0 +1,214 @@
+{
+  "TOPReward": {
+    "videos": {
+      "B+": {
+        "status": "valid",
+        "video": "0001.mp4",
+        "points": [
+          -23.25,
+          -23.25,
+          -23.625,
+          -24.375,
+          -23.5,
+          -23.25,
+          -22.875,
+          -23.0,
+          -23.125,
+          -22.875,
+          -23.75,
+          -23.375,
+          -23.375,
+          -23.125,
+          -24.125
+        ],
+        "pre_0_2_median": -23.25,
+        "post_12_14_median": -23.375,
+        "post_minus_pre": -0.125
+      },
+      "B0": {
+        "status": "valid",
+        "video": "0002.mp4",
+        "points": [
+          -22.75,
+          -22.875,
+          -23.375,
+          -24.25,
+          -23.625,
+          -23.625,
+          -22.875,
+          -24.0,
+          -22.5,
+          -23.625,
+          -23.875,
+          -24.25,
+          -22.375,
+          -22.625,
+          -22.75
+        ],
+        "pre_0_2_median": -22.875,
+        "post_12_14_median": -22.625,
+        "post_minus_pre": 0.25
+      },
+      "U0": {
+        "status": "valid",
+        "video": "0003.mp4",
+        "points": [
+          -23.25,
+          -22.875,
+          -23.875,
+          -23.5,
+          -24.375,
+          -23.875,
+          -25.0,
+          -24.875,
+          -23.375,
+          -23.75,
+          -24.25,
+          -23.5,
+          -24.75,
+          -24.75,
+          -24.125
+        ],
+        "pre_0_2_median": -23.25,
+        "post_12_14_median": -24.75,
+        "post_minus_pre": -1.5
+      },
+      "H-": {
+        "status": "valid",
+        "video": "0004.mp4",
+        "points": [
+          -23.375,
+          -23.25,
+          -24.0,
+          -24.125,
+          -24.875,
+          -24.375,
+          -24.875,
+          -24.75,
+          -23.75,
+          -22.25,
+          -22.625,
+          -23.25,
+          -22.0,
+          -21.5,
+          -21.625
+        ],
+        "pre_0_2_median": -23.375,
+        "post_12_14_median": -21.625,
+        "post_minus_pre": 1.75
+      },
+      "G+": {
+        "status": "valid",
+        "video": "0005.mp4",
+        "points": [
+          -23.375,
+          -23.625,
+          -24.0,
+          -24.375,
+          -23.625,
+          -23.25,
+          -22.25,
+          -20.5,
+          -21.875,
+          -17.375,
+          -14.5,
+          -15.125,
+          -15.375,
+          -15.75,
+          -14.75
+        ],
+        "pre_0_2_median": -23.625,
+        "post_12_14_median": -15.375,
+        "post_minus_pre": 8.25
+      },
+      "N0": {
+        "status": "valid",
+        "video": "0006.mp4",
+        "points": [
+          -23.75,
+          -23.375,
+          -24.25,
+          -24.5,
+          -24.625,
+          -24.625,
+          -24.125,
+          -24.125,
+          -24.125,
+          -24.125,
+          -24.0,
+          -24.0,
+          -24.125,
+          -24.125,
+          -24.0
+        ],
+        "pre_0_2_median": -23.75,
+        "post_12_14_median": -24.125,
+        "post_minus_pre": -0.375
+      }
+    },
+    "counts": {
+      "valid": 6,
+      "missing": 0,
+      "invalid": 0
+    },
+    "pairwise": {
+      "Bplus_vs_B0_delta": {
+        "difference": -0.375,
+        "outcome": "loss"
+      },
+      "Bplus_vs_U0_delta": {
+        "difference": 1.375,
+        "outcome": "win"
+      },
+      "Hminus_vs_N0_delta": {
+        "difference": 2.125,
+        "outcome": "loss"
+      },
+      "Gplus_vs_N0_delta": {
+        "difference": 8.625,
+        "outcome": "win"
+      }
+    },
+    "scale": "native; no per-video normalization"
+  },
+  "Robometer PR33 dtype compat": {
+    "videos": {
+      "B+": {
+        "status": "missing",
+        "video": "0001.mp4"
+      },
+      "B0": {
+        "status": "missing",
+        "video": "0002.mp4"
+      },
+      "U0": {
+        "status": "missing",
+        "video": "0003.mp4"
+      },
+      "H-": {
+        "status": "missing",
+        "video": "0004.mp4"
+      },
+      "G+": {
+        "status": "missing",
+        "video": "0005.mp4"
+      },
+      "N0": {
+        "status": "missing",
+        "video": "0006.mp4"
+      }
+    },
+    "counts": {
+      "valid": 0,
+      "missing": 6,
+      "invalid": 0
+    },
+    "pairwise": {
+      "Bplus_vs_B0_delta": null,
+      "Bplus_vs_U0_delta": null,
+      "Hminus_vs_N0_delta": null,
+      "Gplus_vs_N0_delta": null
+    },
+    "scale": "native; no per-video normalization"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-03",
+  "task": "Refresh specialized robot execution monitoring and progress systems",
+  "empirical_gap_demonstrated": false,
+  "models_run": 0,
+  "weights_downloaded": 0,
+  "dataset_media_downloaded": 0,
+  "recommendations": [
+    {
+      "system": "ProgressCompass",
+      "role": "priority_architecture_for_scope_audit",
+      "paper": "https://arxiv.org/html/2609.36684v1",
+      "date": "2026-09-29",
+      "release_status": "Official project says Code (coming soon)",
+      "evidence_locator": "Appendix B Orienter and Navigator",
+      "observed_design": "Satisfied steps stay fixed; open steps can be revised",
+      "hypothesis_only": "Check handling of invalidated outcomes when task requires continued validity; historical event completion is a separate semantic target",
+      "counterconsideration": "Method distinguishes lasting states and brief interactions; no tested failure in our cases"
+    },
+    {
+      "system": "R2VLM",
+      "role": "released_recurrent_reasoning_comparator",
+      "paper": "https://arxiv.org/html/2603.17312v1",
+      "repository": "https://github.com/GLAD-RUC/R2VLM",
+      "model": "zhangyuelin/R2VLM-Alfred-RL",
+      "model_revision": "6c84c9bffe680e310ad7fcaaf7016134e0a0608f",
+      "release_status": "Official weights and training resources confirmed; inference/evaluation path not audited",
+      "counterconsideration": "Explicitly updates completion status; evidence mainly ALFRED and Ego4D"
+    },
+    {
+      "system": "RoboMonitor",
+      "role": "recent_specialized_monitor_comparator",
+      "paper": "https://arxiv.org/html/2609.30715v1",
+      "date": "2026-09-25",
+      "release_status": "No usable official code/checkpoint verified in inspected sources",
+      "counterconsideration": "Task-supervised four-task evaluation; failure AP not uniformly superior at smaller training budget"
+    },
+    {
+      "system": "RoboMeter-4B",
+      "role": "available_robot_progress_backbone_candidate",
+      "repository": "https://github.com/robometer/robometer",
+      "model": "robometer/Robometer-4B",
+      "model_revision": "beef63bc914c5c189329d49c6d712d96d632aa34",
+      "release_status": "Official code and weights confirmed; not downloaded or run this turn",
+      "counterconsideration": "Progress output is not automatically per-condition current-validity output"
+    },
+    {
+      "system": "Robo-Dopamine 2.0",
+      "role": "directly_related_history_and_ood_comparator",
+      "paper": "https://arxiv.org/html/2608.15680v1",
+      "repository": "https://github.com/FlagOpen/Robo-Dopamine",
+      "release_status": "Preview weights predate paper; exact paper-checkpoint correspondence unverified"
+    }
+  ],
+  "not_prioritized": [
+    {"system": "StageGuard", "reason": "Skill transition target is narrower; discovered namesake checkpoint author and experiment correspondence unverified"},
+    {"system": "ROVER", "reason": "Useful older recurrent framework; current official quick start uses paid API, prohibited in this project"}
+  ],
+  "next_action": "Audit native task semantics and corresponding outputs of ProgressCompass and R2VLM before claiming invalidated-condition errors",
+  "protocol_version": "S6-draft-4",
+  "data_manifest_version": "S7-screening-4"
+}

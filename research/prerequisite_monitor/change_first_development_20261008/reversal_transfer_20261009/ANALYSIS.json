@@ -1,0 +1,174 @@
+{
+  "issued": 24,
+  "completed": 24,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior": 283,
+  "cumulative": 307,
+  "counts": {
+    "current_opposed_first": {
+      "n": 6,
+      "correct_ai": 4,
+      "unknown": 0,
+      "input_tokens": 1713
+    },
+    "current_positive_first": {
+      "n": 6,
+      "correct_ai": 4,
+      "unknown": 0,
+      "input_tokens": 1713
+    },
+    "prefix8_opposed_first": {
+      "n": 6,
+      "correct_ai": 5,
+      "unknown": 0,
+      "input_tokens": 7373
+    },
+    "prefix8_positive_first": {
+      "n": 6,
+      "correct_ai": 3,
+      "unknown": 0,
+      "input_tokens": 7373
+    }
+  },
+  "pairs": [
+    {
+      "mode": "current",
+      "probe": "opening_R_0",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "mode": "current",
+      "probe": "opening_R_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "mode": "current",
+      "probe": "opening_R_7",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "False"
+      ],
+      "order_consistent": false,
+      "both_correct_ai": false
+    },
+    {
+      "mode": "current",
+      "probe": "plate_R_0",
+      "reference_ai": "False",
+      "states": [
+        "True",
+        "False"
+      ],
+      "order_consistent": false,
+      "both_correct_ai": false
+    },
+    {
+      "mode": "current",
+      "probe": "plate_R_14",
+      "reference_ai": "False",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": false
+    },
+    {
+      "mode": "current",
+      "probe": "plate_R_7",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "mode": "prefix8",
+      "probe": "opening_R_0",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "mode": "prefix8",
+      "probe": "opening_R_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "mode": "prefix8",
+      "probe": "opening_R_7",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "mode": "prefix8",
+      "probe": "plate_R_0",
+      "reference_ai": "False",
+      "states": [
+        "True",
+        "False"
+      ],
+      "order_consistent": false,
+      "both_correct_ai": false
+    },
+    {
+      "mode": "prefix8",
+      "probe": "plate_R_14",
+      "reference_ai": "False",
+      "states": [
+        "True",
+        "False"
+      ],
+      "order_consistent": false,
+      "both_correct_ai": false
+    },
+    {
+      "mode": "prefix8",
+      "probe": "plate_R_7",
+      "reference_ai": "True",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": false
+    }
+  ],
+  "audit_errors": [],
+  "wall_seconds": 12.797415673732758,
+  "adapter_seconds": 4.645259634125978,
+  "input_tokens": 18172,
+  "peak_vram_gib": 16.861892223358154,
+  "status": "AI development reversal transfer; atomic state trajectory only, not automated event or utility/reversal accuracy"
+}

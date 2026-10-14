@@ -1,0 +1,221 @@
+
+
+ [2310.17552] Model-Based Runtime Monitoring with Interactive Imitation Learning
+
+ Skip to main content
+
+ Search
+
+ Submit
+ Donate
+
+ Log in
+
+ Search arXiv
+
+ Press Enter to search · Advanced search
+
+Computer Science > Robotics
+
+ arXiv:2310.17552 (cs)
+
+ [Submitted on 26 Oct 2023]
+
+Title:Model-Based Runtime Monitoring with Interactive Imitation Learning
+
+Authors:Huihan Liu, Shivin Dass, Roberto Martín-Martín, Yuke Zhu 
+View a PDF of the paper titled Model-Based Runtime Monitoring with Interactive Imitation Learning, by Huihan Liu and 3 other authors
+ View PDF
+ HTML (experimental)
+
+ Abstract:Robot learning methods have recently made great strides, but generalization and robustness challenges still hinder their widespread deployment. Failing to detect and address potential failures renders state-of-the-art learning systems not combat-ready for high-stakes tasks. Recent advances in interactive imitation learning have presented a promising framework for human-robot teaming, enabling the robots to operate safely and continually improve their performances over long-term deployments. Nonetheless, existing methods typically require constant human supervision and preemptive feedback, limiting their practicality in realistic domains. This work aims to endow a robot with the ability to monitor and detect errors during task execution. We introduce a model-based runtime monitoring algorithm that learns from deployment data to detect system anomalies and anticipate failures. Unlike prior work that cannot foresee future failures or requires failure experiences for training, our method learns a latent-space dynamics model and a failure classifier, enabling our method to simulate future action outcomes and detect out-of-distribution and high-risk states preemptively. We train our method within an interactive imitation learning framework, where it continually updates the model from the experiences of the human-robot team collected using trustworthy deployments. Consequently, our method reduces the human workload needed over time while ensuring reliable task execution. Our method outperforms the baselines across system-level and unit-test metrics, with 23% and 40% higher success rates in simulation and on physical hardware, respectively. More information at this https URL
+
+ Subjects:
+
+ Robotics (cs.RO); Artificial Intelligence (cs.AI); Machine Learning (cs.LG)
+
+ Cite as:
+ arXiv:2310.17552 [cs.RO]
+
+ (or 
+ arXiv:2310.17552v1 [cs.RO] for this version)
+
+ https://doi.org/10.48550/arXiv.2310.17552
+
+ Focus to learn more
+
+ arXiv-issued DOI via DataCite
+
+Submission history From: Huihan Liu [view email] [v1]
+ Thu, 26 Oct 2023 16:45:44 UTC (3,980 KB)
+
+ Full-text links:
+
+Access Paper:
+
+View a PDF of the paper titled Model-Based Runtime Monitoring with Interactive Imitation Learning, by Huihan Liu and 3 other authors
+View PDF
+HTML (experimental)
+TeX Source
+
+ view license
+
+Current browse context:
+
+cs.RO
+
+ < prev
+
+   |   
+ next >
+
+ new
+ | 
+ recent
+ | 2023-10
+
+ Change to browse by:
+
+ cs
+ cs.AI
+ cs.LG
+
+References & Citations
+
+NASA ADS
+Google Scholar
+
+Semantic Scholar
+
+ export BibTeX citation
+ Loading...
+
+BibTeX formatted citation
+ ×
+
+ loading...
+
+ Data provided by: 
+
+Bookmark
+
+ Bibliographic Tools
+
+Bibliographic and Citation Tools
+
+ Bibliographic Explorer Toggle
+
+ Bibliographic Explorer (What is the Explorer?)
+
+ Connected Papers Toggle
+
+ Connected Papers (What is Connected Papers?)
+
+ Litmaps Toggle
+
+ Litmaps (What is Litmaps?)
+
+ scite.ai Toggle
+
+ scite Smart Citations (What are Smart Citations?)
+
+ Code, Data, Media
+
+Code, Data and Media Associated with this Article
+
+ alphaXiv Toggle
+
+ alphaXiv (What is alphaXiv?)
+
+ Links to Code Toggle
+
+ CatalyzeX Code Finder for Papers (What is CatalyzeX?)
+
+ DagsHub Toggle
+
+ DagsHub (What is DagsHub?)
+
+ GotitPub Toggle
+
+ Gotit.pub (What is GotitPub?)
+
+ Huggingface Toggle
+
+ Hugging Face (What is Huggingface?)
+
+ ScienceCast Toggle
+
+ ScienceCast (What is ScienceCast?)
+
+ Demos
+
+Demos
+
+ Replicate Toggle
+
+ Replicate (What is Replicate?)
+
+ Spaces Toggle
+
+ Hugging Face Spaces (What is Spaces?)
+
+ Spaces Toggle
+
+ TXYZ.AI (What is TXYZ.AI?)
+
+ Related Papers
+
+Recommenders and Search Tools
+
+ Link to Influence Flower
+
+ Influence Flower (What are Influence Flowers?)
+
+ Core recommender toggle
+
+ CORE Recommender (What is CORE?)
+
+Author
+
+Venue
+
+Institution
+
+Topic
+
+ About arXivLabs
+
+arXivLabs: experimental projects with community collaborators
+
+arXivLabs is a framework that allows collaborators to develop and share new arXiv features directly on our website.
+
+Both individuals and organizations that work with arXivLabs have embraced and accepted our values of openness, community, excellence, and user data privacy. arXiv is committed to these values and only works with partners that adhere to them.
+
+Have an idea for a project that will add value for arXiv's community? Learn more about arXivLabs.
+
+ Which authors of this paper are endorsers? |
+ Disable MathJax (What is MathJax?)
+
+ We gratefully acknowledge support from
+ our major funders,
+ member institutions, ,
+ and all contributors.
+
+ About
+ ·
+ Help
+ ·
+ Contact
+ ·
+ Subscribe
+ ·
+ Copyright
+ ·
+ Privacy
+ ·
+ Accessibility
+ ·
+ Operational Status (opens in new tab)
+
+Major funding support from
+

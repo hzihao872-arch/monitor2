@@ -1,0 +1,569 @@
+{
+  "issued": 15,
+  "stages": {
+    "INVENTORY": {
+      "n": 8,
+      "strict_valid": 7
+    },
+    "TRACK": {
+      "n": 7,
+      "strict_valid": 7
+    }
+  },
+  "queries": {
+    "q07108c1875aa88b5": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "orange square plate on gray box",
+              "id": "o1",
+              "part_of": "o2",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray box with transparent side",
+              "id": "o2",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray cube on orange plate",
+              "id": "o3",
+              "part_of": "o1",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "white robotic arm with black joints",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "standalone item"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0005",
+              "after": "gray cube lifted by robot arm, orange plate now partially empty",
+              "b": "f0003",
+              "before": "gray cube on orange plate, robot arm approaching",
+              "object": "o3"
+            },
+            {
+              "a": "f0007",
+              "after": "gray box with orange plate and empty space where gray cube was",
+              "b": "f0006",
+              "before": "gray box with orange plate and gray cube on top",
+              "object": "o2"
+            },
+            {
+              "a": "f0011",
+              "after": "gray cube placed back on orange plate, robot arm retracted",
+              "b": "f0009",
+              "before": "gray cube held by robot arm above box",
+              "object": "o3"
+            }
+          ],
+          "context": "A blue cube rests on a wooden surface near a gray box with a transparent side, which holds an orange plate with a gray cube on it. A white robotic arm is positioned nearby.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    },
+    "q07e7773ad34d85f6": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "pink cube on wooden surface",
+              "id": "o1",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray rectangular bar with yellow and green top",
+              "id": "o2",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray robotic arm with black joints",
+              "id": "o3",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray cylindrical base of robotic arm",
+              "id": "o4",
+              "part_of": "o3",
+              "visible_state": "visibly connected to robotic arm"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0010",
+              "after": "pink cube moved off platform and onto wooden surface",
+              "b": "f0004",
+              "before": "pink cube on yellow platform",
+              "object": "o1"
+            },
+            {
+              "a": "f0010",
+              "after": "gray bar partially detached from platform and lying on surface",
+              "b": "f0006",
+              "before": "gray bar with yellow and green top on platform",
+              "object": "o2"
+            },
+            {
+              "a": "f0010",
+              "after": "blue cube remains on wooden surface, no change",
+              "b": "f0008",
+              "before": "blue cube on wooden surface",
+              "object": "o0"
+            }
+          ],
+          "context": "A robotic arm on a wooden surface interacts with a yellow platform holding a gray cube and a pink cube, while a blue cube remains separate.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    },
+    "q0d6f6ef3062d4d34": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "orange square with small gray cube on top",
+              "id": "o1",
+              "part_of": "o2",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray box with transparent sides and orange top",
+              "id": "o2",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "white robotic arm with black joints",
+              "id": "o3",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "white cylindrical object partially visible",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "standalone item"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0004",
+              "after": "gray cube lifted by robotic arm",
+              "b": "f0003",
+              "before": "gray cube on orange square",
+              "object": "o1"
+            },
+            {
+              "a": "f0005",
+              "after": "gray cube held by robotic arm above orange square",
+              "b": "f0004",
+              "before": "gray cube lifted by robotic arm",
+              "object": "o1"
+            },
+            {
+              "a": "f0006",
+              "after": "gray cube placed on orange square",
+              "b": "f0005",
+              "before": "gray cube held by robotic arm above orange square",
+              "object": "o1"
+            }
+          ],
+          "context": "A blue cube, an orange square with a gray cube on top, and a gray box with transparent sides sit on a wooden surface as a white robotic arm moves toward them.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    },
+    "q613a0d8ddf5acc68": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "orange square platform on gray box",
+              "id": "o1",
+              "part_of": "o2",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray box with transparent side",
+              "id": "o2",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray cube on orange platform",
+              "id": "o3",
+              "part_of": "o1",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "white robotic arm with black joints",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "standalone item"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0004",
+              "after": "gray cube lifted by robotic arm",
+              "b": "f0003",
+              "before": "gray cube on orange platform",
+              "object": "o3"
+            },
+            {
+              "a": "f0006",
+              "after": "gray box with transparent side and orange platform partially removed",
+              "b": "f0004",
+              "before": "gray box with transparent side and orange platform",
+              "object": "o2"
+            },
+            {
+              "a": "f0010",
+              "after": "gray cube placed back on orange platform",
+              "b": "f0006",
+              "before": "gray cube held by robotic arm",
+              "object": "o3"
+            }
+          ],
+          "context": "A blue cube rests on a wooden surface near a robotic arm. A gray box with a transparent side holds an orange platform with a gray cube on top.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    },
+    "q675f22bca6b91b54": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "pink cube on wooden surface",
+              "id": "o1",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray rectangular bar with yellow and green top",
+              "id": "o2",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray cube on yellow surface",
+              "id": "o3",
+              "part_of": "o2",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "white robotic arm with black joints",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "standalone item"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0005",
+              "after": "blue cube held by robotic arm",
+              "b": "f0000",
+              "before": "blue cube on wooden surface",
+              "object": "o0"
+            },
+            {
+              "a": "f0011",
+              "after": "blue cube placed on yellow platform",
+              "b": "f0005",
+              "before": "blue cube held by robotic arm",
+              "object": "o0"
+            },
+            {
+              "a": "f0014",
+              "after": "gray rectangular bar with yellow and green top, now with blue cube on top",
+              "b": "f0000",
+              "before": "gray rectangular bar with yellow and green top",
+              "object": "o2"
+            }
+          ],
+          "context": "A robotic arm moves toward a blue cube on a wooden surface, then picks it up and places it on a yellow platform with other cubes.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    },
+    "qbb0dbd57d63ce6a9": {
+      "INVENTORY": {
+        "errors": [
+          "parent cycle"
+        ],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "pink cube with green stick attached",
+              "id": "o1",
+              "part_of": "o1",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray cube on yellow platform",
+              "id": "o2",
+              "part_of": "o2",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "green stick lying on gray rail",
+              "id": "o3",
+              "part_of": "o3",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray rail with yellow platform and green stick",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "assembled structure"
+            }
+          ]
+        },
+        "valid": false
+      }
+    },
+    "qcde827bb66b99fd4": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "pink cube on wooden surface",
+              "id": "o1",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray cube on yellow platform",
+              "id": "o2",
+              "part_of": "o3",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "yellow platform with gray cube on it",
+              "id": "o3",
+              "part_of": "o4",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray track with yellow platform and green rods",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "standalone item"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0006",
+              "after": "gray cube lifted off yellow platform",
+              "b": "f0005",
+              "before": "gray cube on yellow platform",
+              "object": "o2"
+            },
+            {
+              "a": "f0007",
+              "after": "gray cube placed on yellow platform",
+              "b": "f0006",
+              "before": "gray cube held by robot above yellow platform",
+              "object": "o2"
+            },
+            {
+              "a": "f0009",
+              "after": "pink cube moved onto yellow platform",
+              "b": "f0008",
+              "before": "pink cube stationary on wooden surface",
+              "object": "o1"
+            }
+          ],
+          "context": "A robot manipulates a gray cube on a yellow platform, which is part of a gray track with green rods, while a blue and pink cube remain stationary on a wooden surface.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    },
+    "qf2bed1caaecc37a0": {
+      "INVENTORY": {
+        "errors": [],
+        "payload": {
+          "coverage": "complete",
+          "objects": [
+            {
+              "description": "blue cube on wooden surface",
+              "id": "o0",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "orange square with small gray cube on top",
+              "id": "o1",
+              "part_of": "o2",
+              "visible_state": "visibly connected component"
+            },
+            {
+              "description": "gray box with transparent sides and orange top",
+              "id": "o2",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "white robotic arm with black joints",
+              "id": "o3",
+              "part_of": null,
+              "visible_state": "standalone item"
+            },
+            {
+              "description": "gray cylindrical object partially visible",
+              "id": "o4",
+              "part_of": null,
+              "visible_state": "standalone item"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "TRACK": {
+        "errors": [],
+        "payload": {
+          "changes": [
+            {
+              "a": "f0005",
+              "after": "blue cube held by robotic arm",
+              "b": "f0004",
+              "before": "blue cube on wooden surface",
+              "object": "o0"
+            },
+            {
+              "a": "f0010",
+              "after": "blue cube inside transparent box",
+              "b": "f0008",
+              "before": "blue cube held by robotic arm above box",
+              "object": "o0"
+            },
+            {
+              "a": "f0014",
+              "after": "gray cube remains on orange square",
+              "b": "f0000",
+              "before": "gray cube on orange square",
+              "object": "o1"
+            }
+          ],
+          "context": "A robotic arm manipulates a blue cube on a wooden surface near a transparent box with an orange top and a small gray cube on it.",
+          "coverage": "complete"
+        },
+        "valid": true
+      }
+    }
+  },
+  "skipped": [
+    {
+      "dependent_stage": "TRACK",
+      "reason": "invalid inventory"
+    }
+  ],
+  "status": "Strict format and ID consistency are not semantic correctness; generated initial hypotheses, goal-blind exposed RGB development diagnostic."
+}

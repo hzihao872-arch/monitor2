@@ -1,0 +1,759 @@
+                    This CVPR paper is the Open Access version, provided by the Computer Vision Foundation.
+                                 Except for this watermark, it is identical to the accepted version;
+                           the final published version of the proceedings is available on IEEE Xplore.
+
+
+
+
+ H ISTORY TO F UTURE       : Evolving Agent with Experience and Thought for
+                 Zero-shot Vision-and-Language Navigation
+
+                Guangzhao Dai1 , Shuo Wang2 , Zihan Wang3 , Guo-Sen Xie1 , Yang Yang1 ,
+                                Jinshan Pan1 , Qianru Sun4 , Xiangbo Shu1†
+     1
+       School of Computer Science and Engineering, Nanjing University of Science and Technology
+                           2
+                             School of Information, Renmin University of China
+                        3
+                          School of Computing, National University of Singapore
+           4
+             School of Computing and Information Systems, Singapore Management University
+                                                        †
+                                                            Corresponding author
+
+
+                                                                                  Training-based for VLN-CE              Naive-reasoning for zero-shot VLN-CE
+  “The only source of knowledge is experience. All knowledge of            Instruction                                      Instruction
+  reality starts from experience and ends in it.”
+                                                  — Albert Einstein                ���������� ����� ⟶ ��������                            ��� ⟶ ��������
+
+
+                          Abstract                                         Instruction
+
+                                                                                                       history experience       future thought
+Vision-and-Language Navigation in Continuous Environ-
+ment (VLN-CE) requires an agent to follow language                                            H-CoE                ��� ⟶ ��������            F-CoT
+instructions to navigate the target destination. With
+the advancement of large language models (LLMs), re-                         History experience                                       Future thought
+                                                                                                        updating
+cent efforts have explored adapting them for zero-shot                     trajectory      scene                                   Action       Landmark
+VLN-CE, offering a promising solution in addressing the                    History Chain-of-Experience (H-CoE)                Future Chain-of-Thought (F-CoT)
+drawbacks of poor generalization in the training-based                             Feedback Reasoning with H-CoE and F-CoT for zero-shot VLN-CE
+paradigm. However, existing LLM-based works primar-
+ily perform naive reasoning for decision-making and lack                Figure 1. Previous methods typically focused on the task of VLN-
+feedback, e.g., reviewing historical errors and predicting              CE under Training-based paradigms, suffering from poor zero-
+future potentials. Consequently, it may suffer from con-                shot generalization in unseen scenes. Recent methods address this
+tinuous failure for those initial error tasks. In this paper,           by LLMs in rich world knowledge and have explored adapting
+                                                                        them for zero-shot VLN-CE, but incur Naive reasoning without
+we rethink LLM-based zero-shot VLN-CE and propose a
+                                                                        feedback, e.g., reviewing historical errors and predicting future
+new paradigm, named E VO NAV, to improve the agent’s
+                                                                        potentials, leading to poor decision-making. This paper improves
+decision-making with future thought and history experience              LLM-based agents’ decision-making by the Feedback Reasoning
+via Future Chain-of-Thought (F-CoT) and History Chain-                  of history experience and future thought via History Chain-of-
+of-Experience (H-CoE). F-CoT predicts future actions and                Experience (H-CoE) and Future Chain-of-Thought (F-CoT).
+landmarks as thoughts to assist navigation progress esti-
+mation and direction selection, while H-CoE summarizes                  34] to achieve promising accuracy. However, such training-
+historical trajectories and scenes as experience to improve             based paradigms require models to build a fixed inductive
+navigation decision reliability. Both F-CoT and H-CoE co-               bias for certain seen environments, resulting in poor gener-
+operatively evolve the agent’s decision-making. Extensive               alization in new scenarios. More importantly, these draw-
+experiments in both the simulator and real-world environ-               backs of training-based paradigms (e.g., the top left of Fig-
+ments demonstrate the effectiveness of our E VO NAV.                    ure 1) have become more prominent and urgent problems
+                                                                        that need to be addressed for zero-shot embodied navigation
+1. Introduction                                                         tasks [35, 38, 39], particularly for zero-shot Vision-and-
+                                                                        Language Navigation in Continuous Environment (VLN-
+State-of-the-art embodied models [14, 47, 54] typically fol-            CE) [35, 38, 39, 44, 53]. This task enables the agent to
+low the training paradigm on task-specific datasets [6, 24,             follow language instructions, flexibly explore in a continu-
+
+
+
+                                                                   15177
+ous environment, and navigate to the destination.                  cooperative to refine the agent’s decision-making. Both ex-
+    Recently, with the rapid development of large language         tensive experiments in the simulator and real-world envi-
+models (LLMs) [1, 8, 18, 22], following powerful reason-           ronment demonstrate the effectiveness of our EvoNav.
+ing ability and rich commonsense knowledge, LLM-based                    In summary, our main contributions are:
+paradigms have become a promising approach for embod-
+                                                                   • We rethink LLM-based zero-shot VLN-CE and present a
+ied navigation. The emerging works have attempted to
+                                                                     new history-future reasoning paradigm, named E VO N AV,
+extend these versatile LLMs and adapt them for VLN-
+                                                                     which evolves the agent’s decision-making by backtrack-
+CE [2, 11, 26, 55, 57], achieving brilliant progress in ad-
+                                                                     ing history experience and predicting future thought.
+dressing the drawbacks of poor generalization under the
+                                                                   • We present a Future Chain-of-Thought (F-CoT) rea-
+training-based paradigm. As shown in the top right of Fig-
+                                                                     soning, which predicts future actions and landmarks as
+ure 1, these works generally use multiple generalist visual
+                                                                     thought to assist the agent in tracking current navigation
+translators (e.g., BLIP-2 [28]) to translate visual scenes into
+                                                                     progress and direction prediction.
+universal linguistic text [13, 26] and then reason about nav-
+                                                                   • We present a History Chain-of-Experience (H-CoE)
+igation actions with rich world knowledge in LLMs.
+                                                                     reasoning, which summarizes textual trajectories and vi-
+    Despite the significant progress achieved by LMMs,               sual scenes from historical episodes as experience to im-
+these methods use extra visual translators to indirectly pro-        prove current decision-making.
+cess visual environments rather than using LLMs, leading
+to poor reasoning of visual details. More importantly, these             For thorough examination (§5), we test E VO NAV across
+methods simply perform naive reasoning [12, 35, 53] for               several diverse open- and closed-source LMMs. Experi-
+decision-making and lack the feedback of backtracking his-            mental results demonstrate that E VO NAV outperforms the
+tory and predicting future, e.g., reviewing errors of histori-        counterparts, e.g., +20% SR, +21% OSR, and +17% SPL
+cal episodes and imagining potential results of future. Such          gains over R2R-CE [6], +6% SR, +7% OSR, and +4% SPL
+feedback is more valuable, especially for those failure cases.        on more complex NavRAG-CE [48], which requires agents
+Therefore, this leads to a question: have we fully unleashed          deeper understanding of user demands. E VO NAV not only
+the potential of LLMs for zero-shot VLN-CE?                           helps release the reasoning power of existing LLMs, but
+                                                                      also evidences the merits of historical experience and future
+    In this paper, the answer is “NO”. The above paradigm
+                                                                      thought methods in challenging VLN-CE decision-making.
+relying on naive reasoning without feedback may suffer
+                                                                      Source code will be released.
+from heavy decision hallucination for those failed tasks.
+Consequently, it may encounter continuous failure for those
+initial navigation error tasks. In contrast, like humans
+in navigation, we can continuously evolve our decision-
+                                                                      2. Related Work
+making from history to future feedback [7, 25], following             2.1. Vision-and-Language Navigation
+history → now → future. Among them, in assisting current
+decision-making, we summarize historical errors to provide            Vision-and-Language Navigation (VLN) tasks involve
+experience while imagining future results to avoid risk. In           agents navigating to target locations based on natural lan-
+light of this, it inspires us to follow the human mechanism           guage instructions. Traditional approaches primarily used
+for evolving agents in navigation. Thus, this paper rethink           discrete settings with the MP3D simulator [9], where navi-
+LLM-based zero-shot VLN-CE and propose a new frame-                   gation was based on predefined graphs and fixed node selec-
+work, named EvoNav, to improve the agent’s decision-                  tions. To enable more realistic interactions, the continuous
+making by history experience and future thought.                      environment setting (VLN-CE) was introduced, allowing
+    Specifically, as illustrated at the bottom of Figure 1,           agents to move freely using low-level actions. Initial VLN-
+EvoNav addresses the above process by two insightful rea-             CE methods employed encoder-decoder architectures [6]
+soning: ❶ History Chain-of-Experience (H-CoE) and ❷                   with LSTMs and attention [3, 16, 19, 27, 32, 36, 40–
+Future Chain-of-Thought (F-CoT). For ❶ H-CoE, it pro-                 43, 45, 49–52]. With the rise of vision Transformers [15],
+vides history experience from two complementary sources:              adapting Transformer models for VLN-CE became preva-
+textual trajectory experience and visual scene experience.            lent [5, 10, 21, 31, 33, 46]. Recent works fine-tuning large
+Among them, the textual trajectory experience provides                models, such as Navid [54] of scaling to 550k samples for
+global guidance for navigation episodes, while the visual             training LLM, offer promising solutions. However, training
+scene experience delivers local visual images for naviga-             VLN models on domain-specific data limits their zero-shot
+tion step. For ❷ F-CoT, it provides future thought by pre-            generalization on unseen environments. This paper focuses
+dicting future actions and landmarks, which assist agent to           on the more challenging and practical setting of zero-shot
+track the current navigation progress and potential moving            VLN-CE, aiming to improve LLM-based agents’ decision-
+directions. The history experience and future thought are             making by historical experience and future thought.
+
+
+
+                                                              15178
+    Overview framework @ Episode K:                                                                                                                        H-CoE: History trajectory experience
+                                                                                                                                                                                                                Full landmarks as text query
+                                                                                                                                                             Episode ≤ K-1: build trajectory experience
+                                                                                History Chain-of-Experience (H-CoE)        [Navigation input]
+
+
+
+
+                                                  Future Chain-of-Thought
+                                                                                                                                                              [output]            Error Analysis
+                                                                              History trajectory    History scene
+                  Waypoint predicator
+                                                                                                                             <Language instruction>         <Observation>        Correcte process                        Text-task
+                                        View 1                                   experience          experience                                                                                                          retrieval
+                                                                                                                             <View images>                    <Thought>             Key tips              updating
+                                                                              retrieval                    retrieval         …                               <prediction>         Double-check
+       Full
+
+
+
+
+                                                          (F-CoT)
+                                                                                text                        image            <Task experience>
+    Sub-actions
+                                        View 3                                                                               <Scene experience>
+       Full                                                                          Action prediction                                                     H-CoE: History scene experience
+    Landmarks                                                                                                              [Navigation output]                                                                 Future landmark as text query
+                                                                                                                                                             Episode ≤ K: build scene experience
+                                                                                                       Llama                  <Observation>                      LLM                                             Text-description
+     Language                                                                                                                                                            Description Text                            retrieval
+                                        View 12                                                                               <Thought>
+    instruction                                                                                                                                                                                    updating
+                                                                                                                              <Prediction>                                                                        Text-visual
+                                                                                                                                                                 CLIP    Visual embedding                          retrieval
+
+
+   Future Chain-of-Thought (F-CoT)
+
+    Ⅰ Instruction extraction                                                Ⅱ Predict future action                    Ⅲ     Estimate progress            Ⅳ Predict future landmark
+                                                                                                                                                                                                              Action prediction
+                                                                                                                                                                                                              <thought, experience>
+
+Figure 2. Overview framework of EvoNav. EvoNav addresses zero-shot VLN-CE with two complementary reasoning schemes: Future
+Chain-of-Thought (F-CoT) and History Chain-of-Experience (H-CoE). Given panoramic RGB and depth images, a standard waypoint
+predictor [20] first identifies candidate waypoint images. These images are then analyzed by the F-CoT, which predicts next-step actions
+and landmarks as thoughts to guide current navigation progress and direction. After that, H-CoE retrieves trajectory- and scene-related
+experience from a dynamic experience bank that continuously summarizes and stores completed trajectories and visited scenes. Finally,
+the retrieved historical experiences and future thoughts are fused within the action prediction module to support decision-making.
+
+2.2. Large Language Models for Navigation                                                                                                     ence can generalize to new environments.
+With the emergence of large language models (LLMs),                                                                                           3. Problem Formulation
+recent works have explored their potential in VLN-CE.
+Some approaches use LLMs as navigation planners, such                                                                                         Vision-and-Language Navigation in Continuous Environ-
+as DiscussNav [29], A2 Nav [13], CA-Nav [12], and Open-                                                                                       ments (VLN-CE) requires an agent to follow the language
+Nav [35]. To enhance LLM-based agents with naviga-                                                                                            instruction and navigate to the target location with low-level
+tion knowledge, some works scale domain-specific data or                                                                                      actions, such as move forward 0.25m, turn left and right
+train additional navigation modules [38, 54, 58]. While                                                                                       15°. At each step, the agent receives panoramic RGB-D vi-
+these methods improve performance, they hinder sim-to-                                                                                        suals O, comprised of 12 RGB images and depth images
+real transfer in VLN-CE, as they require extra data training.                                                                                 surrounding its current location (e.g., 0°, 30°, ..., 330°). In
+Additionally, these LLM-based works typically perform di-                                                                                     addition, the agent is provided with language instruction I
+rect unidirectional reasoning for decision-making and lack                                                                                    for each episode. No pre-built maps are allowed in this task.
+feedback, they may fail continuously after an initial nav-
+igation error, resulting in poor decision-making. In con-                                                                                     4. Method
+trast, this paper propose an EvoNav framework for zero-
+                                                                                                                                              4.1. Preliminary: LLM-based zero-shot VLN-CE
+shot VLN-CE that improves the agent’s decision-making by
+history experience and future thought.                                                                                                        Existing LLM-based paradigms of zero-shot VLN-CE pri-
+                                                                                                                                              marily simply associate the instruction I and current visual
+2.3. Lifelong Learning                                                                                                                        observations O with LLMs and perform direct reasoning to
+The most recent works [17, 23, 47, 56] propose to main-                                                                                       predict agent actions Anow , as follows
+tain global memory to store environment 3D structure for                                                                                                         LLM (O, I) → Anow .                    (1)
+embodied tasks, offering a promising solution in address-                                                                                     However, such a paradigm may suffer from heavy decision
+ing embodied navigation with lifelong learning. Such a                                                                                        hallucination due to neglecting the reasoning feedback, e.g.,
+memory-based approach shares a similar spirit with us in                                                                                      reviewing historical errors and predicting future potentials.
+evolving agents’ decision-making with history experience,                                                                                        In this paper, we rethink zero-shot VLN-CE and present
+but differs in key aspects. First, maintaining and updat-                                                                                     a novel paradigm, aka EvoNav, to continuously evolve the
+ing such memories typically relies on complex localiza-                                                                                       agent’s decision-making by leveraging reasoning of history
+tion tools (e.g., SLAM [23, 47]) to construct environment                                                                                     experience and future thought. As a result, the Eq. 1 is re-
+representation, while our experience is free from these ex-                                                                                   formulated as,
+tra tools. Second, these methods primarily directly store                                                                                                      experience              thought
+geometric structure but lack task-related knowledge, while
+                                                                                                                                                  H-C O E ← LLM (O, I) → Anow → F-C OT.                                                        (2)
+our experience improves its via task-related experience and
+thought. Third, such memories are useful only when the                                                                                        Overview Framework. As demonstrated in Figure 2,
+agent revisits the same environment, while EvoNav experi-                                                                                     EvoNav mainly contains two complementary reasoning
+
+
+
+                                                                                                                                  15179
+scheme: i) Future Chain-of-Thought (F-CoT, §4.2) that pre-        4.3. History Chain-of-Experience (H-CoE)
+dicts next-step actions and landmarks as thought to assist
+                                                                  Here, we elaborate a History Chain-of-Experience (H-CoE)
+in tracking current navigation progress and direction; and
+                                                                  reasoning, which online summarizes historical navigation
+ii) History Chain-of-Experience (H-CoE, §4.3) that summa-
+                                                                  task textual trajectories and visual images as experience, for
+rizes historical task-level decisions and step-level scenes as
+                                                                  improving the current decision-making process with simi-
+experience to assist current navigation decisions.
+                                                                  lar instructions or scenes. This is achieved by two comple-
+4.2. Future Chain-of-Thought (F-CoT)                              mentary historical experiences, the textual trajectory expe-
+                                                                  rience and the visual scene experience, as follows.
+F-CoT is designed to assist in navigation progress estima-
+tion and direction selection with future thought by four          4.3.1. Textual Trajectory Experience
+main stages: instruction extraction, future action prediction,    Metric Evaluation. For each finished episode, we online
+progress estimation, and future landmark prediction.              test the agent’s effective and efficient performance R with
+4.2.1. Instruction Extraction                                     moving to the destination, formulated as,
+To capture instruction details, we use LLM to parse the full                R = ψ(NE,SR,OSR,SPL) N av, N av GT ,
+                                                                                                                   
+                                                                                                                          (7)
+instructions into two subsets, i.e., temporal sub-actions and
+spatial landmarks. The sub-actions correspond to the move-         where N av and N av GT are predicted path and ground-
+ments (e.g., “go through”) while spatial landmarks are ob-         truth path. The (NE, SR, OSR, SPL) denotes evaluation
+jects (e.g., “the white double doors”) in the instruction, as      metrics, please see more metric details in Sec. 5.1.
+
+                     I t , I s = LLM (I) ,
+                              
+                                                            (3)       Navigation Summary. Using R and the complete navi-
+        s   t
+where I /I denotes the parsed full sub-actions/landmarks.             gation trajectory H∗ of each finished episode, we prompt
+                                                                      LLM to summarize its decision process as the experience E
+4.2.2. Predict Future Action                                          to assist the decision-making for future similar episodes, as
+To track navigation progress, we use an LLM to predict fu-            • Rule 1-Complete Failure (SR=0): Carefully analyze the
+ture actions P f . Note that since future actions have not yet          navigation error; Provide a corrected navigation process;
+occurred, the agent’s state can be inferred by excluding the            Summarize key tips for similar tasks; and double-check.
+predicted future action from completed sub-actions, as                • Rule 2-Perfect Navigation (SR=1 and SPL ≥ 0.8): Re-
+                                                                        produce this decision process exactly as supported.
+                  P f = LLM (H, O, I) ,                    (4)
+                                                                      • Rule 3-Successful but Inefficient (SR=1 and SPL < 0.8):
+where the H denotes the past step’s path information before             Provide optimized navigation suggestions for higher SPL.
+the current step. Note that when the agent is in the start
+position, the H is set as “Step 0 start position”.                    Trajectory Experience Construction. With each fin-
+                                                                      ished episode’s trajectory experience E, we use chroma (a
+4.2.3. Estimate Progress                                              vector database) to continuously store it in the experience
+Based on the future action P f , we comprehensively re-               bank M. When the n-th episode is finished, the Mn is on-
+view the historical finished path to infer current navigation         line constructed as,
+progress, i.e., have executed actions Ad , as,                                                                      N
+                                                                               Mn = Mn−1 ∪ [(In , Ins , Hn∗ , En )]n=1 ,       (8)
+                Ad = LLM I s , I t , P f , H .
+                                             
+                                                          (5)
+                                                                      where N is the dataset volume. Please Note that experi-
+4.2.4. Predict Future Landmark                                        ence can only be collected after an episode is completed.
+To enhance the agent’s perception of the future direction,            In other words, when the n-th episode is not finished, M
+we prompt the LLM to infer future landmarks from all po-              stores only the experience from the previous (n−1) episode.
+tential landmarks, by the following rules:
+• Rule 1-When the next action explicitly references a land-
+  mark: i) Extract the mentioned landmark object; ii)                 Trajectory Experience Retrieval. Here, we use the full
+  Match it with an entry in the Landmarks List; iii) Out-             landmarks I s of the current episode as the query to retrieve
+  put the landmark name exactly as recorded in the list.              the top-K experiences from M. For n-th episode, the re-
+• Rule 2-When the next action only describes directional              trieved trajectory experiences Tne is formulated as,
+  movement without a landmark reference: Actions likes                                            
+                                                                                                       Ins · M(n−1)
+                                                                                                                           
+                                                                                 e
+  “Turn left/right” “Go forward” contain no landmark in-                       Tn = T 2Tretrieval                            ,  (9)
+                                                                                                    ||Ins || · ||M(n−1) ||
+  formation and should directly output “None.”
+With above rules, the future landmark Lf is calculated as,            where T 2Tretrieval is the retrieval of cosine similarity.
+               Lf = LLM I, I s , I t , Ad .
+                                           
+                                                         (6)          M(n−1) is stored experience from previous (n−1) episode.
+
+
+
+                                                              15180
+4.3.2. Visual Scene Experience                                                          where Rn , Sn , and Yn denotes the agent’s reasoning
+Scene Experience Construction. During navigation, we                                    process, viewpoint description, and selected viewpoint to
+extract visual descriptions at each step using the LLM,                                 move. Finally, we aggregate that information with the pre-
+                                                                                                                                         ′
+which are projected into the embedding vector d and stored                              vious H to update the n-step navigation history H .
+in the scene-description experience bank D. Meanwhile,
+visual appearance features are extracted using CLIP, and                                5. Experiments
+their embeddings f are stored in the scene-appearance ex-                               5.1. Experiment Setup
+perience bank F. For the i-th navigation step in the n-th
+episode, the experience banks are constructed as follows:                               Simulated Environments. Following the protocol of pre-
+                                                                                        vious zero-shot works [35, 38, 39, 54], we use the sam-
+                                 i−1                          i−1
+                           din                            fni                           pled R2R-CE [6] for evaluation. Following the above proto-
+                                                     
+ Dn , Fn = Dn−1 ∪                  i=1
+                                         , Fn−1 ∪                     i=1
+                                                                            . (10)
+                                                                                        col, we sample a new subset from more complex NavRAG-
+Please Note that experience can only be collected after a                               CE [48] for a better evaluation, which requires the agent
+navigation step is completed. In other words, when the                                  to understand difficult human demands. Please see supple-
+agent is executing n-th episode at i-th step, D or F stores                             mentary material for more details about the datasets.
+only the scene images before n-th episode at (i − 1) step.
+                                                                                        Real-world Environments. To further evaluate our ap-
+Experience Retrieval. Here, we use the future landmarks                                 proach in real-world settings, we conducted comprehen-
+Lf as the query text, which response potential direction se-                            sive experiments across four representative indoor environ-
+lection (cf. Eq. 6), to retrieve scene experience in two ways:                          ments: Laboratory, Corridor, Elevator Lobby, and Study
+text-description retrieval (T 2Dretrieval ) and text-visual re-                         Room. For each, we collected and annotated 20 language
+trieval (T 2Vretrieval ). Specifically, the former focuses on                           instructions, covering both simple and complex tasks. Note
+the text-to-description similarity in query text and scene de-                          that these annotated samples are excluded from the simu-
+scription d, while the latter focuses on the text-to-visual                             lated datasets. This diverse set allows for a thorough eval-
+similarity by using CLIP [37] to project query text and                                 uation of the agent’s performance in real-world conditions.
+stored visual images into feature space. For the n-th episode
+at i-th step, the retrieved top-K scene images Vne (cf. Fig-                            Evaluation Metrics. Following the standard VLN-CE
+ure 5 (c) about K-number ablation) is formulated as,                                    protocol [4, 5, 38, 39, 54], we evaluate our EvoNav nav-
+                                                                                        igation performance in the following metrics: success rate
+                       Vne = V d + V f ,                                     (11)
+                                                              !                         (SR), oracle success rate (OSR), normalized Dynamic Time
+                                            Lfi · Dn                                    Warping (nDTW), success weighted by path length (SPL),
+          V d = T 2Dretrieval                                     ,          (12)       trajectory length (TL), and navigation error (NE).
+                                         ||Lfi || · ||Dn ||
+                                                              !                         5.2. Comparison on Simulated Environment
+            f                               Lfi · Fn
+           V = T 2Vretrieval                                      .          (13)       Table 1 and Table 2 compare the performance of EvoNav
+                                         ||Lfi || · ||Fn ||
+                                                                                        with recent VLN-CE methods on the R2R-CE and
+4.4. Action Prediction                                                                  NavRAG-CE benchmark, including supervised VLN-CE,
+                                                                                        zero-shot VLN-CE with extra pre-training, and zero-shot
+Based on the above process, the agent’s action prediction is                            VLN-CE with train-free approaches. Overall, compared to
+improved by historical experience and future thought, as                                zero-shot VLN-CE methods on Table 1 and Table 2, our ap-
+• View Observation: Concisely describe visible objects in                               proach achieves state-of-the-art (SOTA) results across all
+  the view and their spatial relationships.                                             metrics, demonstrating the effectiveness of EvoNav. All
+• Thought Assistance: Using Lf in assisting current direc-                              methods, except Smartway-GPT4o [38] and MapGPT-CE-
+  tion prediction. Please see thought details in Eq. 6.                                 GPT4o [11], are evaluated using the same waypoint predic-
+• Experience Assistance: Retrieve the related trajectory Ent                            tor to allow us to exclude and focus on the performance of
+  and scene E v experience for the current episode. Please                              the methods themselves. Specifically, in Table 1, EvoNav
+  see experience details in Eq. 9 and Eq. 11.                                           outperforms Open-Nav with the same Gemini-2.5-pro on
+• Viewpoint selection: Based on the above information, se-                              SR (+20%) and OSR (+21%), and outperforms Smartway-
+  lect the most suitable viewpoint to move.                                             GPT4o [38] of pretraining the waypoint predictor with more
+Overall, for i-th navigation step at the n-th episode, the                              data on NE, SR, and SPL. In Table 2, EvoNav also out-
+agent’s action prediction is formulated as,                                             performs other recent methods and achieves SOTA results
+    Rn , Sn , Yn = LLM I s , I t , I, H, O, T e , V e , Ad ,
+                                                                                       across multiple diverse LLMs on NavRAG-CE, which tests
+                                                            (14)                        the agent’s ability to handle more complex user demands.
+                                                                                        This proves the superiority and effectiveness of our EvoNav.
+
+
+                                                                                    15181
+          Leave the bathroom. Go through the door straight across
+          the hall walk straight through the kitchen. Turn left at          Future thought                         History Trajectory experience            History Scene experience
+                                                                            Future action: Walk straight through   step1: <observation><thought><action>.
+          the end of the bar turn left again and go in the room to
+                                                                            the kitchen.                           ⋯
+          the right stand in between the closet and the sink.               Future landmark: Kitchen               step6: <observation><thought><action>.
+
+                                                                          [Step 3]$input: <instruction> <sub-actions, landmarks>⋯<future thought> <history experience>
+                                                         EvoNav           $output: Observation: "View 0 in Step 3: This view looks straight down a narrow
+                                                                          pantry or kitchen hallway. On the left are dark shelves filled with white dishes,
+                                                                          about 1-2 meters away. The hallway continues forward, leading into a more open
+                                                                          kitchen area with a refrigerator visible on the right." thought: I have successfully
+                                                                          left the bathroom and entered the kitchen area. The future action help me proves this
+                                                                          progress again. The current instruction is to "walk straight through the kitchen". I
+                                                                          am in a long pantry that leads into the main kitchen. To follow the future Kitchen, I
+                     Viewpoint: 0                                         must continue moving forward to find it. Scene experience show kitchen area’s images.
+                                                  Viewpoint: 6            The Viewpoint 0 offers the most direct and central path forward, which best aligns
+                                           Viewpoint: 11
+                                                                          with the instruction to walk straight. Therefore, I will proceed straight ahead,
+                                                                          which match the thought of waking through the kitchen in Trajectory experience.
+                                                                          prediction: '0'
+                                  Step 3
+                   Viewpoint: 5                                           [Step 3] $input: <task description> <sub-actions, landmarks>
+                                                                          $output: observation: "7": "Direction Viewpoint ID: 7 in Step ID 3: This view is to
+                                                  Viewpoint: 7
+                                                                          the right, showing a countertop and sink against a dark tiled wall. To the right of
+                                                                          this is a dark wooden door frame leading into a bedroom, where a bed is visible about
+                                                                          2-3 meters away.", thought: The first action to leave the bathroom has been completed.
+                                                                          The next step is to go through the door straight across the hall. Viewpoint ID 7
+                                                                          shows a hallway and a door, which aligns with the instruction. Therefore, moving to
+                                                          SOTA            Viewpoint ID 7 is the most suitable choice to follow the instruction.
+                                                                          prediction: '7'
+
+
+Figure 3. Navigation demo in simulated environment on R2R-CE. The left denotes navigation trajectories between the SOTA method and
+our EvoNav. For a better view, we also provide the navigation decision-making details of the key step, which highlight the effect of the
+proposed future thoughts and historical experience. Please see more navigation demo of the simulated environment in the Appendix.
+
+Table 1. Performance comparison on the R2R-CE benchmark. “†”                                              Table 2. Comparison with recent SOTA methods on the NavRAG-
+denotes using the result reported in [38]. “-” denotes unavailable                                        CE benchmark. Best and second-best results are highlighted.
+statistics. Best and second-best results are highlighted.
+                                                                                                              Method                                               NE↓ OSR↑ SR↑ SPL↑
+ Method                                      NE↓ nDTW↑ OSR↑ SR↑ SPL↑
+                                                                                                              Zero-shot VLN-CE with train-free
+ VLN-CE with supervised learning                                                                              Random                           14.95 9.15 2.13 1.76
+ CMA [20]                        6.92                   50.77        45      37      32.17                    InstructNav-GPT4o [30]           13.62 20.62 13.40 7.93
+ RecBERT[20]                      5.8                   54.81        57      48      43.22                    DiscussNav-GPT4o [29]             7.99 22.73 14.58 8.25
+ BEVBert [4]                     5.13                   61.40        64      60      53.41                    Open-Nav-GPT4o [35]               6.81  38    22 11.89
+ ETPNav [5]                      5.16                   61.16        63      58      52.19                    Open-Nav-Gemini-2.5-pro [35]      6.77  44    24 13.39
+ Zero-shot VLN-CE with extra pre-training                                                                     EvoNav-GPT4o (ours)               6.77  41    29 14.28
+ SmartWay-GPT4o [38]              7.01                     -         51      29      22.46                    EvoNav-Gemini-2.5-pro (ours) 6.20       51    30 17.60
+ Zero-shot VLN-CE with train-free                                                                         navigation demos in Figure 4. Overall, these results prove
+ Random                           8.63                  34.08         12    2 1.50
+ LXMERT [20]                      10.48                 18.73         22    2 1.87                        the effectiveness of our method for real-world navigation.
+ DiscussNav-GPT4† [29]            7.77                  42.87         15   11 10.51
+ NavGPT-CE-GPT4† [57]             8.37                    -          26.9 16.30 10.20                     5.4. Ablation Study
+ MapGPT-CE-GPT4o† [11]            8.16                    -           21    7 5.04
+ Open-Nav-GPT4o [35]              6.70                  45.79         23   19 16.10
+                                                                                                          5.4.1. Ablation of Different LLMs on Navigation
+ Open-Nav-Gemini-2.5-pro [35] 7.28                      49.51         30   23 19.90                       As shown in Table 5, we generalize EvoNav across both
+ EvoNav-GPT4o (ours)              5.97                  56.32         35   30 24.91                       open-source and closed-source LLMs. Overall, agents us-
+ EvoNav-Gemini-2.5-pro (ours) 5.04                      62.38         51   43 37.77
+                                                                                                          ing closed-source LLMs (e.g., Gemini-2.5-pro) outperform
+                                                                                                          those based on open-source models, benefiting from richer
+                                                                                                          data optimization and computing resources. Despite this,
+5.3. Comparison on Real-world Environments                                                                our EvoNav that equips open-source models, e.g., Llama4-
+                                                                                                          Maverick, achieves comparable SR and SPL to GPT-4o.
+To further evaluate the generalizability of our approach,                                                 This demonstrates that EvoNav can effectively adapt to dif-
+we deploy EvoNav on an omnidirectional wheeled robot                                                      ferent LLMs and unleash their reasoning capabilities, prov-
+in real-world environments. We collect data from four di-                                                 ing its robustness and generalizability.
+verse scenes, e.g., Laboratory, Corridor, Elevator Lobby,
+and Study Room, annotating 20 samples per scene. As                                                       5.4.2. Ablation of Key Components of EvoNav
+shown in Table 3, we compare our method with several pre-                                                 (1) A1→A3: Future Action and Landmark in F-CoT.
+vious works (e.g., CMA, BevBert, and Open-Nav) in the                                                     We analyze the impact of future action (cf. Eq. 4) and
+zero-shot VLN-CE setting, achieving SOTA results across                                                   landmark (cf. Eq. 6) information in F-CoT, as shown in
+all metrics. Additionally, we visualize several real-world                                                A1→A3 of Table 4. Here, “Base” denotes results of the
+
+
+
+                                                                                                15182
+                                                         Table 3. Comparison on Real-world Environments
+                                                  Laboratory                            Corridor                      Elevator Lobby                Study Room
+  Method
+                                         NE↓            OSR↑         SR↑       NE↓       OSR↑        SR↑       NE↓        OSR↑         SR↑   NE↓      OSR↑        SR↑
+
+  CMA[20]                                2.94            30          30        3.11        20         20       3.01         20         10    3.10       25        20
+  BEVBert[4]                             3.00            25          20        3.05        30         25       2.96         25         20    3.12       35        20
+  NaVid[54]                              2.88            35          30        3.06        25         20       2.74         30         25    3.03       25        20
+  Open-Nav-Gemini-2.5-pro [35]           2.86            35          35        3.07        20         15       2.72         30         25    3.05       25        15
+  EvoNav-Gemini-2.5-pro (ours)           2.58            45          40        2.75        40         35       2.55         40         35    2.66       45        40
+
+
+                           Table 4. Ablation of key components of F-CoT and H-CoE of EvoNav on R2R-CE Dataset.
+
+                          F-CoT (Sec. 4.2)                                     H-CoE (Sec. 4.3)
+    Methods                                                                                                            NE↓       nDTW↑       OSR↑      SR↑       SPL↑
+                     P f (Eq. 4)   Lf (Eq. 6)                  T e (Eq. 9)      V d (Eq. 12)    V f (Eq. 13)
+
+      Base              ✗                ✗              ✗               ✗                                  ✗           8.43       38.42       14        9        7.46
+  Ablation of using future action P f and landmark Lf in F-CoT
+       A1               ✓                ✗              ✗               ✗                                  ✗           6.31       53.62       33       25        22.10
+       A2               ✗                ✓              ✗               ✗                                  ✗           6.39       52.57       31       23        19.96
+       A3               ✓                ✓              ✗               ✗                                  ✗           5.79       56.22       36       27        24.92
+  Ablation of using trajectory T e experience in H-CoE
+       B1               ✓                ✓              ✗               ✗                                  ✗           5.79       56.22       36       27        24.92
+       B2               ✓                ✓              ✓               ✗                                  ✗           5.69       58.10       42       31        27.64
+  Ablation of using scene (V d ,V f ) experience in H-CoE
+       C1               ✓                ✓              ✗               ✓                                  ✗           5.39       59.53       48       39        33.21
+       C2               ✓                ✓              ✗               ✗                                  ✓           5.42       59.82       46       37        32.78
+       C3               ✓                ✓              ✗               ✓                                  ✓           5.36       60.09       48       40        34.07
+  Ablation of using trajectory T e and scene (V d ,V f ) experience in H-CoE
+       D1               ✓                ✓              ✓               ✗                                  ✓           5.37       60.24       47       39        33.39
+       D2               ✓                ✓              ✓               ✓                                  ✗           5.05       61.11       51       41        36.11
+  Full pipeline         ✓                ✓              ✓               ✓                                  ✓           5.04       62.38       51       43        37.77
+
+Table 5. EvoNav performance with different LLMs on R2R-CE.
+ Method                           NE↓       nDTW↑             OSR↑    SR↑      SPL↑             Table 4. Here, we removed the trajectory experience to
+ The close-source LMMs                                                                          allow us to focus on the effect of scene experience itself.
+ GPT-4o                           5.97          56.32          35         30   24.91            Based on A3, agents with either scene description or ap-
+ Gemini-2.5-pro                   5.04          62.38          51         43   37.77
+ Claude-sonnet-4.5                7.77          45.67          23         18   14.98            pearance experience show performance gains, with the for-
+ Doubao-1.5-Thinking-vision-pro   6.44          53.67          36         28   23.26
+                                                                                                mer achieving more. Compared with visual appearance in
+ The open-source LMMs
+ Qwen2.5-vl-72b                   6.78          49.29          24         19   15.76
+                                                                                                C1, C2 of visual description achieves higher performance,
+ GLM-4.5v                         7.13          45.96          21         16   13.89            as LLMs with rich commonsense knowledge provide more
+ Qwen3-vl-235b-a22b-instruct      6.86          51.25          37         30   23.89
+ Llama4-Maverick                  6.79          49.28          31         27   22.43            refined visual observation even through using only a textual
+                                                                                                description. Nevertheless, visual appearance can still offer
+baseline, which is direct answering through Gemini-2.5-                                         key visual information that is absent in LLM’s textual de-
+pro from the visual observation and instruction. In view                                        scription, e.g., color, layout, and texture, improving the vi-
+of “Base”, A1 outperforms A2. This is because the future                                        sual appearance. Finally, C3 achieves the best performance
+landmarks obtained in A2 are sub-optimal, resulting from                                        when combining both scene description and appearance.
+incomplete progress estimation due to the absence of future-                                    (4) D1→D2: Trajectory and Scene Experience in H-CoE.
+action guidance. Based on A2, the performance of A3 is im-                                      We examine the effect of combining trajectory, scene de-
+proved. This proves that both future action and landmarks                                       scription, and appearance experience, as shown in D1→D2
+are essential for better decision-making.                                                       of Table 4. Similar to the findings on the strength of visual
+(2) B1→B2: Trajectory Experience in H-CoE. We eval-                                             description in LLMs, D2 outperforms D1, which combines
+uate the impact of trajectory experience (cf. Eq. 9), as                                        historical textual trajectory and holistic appearance experi-
+shown in B1→B2 of Table 4. Compared to B1, B2 achieves                                          ence. The full pipeline achieves the best performance by in-
+a significant performance gain when provided with summa-                                        tegrating F-CoT and H-CoE. In summary, the ablation study
+rized experiences from similar past episodes. This high-                                        confirms that all components of EvoNav are essential and
+lights the effectiveness of historical trajectory experience.                                   contribute synergistically to the final performance.
+(3) C1→C3: Scene Experience in H-CoE. We examine                                                5.4.3. Ablation of Retrieval Period
+the effect of scene description (cf. Eq. 12) and appearance                                     We evaluate the performance of different experience re-
+(cf. Eq. 13) experience in H-CoE, as shown in C1→C3 of                                          trieval periods for VLN-CE, as shown in Figure 5(a). “0-
+
+
+
+                                                                                       15183
+     Decision-making with future thought and history experience         Human instruction: Move forward to the deep red table, turn right and walk through hallway, stop before the round white table.
+
+                                                                     Future thought                                History Trajectory experience                                                                                                                                       History Scene experience
+                                                                     Future action: Move forward to the            {Step1: <observation>View 0 contains a deep red table on the left, a white table area in the distance. The deep red table is ~2m ahead.<thought>View 0 shows
+                                                                                                                   the deep red table ahead, aligning with moving forward toward it. <prediction> view 0}; {<Step2: <observation> View 4 shows the scene after turning right, with
+                                                                     deep red table                                the white table area ahead.<thought> View 4 matches the need to turn right toward the white table. <prediction> view 4}; ….; {Step4: <observation> view 6
+                                                                     Future landmark: Deep red table               shows the power socket area near the white table, the stopping point.<thought>View 6 aligns with stopping at the power socket. <prediction>view 6>}
+
+
+
+                                                                  [Step 2]$input: <instruction> <sub-actions, landmarks>,⋯⋯,<future thought> <history experience>
+                                                                  $output: Observation: View 0 in Step 2: This view contains a deep red table, a brown desk with two monitors, a person, a tall stand, a red
+                                                                  container. The deep red table is ~2m ahead, with a brown desk ~3m behind, and a brown desk ~2.5m right. thought: From the provided future
+                                                                  action and landmark, I have not finished them. Thus, I need to move an view that includes the deep red table. The scene experience shows
+                                                                  images of the red table, and the trajectory experience offers several paths to find it. The View 0 shows a deep red table and central path
+                                                                  forward, which best aligns with the future landmark to move forward. Therefore, I will select view 0 to move. prediction: view 0
+
+
+
+
+                                                                                                                   View 4 View 2
+                                                                                                                                             View 0
+
+                                                                              Step 1                                     Step 2                                                           Step 3                                                           Step 4                                                 Step 5
+Figure 4. Navigation demo in the real world. For a better view, we also provide the decision-making details of the key step (step 2), which
+highlights the effect of the proposed future thoughts and historical experience. Please see more real-world demos in the Appendix.
+                                                                                OSR↑        SR↑          SPL↑                                                               OSR↑               SR↑               SPL↑                                                                  OSR↑            SR↑          SPL↑
+                                               55                                                   51                                     55                                     51                                                                      55                                                 51
+                                                                                                                  48                                      48                                             49                                                                                    48                    49
+                                               50                                                                                          50                                                                                   46                        50                                                                 47
+                                                                                    42                                                                                                                                                                                               45
+                                               45                                                   43                                                                            43                                                                                 42                                      43
+                                                                                                                  40                       45                                                            41                                               45                                                         40
+                                                                      36                                                                                   40                                                                                                                                   39
+                                               40
+                                                                                    33                                                     40                                                                                   35                        40                                                                 35
+                                               35                                                                                                                                                                                                                                    34
+                                                                      27                           37.77        35.23                      35                                                                                                             35         31
+                                               30                                                                                                                              37.77                                                                                                                    37.77
+                                                                                                                                                                                                      34.26                                                                                   35.28                 35.41
+                                               25                                  30.19                                                   30           34.07                                                                 32.19
+                                                                                                                                                                                                                                                          30                                                                33.65
+                                                                     24.92                                                                                                                                                                                         27.64             31.2
+                                               20                                                                                          25                                                                                                             25
+                                                                    0-start      10-start         30-start      50-start                                0-traj                 1-traj                 2-traj                 3-traj                              0-imag          1-imag       2-imag    4-imag     5-imag   6-imag
+
+                                                                  (a) Effect of retrieval period: history experience                         (b) Effect of different volumes: trajectory experience                                                         (c) Effect of different volumes: scene experience
+
+                         Figure 5. Ablation of different retrieval period (a), volumes of trajectory experience (b), and volumes of scene experience (c).
+
+start” refers to not using historical experience (cf. A3 of                                                                                                                                           Table 6. Comparisons of run time and GPU memory on the same
+Table 4), while “10/30/50-start” indicates the agent begins                                                                                                                                           RTX 3090 GPU and the same LLM’s API (Gemini-2.5-pro).
+constructing the experience bank during the first 10/30/50%                                                                                                                                                Method                                       OSR↑                   SR↑              Time (mins) ↓               GPU (GB) ↓
+of the navigation episode and starts retrieving experience af-                                                                                                                                             Open-Nav [35]                                30                     23               14.7                        12.5
+terward. The results show performance improves gradually,                                                                                                                                                  EvoNav (ours)                                51↑21                  43↑20            7.6↓7.1                     2.4↓10.1
+peaking at 30%, then declining. This suggests that start-
+ing retrieval too early leads to lower similarity between the                                                                                                                                         LLM’s API (Gemini-2.5-pro). Specifically, our EvoNav not
+current episode and retrieved experiences, as the experience                                                                                                                                          only outperforms to SOTA method over 20% on SR and
+bank contains fewer relevant examples. Conversely, starting                                                                                                                                           OSR but also is more efficient, such as Open-Nav vs. Ours:
+retrieval too late limits the benefit of the experience.                                                                                                                                              1) inference GPU memory: 12.5 G vs. 2.4 G; 2) inference
+                                                                                                                                                                                                      times per episode: 14.7 mins vs. 7.6 mins. Overall, this
+5.4.4. Ablation of Experience Volume
+                                                                                                                                                                                                      proves our work is more effective and also practical.
+As shown in Figure 5 (b)→(c), we evaluate the performance
+of different volumes of trajectory and scene experience. “0-                                                                                                                                          6. Conclusion
+traj/image” means no trajectory/scene experience is used                                                                                                                                              This paper rethinks LLM-based zero-shot VLN-CE and
+from the full pipeline (cf. C3/B2 of Table 4). “1/2/3-traj”                                                                                                                                           introduces a framework with the history-future reasoning
+and “1/2/3/4/5/6-image” refer to retrieving corresponding                                                                                                                                             (named EvoNav) for zero-shot VLN-CE, which improves
+numbers of trajectory/scene experiences. In Figure 5 (b),                                                                                                                                             the agent’s decision-making by history experience and fu-
+results of “1-traj” outperforms “2-traj”, achieving the best                                                                                                                                          ture thought via Future Chain-of-Thought (F-CoT) and
+results. Similarly, in Figure 5 (c), scene experience per-                                                                                                                                            History Chain-of-Experience (H-CoE). F-CoT predicts fu-
+formance improves gradually, peaking at “4-image”. This                                                                                                                                               ture actions and landmarks as thoughts to assist navigation
+suggests that increasing historical experience does not nec-                                                                                                                                          progress estimation and direction selection, while H-CoE
+essarily improve performance. Excessive experience, how-                                                                                                                                              summarizes historical trajectories and scenes as experience
+ever, can introduce irrelevant noise, reducing context qual-                                                                                                                                          to improve navigation decision reliability. In future work,
+ity and, ultimately, navigation performance.                                                                                                                                                          we aim to explore the multi-agent collaboration to improve
+5.4.5. Analysis of Run Time and GPU Memory                                                                                                                                                            the reasoning ability of LLM-based agents. One more thing,
+Table 6 summarizes the computational cost comparisons be-                                                                                                                                             we hope E VO NAV can encourage the embodied community
+tween EvoNav with the more recent Open-Nav. For a fair                                                                                                                                                to further explore the idea of “review history and dream
+comparison, we fixed them with the same GPU device and                                                                                                                                                future” in evolving challenging agents’ decision-making.
+
+
+
+                                                                                                                                                                                      15184
+Acknowledgement. The work is supported by the National                    continuous environments. IEEE TPAMI, 47(11):10441–
+Natural Science Foundation of China (No.     U25A20442,                   10456, 2025. 2, 3
+62427808, 62472222, and 62276134), the Natural Science               [13] Peihao Chen, Xinyu Sun, Hongyan Zhi, Runhao Zeng,
+Foundation of Jiangsu Province (No. BK20240080), and the                  Thomas H. Li, Gaowen Liu, Mingkui Tan, and Chuang Gan.
+National Defense Science and Technology Industry Bureau                   A2 nav: Action-aware zero-shot robot navigation by exploit-
+Technology Infrastructure Project (No. JSZL2024606C001).                  ing vision-and-language ability of foundation models. arXiv
+                                                                          preprint arXiv:2308.07997, 2023. 2, 3
+                                                                     [14] Guangzhao Dai, Shuo Wang, Hao Zhao, Bin Zhu, Qianru
+References                                                                Sun, and Xiangbo Shu. Thinkmatter: Panoramic-aware
+ [1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ah-                instructional semantics for monocular vision-and-language
+     mad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida,             navigation. IEEE TIP, 35:1937–1950, 2026. 1
+     Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al.         [15] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov,
+     Gpt-4 technical report. arXiv preprint arXiv:2303.08774,             Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner,
+     2023. 2                                                              Mostafa Dehghani, Matthias Minderer, Georg Heigold, Syl-
+ [2] Michael Ahn, Anthony Brohan, Noah Brown, and et al. Do               vain Gelly, et al. An image is worth 16x16 words: Trans-
+     as i can and not as i say: Grounding language in robotic af-         formers for image recognition at scale. arXiv preprint
+     fordances. In arXiv preprint arXiv:2204.01691, 2022. 2               arXiv:2010.11929, 2020. 2
+ [3] Dong An, Yuankai Qi, Yan Huang, Qi Wu, Liang Wang, and          [16] Daniel Fried, Ronghang Hu, Volkan Cirik, Anna Rohrbach,
+     Tieniu Tan. Neighbor-view enhanced model for vision and              Jacob Andreas, Louis-Philippe Morency, Taylor Berg-
+     language navigation. In ACM MM, pages 5101–5109, 2021.               Kirkpatrick, Kate Saenko, Dan Klein, and Trevor Darrell.
+     2                                                                    Speaker-follower models for vision-and-language naviga-
+ [4] Dong An, Yuankai Qi, Yangguang Li, Yan Huang, Liang                  tion. In NeurIPS, pages 3318–3329, 2018. 2
+     Wang, Tieniu Tan, and Jing Shao. Bevbert: Multimodal map        [17] Muhammad Fadhil Ginting, Dong-Ki Kim, Xiangyun Meng,
+     pre-training for language-guided navigation. In ICCV, pages          Andrzej Reinke, Bandi Jai Krishna, Navid Kayhani, Ori-
+     2737–2748, 2023. 5, 6, 7                                             ana Peltzer, David D Fan, Amirreza Shaban, Sung-Kyun
+ [5] Dongyan An, H. Wang, Wenguan Wang, Zun Wang, Yan                     Kim, et al. Enter the mind palace: Reasoning and planning
+     Huang, Keji He, and Liang Wang. Etpnav: Evolving topo-               for long-term active embodied question answering. arXiv
+     logical planning for vision-language navigation in continu-          preprint arXiv:2507.12846, 2025. 3
+     ous environments. IEEE TPAMI, 47:5130–5145, 2025. 2, 5,         [18] Daya Guo, Dejian Yang, Haowei Zhang, Song, and et al.
+     6                                                                    Deepseek-r1: Incentivizing reasoning capability in llms via
+ [6] Peter Anderson, Qi Wu, Damien Teney, Jake Bruce, Mark                reinforcement learning. arXiv preprint arXiv:2501.12948,
+     Johnson, Niko Sünderhauf, Ian D. Reid, Stephen Gould, and           2025. 2
+     Anton van den Hengel. Vision-and-language navigation: In-       [19] Yicong Hong, Cristian Rodriguez, Yuankai Qi, Qi Wu, and
+     terpreting visually-grounded navigation instructions in real         Stephen Gould. Language and visual entity relationship
+     environments. In CVPR, pages 3674–3683, 2018. 1, 2, 5                graph for agent navigation. In NeurIPS, pages 7685–7696,
+ [7] Monika Ardelt and Sabine Grunwald. The importance of                 2020. 2
+     self-reflection and awareness for human development in hard     [20] Yicong Hong, Zun Wang, Qi Wu, and Stephen Gould. Bridg-
+     times. Research in Human Development, 15(3-4):187–199,               ing the gap between learning in discrete and continuous en-
+     2018. 2                                                              vironments for vision-and-language navigation. In CVPR,
+ [8] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin              pages 15418–15428, 2022. 3, 6, 7
+     Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun            [21] Haoshuo Huang, Vihan Jain, Harsh Mehta, Alexander Ku,
+     Tang, et al. Qwen2. 5-vl technical report. arXiv preprint            Gabriel Magalhães, Jason Baldridge, and Eugene Ie. Trans-
+     arXiv:2502.13923, 2025. 2                                            ferable representation learning in vision-and-language navi-
+ [9] Angel X. Chang, Angela Dai, Thomas A. Funkhouser, Ma-                gation. In ICCV, pages 7403–7412, 2019. 2
+     ciej Halber, Matthias Nießner, Manolis Savva, Shuran Song,      [22] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perel-
+     Andy Zeng, and Yinda Zhang. Matterport3d: Learning from              man, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Weli-
+     RGB-D data in indoor environments. In 3DV, pages 667–                hinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card.
+     676, 2017. 2                                                         arXiv preprint arXiv:2410.21276, 2024. 2
+[10] Bolei Chen, Jiaxu Kang, Yifei Wang, Ping Zhong, Qi Wu,          [23] Mukul Khanna, Ram Ramrakhya, Gunjan Chhablani, Sriram
+     and Jianxin Wang. Recursive visual imagination and adap-             Yenamandra, Theophile Gervet, Matthew Chang, Zsolt Kira,
+     tive linguistic grounding for vision language navigation.            Devendra Singh Chaplot, Dhruv Batra, and Roozbeh Mot-
+     arXiv preprint arXiv:2507.21450, 2025. 2                             taghi. Goat-bench: A benchmark for multi-modal lifelong
+[11] Jiaqi Chen et al. Mapgpt: Map-guided prompting for unified           navigation. In CVPR, pages 16373–16383, 2024. 3
+     vision-and-language navigation. In ACL, pages 9796–9810,        [24] Alexander Ku, Peter Anderson, Roma Patel, Eugene Ie, and
+     2024. 2, 5, 6                                                        Jason Baldridge. Room-across-room: Multilingual vision-
+[12] Kehan Chen, Dong An, Yan Huang, Xu, and et al.                       and-language navigation with dense spatiotemporal ground-
+     Constraint-aware zero-shot vision-language navigation in             ing. In EMNLP, pages 4392–4412, 2020. 1
+
+
+
+
+                                                                15185
+[25] Mark R Leary and Nicole R Buttermore. The evolution of            [39] Xiangyu Shi, Zerui Li, Yanyuan Qiao, and Qi Wu. Fast-
+     the human self: Tracing the natural history of self-awareness.         smartway: Panoramic-free end-to-end zero-shot vision-and-
+     Journal for the theory of Social Behaviour, 33(4):365–404,             language navigation. arXiv preprint arXiv:2511.00933,
+     2003. 2                                                                2025. 1, 5
+[26] Dingbang Li, Wenzhou Chen, and Xin Lin. Tina: Think,              [40] Xiangbo Shu, Jinhui Tang, Guo-Jun Qi, Wei Liu, and Jian
+     interaction, and action framework for zero-shot vision lan-            Yang. Hierarchical long short-term concurrent memory for
+     guage navigation. In ICME, pages 1–6, 2024. 2                          human interaction recognition. IEEE TPAMI, 43(3):1110–
+[27] Jialu Li, Hao Tan, and Mohit Bansal. Envedit: Environment              1118, 2019. 2
+     editing for vision-and-language navigation. In CVPR, pages        [41] Xiangbo Shu, Binqian Xu, Liyan Zhang, and Jinhui Tang.
+     15386–15396, 2022. 2                                                   Multi-granularity anchor-contrastive representation learning
+[28] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi.                 for semi-supervised skeleton-based action recognition. IEEE
+     Blip-2: Bootstrapping language-image pre-training with                 TPAMI, 45(6):7559–7576, 2022.
+     frozen image encoders and large language models. In ICML,         [42] Hao Tan, Licheng Yu, and Mohit Bansal. Learning to nav-
+     pages 19730–19742, 2023. 2                                             igate unseen environments: Back translation with environ-
+[29] Yuxing Long, Xiaoqi Li, Wenzhe Cai, and Hao Dong. Dis-                 mental dropout. In NAACL-HLT, pages 2610–2621, 2019.
+     cuss before moving: Visual language navigation via multi-         [43] Jinhui Tang, Xiangbo Shu, Rui Yan, and Liyan Zhang. Co-
+     expert discussions. In ICRA, pages 17380–17387, 2023. 3,               herence constrained graph lstm for group activity recogni-
+     6                                                                      tion. IEEE TPAMI, 44(2):636–647, 2019. 2
+[30] Yuxing Long, Wenzhe Cai, Hongcheng Wang, Guanqi Zhan,             [44] Yunheng Wang, Yuetong Fang, Taowen Wang, Yixiao Feng,
+     and Hao Dong. Instructnav: Zero-shot system for generic                Yawen Tan, Shuning Zhang, Peiran Liu, Yiding Ji, and Ren-
+     instruction navigation in unexplored environment. arXiv                jing Xu. Dreamnav: A trajectory-based imaginative frame-
+     preprint arXiv:2406.04882, 2024. 6                                     work for zero-shot vision-and-language navigation. arXiv
+[31] Arjun Majumdar, Ayush Shrivastava, Stefan Lee, Peter An-               preprint arXiv:2509.11197, 2025. 1
+     derson, Devi Parikh, and Dhruv Batra. Improving vision-           [45] Zun Wang, Jialu Li, Yicong Hong, Yi Wang, Qi Wu, Mo-
+     and-language navigation with image-text pairs from the web.            hit Bansal, Stephen Gould, Hao Tan, and Yu Qiao. Scaling
+     In ECCV, pages 259–274, 2020. 2                                        data generation in vision-and-language navigation. In ICCV,
+[32] Yuankai Qi, Zizheng Pan, Shengping Zhang, Anton van den                pages 12009–12020, 2023. 2
+     Hengel, and Qi Wu. Object-and-action aware model for vi-          [46] Zihan Wang, Xiangyang Li, Jiahao Yang, Yeqi Liu, and
+     sual language navigation. In ECCV, pages 303–317, 2020.                Shuqiang Jiang. Gridmm: Grid memory map for vision-and-
+     2                                                                      language navigation. In ICCV, pages 15625–15636, 2023.
+[33] Yanyuan Qiao, Yuankai Qi, Yicong Hong, Zheng Yu, Peng                  2
+     Wang, and Qi Wu. Hop+: History-enhanced and order-                [47] Zihan Wang, Seungjun Lee, and Gim Hee Lee. Dynam3d:
+     aware pre-training for vision-and-language navigation. IEEE            Dynamic layered 3d tokens empower vlm for vision-and-
+     TPAMI, 45(7):8524–8537, 2023. 2                                        language navigation. arXiv preprint arXiv:2505.11383,
+[34] Yanyuan Qiao, Haodong Hong, Wenqi Lyu, Dong An, Siqi                   2025. 1, 3
+     Zhang, Yutong Xie, Xinyu Wang, and Qi Wu. Navbench:               [48] Zihan Wang, Yaohui Zhu, Gim Hee Lee, and Yachun Fan.
+     Probing multimodal large language models for embodied                  Navrag: Generating user demand instructions for embodied
+     navigation. arXiv preprint arXiv:2506.01031, 2025. 1                   navigation through retrieval-augmented llm. arXiv preprint
+[35] Yanyuan Qiao, Wenqi Lyu, Hui Wang, Zixu Wang, Zerui Li,                arXiv:2502.11142, 2025. 2, 5
+     Yuan Zhang, Mingkui Tan, and Qi Wu. Open-nav: Explor-             [49] Shu Xiangbo, Zhang Liyan, Sun Yunlian, and Jinhui Tang.
+     ing zero-shot vision-and-language navigation in continuous             Host–parasite: Graph lstm-in-lstm for group activity recog-
+     environment with open-source llms. In ICRA, pages 6710–                nition. IEEE TNNLS, 32(2):663–674, 2021. 2
+     6717, 2025. 1, 2, 3, 5, 6, 7, 8                                   [50] Shu Xiangbo, Zhang Liyan, Qi Guo-Jun, Liu Wei, and Jinhui
+[36] Hongyu Qu, Xiangbo Shu, Rui Yan, Hailiang Gao, Wenguan                 Tang. Spatiotemporal co-attention recurrent neural networks
+     Wang, and Jinhui Tang. Spatio-temporal decoupled knowl-                for human-skeleton motion prediction. IEEE TPAMI, 44(6):
+     edge compensator for few-shot action recognition. arXiv                3300–3315, 2022.
+     preprint arXiv:2602.18043, 2026. 2                                [51] Rui Yan, Lingxi Xie, Jinhui Tang, Xiangbo Shu, and Qi Tian.
+[37] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya                     Higcin: Hierarchical graph-based cross inference network
+     Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,                  for group activity recognition. IEEE TPAMI, 45(6):6955–
+     Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen                    6968, 2020.
+     Krueger, and Ilya Sutskever. Learning transferable visual         [52] Rui Yan, Lingxi Xie, Xiangbo Shu, Liyan Zhang, and Jinhui
+     models from natural language supervision. In ICML, pages               Tang. Progressive instance-aware feature learning for com-
+     8748–8763, 2021. 5                                                     positional action recognition. IEEE TPAMI, 45(8):10317–
+[38] Xiangyu Shi, Zerui Li, Wenqi Lyu, Jiatong Xia, Feras Day-              10330, 2023. 2
+     oub, Yanyuan Qiao, and Qi Wu. Smartway: Enhanced way-             [53] Hang Yin, Haoyu Wei, Xiuwei Xu, Wenxuan Guo, Jie Zhou,
+     point prediction and backtracking for zero-shot vision-and-            and Jiwen Lu. Gc-vln: Instruction as graph constraints for
+     language navigation. In IROS, pages 16923–16930, 2025. 1,              training-free vision-and-language navigation. arXiv preprint
+     3, 5, 6                                                                arXiv:2509.10454, 2025. 1, 2
+
+
+
+
+                                                                  15186
+[54] Jiazhao Zhang, Kunyu Wang, Rongtao Xu, Gengze Zhou,
+     Yicong Hong, Xiaomeng Fang, Qi Wu, Zhizheng Zhang,
+     and He Wang. Navid: Video-based vlm plans the next
+     step for vision-and-language navigation. arXiv preprint
+     arXiv:2402.15852, 2024. 1, 2, 3, 5, 7
+[55] Duo Zheng, Shijia Huang, Lin Zhao, Yiwu Zhong, and Liwei
+     Wang. Towards learning a generalist model for embodied
+     navigation. In CVPR, pages 13624–13634, 2024. 2
+[56] Qi Zheng, Daqing Liu, Chaoyue Wang, Jing Zhang, Dadong
+     Wang, and Dacheng Tao. Esceme: Vision-and-language nav-
+     igation with episodic scene memory. IJCV, 133(1):254–274,
+     2025. 3
+[57] Gengze Zhou, Yicong Hong, and Qi Wu. Navgpt: Explicit
+     reasoning in vision-and-language navigation with large lan-
+     guage models. In AAAI, pages 7641–7649, 2023. 2, 6
+[58] Gengze Zhou, Yicong Hong, Zun Wang, Xin Eric Wang, and
+     Qi Wu. Navgpt-2: Unleashing navigational reasoning ca-
+     pability for large vision-language models. In ECCV, pages
+     260–278, 2024. 3
+
+
+
+
+                                                               15187
+

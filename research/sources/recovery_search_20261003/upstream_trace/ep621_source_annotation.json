@@ -1,0 +1,81 @@
+{
+  "annotation_file": "stack_three_color_cubes_ep2_annotations.json",
+  "annotation_array_index": 35,
+  "source_index_present": false,
+  "annotation": {
+    "video": "annotated_data/stack_three_color_cubes_ep2/videos/episode_36_cam_high.mp4",
+    "task": "Use the left arm to stack the green cube on top of the blue cube. Subsequently, use the right arm to place the red cube on top of the green one to complete the three-layer structure.",
+    "failure_detection": "yes",
+    "images": [
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/0.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/25.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/50.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/75.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/100.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/125.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/150.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/175.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/200.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/225.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/250.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/275_avoid_keyframe.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/300.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/325.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/338_correct_keyframe.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/350.jpg",
+      "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/360.jpg"
+    ],
+    "subtasks": [
+      "1. Move the left arm to align with the green cube.",
+      "2. Grasp the green cube with the left arm.",
+      "3. Move the left arm to align with the blue cube.",
+      "4. Release the green cube to place it on top of the blue cube.",
+      "5. Move the right arm to align with the red cube.",
+      "6. Grasp the red cube with the right arm.",
+      "7. Move the right arm to align with the green cube.",
+      "8. Release the red cube to place it on top of the green cube."
+    ],
+    "keyframe": [
+      {
+        "avoid_keyframe": "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/275_avoid_keyframe.jpg",
+        "correct_keyframe": "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/338_correct_keyframe.jpg"
+      }
+    ],
+    "failure_subtask": "5",
+    "failure_type": "task planning",
+    "avoidance": [
+      {
+        "low_level": " ",
+        "avoid_keyframe_annotations": "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/275_avoid_keyframe_annotations.jpg",
+        "avoid_keyframe_annotations_code": [
+          {
+            "type": "crosshair",
+            "pos": [
+              442,
+              247
+            ]
+          }
+        ]
+      }
+    ],
+    "correction": [
+      {
+        "low_level": " ",
+        "correct_keyframe_annotations": "annotated_data/stack_three_color_cubes_ep2/frames/episode_36_cam_high/338_correct_keyframe_annotations.jpg",
+        "correct_keyframe_annotations_code": [
+          {
+            "type": "dual_crosshair",
+            "p1": [
+              91,
+              383
+            ],
+            "p2": [
+              396,
+              287
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

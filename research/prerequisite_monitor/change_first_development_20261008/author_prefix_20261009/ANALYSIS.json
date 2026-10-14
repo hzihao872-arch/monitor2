@@ -1,0 +1,419 @@
+{
+  "issued": 17,
+  "completed": 17,
+  "failed": 0,
+  "ambiguous": 0,
+  "cumulative": 372,
+  "objective_audit": {
+    "negative_logp": 12.75000286102295,
+    "masked_loss": 12.75000286102295,
+    "expected_frozen_logp": -12.75000286102295,
+    "source_loss_delta": 0.0,
+    "prior_score_delta": 0.0,
+    "passes": true,
+    "candidate_total_mass": 2.902382719141625e-06,
+    "top_token_id": 151645,
+    "top_token_logp": -3.099436753473128e-06
+  },
+  "curves": [
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -23.125,
+              "True": -21.875,
+              "Unknown": -31.75
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -21.875,
+            "value": "True"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -21.125,
+              "True": -17.625,
+              "Unknown": -32.9375
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -17.625,
+            "value": "True"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -23.375003814697266,
+              "True": -12.75000286102295,
+              "Unknown": -34.625003814697266
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -12.75000286102295,
+            "value": "True"
+          }
+        }
+      ],
+      "early_delta": 4.25,
+      "final_delta": 9.12499713897705
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -22.375,
+              "True": -22.625,
+              "Unknown": -31.375
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.625,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -19.25,
+              "True": -23.75,
+              "Unknown": -33.8125
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -23.75,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -17.875,
+              "True": -23.5,
+              "Unknown": -33.0
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -23.5,
+            "value": "False"
+          }
+        }
+      ],
+      "early_delta": -1.125,
+      "final_delta": -0.875
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -22.5,
+              "True": -22.75,
+              "Unknown": -31.5625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.75,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -19.125,
+              "True": -23.875,
+              "Unknown": -34.0625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -23.875,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -18.75,
+              "True": -24.375,
+              "Unknown": -33.9375
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -24.375,
+            "value": "False"
+          }
+        }
+      ],
+      "early_delta": -1.125,
+      "final_delta": -1.625
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -22.625,
+              "True": -21.5,
+              "Unknown": -31.5
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -21.5,
+            "value": "True"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -19.625,
+              "True": -24.625,
+              "Unknown": -34.5625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -24.625,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -17.375,
+              "True": -22.625,
+              "Unknown": -32.5625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.625,
+            "value": "False"
+          }
+        }
+      ],
+      "early_delta": -3.125,
+      "final_delta": -1.125
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -21.875,
+              "True": -23.0,
+              "Unknown": -32.6875
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -23.0,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -18.375,
+              "True": -20.375,
+              "Unknown": -32.625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -20.375,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -22.500001907348633,
+              "True": -13.500001907348633,
+              "Unknown": -33.4375
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -13.500001907348633,
+            "value": "True"
+          }
+        }
+      ],
+      "early_delta": 2.625,
+      "final_delta": 9.499998092651367
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -21.875,
+              "True": -23.25,
+              "Unknown": -32.5
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -23.25,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -18.875,
+              "True": -23.375,
+              "Unknown": -33.5625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -23.375,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -15.875,
+              "True": -20.875,
+              "Unknown": -31.375
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -20.875,
+            "value": "False"
+          }
+        }
+      ],
+      "early_delta": -0.125,
+      "final_delta": 2.375
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -22.125,
+              "True": -22.125,
+              "Unknown": -32.9375
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.125,
+            "value": "True"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -17.875,
+              "True": -22.375,
+              "Unknown": -33.1875
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.375,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -15.625,
+              "True": -20.875,
+              "Unknown": -31.3125
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -20.875,
+            "value": "False"
+          }
+        }
+      ],
+      "early_delta": -0.25,
+      "final_delta": 1.25
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "curve": [
+        {
+          "time_ms": 1000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -22.0,
+              "True": -22.25,
+              "Unknown": -32.8125
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.25,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 7000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -17.875,
+              "True": -22.125,
+              "Unknown": -33.1875
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -22.125,
+            "value": "False"
+          }
+        },
+        {
+          "time_ms": 14000,
+          "payload": {
+            "calibrated": false,
+            "logp": {
+              "False": -16.0,
+              "True": -21.25,
+              "Unknown": -32.0625
+            },
+            "objective": "exact conditional probability of final appended True token; no full trajectory normalization",
+            "true_logp": -21.25,
+            "value": "False"
+          }
+        }
+      ],
+      "early_delta": 0.125,
+      "final_delta": 1.0
+    }
+  ],
+  "audit_errors": [],
+  "wall_seconds": 11.297270195558667,
+  "adapter_seconds": 3.2005149046890438,
+  "input_tokens": 10507,
+  "output_tokens": 0,
+  "peak_vram_gib": 19.00141954421997,
+  "status": "raw unnormalized completion likelihood curves, variable prefix frame count; not calibrated benefit/readiness scores"
+}

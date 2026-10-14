@@ -1,0 +1,134 @@
+{
+  "status": "pass",
+  "checks": {
+    "existing_base": true,
+    "python8": true,
+    "python4": true,
+    "checkpoint_revisions": true,
+    "8b_config_exact": true,
+    "4b_config_exact": true,
+    "access_gate_zip_sha": true,
+    "access_gate_contents": true,
+    "support_surface_zip_sha": true,
+    "support_surface_contents": true,
+    "code_zip_sha": true,
+    "model_side_only": true,
+    "top_commit": true,
+    "robo_commit": true,
+    "robo_patch_exact": true,
+    "native_paths": true,
+    "six_weight_shards_exact": true,
+    "gpu_approximately_24gib_free": true,
+    "disk_at_least_5gib": true,
+    "python8_deps_cuda": true,
+    "python4_deps_cuda": true,
+    "offline_env": true
+  },
+  "details": {
+    "utc": "2026-10-07T11:01:24.992631+00:00",
+    "shanghai": "2026-10-07T19:01:24.992744+08:00",
+    "checkpoint_config_sha256": {
+      "8b": "5cd452860dc1e9c29dd71cc3cef7f39b338b7a40793f7a260655c2d3568f3661",
+      "4b": "2287e93a95c1dcd5e471cf386cf5750e7643ee0b2c44a2544a1318b8b8f3c9be"
+    },
+    "access_gate": {
+      "video_count": 9,
+      "pixel_hash_count": 135,
+      "instruction_sha256": "77b98a4d9120926cb721581961164dd91db0528983ced5274b33758b894f594d",
+      "video_sha256": {
+        "0001.mp4": "bbff90451d04385447dc678821709646577bbd44afeadea5460f045b5cb629d8",
+        "0002.mp4": "b8924c2579da2c4a06cbe6c786cc0a349b67d72121222efa86129bba14ced962",
+        "0003.mp4": "4e1a3caab90af8269aaa33d65f24fa4bcececc41b67a095da5f7eb25c75ab02c",
+        "0004.mp4": "97cb6e35789254005a245ea0d263fcfe503072c8b953b67c75cce23eb47fe106",
+        "0005.mp4": "d8baa2c63188ca9f20bdd69a3e964dd14eb618f428e03049bc590328550af50b",
+        "0006.mp4": "5b3b96330b4c0fb7e85bf0c7f3878bdc9bea80af91119c235d5935d26a613322",
+        "0007.mp4": "914e03f16405a037f91fa997c0e8db924626434342b4e6388eb75f32d10c1fc2",
+        "0008.mp4": "8b677452399a26aa6903d6a5e338b9870bcbcac4c9192720b1d5715bde9e2c67",
+        "0009.mp4": "9be4bf8325ae2b41916457a8c5dbb29c2761ddcd337bb4c32ddb65974c78fb9c"
+      }
+    },
+    "support_surface": {
+      "video_count": 9,
+      "pixel_hash_count": 135,
+      "instruction_sha256": "e33eea7db932586eae01bc50c8a78d0d5b24ba9f8433601c084d13b8816435ab",
+      "video_sha256": {
+        "0001.mp4": "de51bd2d003ebe393b570057f2fd3a64f6dcceb5edb6f68e65ab02287412242e",
+        "0002.mp4": "94f4d6424cbbe6d81a2eb5d37bd875c2d753bac9bc8d935b7b73de70dbe5fcde",
+        "0003.mp4": "869c899f92951e0d82b2ba71182bcfa915fade43d316536b042d9d1d29b2cee2",
+        "0004.mp4": "bc3fa9d899a11f0838d1a0823dea9f7d29a917b19cb0c8c8bd463ea6842e9680",
+        "0005.mp4": "0df666307dc5a1fca61e9c79c277f88595c09875a1e4e87c783d3ea20075d2ff",
+        "0006.mp4": "424c3cb33b30ede23dfcd74c8976a8d51cc9d24609221d3913f37ee22dc32338",
+        "0007.mp4": "d5176e3bdd4d29066a6780e26aeb7411eca42adefc8406c3794ab5823b73f3a1",
+        "0008.mp4": "3e889f5d6ecb938a9a216bbfb812a9f96f1260a690e22b9059a256d90a0f2075",
+        "0009.mp4": "b7641e512765230fadfc51ed93db15fbd1dec022fa5f90b7feb33cff43663ece"
+      }
+    },
+    "top_commit": {
+      "returncode": 0,
+      "stdout": "4877a0ee5098cbec18485125466631b1dcc4a573",
+      "stderr": ""
+    },
+    "robo_commit": {
+      "returncode": 0,
+      "stdout": "352d160389daa964788de1ec933d1925f3a6de4f",
+      "stderr": ""
+    },
+    "robo_patch_sha256": "b560da190b4dccaa405684beb2e33a5950fefd035983dc98ae9d02406b9d2fac",
+    "weight_files": [
+      {
+        "repo": "Qwen/Qwen3-VL-8B-Instruct",
+        "file": "model-00001-of-00004.safetensors",
+        "actual_sha256": "d5d0aef0eb170fc7453a296c43c0849a56f510555d3588e4fd662bb35490aefa",
+        "match": true
+      },
+      {
+        "repo": "Qwen/Qwen3-VL-8B-Instruct",
+        "file": "model-00002-of-00004.safetensors",
+        "actual_sha256": "8be88fb5501e4d5719a6d4cc212e6a13480330e74f3e8c77daa1a68f199106b5",
+        "match": true
+      },
+      {
+        "repo": "Qwen/Qwen3-VL-8B-Instruct",
+        "file": "model-00003-of-00004.safetensors",
+        "actual_sha256": "83de00eafe6e0d57ccd009dbcf71c9974d74df2f016c27afb7e95aafd16b2192",
+        "match": true
+      },
+      {
+        "repo": "Qwen/Qwen3-VL-8B-Instruct",
+        "file": "model-00004-of-00004.safetensors",
+        "actual_sha256": "0a88b98e9f96270973f567e6a2c103ede6ccdf915ca3075e21c755604d0377a5",
+        "match": true
+      },
+      {
+        "repo": "robometer/Robometer-4B",
+        "file": "model-00001-of-00002.safetensors",
+        "actual_sha256": "2cfa81761595f6b10bd079736eb32bdeeeb0b49224619411bd511d9d1f1171a4",
+        "match": true
+      },
+      {
+        "repo": "robometer/Robometer-4B",
+        "file": "model-00002-of-00002.safetensors",
+        "actual_sha256": "a25be9713ccc3cb14738be76ef6665742093d70323ec026ea70e8fa843a342be",
+        "match": true
+      }
+    ],
+    "gpu": {
+      "returncode": 0,
+      "stdout": "NVIDIA GeForce RTX 5090, 32607, 32110",
+      "stderr": ""
+    },
+    "gpu_free_mib": 32110,
+    "disk_free_bytes": 48223367168,
+    "python8_deps": {
+      "returncode": 0,
+      "stdout": "2.8.0+cu128 True",
+      "stderr": ""
+    },
+    "python4_deps": {
+      "returncode": 0,
+      "stdout": "2.8.0+cu128 True",
+      "stderr": ""
+    }
+  },
+  "note": "read-only gate; actual rental end time is checked separately"
+}

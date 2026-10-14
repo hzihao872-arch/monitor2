@@ -1,0 +1,5433 @@
+Inductive Learning of Robot Task Knowledge from Raw Data and Online Expert Feedback
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1
+Introduction
+2
+Related Works
+3
+Background and notation
+3.1
+Notation
+3.2
+The peg transfer task
+3.3
+ASP planning task description
+3.4
+Inductive learning of ASP theories
+4
+Methodology
+4.1
+Unsupervised learning of ASP task knowledge
+4.1.1
+Action-context tuples generation
+4.1.2
+Constraints as extended action preconditions
+4.1.3
+Learning extended action preconditions
+4.1.4
+Generating effects of actions
+4.2
+Online supervised refinement of ASP task knowledge
+5
+Results
+5.1
+Unsupervised learning of ASP task knowledge
+5.2
+Online supervised refinement of ASP task knowledge
+6
+Discussion
+Prior knowledge of actions and environmental features
+Advanced symbol grounding
+Task and motion learning
+Bottom-up vs. top-down learning
+Probabilistic task knowledge
+User validation
+7
+Conclusion
+8
+Learned axioms
+8.1
+Unsupervised learning of ASP task knowledge
+8.1.1
+A
+s
+​
+e
+​
+m
+A_{sem}
+8.1.2
+A
+k
+​
+i
+​
+n
+A_{kin}
+8.1.3
+Baseline algorithm
+8.2
+Online supervised refinement of ASP task knowledge
+References
+License: CC BY-NC-ND 4.0
+arXiv:2501.07507v1 [cs.AI] 13 Jan 2025
+Inductive Learning of Robot Task Knowledge from Raw Data and Online Expert Feedback
+Daniele Meli
+Email:
+daniele.meli@univr.it
+Affiliation:
+Department of Computer Science
+Paolo Fiorini
+Affiliation:
+Department of Engineering for Innovation Medicine, University of Verona, Strada Le Grazie 15, Verona, 37135, Italy
+Abstract
+The increasing level of autonomy of robots poses challenges of trust and social acceptance, especially in human-robot interaction scenarios.
+This requires an interpretable implementation of robotic cognitive capabilities, possibly based on formal methods as logics for the definition of task specifications. However, prior knowledge is often unavailable in complex realistic scenarios.
+In this paper, we propose an
+offline algorithm
+based on inductive logic programming from noisy examples to extract task specifications (i.e., action preconditions, constraints and effects) directly from raw data of few heterogeneous (i.e., not repetitive) robotic executions. Our algorithm leverages on the output of
+any
+unsupervised action identification algorithm from video-kinematic recordings. Combining it with the definition of very basic, almost task-agnostic, commonsense concepts about the environment, which contribute to the interpretability of our methodology, we are able to learn logical axioms encoding preconditions of actions, as well as their effects in the event calculus paradigm.
+Since the quality of learned specifications depends mainly on the accuracy of the action identification algorithm, we also propose an
+online framework
+for incremental refinement of task knowledge from user’s feedback, guaranteeing safe execution.
+Results in a standard manipulation task and benchmark for user training in the safety-critical surgical robotic scenario, show the robustness, data- and time-efficiency of our methodology, with promising results towards the scalability in more complex domains.
+keywords
+Inductive Logic Programming, Answer Set Programming, Learning Under Uncertainty, Online Learning, Human-Robot Interaction, Explainable AI
+1
+Introduction
+Robots are becoming increasingly popular in many fields of industry and society.
+As their degree of autonomy, hence
+intelligence
+, increases, human-robot interaction is a crucial aspect of design in the development of robotic systems, to preserve human safety and increase social acceptance in complex, typically human-centered scenarios.
+In this context, recent international provisions and regulations, e.g., by the European Union
+1
+1
+1
+Artificial Intelligence Act,
+https://www.europarl.europa.eu/doceo/document/TA-9-2023-0236_EN.html
+prescribe
+interpretability
+(
+Rosenfeld and Richardson, 2019
+)
+as one fundamental requirement to achieve safe and transparent human-robot interaction.
+To this aim, formal representation of agents’ (robots’) environments and tasks is a suitable and convenient choice.
+Such representations in robotics include, among others, action languages for planning
+(
+Erdem and Patoglu, 2012
+)
+, as the well-established Planning Domain Definition Language (PDDL) by
+Haslum et al (2019)
+;
+Estivill-Castro and Ferrer-Mestres (2013)
+;
+Kootbally et al (2015)
+, logic programming for plan re-configuration
+(
+Meli et al, 2023b
+)
+, ontology-based systems
+(
+Manzoor et al, 2021
+)
+and behavior trees
+(
+Ögren and Sprague, 2022
+)
+.
+One fundamental limitation of these approaches is the assumption of full scenario and task knowledge, which is clearly impractical in complex, uncertain or partially observable domains.
+In this paper, we propose a methodology to derive logical task specifications from visual and kinematic data of robotic executions. In particular, we assume prior knowledge of very basic commonsense concepts (
+features
+) about the environment, e.g., related to relative positions of objects in the scene. These are usually shared among many tasks and scenarios, and they are already encoded in available general-purpose ontologies for robotic and automation, e.g., by
+Schlenoff et al (2012)
+. We then combine automatic retrieval of environmental features from input execution data, with unsupervised action identification. The resulting matching examples of action execution and environmental features are used in an Inductive Logic Programming (ILP) by
+Muggleton and De Raedt (1994)
+framework to derive salient task specifications, namely, preconditions and effects of actions and constraints.
+Learned specifications are affected by the noise in the input data and their post-processing (i.e., environmental features retrieval and unsupervised action identification), thus they may not immediately applied for safe fully autonomous robotic planning and execution.
+Hence, we finally propose a framework interleaving human and autonomous execution, allowing for incremental knowledge refinement via robot teaching.
+This paper then makes the following contributions:
+•
+we propose ILP under the semantics of Answer Set Programming (ASP) by
+Lifschitz (2019)
+to learn task specifications from little noisy raw data of robotic execution. Our methodology can work in combination with any action identification algorithm, exploiting the output of the latter to define noise in action examples, and is robust . Moreover, following our previous work in
+Meli et al (2021a)
+, we employ the representation of event calculus
+(
+Mueller, 2008
+)
+to efficiently learn temporal specifications about environmental features, i.e., effects of actions;
+•
+we propose an ILP- and ASP-based framework for time- and data-efficient incremental learning of task knowledge and autonomous robotic planning, involving an expert human in the loop to guarantee safe execution. The proposed framework represents an extension of our preliminary work in
+Meli et al (2023a)
+, where we did not learn effects of actions and showcased only a simple example of precondition refinement for one action, without evaluating the performance quantitatively for the full task;
+•
+we evaluate our approach with different action identification algorithms and with a partial ablation study (considering or neglecting
+unobserved action examples
+). We operate in the domain of surgical task automation, specifically in the benchmark peg transfer scenario from the Fundamentals of Laparoscopic Surgery (FLS) in
+Soper and Fried (2008)
+, using da Vinci robot and Research Kit (dVRK)
+(
+Kazanzides et al, 2014
+)
+.
+Broadly speaking, the surgical scenario poses fundamental challenges in the field of task knowledge retrieval, e.g., the scarce availability of data due to legal and organisational issues, and the paramount importance of safety and social acceptance, thus justifying the use of data-efficient and interpretable learning with ILP. With particular reference to the peg transfer scenario, it is one of the most challenging tasks from FLS, which must be accomplished in the smallest time and with the highest number of successful repetitions
+2
+2
+2
+https://www.flsprogram.org/technical-skills-training-curriculum/
+. Indeed, the peg transfer requires dual arm coordination and reasoning on the placements of rings and pegs, which stresses the mental focus and resistance of the surgeon under time constraints in a real operating room. Moreover, this task is not only paradigmatic in the clinical context, but it is also an example of a generic structured robotic pick-and-place task. Thus, our experiments are designed to show promising results towards the general applicability of our methodology to more general robotic and automation domains;
+•
+we make publicly available the code for replicating experimental results and the framework for incremental task knowledge refinement
+3
+3
+3
+https://github.com/danm11694/ILASP_robotics.git
+.
+In the following, we first revise state of the art in robotic task learning, in Section
+2
+. Then, in Section
+3
+we provide relevant background about the fundamental components of our framework, ASP and ILP, as well as a description of the peg transfer task useful as a leading example. Finally, we detail our methodology in Section
+4
+, perform experimental validation in Section
+5
+and draw conclusions with limitations and future perspectives in Sections
+6
+-
+7
+.
+2
+Related Works
+Learning robotic task sequences from previous observations or human teaching is a widely studied problem, especially in the area of industrial assembly and manipulation
+(
+Zhu and Hu, 2018
+;
+Mukherjee et al, 2022
+)
+.
+State-of-the-art approaches rely on probabilistic models to capture the variability of the environment and execution, e.g., Gaussian Mixture Models (GMMs) as in
+Calinon (2016)
+;
+Kyrarini et al (2019)
+and Hidden Markov Models (HMMs) as in
+Tanwani and Calinon (2016)
+;
+Medina and Billard (2017)
+.
+With the recent uptake of deep learning and large data models, neural architectures have been employed both for online and offline learning of optimal robotic strategies for complex domains. Main approaches involve reward shaping to learn efficient task policies from human demonstrations
+(
+Alakuijala et al, 2023
+)
+, or end-to-end learning of sensor-action maps for robotic navigation
+(
+Liu et al, 2017
+)
+and manipulation
+(
+Rahmatizadeh et al, 2018
+)
+.
+This has paved the way towards
+human-in-the-loop
+Deep Reinforcement Learning (DRL), where humans communicate with the autonomous robot either to show it safe and best practice under different situations
+(
+Huang et al, 2024
+)
+, acting as teachers
+(
+Shenfeld et al, 2023
+)
+, or to give targets and commands, based on pre-trained foundational visual-language models
+(
+Shah et al, 2023
+)
+.
+In the specific field of robotic surgery, HMMs have been used, e.g., by
+Berthet-Rayne et al (2016)
+, though more general Bayesian networks are the most popular
+(
+Blum et al, 2008
+;
+Charrière et al, 2017
+)
+. Recently, DRL is becoming a prominent approach to surgical task automation
+(
+Shahkoo and Abin, 2023
+;
+Fan et al, 2024
+;
+Corsi et al, 2023
+)
+, paving the way towards interactive human-robot learning
+(
+Long et al, 2023
+)
+.
+One crucial limitation, especially for DRL and deep learning methods, is their scarce interpretability and the lack of safety guarantees, even when safe
+(
+Shahkoo and Abin, 2023
+)
+or human-in-the-loop
+(
+Huang et al, 2024
+)
+solutions are employed. Indeed, these approaches heavily rely on large and diverse training datasets, failing at the generalization to similar but different task situations. For this reason, some researchers have attempted to directly learn human models of agency
+(
+Nikolaidis et al, 2015
+;
+Chen et al, 2020
+)
+, which however severely limit the performance of the autonomous agent.
+Similar limitations hold for Bayeesian and statistical methods.
+As an example in the surgical setting, 80 homogeneous (i.e., under the same environmental conditions) executions are required by
+Berthet-Rayne et al (2016)
+to learn a HMM for a good replication of the yet relatively simple peg transfer task.
+Finally, these approaches are highly sensitive to parameter initialization, as shown by
+Medina and Billard (2017)
+.
+In contrast, in this paper we propose to use ILP
+(
+Muggleton, 1991
+)
+to learn
+task specifications
+, i.e., preconditions, effects and constraints on actions; and then perform automated reasoning in on specifications in ASP formalism for task planning and execution.
+Originated from the broad field of domain knowledge discovery
+(
+Sridharan and Meadows, 2018
+;
+Mota and Sridharan, 2020
+;
+Laird et al, 2017
+)
+, ILP solves many limitations of above machine learning and DRL approaches, being data- and time-efficient, and able to easily generalize theory from data. Furthermore, the interpretable logical formalism allows easier interaction with humans for online task knowledge refinement.
+For this reason, ILP has been successfully applied to robotic learning
+(
+Cropper and Muggleton, 2019
+;
+Meli et al, 2020
+;
+Meli et al, 2021a
+)
+.
+However, one important limitation of ILP, and in general frameworks for high-level knowledge extraction, is the poor performance in the presence of
+noisy datasets
+, i.e., task examples with uncertainty.
+For this reason, researchers have tried to embed uncertainty into the inductive process, as
+Katzouris et al (2023)
+to learn event definitions and
+Law (2023)
+under the more generic answer set semantics.
+In this direction, neurosymbolic approaches have been proposed, e.g., differentiable inductive logic programming
+(
+Evans and Grefenstette, 2018
+;
+Shindo et al, 2021
+)
+and statistical relational learning
+(
+Marra et al, 2024
+;
+Hazra and De Raedt, 2023
+)
+, which however suffer from scalability issues and cannot be currently applied out of toy robotic domains, unless strict task-specific constraints are imposed to the ILP problem
+(
+Hazra and De Raedt, 2023
+)
+. For instance, we tried to apply the publicly available code released by
+Evans and Grefenstette (2018)
+to the peg transfer domain, but it failed for the large space of possible specifications to be learned.
+Under the framework of ILP in the ASP semantics, we stem from our previous works on fully supervised task specifications learning in
+Meli et al (2020)
+;
+Meli et al (2021a)
+, considering the more realistic use case of ILP examples generated from an unsupervised action identification algorithm applied on raw robotic execution data.
+We then extend
+Meli et al (2023a)
+to refine task knowledge (including effects of actions) from human feedback via online ILP, guaranteeing safe execution thanks to expert supervision.
+We use the state-of-the-art ILASP (Inductive Learning of Answer Set Programs) tool by
+Law (2018)
+for its theoretical and empirical advantages against main competitors as
+Katzouris et al (2016)
+;
+Schüller and Benz (2018)
+;
+Cropper and Morel (2021)
+, encompassing learning from noisy data, context-dependent examples (capturing the action-environment connection particularly relevant in robotic tasks) and the possibility to induce
+most probable
+ASP theories, i.e., covering most of the examples.
+Moreover, the answer set semantics supported by ILASP is the state of the art for planning
+(
+Erdem et al, 2016
+)
+, especially in robotic contexts
+(
+Erdem and Patoglu, 2018
+;
+Meli et al, 2023b
+)
+.
+3
+Background and notation
+In this section, we describe the paradigmatic peg transfer task, to use it as a leading example in the rest of the paper. We then provide basic notions about ASP and ILP under the ASP semantics, necessary to detail our methodology next.
+We start by providing a list of relevant symbols used throughout the paper, as a practical reference to the reader.
+3.1
+Notation
+text
+Atoms in ASP formalism
+:-
+Logical implication
+←
+\leftarrow
+in ASP syntax
+⊧
+\models
+Logical entailment
+H
+⁡
+(
+a
+)
+\pazocal{H(a)}
+Herbrand base of
+a
+a
+, representing the set of all possible ground versions of
+a
+a
+B
+B
+Background knowledge for ILP task
+S
+M
+S_{M}
+Search space for ILP task
+E
+=
+⟨
+E
++
+,
+E
+−
+⟩
+E=\langle E^{+},E^{-}\rangle
+Sets of positive (
+E
++
+E^{+}
+) and negative (
+E
+−
+E^{-}
+) examples for ILP task
+H
+H
+Target hypothesis for ILP
+C
+C
+Context for CDPIs in ILASP
+e
+i
+​
+n
+​
+c
+e^{inc}
+Included set of an ILASP example or partial interpretation
+e
+e
+​
+x
+​
+c
+e^{exc}
+Excluded set of an ILASP example or partial interpretation
+S
+S
+Stream of task executions, as sequence of kinematic features
+K
+\pazocal{K}
+and visual features
+G
+\pazocal{G}
+.
+Φ
+\Phi
+Action identification algorithm
+L
+\pazocal{L}
+Action labels (for classification)
+F
+\pazocal{F}
+Semantic environmental features in ASP syntax
+X
+⁡
+(
+X
+a
+)
+\pazocal{X}(\pazocal{X}_{a})
+Set of extended action preconditions, i.e., including both preconditions and constraints (for action
+a
+a
+)
+I
+\pazocal{I}
+(
+I
+F
+\pazocal{I}_{F}
+)
+Set of initiating conditions for effects of actions (for a specific environmental feature
+F
+∈
+F
+F\in\pazocal{F}
+)
+E
+\pazocal{E}
+(
+E
+F
+\pazocal{E}_{F}
+)
+Set of terminating conditions for effects of actions (for a specific environmental feature
+F
+∈
+F
+F\in\pazocal{F}
+)
+ρ
+i
+​
+j
+\rho_{ij}
+Confidence level for timed segment
+i
+i
+to be associated with action label
+l
+j
+l_{j}
+S
+\pazocal{S}
+Set of probabilistic timed segments (after applying
+Φ
+\Phi
+to
+S
+S
+)
+3.2
+The peg transfer task
+Figure 1
+:
+The setup for the peg transfer task with dVRK.
+Figure
+1
+shows the setup for the illustrative surgical training task of peg transfer. The objective is to place colored rings on pegs of the corresponding color using the two patient-side manipulators (PSM1 and PSM2) of the dVRK. Each PSM can grasp any reachable ring and place it on any reachable peg; reachability is determined by the relative position of rings and pegs with respect to the center of the base. Reachability regions are identified by the red dashed line in Figure
+1
+.
+For instance, PSM1 can reach the red ring and the blue peg, while PSM2 can reach the blue ring and the green peg.
+In case an arm can reach a ring but not the same-colored peg, it must move to the center of the base and transfer the ring to the other arm to complete the task.
+Pegs can be occupied by other rings and must be freed before placing the desired ring on it. Also, rings may be on pegs or on the base in the initial state, i.e., some rings may need to be extracted before being moved.
+3.3
+ASP planning task description
+We describe the peg transfer task in an established format for Answer Set Programming (ASP) by
+Calimeri et al (2020)
+.
+A (planning) domain’s description in ASP comprises a
+sorted signature
+and
+axioms
+.
+The sorted signature is the alphabet of the domain, defining
+constants
+(either Booleans, strings or integers),
+variables
+and
+atoms
+, i.e., predicates of variables.
+In the peg transfer domain, variables represent arms
+A
+(with constant value either
+psm1
+or
+psm2
+), objects
+O
+(either
+ring
+or
+peg
+) and colors (either
+red, green, blue, yellow
+or
+grey
+).
+Atoms represent concepts as the relative locations between objects and / or arms (e.g.,
+at(A,ring,C)
+, meaning that arm
+A
+is at the location of ring with color
+C
+, or
+placed(ring,C1,peg,C2)
+, meaning that ring with color
+C1
+is placed on peg with color
+C2
+) and the status of grippers of arms (e.g.,
+closed_gripper(A)
+.
+In our previous work
+(
+Meli et al, 2021a
+)
+we considered more task-specific environmental concepts, e.g.,
+in_hand(A,R,C)
+to represent that a ring is held by an arm. However, these can be derived from other atoms (for instance,
+in_hand(A,R,C)
+holds when both
+at(A,R,C)
+and
+closed_gripper(A)
+do), so we omit them in this paper, in order to allow dependency only on basic kinematic information from the robot and preserve generalization to different tasks.
+Atoms also represent actions of the task, i.e.,
+move(A,O,C)
+(moving to a colored ring or peg),
+move(A,center,C)
+(moving to center for transfer of ring
+C
+),
+grasp(A,ring,C)
+,
+release(A)
+and
+extract(A,ring,C)
+for gripper actions and extraction, respectively.
+We further annotate atoms with a temporal variable
+t
+representing the discrete time step of the task flow (e.g.,
+move(A,O,C,t)
+).
+Whenever all variables in an atom are assigned with constant values, we say that the atom is
+ground
+.
+Given the sorted signature, axioms define preconditions and effects of actions and constraints.
+Preconditions for the peg transfer task (in the form
+Action : Precondition
+) are:
+0 {move(A, O, C, t) : reachable(A, O, C, t);
+(1a)
+move(A, center, C, t) : at(A, R, C, t), closed_gripper(A, t);
+(1b)
+extract(A, ring, C, t) : at(A, ring, C, t), closed_gripper(A, t);
+(1c)
+grasp(A, ring, C, t) : at(A, ring, C, t);
+(1d)
+release(A, t) : at(A, ring, C, t), closed_gripper(A, t)} 1.
+(1e)
+where the
+aggregate
+construct
+0 {..} 1
+indicates that only one action per time step can be executed, given that the corresponding precondition holds.
+Effects of actions are expressed according to the generic paradigm of event calculus by
+Kowalski and Sergot (1989)
+, i.e., a generic environmental atom
+F
+is subject to the law of inertia:
+holds(F, t) :- initiated(F, t).
+holds(F, t) :- holds(F, t-1), not terminated(F, t).
+where
+:-
+equals to
+←
+\leftarrow
+(logical implication) and
+not
+is the default negation (if a Boolean
+b
+b
+is not known to be true, i.e., unobserved, then
+not
+b
+b
+is true).
+The inertia law can be interpreted as follows: an environmental atom starts holding as some
+initiated(F)
+condition holds, and ends holding at the occurrency of some
+terminated(F)
+condition. As an example, consider the peg transfer task. Atom
+at(A,ring,C)
+starts holding when
+move(A,ring,C)
+has been executed, and terminates only when arm
+A
+moves away. The inertia law is valid in every robotic scenario involving interaction with the environment.
+Effects of actions in the peg transfer task are then equivalently described by the following initiating and terminating conditions:
+initiated(closed_gripper(A), t) :- grasp(A, ring, C, t-1).
+(2a)
+initiated(placed(ring, C1, peg, C2), t) :- at(A, ring, C1, t-1),
+closed_gripper(A, t-1), at(A, peg, C2, t-1), release(A, t-1).
+(2b)
+initiated(at(A, ring, C), t) :- move(A, ring, C, t-1).
+(2c)
+initiated(at(A, peg, C), t) :- move(A, peg, C, t-1).
+(2d)
+initiated(at(A, center), t) :- move(A, center, C, t-1).
+(2e)
+terminated(closed_gripper(A), t) :- release(A, t-1).
+(2f)
+terminated(placed(ring, C1, peg, C2), t) :- extract(A, ring, C1, t-1),
+color(C2).
+(2g)
+terminated(at(A, ring, C1), t) :- move(A, ring, C2, t-1), color(C1).
+(2h)
+terminated(at(A, ring, C1), t) :- move(A, peg, C2, t-1), color(C1).
+(2i)
+terminated(at(A, ring, C1), t) :- move(A, center, C2, t-1), color(C1).
+(2j)
+terminated(at(A, peg, C1), t) :- move(A, peg, C2, t-1), color(C1).
+(2k)
+terminated(at(A, peg, C1), t) :- move(A, ring, C2, t-1), color(C1).
+(2l)
+terminated(at(A, peg, C1), t) :- move(A, center, C2, t-1), color(C1).
+(2m)
+terminated(at(A, center), t) :- move(A, O, C, t-1).
+(2n)
+The specification of
+color(C2)
+in axioms (
+2g
+)-(
+2m
+) is required in ASP to guarantee safety of rules, i.e., all variables on the left-hand side (
+head of rule
+) of logical implication must appear without negation on the right-hand side (
+body of rule
+).
+Finally, constraints of the task are:
+:- move(A, center, C1, t), closed_gripper(A, t), at(A, ring, C2, t),
+placed(ring, C2, peg, C3, t).
+(3a)
+:- move(A, peg, C1, t), closed_gripper(A, t), at(A, ring, C2, t),
+placed(ring, C2, peg, C3, t).
+(3b)
+:- move(A, ring, C, t), closed_gripper(A, t).
+(3c)
+:- move(A, peg, C1, t), placed(ring, C2, peg, C1, t).
+(3d)
+The lack of head atoms is equivalent to
+⊥
+←
+…
+\bot\leftarrow\ldots
+, i.e., body atoms cannot concurrently be ground, otherwise
+falsum
+⊥
+\bot
+would be implied.
+The semantics of above constraints is then, respectively: arm
+A1
+cannot move to the center for transfer if it is holding a ring which is still placed on a peg (extraction is required); arm
+A1
+cannot move to a peg if it is holding a ring which is still placed on a peg; an arm with closed gripper cannot move to a ring; an arm cannot move to an occupied peg.
+Given the task description, an ASP solver computes (possibly multiple)
+answer sets
+, i.e., the minimal sets of ground atoms satisfying the specifications.
+Each answer set contains actions to be executed at each time step, and the corresponding environmental context.
+3.4
+Inductive learning of ASP theories
+We now provide relevant definitions to introduce the problem of inductive learning of ASP theories in our considered scenario. Additional details can be found in
+Law et al (2018)
+.
+A generic ILP problem
+T
+\pazocal{T}
+for ASP theories is defined as the tuple
+T
+=
+⟨
+B
+,
+S
+M
+,
+E
+⟩
+\pazocal{T}=\langle B,S_{M},E\rangle
+, where
+B
+B
+is the
+background knowledge
+, i.e. a set of axioms and atoms in ASP syntax;
+S
+M
+S_{M}
+is the
+search space
+, i.e. the set of candidate ASP axioms that can be learned; and
+E
+E
+is a set of
+examples
+. The goal of
+T
+\pazocal{T}
+is to find a subset
+H
+⊆
+S
+M
+H\subseteq S_{M}
+such that
+H
+∪
+B
+⊧
+E
+H\cup B\models E
+.
+In ILASP
+(
+Law, 2018
+)
+tool considered in this paper, examples are
+partial interpretations
+defined as follows.
+Definition 1
+(Partial interpretation)
+.
+Let
+P
+P
+be an ASP program. Any set of ground atoms that can be generated from axioms in
+P
+P
+is an
+interpretation
+of
+P
+P
+. Given an interpretation
+I
+I
+of
+P
+P
+, we say that a pair of subsets of grounded atoms
+e
+=
+⟨
+e
+i
+​
+n
+​
+c
+,
+e
+e
+​
+x
+​
+c
+⟩
+e=\langle e^{inc},e^{exc}\rangle
+(respectively the included and excluded set) is a
+partial interpretation (extended by interpretation
+I
+I
+)
+if
+e
+i
+​
+n
+​
+c
+⊆
+I
+e^{inc}\subseteq I
+and
+e
+e
+​
+x
+​
+c
+∩
+I
+=
+∅
+e^{exc}\cap I=\emptyset
+.
+In particular, we consider
+context-dependent partial interpretations
+, as introduced by
+Law et al (2016)
+.
+Definition 2
+(Context-dependent partial interpretation (CDPI))
+.
+A CDPI of an ASP program P with an interpretation I is a tuple
+e
+c
+=
+⟨
+e
+,
+C
+⟩
+e_{c}=\langle e,C\rangle
+, where
+e
+e
+is a partial interpretation and
+C
+C
+is an ASP program called
+context
+.
+I
+I
+is said to extend
+e
+c
+e_{c}
+if
+e
+i
+​
+n
+​
+c
+∪
+C
+⊆
+I
+e^{inc}\cup C\subseteq I
+and
+(
+e
+e
+​
+x
+​
+c
+∪
+C
+)
+∩
+I
+=
+∅
+(e^{exc}\cup C)\cap I=\emptyset
+.
+To better understand CDPIs, consider the task of learning preconditions of action
+release(A,t)
+in the peg transfer domain.
+Hence,
+S
+M
+S_{M}
+includes axioms in the form
+release(A,t) :- F
+1
+, …F
+n
+, being
+F
+i
+a generic environmental atom of the task.
+In ILASP syntax, a CDPI may be expressed as
+#pos(id, {release(psm1,1)}, {release(psm2,1)}, {at(psm1,peg,red,1),
+(4)
+closed_gripper(psm1,1), closed_gripper(psm2,1), …}).
+where
+id
+denotes the unique identifier of the example,
+e
+i
+​
+n
+​
+c
+=
+{
+release(psm1,1)
+}
+e^{inc}=\{{\small\texttt{release(psm1,1)}}\}
+means that the gripper of PSM1 was open at time step 1,
+e
+e
+​
+x
+​
+c
+=
+{
+release(psm2,1)
+}
+e^{exc}=\{{\small\texttt{release(psm2,1)}}\}
+means that the gripper of PSM2 was not open at time step 1, and
+C
+=
+{
+at(psm1,ring,red,1)
+,
+…
+}
+C=\{{\small\texttt{at(psm1,ring,red,1)}},\ldots\}
+is the set of ground environmental atoms at time step 1. In other words,
+e
+i
+​
+n
+​
+c
+e^{inc}
+and
+e
+e
+​
+x
+​
+c
+e^{exc}
+include the ground atoms corresponding to the head of the axioms to be learned, while
+C
+C
+includes all other ground atoms.
+We now specialize
+T
+\pazocal{T}
+to CDPIs as follows:
+Definition 3
+(Learning ASP theories from CDPIs)
+.
+An ILASP learning task from CDPIs is a tuple
+T
+=
+⟨
+B
+,
+S
+M
+,
+E
+⟩
+\pazocal{T}=\langle B,S_{M},E\rangle
+, where
+E
+E
+is a set of CDPIs. We say that
+H
+⊆
+S
+M
+H\subseteq S_{M}
+is a solution to
+T
+\pazocal{T}
+if the following holds:
+∀
+e
+∈
+E
+​
+∃
+A
+​
+S
+​
+s
+.
+t
+.
+B
+∪
+H
+∪
+C
+⊧
+A
+​
+S
+:
+e
+​
+is extended by
+​
+A
+​
+S
+\forall e\in E\ \exists AS\ s.t.\ B\cup H\cup C\models AS:\ e\textrm{ is extended by }AS
+More specifically, ILASP computes the
+shortest
+hypothesis, i.e., the one with minimal number of atoms.
+For instance, from example (
+4
+), ILASP can learn
+release(A, t) :- at(A, peg, C, t).
+(5)
+where the excluded set of example (
+4
+) allows to discard the possible axiom
+release(A, t) :- closed_gripper(A, t)
+.
+In this paper, we consider an extension of the task in Definition
+3
+, i.e., learning ASP theories from
+noisy
+CDPIs as proposed by
+Law (2018)
+:
+Definition 4
+(Learning ASP theories from noisy CDPIs)
+.
+An ILASP learning task from noisy CDPIs is a tuple
+T
+=
+⟨
+B
+,
+S
+M
+,
+E
+⟩
+\pazocal{T}=\langle B,S_{M},E\rangle
+, where
+E
+E
+is a set of
+N
+N
+noisy CDPIs, i.e., CDPIs annotated with an integer weight
+w
+i
+,
+∀
+i
+=
+1
+​
+…
+​
+N
+w_{i},\forall i=1\ldots N
+. We say that
+H
+⊆
+S
+M
+H\subseteq S_{M}
+is a solution to
+T
+\pazocal{T}
+if the following holds:
+∀
+e
+∈
+E
+​
+∃
+A
+​
+S
+​
+s
+.
+t
+.
+B
+∪
+H
+∪
+C
+⊧
+A
+​
+S
+:
+e
+​
+is extended by
+​
+A
+​
+S
+\forall e\in E\ \exists AS\ s.t.\ B\cup H\cup C\models AS:\ e\textrm{ is extended by }AS
+(6)
+More specifically, ILASP computes the hypothesis which minimizes the cost
+Γ
+=
+λ
++
+η
+\Gamma=\lambda+\eta
+, where
+λ
+\lambda
+is the number of atoms in the axioms of the hypothesis and
+η
+=
+∑
+i
+=
+1
+K
+w
+i
+u
+\eta=\sum_{i=1}^{K}w^{u}_{i}
+, being
+{
+w
+i
+u
+}
+i
+=
+1
+K
+\{w^{u}_{i}\}_{i=1}^{K}
+the set of weights for
+K
+≤
+N
+K\leq N
+uncovered examples, i.e., CDPIs not satisfying axiom (
+6
+).
+In other words, Definition
+4
+introduces the possibility to “ignore” some examples, if their weight is low. This is particularly useful to discard highly uncertain examples, e.g., resulting from poor-quality identification.
+Consider, for instance, the following noisy CDPIs:
+#pos(id@
+​
+1
+​
+, {release(psm1,1)}, {release(psm2,1)}, {at(psm1,peg,red,1),
+\displaystyle{\small\texttt{\#pos(id@}}1{\small\texttt{, \lx@text@lbrace release(psm1,1)\lx@text@rbrace, \lx@text@lbrace release(psm2,1)\lx@text@rbrace, \lx@text@lbrace at(psm1,peg,red,1), }}
+closed_gripper(psm1,1), closed_gripper(psm2,1), …}).
+(7a)
+#pos(id@
+​
+2
+​
+, {release(psm1,3)}, {release(psm2,3)}, {at(psm1,peg,red,3),
+\displaystyle{\small\texttt{\#pos(id@}}2{\small\texttt{, \lx@text@lbrace release(psm1,3)\lx@text@rbrace, \lx@text@lbrace release(psm2,3)\lx@text@rbrace, \lx@text@lbrace at(psm1,peg,red,3), }}
+at(psm2,peg,blue,3), closed_gripper(psm1,3), …}).
+(7b)
+The first one would lead to learn
+release(A, t) :- at(A, peg, C, t).
+(8)
+while from the second one
+release(A, t) :- closed_gripper(A, t).
+(9)
+However, axiom (
+9
+) has
+Γ
+=
+2
++
+1
+=
+3
+\Gamma=2+1=3
+(CDPI (
+7a
+) is not covered), while axiom (
+8
+) has
+Γ
+=
+2
++
+2
+=
+4
+\Gamma=2+2=4
+(CDPI (
+7b
+) is not covered). For this reason, ILASP selects (
+8
+) as the best hypothesis.
+Finally, we consider another extension to Definition
+3
+, including
+negative examples
+as in
+Sakama and Inoue (2009)
+.
+Definition 5
+(Learning ASP theories from positive and negative CDPIs)
+.
+Consider An ILASP learning task
+T
+=
+⟨
+B
+,
+S
+M
+,
+E
+⟩
+\pazocal{T}=\langle B,S_{M},E\rangle
+as in Definition
+3
+, where
+E
+=
+⟨
+E
++
+,
+E
+−
+⟩
+E=\langle E^{+},E^{-}\rangle
+is a set of CDPIs split into two sub-sets
+E
++
+,
+E
+−
+E^{+},E^{-}
+, with the latter being negative and the former positive examples. We say that
+H
+⊆
+S
+M
+H\subseteq S_{M}
+is a solution to
+T
+\pazocal{T}
+if the following holds:
+∀
+e
+∈
+E
++
+​
+∃
+A
+​
+S
+​
+s
+.
+t
+.
+B
+∪
+H
+∪
+C
+⊧
+A
+​
+S
+:
+e
+​
+is extended by
+​
+A
+​
+S
+\displaystyle\forall e\in E^{+}\ \exists AS\ s.t.\ B\cup H\cup C\models AS:\ e\textrm{ is extended by }AS
+∀
+e
+∈
+E
+−
+​
+∄
+​
+A
+​
+S
+​
+s
+.
+t
+.
+B
+∪
+H
+∪
+C
+⊧
+A
+​
+S
+:
+e
+​
+is extended by
+​
+A
+​
+S
+\displaystyle\forall e\in E^{-}\ \nexists AS\ s.t.\ B\cup H\cup C\models AS:\ e\textrm{ is extended by }AS
+In other words, while standard positive examples describe
+allowed (but not mandatory) ground atoms to be modeled by the learned ASP theory
+, negative examples are more strong and describe
+forbidden ground atoms
+, hence typically leading to the learning of task constraints.
+For instance, from example (
+4
+) ILASP may learn either axiom (
+5
+) or:
+0 { release(A, t) : closed_gripper(A, t)} 1.
+(10)
+since the aggregate construct implies that
+release(A, t)
+may or may not be grounded
+, thus
+e
+i
+​
+n
+​
+c
+=
+{
+release(psm1, 1)
+}
+,
+e
+e
+​
+x
+​
+c
+=
+{
+release(psm2, 1)
+}
+e^{inc}=\{{\small\texttt{release(psm1, 1)}}\},e^{exc}=\{{\small\texttt{release(psm2, 1)}}\}
+are still allowed by Definition
+3
+.
+However, if we add to example (
+4
+) the negative example:
+#neg(id, {release(psm2,1)}, {)}, {at(psm1,peg,red,1),
+closed_gripper(psm1,1), closed_gripper(psm2,1), …}).
+axiom (
+10
+) is not allowed from Definition
+5
+, since it could still model
+e
+i
+​
+n
+​
+c
+=
+{
+release(psm2, 1)
+}
+e^{inc}=\{{\small\texttt{release(psm2, 1)}}\}
+which is now strictly forbidden.
+4
+Methodology
+In this section, we present our methodology for unsupervised learning and online supervised refinement of ASP task knowledge.
+4.1
+Unsupervised learning of ASP task knowledge
+The unsupervised learning strategy is sketched in Algorithm
+1
+.
+More specifically, in Section
+4.1.1
+we describe how to generate the action-context tuples, starting from a dataset of synchronized visual and kinematic executions of the task. Then, in Section
+4.1.3
+and
+4.1.4
+, we show how to build examples from action-context tuples, in order to learn ASP axioms for constrained preconditions, and how to generate axioms for effects of actions in the event calculus, respectively.
+While explaining different components of our strategy, we refer to specific lines in Algorithm
+1
+.
+Algorithm 1
+Unsupervised learning of ASP task knowledge
+1:
+Input
+: Synchronized video-kinematic stream of task executions
+S
+S
+; action identification algorithm
+Φ
+\Phi
+; set of task action labels
+L
+\pazocal{L}
+; set of semantic environmental features
+F
+\pazocal{F}
+2:
+Output
+: Set
+X
+\pazocal{X}
+of extended action preconditions; sets
+I
+,
+E
+\pazocal{I},\pazocal{E}
+of initiating and terminating conditions, respectively,
+∀
+F
+∈
+F
+\forall{\small\texttt{F}}\in\pazocal{F}
+3:
+Initialize
+:
+X
+=
+I
+F
+=
+I
+=
+E
+=
+E
+F
+=
+∅
+\pazocal{X}=\pazocal{I}_{\small\texttt{F}}=\pazocal{I}=\pazocal{E}=\pazocal{E}_{\small\texttt{F}}=\emptyset
+.
+4:
+S
+=
+Φ
+⁡
+(
+S
+)
+\pazocal{S}=\Phi(S)
+%
+Sequence of probabilistic timed segments
+5:
+N
+=
+|
+S
+|
+N=|\pazocal{S}|
+6:
+P
+=
+{
+⟨
+l
+j
+,
+C
+i
+,
+ρ
+i
+​
+j
+⟩
+}
+\pazocal{P}=\{\langle l_{j},C_{i},\rho_{ij}\rangle\}
+=
+GENERATE_ACT
+(
+S
+\pazocal{S}
+) %
+Generate action-context tuples
+7:
+for
+j
+∈
+{
+1
+,
+…
+,
+|
+L
+|
+}
+j\in\{1,\ldots,|\pazocal{L}|\}
+do
+8:
+for
+i
+∈
+{
+1
+,
+…
+,
+N
+}
+i\in\{1,\ldots,N\}
+do
+9:
+if
+ρ
+i
+​
+j
+<
+1
+N
+​
+∑
+k
+=
+1
+N
+ρ
+k
+​
+j
+\rho_{ij}<\frac{1}{N}\sum_{k=1}^{N}\rho_{kj}
+then
+10:
+P
+\pazocal{P}
+.
+REMOVE
+(
+⟨
+l
+j
+,
+C
+i
+,
+ρ
+i
+​
+j
+⟩
+\langle l_{j},C_{i},\rho_{ij}\rangle
+) %
+Filter too noisy examples
+11:
+else
+12:
+for all
+F
+∈
+F
+\in\pazocal{F}
+s.t.
+f
+∈
+G
+⁡
+(
+F
+)
+∧
+f
+∈
+C
+i
+{\small\texttt{f}}\in G({\small\texttt{F}})\land{\small\texttt{f}}\in C_{i}
+do
+%
+Consider ground environmental features in the context
+13:
+if
+f
+∉
+C
+i
+−
+1
+\notin C_{i-1}
+then
+14:
+I
+F
+\pazocal{I}_{\small\texttt{F}}
+.
+APPEND
+(
+⟨
+F
+,
+l
+j
+,
+ρ
+i
+​
+j
+⟩
+\langle{\small\texttt{F}},l_{j},\rho_{ij}\rangle
+) %
+Probabilistic initiating condition
+15:
+end
+if
+16:
+if
+f
+∉
+C
+i
++
+1
+\notin C_{i+1}
+then
+17:
+E
+F
+\pazocal{E}_{\small\texttt{F}}
+.
+APPEND
+(
+⟨
+F
+,
+l
+j
+,
+ρ
+i
+​
+j
+⟩
+\langle{\small\texttt{F}},l_{j},\rho_{ij}\rangle
+) %
+Probabilistic terminating condition
+18:
+end
+if
+19:
+end
+for
+20:
+end
+if
+21:
+end
+for
+22:
+P
+j
+=
+{
+p
+=
+⟨
+l
+j
+,
+C
+i
+,
+ρ
+i
+​
+j
+⟩
+∈
+P
+}
+\pazocal{P}_{j}=\{p=\langle l_{j},C_{i},\rho_{ij}\rangle\in\pazocal{P}\}
+%
+Split action-context tuples for each action label
+23:
+C
+\pazocal{C}
+=
+GENERATE_CDPI
+(
+P
+j
+\pazocal{P}_{j}
+) %
+Generate CDPIs for each action label
+24:
+X
+j
+\pazocal{X}_{j}
+=
+ILASP
+(
+C
+\pazocal{C}
+) %
+Run ILASP to learn extended action preconditions for
+j
+j
+-th label
+25:
+X
+\pazocal{X}
+.
+APPEND
+(
+X
+j
+\pazocal{X}_{j}
+)
+26:
+end
+for
+27:
+for
+F
+∈
+F
+\in\pazocal{F}
+do
+28:
+⟨
+F
+,
+l
+j
+i
+,
+ρ
+i
+​
+j
+⟩
+=
+argmax
+ρ
+¯
+j
+​
+I
+F
+\langle{\small\texttt{F}},l^{i}_{j},\rho_{ij}\rangle=\underset{\bar{\rho}_{j}}{\argmax}\ \pazocal{I}_{{\small\texttt{F}}}
+%
+Find most probable initiating condition
+29:
+⟨
+F
+,
+l
+j
+e
+,
+ρ
+i
+​
+j
+⟩
+=
+argmax
+ρ
+¯
+j
+​
+E
+F
+\langle{\small\texttt{F}},l^{e}_{j},\rho_{ij}\rangle=\underset{\bar{\rho}_{j}}{\argmax}\ \pazocal{E}_{{\small\texttt{F}}}
+%
+Find most probable terminating condition
+30:
+I
+\pazocal{I}
+.
+APPEND
+(
+initiated(F, t) :-
+l
+j
+i
+l_{j}^{i}
+)
+31:
+E
+\pazocal{E}
+.
+APPEND
+(
+terminated(F, t) :-
+l
+j
+e
+l_{j}^{e}
+)
+32:
+end
+forreturn
+X
+,
+I
+,
+E
+\pazocal{X},\pazocal{I},\pazocal{E}
+4.1.1
+Action-context tuples generation
+The input to our learning pipeline is a dataset
+S
+S
+of
+execution traces
+, i.e. synchronized kinematic and video streams of an instance of the task. Recording assumes that the robot and the vision system share a common reference frame, e.g., using the calibration procedure by
+Roberti et al (2020)
+.
+The kinematic stream includes the following features
+K
+\pazocal{K}
+: i) Cartesian coordinates of each arm
+A
+A
+of the robotic system
+𝐩
+A
+=
+{
+x
+p
+​
+o
+​
+s
+,
+A
+,
+y
+p
+​
+o
+​
+s
+,
+A
+,
+z
+p
+​
+o
+​
+s
+,
+A
+}
+\mathbf{p}_{A}=\{x_{pos,A},y_{pos,A},z_{pos,A}\}
+; ii) quaternion coordinates of each arm
+A
+A
+of the robotic system
+𝐪
+A
+=
+{
+x
+o
+​
+r
+,
+A
+,
+y
+o
+​
+r
+,
+A
+,
+z
+o
+​
+r
+,
+A
+,
+w
+o
+​
+r
+,
+A
+}
+\mathbf{q}_{A}=\{x_{or,A},y_{or,A},z_{or,A},w_{or,A}\}
+; iii) opening angles
+j
+A
+j_{A}
+of the grippers. Other works by
+van Amsterdam et al (2019)
+;
+Despinoy et al (2015)
+consider additional kinematic features, e.g., Cartesian and rotational velocities; however, following our previous work
+(
+Meli and Fiorini, 2021
+)
+, we decide not to consider them without loss of generality.
+The video stream is acquired from a RGBD camera. The following geometric features
+G
+\pazocal{G}
+are extracted using standard color segmentation and shape recognition with random sample consensus
+(
+Fischler and Bolles, 1981
+)
+: i) center position
+𝐩
+r
+​
+c
+=
+{
+x
+r
+​
+c
+,
+y
+r
+​
+c
+,
+z
+r
+​
+c
+}
+\mathbf{p}_{rc}=\{x_{rc},y_{rc},z_{rc}\}
+of each ring with color
+c
+c
+; ii) tip position
+𝐩
+p
+​
+c
+=
+{
+x
+p
+​
+c
+,
+y
+p
+​
+c
+,
+z
+p
+​
+c
+}
+\mathbf{p}_{pc}=\{x_{pc},y_{pc},z_{pc}\}
+of each peg with color
+c
+c
+; iii) position
+𝐩
+b
+=
+{
+x
+b
+,
+y
+b
+,
+z
+b
+}
+\mathbf{p}_{b}=\{x_{b},y_{b},z_{b}\}
+of meeting point at the center of the base for transfer; iv) ring radius
+r
+​
+r
+rr
+.
+Kinematic and visual geometric quantities can be automatically mapped to environmental features
+F
+\pazocal{F}
+at each time step with the following relations, as proposed by
+Ginesi et al (2020)
+:
+at(A,ring,C)
+←
+‖
+𝐩
+A
+−
+𝐩
+r
+​
+c
+‖
+2
+<
+r
+​
+r
+\displaystyle\leftarrow||\mathbf{p}_{A}-\mathbf{p}_{rc}||_{2}<rr
+(11)
+at(A,peg,C)
+←
+‖
+𝐩
+A
+−
+𝐩
+p
+​
+c
+‖
+2
+<
+r
+​
+r
+∧
+z
+p
+​
+c
+<
+z
+p
+​
+o
+​
+s
+,
+A
+\displaystyle\leftarrow||\mathbf{p}_{A}-\mathbf{p}_{pc}||_{2}<rr\ \land\ z_{pc}<z_{pos,A}
+placed(ring,C1,peg,C2)
+←
+‖
+𝐩
+r
+​
+c
+​
+1
+−
+𝐩
+p
+​
+c
+​
+2
+‖
+2
+<
+r
+​
+r
+∧
+z
+r
+​
+c
+​
+1
+<
+z
+p
+​
+c
+​
+2
+\displaystyle\leftarrow||\mathbf{p}_{rc1}-\mathbf{p}_{pc2}||_{2}<rr\ \land\ z_{rc1}<z_{pc2}
+reachable(A,O,C)
+←
+a
+​
+r
+​
+g
+​
+m
+​
+i
+​
+n
+A
+​
+|
+y
+o
+​
+c
+−
+y
+p
+​
+o
+​
+s
+,
+A
+|
+=
+A
+\displaystyle\leftarrow argmin_{A}|y_{oc}-y_{pos,A}|=A
+closed_gripper(A)
+←
+j
+A
+<
+π
+8
+\displaystyle\leftarrow j_{A}<\frac{\pi}{8}
+at(A,center)
+←
+‖
+{
+x
+p
+​
+o
+​
+s
+,
+A
+,
+y
+p
+​
+o
+​
+s
+,
+A
+}
+−
+{
+x
+b
+,
+y
+b
+}
+‖
+2
+<
+r
+​
+r
+\displaystyle\leftarrow||\{x_{pos,A},y_{pos,A}\}-\{x_{b},y_{b}\}||_{2}<rr
+4
+4
+footnotetext:
+y
+o
+​
+c
+y_{oc}
+denotes the
+y
+y
+-coordinate of entity
+O
+∈
+\in
+{ring, peg}
+.
+5
+5
+footnotetext:
+π
+8
+\frac{\pi}{8}
+is chosen empirically to identify that the gripper is closed, since the angle is not exactly
+0
+0
+from the encoders of dVRK.
+The set
+F
+\pazocal{F}
+in this paper includes only commonsense information about the relative position of objects and robotic arms and the status of the gripper, hence discarding higher-level concepts as
+the arm is holding a ring
+defined by
+Meli and Fiorini (2021)
+. In this way, we reduce the amount of sophisticated prior knowledge required for action identification and task knowledge induction.
+In fact, the definition of semantic features may be retrieved or straightforwardly derived from available domain ontologies, e.g., by
+Gibaud et al (2018)
+for surgery and
+Schlenoff et al (2012)
+for robotics and automation (for instance, relative positions are connected to the concept of distance, retrieved from the already available
+PositionPoint
+class in
+Schlenoff et al (2012)
+), thus requiring minimal effort from the human designer.
+We can now generate the action-context tuples needed for our learning pipeline, using any algorithm
+Φ
+\Phi
+for action identification from video-kinematic input.
+Such algorithms split the visual-kinematic stream of execution into
+N
+N
+timed segments
+⟨
+K
+i
+,
+G
+i
+,
+t
+i
+⟩
+\langle\pazocal{K}_{i},\pazocal{G}_{i},t_{i}\rangle
+(
+Line 4
+), where
+K
+i
+\pazocal{K}_{i}
+and
+G
+i
+\pazocal{G}_{i}
+are respectively the kinematic and geometric features for the specific segment starting at
+t
+i
+t_{i}
+. Then, they cluster similar segments according to a distance metric
+d
+i
+​
+j
+:
+K
+i
+×
+G
+i
+×
+K
+j
+×
+G
+j
+→
+ℝ
++
+d_{ij}:\pazocal{K}_{i}\times\pazocal{G}_{i}\times\pazocal{K}_{j}\times\pazocal{G}_{j}\rightarrow\mathbb{R}^{+}
+.
+We then convert each
+i
+i
+-th timed segment to
+|
+L
+|
+|\pazocal{L}|
+action-context tuples
+(set
+P
+\pazocal{P}
+)
+⟨
+l
+j
+,
+C
+i
+,
+ρ
+i
+​
+j
+⟩
+,
+∀
+j
+=
+1
+,
+…
+,
+|
+L
+|
+\langle l_{j},C_{i},\rho_{ij}\rangle,\\
+\forall j=1,\ldots,|\pazocal{L}|
+(
+Line 6
+), where
+C
+i
+C_{i}
+is the
+context
+set
+G
+⁡
+(
+F
+)
+G(\pazocal{F})
+of ground environmental features computed from
+K
+i
+\pazocal{K}_{i}
+and
+G
+i
+\pazocal{G}_{i}
+via relations (
+11
+);
+l
+j
+l_{j}
+is the unique identifier of an abstract (non-ground) action of the task in the set
+L
+\pazocal{L}
+;
+ρ
+i
+​
+j
+∈
+[
+0
+,
+1
+]
+\rho_{ij}\in[0,1]
+is the confidence level of the tuple, defined as:
+ρ
+i
+​
+j
+=
+1
+−
+d
+i
+​
+j
+∑
+k
+=
+1
+|
+L
+|
+d
+i
+​
+k
+\rho_{ij}=1-\frac{d_{ij}}{\sum\limits_{k=1}^{|\pazocal{L}|}d_{ik}}
+In other words, the action-context tuple states that under the context
+C
+i
+C_{i}
+, an action of type
+l
+j
+l_{j}
+has been executed with probability
+ρ
+i
+​
+j
+\rho_{ij}
+.
+In this paper, we assume that the number of actions in
+L
+\pazocal{L}
+, i.e.,
+|
+L
+|
+|\pazocal{L}|
+, is known in advance.
+It is reasonable, since typically the set of allowed actions of a robotic task (hence their corresponding motion primitives) is assumed as known
+(
+Kim et al, 2021
+;
+Goel and Brunskill, 2019
+)
+, e.g., provided directly in the annotations of the benchmark JIGSAWS dataset for surgical gestures analysis
+(
+Gao et al, 2014
+)
+. On the contrary, semantic information as the target of an action (e.g.,
+move(A, ring, C)
+has a ring with color
+C
+as a target), its effects and preconditions are not known and must be discovered from the execution traces.
+As a consequence, while the actual set of abstract action for peg transfer should be
+L
+=
+\pazocal{L}=
+{
+move(A,ring,C), move(A,peg,C), move(A,center,C), release(A), grasp(A,ring,C), extract(A, ring, C)
+}, we only consider a less informative set
+L
+=
+{
+l
+j
+(
+A
+)
+}
+,
+∀
+j
+=
+1
+,
+…
+,
+|
+L
+|
+\pazocal{L}=\{l_{j}(\pazocal{A})\},\forall j=1,\ldots,|\pazocal{L}|
+. where
+A
+\pazocal{A}
+is a subset of the available robotic arms (
+|
+A
+|
+≤
+2
+|\pazocal{A}|\leq 2
+in peg transfer) actually involved in the specific action execution. The set
+A
+\pazocal{A}
+can be easily retrieved from the kinematic features, e.g., evaluating the variation of
+𝐩
+A
+\mathbf{p}_{A}
+and
+𝐪
+A
+\mathbf{q}_{A}
+from the beginning to the end of each timed segment returned from the identification algorithm.
+4.1.2
+Constraints as extended action preconditions
+The ILASP formulation considered for unsupervised task knowledge learning reflects Definition
+4
+, i.e., excluding negative examples. Though it is possible to define noisy negative examples and extend Definition
+5
+similarly to Definition
+4
+, this would not be a correct modeling approach. In fact, we learn task knowledge from examples generated by an unsupervised action identification algorithm, which only considers
+observed executions of specific actions
+, without any information about not executed actions. Hence, similarly to our previous works on discovering procedural knowledge from uncertain execution
+(
+Mazzi et al, 2023b
+;
+Meli et al, 2024
+)
+, our task mainly matches the definition of positive examples with an included (observed) and and excluded (unobserved) set in the CDPIs, rather than introducing strictly forbidding negative examples.
+At the same time, only negative examples allow to learn hard constraints typical of real robotic tasks. For this reason, we embed constraints as
+extended preconditions
+of actions. In fact, constraints (
+3a
+)-(
+3d
+) can be added to preconditions (
+1
+) as:
+0 {move(A,ring,C,t) : reachable(A,ring,C,t),not closed_gripper(A,t);
+(12a)
+move(A,peg,C,t) : reachable(A,peg,C,t),not placed(ring,C1,peg,C,t);
+(12b)
+move(A,peg,C,t) : reachable(A,peg,C,t), not placed(ring,C1,peg,C2,t),
+closed_gripper(A,t),at(A,ring,C1,t);
+(12c)
+move(A,center,C,t) : at(A,ring,C,t),not placed(ring,C,peg,C1,t),
+closed_gripper(A,t),at(A,ring,C1,t);
+(12d)
+extract(A,ring,C,t) : at(A,ring,C,t),closed_gripper(A,t);
+(12e)
+grasp(A,ring,C,t) : at(A,ring,C,t);
+(12f)
+release(A,t) : at(A,ring,C,t),closed_gripper(A,t)} 1.
+(12g)
+where constraint (
+3a
+) is embedded in axiom (
+12d
+), constraints (
+3b
+)-(
+3d
+) are represented in (
+12b
+)-(
+12c
+) and constraint (
+3c
+) is added to precondition (
+12a
+).
+4.1.3
+Learning extended action preconditions
+We now show how to translate action-context tuples into CDPIs for learning ASP task knowledge.
+We assume that axioms for each action can be learned separately, i.e., it is possible to launch ILP tasks in Definition
+4
+in parallel for all actions.
+This is reasonable, since we want to capture ASP axioms matching partial interpretations to the context, i.e., relations between actions and environmental features similar to the ones presented in Section
+3.3
+. Hence, mutual dependencies between actions can be ignored, since they are implicitly represented with effects of actions on the environmental context.
+Moreover, we discard
+i
+i
+-th action-context tuple for a given action label
+l
+j
+(
+Lines 9-10
+) if
+ρ
+i
+​
+j
+<
+1
+N
+​
+∑
+k
+=
+1
+N
+ρ
+k
+​
+j
+\rho_{ij}<\frac{1}{N}\sum_{k=1}^{N}\rho_{kj}
+(13)
+In this way, we reduce the input noise to ILASP.
+For each
+i
+,
+j
+i,j
+-th action-context tuple, we then build a noisy CDPI (
+Line 18
+) in the form:
+#pos(id@
+​
+ρ
+i
+​
+j
+​
+,
+​
+G
+​
+(
+l
+j
+)
+​
+,
+​
+H
+​
+(
+l
+j
+)
+∖
+G
+⁡
+(
+l
+j
+)
+​
+,
+​
+C
+i
+​
+).
+{\small\texttt{\#pos(id@}}\rho_{ij}{\small\texttt{, }}G(l_{j}){\small\texttt{, }}\pazocal{H}(l_{j})\setminus G(l_{j}){\small\texttt{, }}C_{i}{\small\texttt{).}}
+(14)
+where
+H
+⁡
+(
+l
+j
+)
+\pazocal{H}(l_{j})
+is the Herbrand base of
+l
+j
+=
+l
+j
+​
+(
+A
+)
+l_{j}=l_{j}(\pazocal{A})
+, i.e., the set of all possible ground atoms which can be derived from
+l
+j
+l_{j}
+(i.e., the different possible assignments of arm variables in
+A
+\pazocal{A}
+);
+G
+⁡
+(
+l
+j
+)
+⊆
+H
+⁡
+(
+l
+j
+)
+G(l_{j})\subseteq\pazocal{H}(l_{j})
+is the set of ground atoms actually observed at the specific time step represented by the example.
+For instance, if PSM1 moves towards the red ring,
+l
+j
+l_{j}
+corresponds to
+move(A, ring, C) =
+l
+j
+l_{j}
+(A)
+,
+G
+(
+l
+j
+)
+=
+{
+l
+j
+G(l_{j})=\{l_{j}
+(psm1)
+},
+H
+(
+l
+j
+)
+=
+{
+l
+j
+\pazocal{H}(l_{j})=\{l_{j}
+(psm1)
+,
+l
+j
+l_{j}
+(psm2)
+}.
+The set
+e
+e
+​
+x
+​
+c
+e^{exc}
+allows to learn extended preconditions embedding constraints.
+Given these CDPIs, for each
+l
+j
+l_{j}
+we define an ILASP task (
+Line 19
+) to learn extended action preconditions (set
+X
+\pazocal{X}
+), with background knowledge containing the definition of
+F
+\pazocal{F}
+and ASP variables (see Section
+3.3
+) and the search space consisting of axioms in the form
+l
+j
+l_{j}
+:- F
+1
+,
+…
+{}_{1},\ldots
+,
+F
+n
+, being
+F
+i
+∈
+F
+,
+∀
+i
+=
+1
+,
+…
+,
+n
+{}_{i}\in\pazocal{F},\forall i=1,\ldots,n
+.
+4.1.4
+Generating effects of actions
+The quality of axioms representing effects of actions depends on the accuracy in the identification of action labels.
+We generate axioms corresponding to effects of actions as follows.
+Assuming the
+i
+,
+j
+i,j
+-th action-context tuple represents the task situation at timestep
+t
+t
+, with context
+C
+t
+≡
+C
+i
+C_{t}\equiv C_{i}
+, we evaluate the differences between
+C
+t
+−
+1
+C_{t-1}
+-
+C
+t
+C_{t}
+on one side, and
+C
+t
++
+1
+C_{t+1}
+-
+C
+t
+C_{t}
+on the other side
+6
+6
+6
+In Algorithm
+1
+, we denote the temporal subscript as
+i
+i
+in the definition of the contexts (
+Lines 12-16
+). In fact, from
+Line 5
+and
+Line 8
+,
+i
+∈
+1
+,
+…
+,
+N
+i\in 1,\ldots,N
+. On the contrary, in the main text of the paper, we use
+t
+−
+1
+t-1
+and
+t
++
+1
+t+1
+to refer to previous and following temporal instants, since we assume some action-context tuples have already been removed by criterion (
+13
+), hence the sequence of
+i
+i
+’s does not necessarily match the temporal sequence.
+.
+Specifically, for each ground atom
+f
+∈
+G
+⁡
+(
+F
+)
+{\small\texttt{f}}\in G({\small\texttt{F}})
+, with
+F
+∈
+F
+\in\pazocal{F}
+, we verify:
+•
+if
+f
+∈
+C
+t
+\in C_{t}
+and
+f
+∉
+C
+t
+−
+1
+\notin C_{t-1}
+, we define a
+probabilistic initiating example
+⟨
+F
+,
+l
+j
+,
+ρ
+i
+​
+j
+⟩
+\langle{\small\texttt{F}},l_{j},\rho_{ij}\rangle
+, meaning that the effect of
+l
+j
+l_{j}
+is to ground the environmental atom
+F
+with probability
+ρ
+i
+​
+j
+\rho_{ij}
+(
+Lines 13-14
+);
+•
+if
+f
+∈
+C
+t
+\in C_{t}
+and
+f
+∉
+C
+t
++
+1
+\notin C_{t+1}
+, we define a
+probabilistic terminating example
+⟨
+F
+,
+l
+j
+,
+ρ
+i
+​
+j
+⟩
+\langle{\small\texttt{F}},l_{j},\rho_{ij}\rangle
+, meaning that the effect of
+l
+j
+l_{j}
+is to unground the environmental atom
+F
+with probability
+ρ
+i
+​
+j
+\rho_{ij}
+(
+Lines 15-16
+).
+For each
+F
+, we obtain a set of probabilistic initiating and terminating examples
+I
+F
+\pazocal{I}_{{\small\texttt{F}}}
+,
+E
+F
+\pazocal{E}_{{\small\texttt{F}}}
+, respectively.
+We then rank these sets according to
+ρ
+¯
+j
+=
+1
+K
+​
+∑
+i
+=
+1
+K
+ρ
+i
+​
+j
+∀
+⟨
+F
+,
+l
+j
+,
+ρ
+i
+​
+j
+⟩
+∈
+I
+F
+​
+(
+respectively
+,
+E
+F
+)
+\bar{\rho}_{j}=\frac{1}{K}\sum\limits_{i=1}^{K}\rho_{ij}\quad\forall\langle{\small\texttt{F}},l_{j},\rho_{ij}\rangle\in\pazocal{I}_{{\small\texttt{F}}}\ (\mathrm{respectively,}\ \pazocal{E}_{{\small\texttt{F}}})
+The above mean measures the accuracy of identifying a generic action
+l
+j
+l_{j}
+as an initiating or terminating condition for a semantic feature
+F
+.
+We then identify
+l
+j
+e
+l_{j}^{e}
+and
+l
+j
+i
+l_{j}^{i}
+, corresponding respectively to
+max
+ρ
+¯
+j
+⁡
+E
+F
+\max_{\bar{\rho}_{j}}\pazocal{E}_{{\small\texttt{F}}}
+and
+max
+ρ
+¯
+j
+⁡
+I
+F
+\max_{\bar{\rho}_{j}}\pazocal{I}_{{\small\texttt{F}}}
+(
+Lines 22-23
+).
+We finally define the following starting and ending conditions for
+F
+(
+Lines 24-25
+):
+initiated(F, t) :-
+l
+j
+i
+.
+\displaystyle{\small\texttt{initiated(F, t) :- }}l_{j}^{i}.
+terminated(F, t) :-
+l
+j
+e
+.
+\displaystyle{\small\texttt{terminated(F, t) :- }}l_{j}^{e}.
+whose collection constitutes the sets
+I
+,
+E
+\pazocal{I},\pazocal{E}
+of initiating and terminating conditions, respectively, describine the effects of robotic actions on the environment.
+4.2
+Online supervised refinement of ASP task knowledge
+Learned preconditions
+X
+\pazocal{X}
+and initiating / terminating conditions (
+I
+\pazocal{I}
+/
+E
+\pazocal{E}
+) for effects of actions may be incomplete or inexact, depending on the quality of the input video-kinematic stream
+S
+S
+and the accuracy of the chosen unsupervised action identification algorithm
+Φ
+\Phi
+.
+Hence, especially in safety-critical scenarios as robotic surgery, we must design a
+shared autonomy framework
+where autonomous ASP reasoning (based on learned task knowledge) is interleaved with human control. At the same time, shared autonomy is useful to
+continuously improve
+the autonomous system, exploiting human feedback as a teacher.
+Two main assumptions underlie our methodology: i) ASP action labels are directly mapped to motion primitives for actual robotic execution; ii) a perception system (in our case, a RGB-D camera and kinematic sensors from the robot) is available to automatically ground semantic features
+F
+\pazocal{F}
+and perform reasoning.
+Both are reasonable. In fact, once timed segments are clustered according to action labels, it is possible to efficiently learn in closed form the corresponding primitive for each action, e.g., as shown by
+Ginesi et al (2020)
+;
+Ginesi et al (2021b)
+.
+Moreover, semantic features are simple geometric re-interpretations of kinematic and geometric features from sensors, according to relations (
+11
+), and
+Ginesi et al (2020)
+;
+Tagliabue et al (2022)
+;
+Meli et al (2021b)
+showed that they can be efficiently computed for online planning.
+We now detail the main steps of our proposed methodology.
+First, preconditions in
+X
+\pazocal{X}
+are converted to a set of aggregate preconditions
+X
+a
+\pazocal{X}_{a}
+:
+0 {
+l
+0
+: F
+1
+,
+F
+2
+,
+…
+,
+F
+n
+;
+\displaystyle{\small\texttt{0 \lx@text@lbrace}}l_{0}{\small\texttt{: F}}_{1},{\small\texttt{F}}_{2},\ldots,{\small\texttt{F}}_{n};
+(15)
+l
+1
+: F
+1
+,
+F
+2
+,
+…
+,
+F
+n
+;
+\displaystyle\ \ \ \ l_{1}{\small\texttt{: F}}_{1},{\small\texttt{F}}_{2},\ldots,{\small\texttt{F}}_{n};
+…
+\displaystyle\ \ \ \ \ldots
+l
+|
+L
+|
+: F
+1
+,
+F
+2
+,
+…
+,
+F
+n
+} 1.
+\displaystyle\ \ \ \ l_{|\pazocal{L}|}{\small\texttt{: F}}_{1},{\small\texttt{F}}_{2},\ldots,{\small\texttt{F}}_{n}{\small\texttt{\lx@text@rbrace 1.}}
+where
+F
+i
+∈
+F
+,
+∀
+i
+=
+1
+,
+…
+,
+n
+{}_{i}\in\pazocal{F},\forall i=1,\ldots,n
+.
+In this way, we set up an ASP program combining
+E
+,
+I
+,
+X
+a
+\pazocal{E},\pazocal{I},\pazocal{X}_{a}
+which can be used for online task planning.
+At the beginning of the task, the perception system grounds semantic features, thus triggering ASP reasoning.
+The generated plan is a sequence of actions
+S
+a
+=
+⟨
+a
+1
+,
+a
+2
+,
+…
+,
+a
+n
+⟩
+S_{a}=\langle{\small\texttt{a}}_{1},{\small\texttt{a}}_{2},\ldots,{\small\texttt{a}}_{n}\rangle
+, selected for execution according to a FIFO policy.
+Before executing
+a
+1
+{\small\texttt{a}}_{1}
+, which is an instance of some
+l
+j
+l_{j}
+, the user is asked a feedback on whether he approves it or not.
+In case of approval, we generate and store a positive
+not noisy
+CDPI for
+l
+j
+l_{j}
+:
+#pos(id
+,
+{
+a
+1
+}
+,
+H
+⁡
+(
+l
+j
+)
+∖
+{
+a
+1
+}
+,
+C
+t
+​
+).
+{\small\texttt{\#pos(id}},\{{\small\texttt{a}}_{1}\},\pazocal{H}(l_{j})\setminus\{{\small\texttt{a}}_{1}\},C_{t}{\small\texttt{).}}
+being
+C
+t
+C_{t}
+the set of ground environmental features at current time
+t
+t
+perceived by sensors.
+Otherwise, we generate and store a negative not noisy example:
+#neg(id
+,
+{
+a
+1
+}
+,
+{
+}
+,
+C
+t
+​
+).
+{\small\texttt{\#neg(id}},\{{\small\texttt{a}}_{1}\},\{\},C_{t}{\small\texttt{).}}
+We then ask the user for a feasible action
+a
+u
+{\small\texttt{a}}_{u}
+, which is an instance of, e.g.,
+l
+i
+,
+i
+≠
+j
+l_{i},i\neq j
+, and store a positive CDPI:
+#pos(id
+,
+{
+a
+u
+}
+,
+H
+⁡
+(
+l
+i
+)
+∖
+{
+a
+u
+}
+,
+C
+t
+​
+).
+{\small\texttt{\#pos(id}},\{{\small\texttt{a}}_{u}\},\pazocal{H}(l_{i})\setminus\{{\small\texttt{a}}_{u}\},C_{t}{\small\texttt{).}}
+Then, we execute an action
+a
+∗
+{\small\texttt{a}}^{*}
+(either
+a
+u
+{\small\texttt{a}}_{u}
+or
+a
+j
+{\small\texttt{a}}_{j}
+), transiting to time step
+t
++
+1
+t+1
+.
+At this point, we evaluate each ground environmental feature
+f
+occurring in
+C
+t
+C_{t}
+but not in
+C
+t
++
+1
+C_{t+1}
+(respectively, viceversa), and generate a positive CDPI for terminating (respectively, initiating) conditions of
+F =
+G
+−
+1
+G^{-1}
+(f)
+(i.e., the corresponding not ground semantic feature) as:
+#pos(id, {terminated(f, t+1)}, {},
+​
+C
+t
+∖
+{f}
+∪
+{
+a
+∗
+}
+​
+).
+\displaystyle{\small\texttt{\#pos(id, \lx@text@lbrace terminated(f, t+1)\lx@text@rbrace, \lx@text@lbrace\lx@text@rbrace, }}C_{t}\setminus{\small\texttt{\lx@text@lbrace f\lx@text@rbrace}}\cup\{{\small\texttt{a}}^{*}\}{\small\texttt{).}}
+respectively
+#pos(id, {initiated(f, t+1)}, {},
+​
+C
+t
+∖
+{f}
+∪
+{
+a
+∗
+}
+​
+).
+\displaystyle{\small\texttt{\#pos(id, \lx@text@lbrace initiated(f, t+1)\lx@text@rbrace, \lx@text@lbrace\lx@text@rbrace, }}C_{t}\setminus{\small\texttt{\lx@text@lbrace f\lx@text@rbrace}}\cup\{{\small\texttt{a}}^{*}\}{\small\texttt{).}}
+After an action belonging to
+l
+j
+l_{j}
+has been
+forbidden
+, and an alternative one belonging to
+l
+i
+l_{i}
+has been provided by the user, we run ILASP online for both action labels, as well as the initiating and terminating conditions for all newly grounded or ungrounded semantic features. We then update corresponding axioms in
+E
+,
+I
+,
+X
+a
+\pazocal{E},\pazocal{I},\pazocal{X}_{a}
+.
+In this way, we do not refine task knowledge at each step of execution, which would be too computationally demanding, but only when the autonomous system exhibits unwanted, potentially unsafe behavior (i.e., available task knowledge is not correct).
+5
+Results
+We now validate our methodology in the peg transfer domain.
+Specifically, we first analyze the performance of Algorithm
+1
+on a relatively small dataset containing both visual and kinematic information about task execution.
+Then, we show how to practically include learned task knowledge into an autonomous robotic framework as the one by
+Ginesi et al (2020)
+, in order to realize shared autonomy with incremental refinement of ASP task knowledge.
+All experiments are run on a computer with AMD Ryzen 7 3700x CPU (8 cores, 16 threads,
+4.4
+GHz
+4.4\text{\,}\mathrm{G}\mathrm{H}\mathrm{z}
+nominal frequency) and
+32
+GB
+32\text{\,}\mathrm{G}\mathrm{B}
+RAM.
+5.1
+Unsupervised learning of ASP task knowledge
+(a)
+(b)
+(c)
+Figure 2
+:
+Initial environmental conditions for the task executions used for unsupervised learning.
+We generate an input video-kinematic stream
+S
+S
+for Algorithm
+1
+, from the three task instances depicted in Figure
+2
+, executed by a user in teleoperation with dVRK and using Intel Realsense RGB-D camera for visual acquisition.
+In Figure
+2(a)
+, the task starts in the nominal situation described in FLS
+(
+Soper and Fried, 2008
+)
+, with all 4 colored rings placed on grey pegs, on the opposite side with respect to the corresponding pegs. Hence, PSMs must perform transfer before placing rings on pegs.
+In Figure
+2(b)
+, a more challenging situation is depicted. Relevant rings and pegs (i.e., the blue and red ones) are on one side of the peg base, hence no transfer is needed. However, rings occupy pegs with mismatched color, thus one of the colored peg must be freed (by placing a ring on a grey peg temporarily), before completing the task.
+Figure
+2(c)
+shows an unconventional scenario with the red ring on the same side as its peg, while the blue ring is on the opposite side out of any peg. Hence, not all rings require extraction in this task instance. Furthermore, before placing the blue ring on its peg (hence, after transfer), the ring fell, hence it had to be grasped again to complete the task.
+These three task examples well represent different flows of executions of peg transfer. However, their major challenge lies in the fact that
+actions are not equally represented
+. For instance,
+move(A, center, C)
+occurs only 5 times (4 times in Figure
+2(a)
+and once in Figure
+2(c)
+), while
+release(A)
+occurs 21 times (10 times in Figure
+2(a)
+, 5 times in Figure
+2(b)
+and 6 times in Figure
+2(c)
+).
+We evaluate the performance of Algorithm
+1
+in terms of standard
+precision, recall
+and
+F1-score
+achieved by learned axioms, given a random environmental context for the task. We assess the performance of the algorithm when using different unsupervised action identification strategies
+Φ
+\Phi
+.
+In particular, we consider our methodology proposed in
+Meli and Fiorini (2021)
+and the original work by
+Despinoy et al (2015)
+, achieving lower F1-score, especially on small heterogeneous datasets of executions (as the one in Figure
+2
+).
+We refer the reader to the two references for more details.
+The essential difference between
+Meli and Fiorini (2021)
+and
+Despinoy et al (2015)
+is that the latter only consider the kinematic signature to cluster action segments, while the former also take into account the environmental representation given by the semantic features. Hence,
+Meli and Fiorini (2021)
+are more robust to heterogeneous motions (a peculiarity of our dataset).
+For this reason, from now on we refer to the variant with the algorithm by
+Despinoy et al (2015)
+as
+A
+k
+​
+i
+​
+n
+A_{kin}
+, while the variant with the algorithm by
+Meli and Fiorini (2021)
+as
+A
+s
+​
+e
+​
+m
+A_{sem}
+.
+Moreover, we also consider a
+baseline
+version of our algorithm where we perform action identification as in
+Meli and Fiorini (2021)
+and
+do not consider
+the excluded set in CDPIs of equation (
+14
+). In other words, we learn task knowledge only from observed examples of execution, neglecting counterexamples which lead to discovering constraints (extended action preconditions).
+We expect the performace to degrade with the accuracy of the underlying action identification strategy.
+In order to evaluate learned axioms for extended action preconditions by each algorithm version, we generate 1000 random contexts (i.e., ground semantic environmental features) for the task. For each context, we then compute feasible ground actions (only one time step ahead in the future, hence immediate actions implied by the context), performing ASP reasoning on both handcrafted task knowledge (Section
+3.3
+) and learned axioms. Whenever the latter match the implications of the former, a
+true positive
+(
+T
+​
+P
+TP
+) is counted. Otherwise, a
+false positive
+(
+F
+​
+P
+FP
+) is considered. We thus compute precision, recall and F1-score as:
+P
+​
+r
+=
+T
+​
+P
+T
+​
+P
++
+F
+​
+P
+​
+R
+​
+e
+​
+c
+=
+T
+​
+P
+T
+​
+P
++
+F
+​
+N
+​
+F
+​
+1
+=
+2
+​
+P
+​
+r
+⋅
+R
+​
+e
+​
+c
+P
+​
+r
++
+R
+​
+e
+​
+c
+Pr=\frac{TP}{TP+FP}\hfill Rec=\frac{TP}{TP+FN}\hfill F1=2\frac{Pr\cdot Rec}{Pr+Rec}
+To evaluate learned effects of actions, we perform analogous experiments, but considering 1000 random action-context pairs, i.e., the same random contexts as above paired with one possible action each.
+In all tests, we also randomize the number of reachable rings
+∈
+{
+1
+,
+2
+,
+3
+,
+4
+}
+\in\{1,2,3,4\}
+.
+For axioms related to actions, ILASP is run setting a maximum length of axioms up to 6 (i.e., 1 head atom and up to 5 body atoms), resulting in
+≈
+10200
+\approx 10200
+axioms in the search space per action (learning tasks for actions are run in parallel, since they are mutually independent).
+As outlined in Algorithm
+1
+, effects of actions are not learned via ILASP.
+We report the learned axioms with the three considered algorithms in Appendix
+8.1
+.
+Learning times in Table
+1
+show that the baseline algorithm is the fastest one, since only executed actions are presented to ILASP, thus the tool does not take into account extended action preconditions (constraints on actions), resulting in simpler yet more incomplete task knowledge.
+Algorithm
+A
+s
+​
+e
+​
+m
+A_{sem}
+requires less time than
+A
+k
+​
+i
+​
+n
+A_{kin}
+. In fact, the latter have a lower action identification accuracy, thus examples are more noisy and ILASP converges more slowly to a final hypothesis. The only exception is for
+move(A, ring, C)
+, which is learned within
+4
+s
+4\text{\,}\mathrm{s}
+when using
+Despinoy et al (2015)
+. However, in this case ILASP actually finds the empty hypothesis.
+For this reason, in Appendix
+8.1.2
+we introduce the trivial axiom:
+move(A, ring, C, t) :- arm(A), color(C).
+meaning that moving to a ring is always possible.
+Table
+2
+shows the quantitative results regarding the quality of learned axioms. For each metric, we report median and Inter-Quartile Range (IQR).
+We highlight the best results in bold (we focus first on the highest median, then on the lowest IQR).
+When using
+A
+s
+​
+e
+​
+m
+A_{sem}
+, the F1-score is the highest in most cases.
+When evaluating effects of actions (statistics about
+initiating
+and
+terminating
+conditions are merged), the baseline algorithm achieves the same performance as
+A
+s
+​
+e
+​
+m
+A_{sem}
+. In fact, as explained in Section
+4.1.4
+, the excluded set introduced in CDPIs in equation (
+14
+) for learning action preconditions does not affect the way we learn axioms for effects. Thus, the main element affecting the results for effects of actions is the chosen unsupervised action identification algorithm.
+The baseline algorithm achieves the worst performance at learning action preconditions for grasping, releasing and extracting. In fact, these actions involve repetitive fast motions, either opening / closing of the gripper or a simple motion normal to the peg base. On the contrary, in our non-homogeneous dataset, moving actions correspond to different shapes of motion, depending on the specific locations of rings and pegs. Thus, the kinematic signature of action segments is more heterogeneous and induces higher errors in
+Despinoy et al (2015)
+. For this reason, the baseline algorithm still achieves better results than
+A
+k
+​
+i
+​
+n
+A_{kin}
+.
+Head
+𝐀
+𝐬𝐞𝐦
+\mathbf{A_{sem}}
+A
+k
+​
+i
+​
+n
+A_{kin}
+Baseline
+move(A, ring, C)
+69
+4
+34
+move(A, peg, C)
+42
+37
+12
+move(A, center, C)
+55
+151
+26
+grasp(A, ring, C)
+20
+141
+12
+extract(A, ring, C)
+44
+127
+12
+release(A)
+166
+187
+81
+Average
+66
+108
+30
+Table 1
+:
+Learning time (in seconds) required by ILASP to discover axioms for actions from the dataset of executions depicted in Figure
+2
+. Values are truncated to the units since they are collected from a single execution of ILASP for each action.
+Table 2
+:
+Quantitative results (median - IQR range) of different variants of Algorithm
+1
+. We aggregate
+initiated
+and
+terminated
+conditions for effects of actions.
+Head
+𝐀
+𝐬𝐞𝐦
+\mathbf{A_{sem}}
+A
+k
+​
+i
+​
+n
+A_{kin}
+Baseline
+move(A, ring, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+0.50
+−
+1.00
+0.50-1.00
+R
+​
+e
+​
+c
+Rec
+0.50
+−
+0.50
+0.50-0.50
+0.00
+−
+1.00
+0.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+0.67
+−
+0.33
+\mathbf{0.67-0.33}
+0.00
+−
+1.00
+0.00-1.00
+0.67
+−
+0.80
+0.67-0.80
+move(A, peg, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+0.50
+−
+1.00
+0.50-1.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+0.75
+1.00-0.75
+1.00
+−
+0.75
+1.00-0.75
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+0.40
+−
+1.00
+0.40-1.00
+0.40
+−
+1.00
+0.40-1.00
+0.67
+−
+1.00
+\mathbf{0.67-1.00}
+move(A, center, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+1.00
+1.00-1.00
+0.13
+−
+1.00
+0.13-1.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+1.00
+−
+1.00
+\mathbf{1.00-1.00}
+0.00
+−
+0.40
+0.00-0.40
+0.22
+−
+1.00
+0.22-1.00
+grasp(A, ring, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.50
+1.00-0.50
+1.00
+−
+1.00
+1.00-1.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+1.00
+−
+0.33
+1.00-0.33
+1.00
+−
+1.00
+1.00-1.00
+extract(A, ring, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+0.00
+−
+1.00
+0.00-1.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+0.00
+−
+1.00
+0.00-1.00
+release(A)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+0.50
+−
+1.00
+0.50-1.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.33
+\mathbf{1.00-0.33}
+0.67
+−
+1.00
+0.67-1.00
+closed_gripper(A)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+at(A, center)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+R
+​
+e
+​
+c
+Rec
+0.67
+−
+1.00
+0.67-1.00
+0.67
+−
+1.00
+0.67-1.00
+0.67
+−
+1.00
+0.67-1.00
+F
+​
+1
+F1
+0.75
+−
+1.00
+\mathbf{0.75-1.00}
+0.75
+−
+1.00
+\mathbf{0.75-1.00}
+0.75
+−
+1.00
+\mathbf{0.75-1.00}
+at(A, ring, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+0.88
+1.00-0.88
+1.00
+−
+0.13
+1.00-0.13
+1.00
+−
+0.88
+1.00-0.88
+F
+​
+1
+F1
+1.00
+−
+0.78
+\mathbf{1.00-0.78}
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.78
+\mathbf{1.00-0.78}
+at(A, peg, C)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+R
+​
+e
+​
+c
+Rec
+0.75
+−
+0.88
+0.75-0.88
+0.75
+−
+0.88
+0.75-0.88
+0.75
+−
+0.88
+0.75-0.88
+F
+​
+1
+F1
+0.83
+−
+0.78
+\mathbf{0.83-0.78}
+0.83
+−
+0.78
+\mathbf{0.83-0.78}
+0.83
+−
+0.78
+\mathbf{0.83-0.78}
+placed(ring, C1, peg, C2)
+P
+​
+r
+Pr
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+R
+​
+e
+​
+c
+Rec
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+F
+​
+1
+F1
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+0.03
+−
+1.00
+0.03-1.00
+1.00
+−
+0.00
+\mathbf{1.00-0.00}
+Mean F1
+0.88
+0.64
+0.73
+5.2
+Online supervised refinement of ASP task knowledge
+(a)
+(b)
+(c)
+Figure 3
+:
+Initial environmental conditions for the task simulations used for task knowledge refinement.
+Learned axioms from Algorithm
+1
+may be incomplete and unsafe for practical application in a fully autonomous robotic framework, due to inaccuracies of unsupervised action identification and Algorithm
+1
+itself.
+We now show how our shared autonomy framework (Section
+4.2
+) can be applied to ensure safety and realize incremental refinement of learned ASP task knowledge, embedding (expert) human feedback in the reasoning and execution loop.
+In particular, we investigate how precision, recall and F1-score of axioms evolve, as they are refined through expert feedback during the execution of the task (for fair comparison, we do not consider the aggregate transformation in equation
+15
+, i.e., we consider
+all possible ground atoms from learned axioms
+).
+We use a simulated model of the peg transfer scenario with dVRK and a RGB-D sensor
+7
+7
+7
+Calibration between the PSMs and the camera is assumed as a prior, achieved, e.g., via the methodology proposed by
+Roberti et al (2020)
+.
+, based on the Robot Operating System
+8
+8
+8
+https://ros.org
+and built in CoppeliaSim environment
+9
+9
+9
+https://www.coppeliarobotics.com/
+and shown in Figure
+3
+.
+As explained in Section
+4.2
+, we assume that motion primitives for each action class are preliminarily learned from clusters generated from the unsupervised action identification algorithm by
+Meli and Fiorini (2021)
+, using, e.g., dynamic movement primitives proposed by
+Ginesi et al (2020)
+10
+10
+10
+An user may also specify a motion primitive for each action, e.g., a trivial linear interpolation between starting and goal position. In any case, we focus only on
+task-level
+learning and refinement, thus motion learning is out of the scope of this paper.
+.
+We start from learned axioms with
+A
+s
+​
+e
+​
+m
+A_{sem}
+.
+In fact, the methodology explained in Section
+4.2
+is not affected by the specific action identification algorithm.
+We execute the autonomous framework in the three ordered scenarios depicted in Figure
+3
+.
+The scene in Figure
+3(a)
+shows a specific task situation with rings to be placed on pegs without transfer. Transferring is however required for rings in Figure
+3(b)
+. Finally, Figure
+3(c)
+depicts a slightly more challenging scenario with occupied pegs. Thus, the sequence of selected scenarios, while relatively short (42 total actions, fewer than the training dataset used in Section
+5.1
+), requires progressive task knowledge refinement and encodes main variants of peg transfer.
+Table
+3
+shows the quantitative analysis on the rules learned after the three simulated scenarios were completed (the final task knowledge is reported in Appendix
+8.2
+).
+Bold entries indicate an improved F1-score at the end of execution, meaning that learned axioms are more accurate.
+In general, the average F1-score increases from
+88
+%
+88\%
+to
+93
+%
+93\%
+, i.e., overall task knowledge is refined.
+Axioms for actions improve or maintain the same performance achieved from offline learning.
+For effects of actions,
+at(A, ring, C)
+achieves lower performance.
+A closer look at finally learned axioms for the corresponding initiating conditions, in equations (
+16k
+)-(
+16l
+), the atoms starts to be ground when either
+move(A, ring, C)
+action is executed, or the arm which cannot reach the peg moves to center for transfer (in this case, in fact, the other arm reaches the ring at the transfer location).
+These initiating conditions are complete for the atom, and extend the only partial knowledge encoded in the original axioms learned offline (Appendix
+8.1.1
+).
+However, the terminating conditions in equations (
+16i
+)-(
+16j
+) only respectively specify that
+at(A, ring, C)
+stops holding when, at transfer location, the other arm moves to the peg to place the ring, or the ring is released on a peg. Compared with ground-truth axioms in equations (
+2h
+)-(
+2j
+), these terminating conditions are still incomplete, since
+at(A, ring, C)
+should stop holding
+whenever
+A
+moves away
+. Collecting examples for all such occurrencies would require more task iterations and variants. Moreover, these considerations hold for all atoms representing the current location of arms, thus justifying the slightly worse performance achieved for
+at(A, peg, C)
+(higher IQR). The median improvement on
+at(A, center)
+, instead, rises from the scarce examples for
+move(A, center, C)
+in the dataset for offline learning (only 4 instances in scenarios depicted in Figure
+2
+). Thus, while the results for the action do not vary after online ASP refinement, the results for its effect improve.
+ILASP was called 13 times, i.e.,
+≈
+30
+%
+\approx 30\%
+times over all required actions to complete the task instances.
+We remark that each time ILASP was invoked, the user voted the autonomous-generated action as invalid, hence not correct and useful (in the best case) or
+potentially unsafe
+.
+This demonstrates the fundamental role of our knowledge refinement architecture for autonomy implementation.
+From a computational perspective, the median - IQR required time for running ILASP was
+2.81
+s
+2.81\text{\,}\mathrm{s}
+-
+6.07
+s
+6.07\text{\,}\mathrm{s}
+11
+11
+11
+The search space is the same as for offline learning.
+, thus compatible with practical application of our framework to real robotic scenarios with non-strict real-time requirements. Moreover, the computational performance may be optimized by using the more efficient FastLAS extension to ILASP by
+Law et al (2020)
+. However, this aspect is out of the scope of this paper, which is more methodological.
+Table 3
+:
+Quantitative results (median - IQR range) after task knowledge refinement in simulation. We aggregate
+initiated
+and
+terminated
+conditions for effects of actions. In brackets, we mark the atoms for which performance is invariant with “
+=
+=
+”, and the ones with better performance with “
++
++
+”
+Head
+P
+​
+r
+Pr
+R
+​
+e
+​
+c
+Rec
+F
+​
+1
+F1
+move(A, ring, C)
+0.50
+−
+1.00
+0.50-1.00
+1.00
+−
+0.00
+1.00-0.00
+0.67
+−
+1.00
+0.67-1.00
+move(A, peg, C)
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+0.93
+−
+1.00
+​
+(
++
+)
+\mathbf{0.93-1.00}(+)
+move(A, center, C)
+1.00
+−
+1.00
+1.00-1.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+1.00
+​
+(
+=
+)
+1.00-1.00(=)
+grasp(A, ring, C)
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.50
+1.00-0.50
+1.00
+−
+1.00
+1.00-1.00
+extract(A, ring, C)
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+​
+(
+=
+)
+1.00-0.00(=)
+release(A)
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+​
+(
++
+)
+\mathbf{1.00-0.00}(+)
+closed_gripper(A)
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+​
+(
+=
+)
+1.00-0.00(=)
+at(A, center)
+1.00
+−
+0.00
+1.00-0.00
+0.83
+−
+1.00
+0.83-1.00
+0.90
+−
+1.00
+​
+(
++
+)
+\mathbf{0.90-1.00}(+)
+at(A, ring, C)
+1.00
+−
+0.33
+1.00-0.33
+0.63
+−
+0.89
+0.63-0.89
+0.29
+−
+1.00
+​
+(
+=
+)
+0.29-1.00(=)
+at(A, peg, C)
+1.00
+−
+0.00
+1.00-0.00
+0.75
+−
+1.00
+0.75-1.00
+0.83
+−
+1.00
+0.83-1.00
+placed(ring, C1, peg, C2)
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+1.00-0.00
+1.00
+−
+0.00
+​
+(
+=
+)
+1.00-0.00(=)
+Mean
+0.93
+​
+(
++
+)
+\mathbf{0.93}(+)
+6
+Discussion
+Our experiments evidence the efficacy of our methodology for offline robotic task knowledge learning from raw data, and interactive online refinement via human feedback.
+Thanks to the generalization capabilities of logical task formalization, offline learning via ILP is highly
+data- and time-efficient
+, and
+robust to non-homogeneous small datasets of executions
+(i.e., non-repetitive action sequences under diverse environmental conditions),
+regardless of the specific action identification algorithm
+.
+Moreover, our framework for
+online incremental learning from expert feedback
+is time-efficient, allowing to easily refine task knowledge online, thanks to the
+interpretable interface
+provided by ASP formalism to the human expert. Since the human can forbid unwanted actions and a deterministic logical task theory is progressively refined, the overall task execution
+is guaranteed to be safe
+, neglecting human fallacies.
+This work opens to several research problems and opportunities for improvement, as outlined in the following.
+Prior knowledge of actions and environmental features
+We make the assumption that all possible task actions and environmental features, i.e., the ASP signature of the task, are known in advance (though the environmental features are almost task-agnostic, since they only describe relative positions of entities of the task).
+In more complex robotic scenarios, involving, e.g., multiple robots with different capabilities (as in industrial robotics or real clinical setups), this may be infeasible.
+A possible solution is to learn relevant task concepts from available textbooks, if available.
+For instance, in the context of robotic surgery, pre-trained transformers have been employed by
+Bombieri et al (2023b)
+;
+Bombieri et al (2024)
+to automatically retrieve relevant surgical concepts from natural language.
+However, real robotic scenarios may still present novel unseen flows of execution, where the system must be able to learn about new actions and new environmental features.
+For such cases, we plan to extend our framework to support new concept learning, which requires some modifications to the current software architecture.
+Advanced symbol grounding
+Given the complete signature of the ASP task, we rely on standard image and kinematic segmentation techniques to retrieve grounded symbols, following Rules (
+11
+).
+In more complex tasks with multiple sensor inputs, more sophisticated situation awareness may be required.
+To this aim, in the future we plan to investigate the use of advanced symbol grounding techniques
+(
+Topan et al, 2021
+)
+, recently applied to the problem of DRL under temporal logic specifications
+(
+Umili et al, 2023
+)
+.
+Task and motion learning
+An impelling requirement from the robotic research community is to jointly learn high-level routines and low-level motion strategies
+(
+James et al, 2020
+)
+.
+This can be achieved with hierarchical learning architectures
+(
+Sridharan et al, 2019
+)
+, or exploiting curriculum-based human demonstrations
+(
+Huang et al, 2024
+)
+.
+However, these cannot be applied to hazardous scenarios as surgical robotics, where fast, safe and efficient learning is required from few examples.
+For this reason, we will integrate online one-shot imitation learning with dynamic movement primitives
+(
+Ginesi et al, 2019
+;
+Ginesi et al, 2021a
+)
+, to work simultaneously with the task-level ILP pipeline.
+Bottom-up vs. top-down learning
+Our approach to task knowledge learning is bottom-up, i.e., it starts from raw data of robotic executions. Another approach to retrieve domain knowledge involves natural language processing applied to manuals and expert annotations, as shown, e.g., by
+Bombieri et al (2023a)
+;
+Pan et al (2023)
+;
+Fuggitti and Chakraborti (2023)
+.
+In the future, we plan to combine the two methodologies, exploiting background knowledge extracted from domain-specific texts in the offline and online learning processes.
+Probabilistic task knowledge
+At the moment we learn deterministic task specifications, accounting for uncertainty only when defining examples and covering the most of them accordingly (see Defintion
+4
+).
+However, as shown, e.g., by
+Berthet-Rayne et al (2016)
+, a more accurate task representation may be provided by probabilistic logical specifications.
+Learning probabilistic logical theories has been already explored, e.g., in the event calculus formalism by
+Katzouris and Artikis (2020)
+. Alternatively, statistical relational learning by
+Hazra and De Raedt (2023)
+;
+Marra et al (2024)
+retrieves probabilistic knowledge graphs, but presents significant computational limitations for its applicability to complex robotic scenarios and online learning.
+In the future, we plan to investigate more sophisticated neurosymbolic planning and learning integrations accounting for task stochasticity.
+One option is to exploit learned logical specifications for the efficient guidance of a probabilistically optimal planner
+(
+Meli et al, 2024
+)
+.
+Alternatively, we could exploit our recent results in neurosymbolic DRL, to simultaneously learn a stochastic DRL policy enhanced by online refined ASP heuristics
+(
+Veronese et al, 2024, in publication
+)
+. In terms of safety guarantees on the overall execution (currently yielded from the deterministic reasoning approach under expert supervision), they shall be then provided via stochastic formal verification
+(
+Marzari et al, 2024
+)
+or shielding techniques
+(
+Mazzi et al, 2023a
+)
+.
+User validation
+Our work represents a preliminary architecture for interpretable human-robot interaction, where the human plays the role of a teacher and supervisor for the student robotic system.
+Application to more complex tasks and real scenarios with physical robots will require an extended user study to assess the actual benefits of human-robot inter-play
+(
+Fosch-Villaronga et al, 2023
+)
+, and the implementation of more sophisticated and user-oriented communication interfaces
+(
+Long et al, 2023
+)
+, e.g., implementing voice commands with automatic speech-to-text and text-to-speech translation in the online refinement phase.
+7
+Conclusion
+In this paper, we have proposed a methodology based on ILP and ASP to discover task specifications, encoding action preconditions, constraints and effects, from raw video-kinematic datasets of robotic executions.
+Our approach leverages on
+any
+unsupervised action identification algorithm to retrieve ILP examples from recordings, combining them with almost task-agnostic commonsense concepts defined by an user, in order to increase the interpretability, trustability and social acceptance of learned axioms.
+In the context of the peg transfer task with dual-arm dVRK, a benchmark training exercise for novice surgeons, we show that our offline learning pipeline requires very basic commonsense concepts, which are often task-agnostic since they only incorporate information about the location of robotic arms with respect to the environment, and the kinematic state of the grippers.
+Moreover, the online learning algorithm is able to refine task knowledge even with few task examples.
+This work represents an important step towards interpretable robotic task learning and generalization from limited raw recordings of execution, showing promising results for the scalability of our methodology to more complex and challenging robotic scenarios.
+8
+Learned axioms
+8.1
+Unsupervised learning of ASP task knowledge
+8.1.1
+A
+s
+​
+e
+​
+m
+A_{sem}
+release(V1,t) :- not reachable(V1,peg,V2,t),not reachable(V1,ring,V2),
+closed_gripper(V1,t),placed(ring,V2,peg,V3,t).
+grasp(V1,ring,V,t) :- not closed_gripper(V1,t),at(V1,ring,V2,t).
+move(V1,peg,V2,t) :- at(V1,ring,V2,t),reachable(V1,peg,V2,t).
+move(V1,center,V2,t) :- not closed_gripper(V3,t),at(V1,ring,V2,t),
+reachable(V3,peg,V2,t),V3!=V1.
+extract(V1,ring,V2,t) :- closed_gripper(V1,t),placed(ring,V2,peg,V3,t),
+at(V4,ring,V2,t).
+move(V1,ring,V2,t) :- not closed_gripper(V1,t),reachable(V1,ring,V2,t),
+reachable(V1,peg,V2,t).
+terminated(at(V1,peg,V2),t+1) :- move(V1,center,V3,t),color(V2).
+initiated(at(A,peg,C),t+1) :- move(A,peg,C,t).
+terminated(at(V1,ring,V2),t+1) :- move(V1,peg,V3,t),color(V2).
+initiated(at(V1,ring,V2),t+1) :- move(V1,ring,V2,t).
+terminated(closed_gripper(A),t+1) :- release(A,t).
+initiated(closed_gripper(A),t+1) :- grasp(A,ring,C,t).
+terminated(placed(ring,C1,peg,C2),t+1) :- extract(A,ring,C1,t),color(C2).
+initiated(placed(ring,V3,peg,V1),t+1) :- move(V2,peg,V1,t),color(V3).
+initiated(at(V1,center),t+1) :- move(V1,center,V2,t).
+8.1.2
+A
+k
+​
+i
+​
+n
+A_{kin}
+move(V1,ring,V2,t) :- arm(V1),color(V2).
+extract(V1,ring,V2,t):-not reachable(V4,peg,V2,t),closed_gripper(V1,t),
+placed(ring,V2,peg,V3,t),at(V4,ring,V2,t).
+grasp(V1,ring,V2,t) :- at(V1,peg,V2,t),reachable(V1,ring,V2,t).
+grasp(V1,ring,V2,t) :- not closed_gripper(V1,t),at(V1,ring,V2,t).
+release(V1,t) :- closed_gripper(V1,t),at(V2,peg,V3,t).
+release(V1,t) :- placed(ring,V2,peg,V3,t),at(V1,ring,V3,t).
+release(V1,t) :- not reachable(V1,peg,V2,t),not reachable(V1,ring,V2,t),
+closed_gripper(V1,t),placed(ring,V2,peg,V3,t).
+release(V1,t) :- closed_gripper(V1,t),placed(ring,V2,peg,V3,t),
+at(V4,center,t),at(V1,ring,V2,t).
+move(V1,peg,V2,t):-at(V1,ring,V2,t),reachable(V1,peg,V2,t).
+move(V1,center,V2,t) :- not closed_gripper(V3,t),at(V1,peg,V4,t),
+reachable(V3,peg,V2,t),V3!=V1.
+move(V1,center,V2,t) :- not closed_gripper(V3,t),at(V1,ring,V2,t),
+reachable(V3,peg,V2,t),V1!=V3.
+move(V1,center,V2,t) :- not closed_gripper(V1,t),at(V3,center,t),
+reachable(V1,peg,V2,t),reachable(V1,ring,V2,t),V1!=V3.
+terminated(at(V1,peg,V2),t+1) :- move(V1,center,V3,t),color(V2).
+initiated(at(A,peg,C),t+1) :- move(A,peg,C,t).
+terminated(at(V1,ring,V2),t+1) :- move(V1,peg,V3,t),color(V2).
+terminated(at(V1,ring,V2),t+1) :- release(V1,t),color(V2).
+initiated(at(V1,ring,V2),t+1) :- move(V1,center,V2,t).
+terminated(closed_gripper(A),t+1) :- release(A,t).
+initiated(closed_gripper(A),t+1) :- grasp(A,ring,C,t).
+initiated(placed(ring,V3,peg,V1),t+1) :- release(V2,t),color(V3),
+color(V1).
+initiated(at(V1,center),t+1) :- move(V1,center,V2,t).
+8.1.3
+Baseline algorithm
+extract(V1,ring,V2,t) :- at(V1,ring,V2,t).
+grasp(V1,ring,V2,t) :- at(V1,ring,V2,t).
+release(V1,t) :- at(V1,ring,V2,t).
+release(V1,t) :- not reachable(V1,peg,V2,t),closed_gripper(V1,t),
+placed(ring,V2,peg,V3,t).
+release(V1,t) :- not closed_gripper(V2,t),reachable(V1,peg,V3,t),
+reachable(V2,ring,V3,t).
+move(V1,peg,V2,t) :- closed_gripper(V1,t),color(V2).
+move(V1,ring,V3,t) :- placed(ring,V2,peg,V3,t),reachable(V1,ring,V3,t).
+move(V1,ring,V2,t) :- at(V3,center,t),reachable(V1,ring,V2,t).
+move(V1,ring,V2,t) :- not at(V1,center,t),not reachable(V1,peg,V2,t),
+reachable(V1,ring,V2,t).
+move(V1,center,V2,t) :- closed_gripper(V1,t),reachable(V4,peg,V2,t),V4!=V1.
+terminated(at(V1,peg,V2),t+1) :- move(V1,center,V3,t),color(V2).
+initiated(at(A,peg,C),t+1) :- move(A,peg,C,t).
+terminated(at(V1,ring,V2),t+1) :- move(V1,peg,V3,t),color(V2).
+initiated(at(V1,ring,V2),t+1) :- move(V1,ring,V2,t).
+terminated(closed_gripper(A),t+1) :- release(A,t).
+initiated(closed_gripper(A),t+1) :- grasp(A,ring,C,t).
+terminated(placed(ring,C1,peg,C2),t+1) :- extract(A,ring,C1,t),color(C2).
+initiated(placed(ring,V3,peg,V1),t+1) :- move(V2,peg,V1,t),color(V3).
+initiated(at(V1,center),t+1) :- move(V1,center,V2,t).
+8.2
+Online supervised refinement of ASP task knowledge
+release(V1,t) :- closed_gripper(V1,t).
+(16a)
+grasp(V1,ring,V2,t) :- not closed_gripper(V1,t),at(V1,ring,V2,t).
+(16b)
+move(V1,peg,V2,t) :- not at(V1,peg,V2,t),closed_gripper(V1,t),
+reachable(V1,peg,V2),not at(V3,center),arm(V3).
+(16c)
+move(V1,peg,V2,t) :- not at(V1,peg,V2,t),closed_gripper(V1,t),
+reachable(V1,peg,V2),at(V3,center),not closed_gripper(V3).
+(16d)
+move(V1,center,V2,t) :- at(V1,ring,V2,t).
+(16e)
+extract(V1,ring,V2,t) :- closed_gripper(V1,t),placed(ring,V2,peg,V3,t),
+at(V4,ring,V2,t).
+(16f)
+move(V1,ring,V2,t) :- reachable(V1,ring,V2).
+(16g)
+terminated(at(V1,peg,V2),t+1) :- placed(ring,V3,peg,V3,t),
+reachable(V1,peg,V2),move(V1,ring,V4,t).
+(16h)
+initiated(at(A,peg,C),t+1) :- move(A,peg,C,t).
+terminated(at(V1,ring,V2),t+1) :- at(V1,center,t),move(V3,peg,V2,t).
+(16i)
+terminated(at(V1,ring,V2),t+1) :- release(V1,t),reachable(V1,ring,V2),
+at(V1,peg,V3,t).
+(16j)
+initiated(at(V1,ring,V2),t+1) :- move(V1,ring,V2,t).
+(16k)
+initiated(at(V1,ring,V2),t+1) :- reachable(V1,peg,V2),move(V3,center,V2,t).
+(16l)
+terminated(closed_gripper(A),t+1) :- release(A,t).
+(16m)
+initiated(closed_gripper(A),t+1) :- grasp(A,ring,C,t).
+(16n)
+terminated(placed(ring,V1,peg,V2),t+1) :- reachable(V3,peg,V2),
+extract(V3,ring,V1,t),at(V3,ring,V1,t).
+(16o)
+initiated(placed(ring,V1,peg,V2),t+1) :- release(V3,t),at(V3,ring,V1,t),
+at(V3,peg,V2,t).
+(16p)
+terminated(at(V1,center),t+1) :- reachable(V1,peg,V2),move(V3,center,V2,t).
+(16q)
+initiated(at(V1,center),t+1) :- move(V1,center,V2,t).
+(16r)
+Declarations
+Competing interests
+- The authors have no competing interests to declare that are relevant to the content of this article.
+Funding
+- This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme under grant agreement No. 742671 (ARS).
+Ethics approval
+- Not applicable.
+Consent to participate
+- Not applicable.
+Consent for publication
+- Not applicable.
+Availability of data and material
+- The data and material are available at
+https://github.com/danm11694/ILASP_robotics.git
+Code availability
+- The code is available at
+https://github.com/danm11694/ILASP_robotics.git
+Authors’ contributions
+- Daniele Meli contributed with the methodology, implementation, experiments and writing. Paolo Fiorini contributed with writing and supervision.
+References
+Alakuijala et al (2023)
+Alakuijala M, Dulac-Arnold G, Mairal J, et al (2023) Learning reward functions
+for robotic manipulation by observing humans. In: 2023 IEEE International
+Conference on Robotics and Automation (ICRA), IEEE, pp 5006–5012
+van Amsterdam et al (2019)
+van Amsterdam B, Nakawala H, De Momi E, et al (2019) Weakly supervised
+recognition of surgical gestures. In: 2019 International conference on
+robotics and automation (ICRA), IEEE, pp 9565–9571
+Berthet-Rayne et al (2016)
+Berthet-Rayne P, Power M, King H, et al (2016) Hubot: A three state human-robot
+collaborative framework for bimanual surgical tasks based on learned models.
+In: 2016 IEEE International conference on robotics and automation (ICRA),
+IEEE, pp 715–722
+Blum et al (2008)
+Blum T, Padoy N, Feußner H, et al (2008) Modeling and online recognition of
+surgical phases using hidden markov models. In: Medical Image Computing and
+Computer-Assisted Intervention–MICCAI 2008: 11th International Conference,
+New York, NY, USA, September 6-10, 2008, Proceedings, Part II 11, Springer,
+pp 627–635
+Bombieri et al (2023a)
+Bombieri M, Meli D, Dall’Alba D, et al (2023a) Mapping natural
+language procedures descriptions to linear temporal logic templates: an
+application in the surgical robotic domain. Applied Intelligence
+53(22):26351–26363
+Bombieri et al (2023b)
+Bombieri M, Rospocher M, Ponzetto SP, et al (2023b) Machine
+understanding surgical actions from intervention procedure textbooks.
+Computers in Biology and Medicine 152:106415
+Bombieri et al (2024)
+Bombieri M, Rospocher M, Ponzetto SP, et al (2024) Surgicberta: a pre-trained
+language model for procedural surgical language. International Journal of
+Data Science and Analytics 18(1):69–81
+Calimeri et al (2020)
+Calimeri F, Faber W, Gebser M, et al (2020) Asp-core-2 input language format.
+Theory and Practice of Logic Programming 20(2):294–309
+Calinon (2016)
+Calinon S (2016) A tutorial on task-parameterized movement learning and
+retrieval. Intelligent service robotics 9:1–29
+Charrière et al (2017)
+Charrière K, Quellec G, Lamard M, et al (2017) Real-time analysis of
+cataract surgery videos using statistical models. Multimedia Tools and
+Applications 76:22473–22491
+Chen et al (2020)
+Chen M, Nikolaidis S, Soh H, et al (2020) Trust-aware decision making for
+human-robot collaboration: Model learning and planning. ACM Transactions on
+Human-Robot Interaction (THRI) 9(2):1–23
+Corsi et al (2023)
+Corsi D, Marzari L, Pore A, et al (2023) Constrained reinforcement learning and
+formal verification for safe colonoscopy navigation. In: 2023 IEEE/RSJ
+International Conference on Intelligent Robots and Systems (IROS), IEEE, pp
+10289–10294
+Cropper and Morel (2021)
+Cropper A, Morel R (2021) Learning programs by learning from failures. Machine
+Learning 110:801–856
+Cropper and Muggleton (2019)
+Cropper A, Muggleton SH (2019) Learning efficient logic programs. Machine
+Learning 108(7):1063–1083
+Despinoy et al (2015)
+Despinoy F, Bouget D, Forestier G, et al (2015) Unsupervised trajectory
+segmentation for surgical gesture recognition in robotic training. IEEE
+Transactions on Biomedical Engineering 63(6):1280–1291
+Erdem and Patoglu (2012)
+Erdem E, Patoglu V (2012) Applications of action languages in cognitive
+robotics. In: Correct Reasoning: Essays on Logic-Based AI in Honour of
+Vladimir Lifschitz. Springer, p 229–246
+Erdem and Patoglu (2018)
+Erdem E, Patoglu V (2018) Applications of ASP in Robotics. Kunstliche
+Intelligenz 32(2-3):143–149
+Erdem et al (2016)
+Erdem E, Gelfond M, Leone N (2016) Applications of answer set programming. AI
+Magazine 37(3):53–68
+Estivill-Castro and Ferrer-Mestres (2013)
+Estivill-Castro V, Ferrer-Mestres J (2013) Path-finding in dynamic environments
+with pddl-planners. In: 2013 16th International Conference on Advanced
+Robotics (ICAR), IEEE, pp 1–7
+Evans and Grefenstette (2018)
+Evans R, Grefenstette E (2018) Learning explanatory rules from noisy data.
+Journal of Artificial Intelligence Research 61:1–64
+Fan et al (2024)
+Fan K, Chen Z, Ferrigno G, et al (2024) Learn from safe experience: Safe
+reinforcement learning for task automation of surgical robot. IEEE
+Transactions on Artificial Intelligence
+Fischler and Bolles (1981)
+Fischler MA, Bolles RC (1981) Random sample consensus: a paradigm for model
+fitting with applications to image analysis and automated cartography.
+Communications of the ACM 24(6):381–395
+Fosch-Villaronga et al (2023)
+Fosch-Villaronga E, Khanna P, Drukarch H, et al (2023) The role of humans in
+surgery automation: Exploring the influence of automation on human–robot
+interaction and responsibility in surgery innovation. International Journal
+of Social Robotics 15(3):563–580
+Fuggitti and Chakraborti (2023)
+Fuggitti F, Chakraborti T (2023) Nl2ltl–a python package for converting
+natural language (nl) instructions to linear temporal logic (ltl) formulas.
+In: Proceedings of the AAAI Conference on Artificial Intelligence, pp
+16428–16430
+Gao et al (2014)
+Gao Y, Vedula SS, Reiley CE, et al (2014) Jhu-isi gesture and skill assessment
+working set (jigsaws): A surgical activity dataset for human motion modeling.
+In: MICCAI workshop: M2cai
+Gibaud et al (2018)
+Gibaud B, Forestier G, Feldmann C, et al (2018) Toward a standard ontology of
+surgical process models. International J CARS 13(9):1397–1408
+Ginesi et al (2020)
+Ginesi M, Meli D, Roberti A, et al (2020) Autonomous task planning and
+situation awareness in robotic surgery. In: 2020 IEEE/RSJ International
+Conference on Intelligent Robots and Systems (IROS), IEEE, pp 3144–3150
+Ginesi et al (2021a)
+Ginesi M, Meli D, Roberti A, et al (2021a) Dynamic movement
+primitives: Volumetric obstacle avoidance using dynamic potential functions.
+Journal of Intelligent & Robotic Systems 101:1–20
+Ginesi et al (2021b)
+Ginesi M, Sansonetto N, Fiorini P (2021b) Overcoming some
+drawbacks of dynamic movement primitives. Robotics and Autonomous Systems
+144:103844
+Ginesi et al (2019)
+Ginesi M, et al (2019) Dynamic movement primitives: Volumetric obstacle
+avoidance. In: 2019 19th International Conference on Advanced Robotics
+(ICAR), IEEE, pp 234–239
+Goel and Brunskill (2019)
+Goel K, Brunskill E (2019) Learning procedural abstractions and evaluating
+discrete latent temporal structure. In: International Conference on Learning
+Representations
+Haslum et al (2019)
+Haslum P, Lipovetzky N, Magazzeni D, et al (2019) An introduction to the
+planning domain definition language, vol 13. Springer
+Hazra and De Raedt (2023)
+Hazra R, De Raedt L (2023) Deep explainable relational reinforcement learning:
+a neuro-symbolic approach. In: Joint European Conference on Machine Learning
+and Knowledge Discovery in Databases, Springer, pp 213–229
+Huang et al (2024)
+Huang W, Liu H, Huang Z, et al (2024) Safety-aware human-in-the-loop
+reinforcement learning with shared control for autonomous driving. IEEE
+Transactions on Intelligent Transportation Systems
+James et al (2020)
+James S, Ma Z, Arrojo DR, et al (2020) Rlbench: The robot learning benchmark &
+learning environment. IEEE Robotics and Automation Letters 5(2):3019–3026
+Katzouris and Artikis (2020)
+Katzouris N, Artikis A (2020) Woled: a tool for online learning weighted answer
+set rules for temporal reasoning under uncertainty. In: Proceedings of the
+International Conference on Principles of Knowledge Representation and
+Reasoning, pp 790–799
+Katzouris et al (2016)
+Katzouris N, Artikis A, Paliouras G (2016) Online learning of event
+definitions. Theory and Practice of Logic Programming 16(5-6):817–833
+Katzouris et al (2023)
+Katzouris N, Paliouras G, Artikis A (2023) Online learning probabilistic event
+calculus theories in answer set programming. Theory and Practice of Logic
+Programming 23(2):362–386
+Kazanzides et al (2014)
+Kazanzides P, Chen Z, Deguet A, et al (2014) An open-source research kit for
+the da vinci® surgical system. In: 2014 IEEE international
+conference on robotics and automation (ICRA), IEEE, pp 6434–6439
+Kim et al (2021)
+Kim TS, Jones J, Peven M, et al (2021) Daszl: Dynamic action signatures for
+zero-shot learning
+Kootbally et al (2015)
+Kootbally Z, Schlenoff C, Lawler C, et al (2015) Towards robust assembly with
+knowledge representation for the planning domain definition language (pddl).
+Robotics and Computer-Integrated Manufacturing 33:42–55
+Kowalski and Sergot (1989)
+Kowalski R, Sergot M (1989) A logic-based calculus of events. In: Foundations
+of knowledge base management. Springer, p 23–55
+Kyrarini et al (2019)
+Kyrarini M, Haseeb MA, Ristić-Durrant D, et al (2019) Robot learning of
+industrial assembly task via human demonstrations. Auton Robots
+43(1):239–257.
+10.1007/s10514-018-9725-6
+,
+URL
+https://doi.org/10.1007/s10514-018-9725-6
+Laird et al (2017)
+Laird JE, Gluck K, Anderson J, et al (2017) Interactive task learning. IEEE
+Intelligent Systems 32(4):6–21
+Law (2018)
+Law M (2018) Inductive learning of answer set programs. PhD thesis, University
+of London
+Law (2023)
+Law M (2023) Conflict-driven inductive logic programming. Theory and Practice
+of Logic Programming 23(2):387–414
+Law et al (2016)
+Law M, Russo A, Broda K (2016) Iterative learning of answer set programs from
+context dependent examples. Theory and Practice of Logic Programming
+16(5-6):834–848
+Law et al (2018)
+Law M, Russo A, Broda K (2018) The complexity and generality of learning answer
+set programs. Artificial Intelligence 259:110–146
+Law et al (2020)
+Law M, Russo A, Bertino E, et al (2020) Fastlas: Scalable inductive logic
+programming incorporating domain-specific optimisation criteria. In:
+Proceedings of the AAAI conference on artificial intelligence, pp 2877–2885
+Lifschitz (2019)
+Lifschitz V (2019) Answer set programming. Springer Heidelberg
+Liu et al (2017)
+Liu GH, Siravuru A, Prabhakar S, et al (2017) Learning end-to-end multimodal
+sensor policies for autonomous navigation. In: Conference on Robot Learning,
+PMLR, pp 249–261
+Long et al (2023)
+Long Y, Wei W, Huang T, et al (2023) Human-in-the-loop embodied intelligence
+with interactive simulation environment for surgical robot learning. IEEE
+Robotics and Automation Letters 8(8):4441–4448
+Manzoor et al (2021)
+Manzoor S, Rocha YG, Joo SH, et al (2021) Ontology-based knowledge
+representation in robotic systems: A survey oriented toward applications.
+Applied Sciences 11(10):4324
+Marra et al (2024)
+Marra G, Dumančić S, Manhaeve R, et al (2024) From statistical
+relational to neurosymbolic artificial intelligence: A survey. Artificial
+Intelligence p 104062
+Marzari et al (2024)
+Marzari L, Corsi D, Marchesini E, et al (2024) Enumerating safe regions in deep
+neural networks with provable probabilistic guarantees. In: Proceedings of
+the AAAI Conference on Artificial Intelligence, pp 21387–21394
+Mazzi et al (2023a)
+Mazzi G, Castellini A, Farinelli A (2023a) Risk-aware shielding of
+partially observable monte carlo planning policies. Artificial Intelligence
+324:103987
+Mazzi et al (2023b)
+Mazzi G, Meli D, Castellini A, et al (2023b) Learning logic
+specifications for soft policy guidance in pomcp. In: Proceedings of the 2023
+International Conference on Autonomous Agents and Multiagent Systems, pp
+373–381
+Medina and Billard (2017)
+Medina JR, Billard A (2017) Learning stable task sequences from demonstration
+with linear parameter varying systems and hidden markov models. In:
+Conference on Robot Learning, PMLR, pp 175–184
+Meli and Fiorini (2021)
+Meli D, Fiorini P (2021) Unsupervised identification of surgical robotic
+actions from small non-homogeneous datasets. IEEE Robotics and Automation
+Letters 6(4):8205–8212
+Meli et al (2020)
+Meli D, Fiorini P, Sridharan M (2020) Towards inductive learning of surgical
+task knowledge: A preliminary case study of the peg transfer task. Procedia
+Computer Science 176:440–449
+Meli et al (2021a)
+Meli D, Sridharan M, Fiorini P (2021a) Inductive learning of
+answer set programs for autonomous surgical task planning. Machine Learning
+pp 1–25
+Meli et al (2021b)
+Meli D, Tagliabue E, Dall’Alba D, et al (2021b) Autonomous
+tissue retraction with a biomechanically informed logic based framework. In:
+2021 International Symposium on Medical Robotics (ISMR), IEEE, pp 1–7
+Meli et al (2023a)
+Meli D, Bombieri M, Dall’Alba D, et al (2023a) Inductive learning
+of surgical task knowledge from intra-operative expert feedback. In: CEUR
+Workshop Proceedings, pp 48–54
+Meli et al (2023b)
+Meli D, Nakawala H, Fiorini P (2023b) Logic programming for
+deliberative robotic task planning. Artificial Intelligence Review pp 1–39
+Meli et al (2024)
+Meli D, Castellini A, Farinelli A (2024) Learning logic specifications for
+policy guidance in pomdps: an inductive logic programming approach. Journal
+of Artificial Intelligence Research 79:725–776
+Mota and Sridharan (2020)
+Mota T, Sridharan M (2020) Axiom Learning and Belief Tracing for Transparent
+Decision Making in Robotics. In: AAAI Fall Symposium on Artificial
+Intelligence for Human-Robot Interaction: Trust and Explainability in
+Artificial Intelligence for Human-Robot Interaction
+Mueller (2008)
+Mueller ET (2008) Event calculus. Foundations of Artificial Intelligence
+3:671–708
+Muggleton (1991)
+Muggleton S (1991) Inductive logic programming. New generation computing
+8(4):295–318
+Muggleton and De Raedt (1994)
+Muggleton S, De Raedt L (1994) Inductive logic programming: Theory and methods.
+The Journal of Logic Programming 19:629–679
+Mukherjee et al (2022)
+Mukherjee D, Gupta K, Chang LH, et al (2022) A survey of robot learning
+strategies for human-robot collaboration in industrial settings. Robotics and
+Computer-Integrated Manufacturing 73:102231
+Nikolaidis et al (2015)
+Nikolaidis S, Ramakrishnan R, Gu K, et al (2015) Efficient model learning from
+joint-action demonstrations for human-robot collaborative tasks. In:
+Proceedings of the tenth annual ACM/IEEE international conference on
+human-robot interaction, pp 189–196
+Ögren and Sprague (2022)
+Ögren P, Sprague CI (2022) Behavior trees in robot control systems. Annual
+Review of Control, Robotics, and Autonomous Systems 5:81–107
+Pan et al (2023)
+Pan J, Chou G, Berenson D (2023) Data-efficient learning of natural language to
+linear temporal logic translators for robot task specification. In: 2023 IEEE
+International Conference on Robotics and Automation (ICRA), IEEE, pp
+11554–11561
+Rahmatizadeh et al (2018)
+Rahmatizadeh R, Abolghasemi P, Bölöni L, et al (2018) Vision-based
+multi-task manipulation for inexpensive robots using end-to-end learning from
+demonstration. In: 2018 IEEE international conference on robotics and
+automation (ICRA), IEEE, pp 3758–3765
+Roberti et al (2020)
+Roberti A, Piccinelli N, Meli D, et al (2020) Improving rigid 3-d calibration
+for robotic surgery. IEEE Transactions on Medical Robotics and Bionics
+2(4):569–573
+Rosenfeld and Richardson (2019)
+Rosenfeld A, Richardson A (2019) Explainability in human–agent systems.
+Autonomous Agents and Multi-Agent Systems 33:673–705
+Sakama and Inoue (2009)
+Sakama C, Inoue K (2009) Brave induction: a logical framework for learning from
+incomplete information. Machine Learning 76(1):3–35
+Schlenoff et al (2012)
+Schlenoff C, Prestes E, Madhavan R, et al (2012) An ieee standard ontology for
+robotics and automation. In: 2012 IEEE/RSJ international conference on
+intelligent robots and systems, IEEE, pp 1337–1342
+Schlenoff et al (2012)
+Schlenoff C, Prestes E, Madhavan R, et al (2012) An ieee standard
+ontology for robotics and automation. In: 2012 IEEE/RSJ International
+Conference on Intelligent Robots and Systems, pp 1337–1342
+Schüller and Benz (2018)
+Schüller P, Benz M (2018) Best-effort inductive logic programming via
+fine-grained cost-based hypothesis generation. Machine Learning
+107(7):1141–1169
+Shah et al (2023)
+Shah D, Osiński B, Levine S, et al (2023) Lm-nav: Robotic navigation with
+large pre-trained models of language, vision, and action. In: Conference on
+robot learning, PMLR, pp 492–504
+Shahkoo and Abin (2023)
+Shahkoo AA, Abin AA (2023) Autonomous tissue manipulation via surgical robot
+using deep reinforcement learning and evolutionary algorithm. IEEE
+Transactions on Medical Robotics and Bionics 5(1):30–41
+Shenfeld et al (2023)
+Shenfeld I, Hong ZW, Tamar A, et al (2023) Tgrl: An algorithm for teacher
+guided reinforcement learning. In: International Conference on Machine
+Learning, PMLR, pp 31077–31093
+Shindo et al (2021)
+Shindo H, Nishino M, Yamamoto A (2021) Differentiable inductive logic
+programming for structured examples. In: Proceedings of the AAAI Conference
+on Artificial Intelligence, pp 5034–5041
+Soper and Fried (2008)
+Soper NJ, Fried GM (2008) The fundamentals of laparoscopic surgery: its time
+has come. Bull Am Coll Surg 93(9):30–32
+Sridharan and Meadows (2018)
+Sridharan M, Meadows B (2018) Knowledge Representation and Interactive
+Learning of Domain Knowledge for Human-Robot Collaboration. Advances in
+Cognitive Systems 7:77–96
+Sridharan et al (2019)
+Sridharan M, Gelfond M, Zhang S, et al (2019) Reba: A refinement-based
+architecture for knowledge representation and reasoning in robotics. Journal
+of Artificial Intelligence Research 65:87–180
+Tagliabue et al (2022)
+Tagliabue E, Meli D, Dall’Alba D, et al (2022) Deliberation in autonomous
+robotic surgery: a framework for handling anatomical uncertainty. In: 2022
+International Conference on Robotics and Automation (ICRA), IEEE, pp
+11080–11086
+Tanwani and Calinon (2016)
+Tanwani AK, Calinon S (2016) Learning robot manipulation tasks with
+task-parameterized semitied hidden semi-markov model. IEEE Robotics and
+Automation Letters 1(1):235–242
+Topan et al (2021)
+Topan S, Rolnick D, Si X (2021) Techniques for symbol grounding with satnet.
+Advances in Neural Information Processing Systems 34:20733–20744
+Umili et al (2023)
+Umili E, Capobianco R, De Giacomo G (2023) Grounding LTLf specifications in
+image sequences. In: Proceedings of the International Conference on
+Principles of Knowledge Representation and Reasoning, pp 668–678
+Veronese et al (2024, in publication)
+Veronese C, Meli D, Farinelli A (2024, in publication) Online inductive
+learning from answer sets for efficient reinforcement learning exploration.
+In: Proceedings of 3rd International Workshop on HYbrid Models for Coupling
+Deductive and Inductive ReAsoning (HYDRA)
+Zhu and Hu (2018)
+Zhu Z, Hu H (2018) Robot learning from demonstration in robotic assembly: A
+survey. Robotics 7(2):17
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

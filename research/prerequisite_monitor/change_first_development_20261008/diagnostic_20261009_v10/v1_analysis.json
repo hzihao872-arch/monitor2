@@ -1,0 +1,374 @@
+{
+  "scope": "all requests; transitions use AI development pre-audit only",
+  "issued": 10,
+  "completed": 10,
+  "failed": 0,
+  "ambiguous": 0,
+  "wall_seconds": 85.2151139806956,
+  "adapter_seconds": 60.3132642460987,
+  "p50_seconds": 7.117629136890173,
+  "p95_seconds": 16.413920948281884,
+  "cost_by_arm_stage": {
+    "compact1:V1": {
+      "requests": 2,
+      "wall_seconds": 23.330400627106428,
+      "adapter_seconds": 14.890856826677918,
+      "input_tokens": 4760,
+      "output_tokens": 478,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18266779136
+    },
+    "compact2:V1": {
+      "requests": 8,
+      "wall_seconds": 61.88471335358918,
+      "adapter_seconds": 45.42240741942078,
+      "input_tokens": 19664,
+      "output_tokens": 1458,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18287639040
+    }
+  },
+  "summary": [
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "mode": "compact1",
+      "valid": false,
+      "errors": [
+        "ValueError:exact_keys:context,changes,coverage"
+      ],
+      "payload": {
+        "changes": [
+          {
+            "a": "c0a",
+            "after": "robot arm mostly occluded by table edge",
+            "b": "c0b",
+            "before": "robot arm visible, partially occluding table",
+            "coverage": "occluded",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0008",
+            "after": "box top removed, revealing empty interior",
+            "b": "f0005",
+            "before": "box top intact, robot arm holding brown block",
+            "coverage": "complete",
+            "object": "box"
+          },
+          {
+            "a": "f0012",
+            "after": "robot arm retracted, brown block back on orange pad",
+            "b": "f0011",
+            "before": "robot arm holding brown block over box",
+            "coverage": "complete",
+            "object": "robot arm"
+          }
+        ],
+        "context": "A white robot arm is positioned near a wooden table with a blue cube and a box containing an orange pad and small brown block."
+      }
+    },
+    {
+      "qid": "qcde827bb66b99fd4",
+      "mode": "compact1",
+      "valid": false,
+      "errors": [
+        "ValueError:exact_keys:context,changes,coverage"
+      ],
+      "payload": {
+        "changes": [
+          {
+            "a": "c0a",
+            "after": "arm lowered, gripper closed around gray block on platform",
+            "b": "c0b",
+            "before": "arm positioned above yellow platform, gripper open",
+            "coverage": "complete",
+            "object": "robot arm"
+          },
+          {
+            "a": "c1a",
+            "after": "platform fully visible as arm retracts slightly",
+            "b": "c1b",
+            "before": "platform partially obscured by robot arm",
+            "coverage": "complete",
+            "object": "yellow platform"
+          },
+          {
+            "a": "f0014",
+            "after": "pink block moved to rest on yellow platform",
+            "b": "f0000",
+            "before": "pink block visible on wooden surface",
+            "coverage": "complete",
+            "object": "pink block"
+          }
+        ],
+        "context": "A robotic arm hovers over a wooden surface with scattered colored blocks and a yellow platform."
+      }
+    },
+    {
+      "qid": "q07108c1875aa88b5",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0008",
+            "after": "robot arm has removed brown cube, box top is open and empty",
+            "b": "f0005",
+            "before": "robot arm above box, orange top with brown cube visible",
+            "object": "robot arm and box"
+          },
+          {
+            "a": "f0010",
+            "after": "robot arm has placed brown cube back on orange top",
+            "b": "f0008",
+            "before": "robot arm above open box, orange top visible",
+            "object": "robot arm and box"
+          },
+          {
+            "a": "f0011",
+            "after": "robot arm has retracted, box top is closed",
+            "b": "f0010",
+            "before": "robot arm above box with brown cube on orange top",
+            "object": "robot arm and box"
+          }
+        ],
+        "context": "A robot manipulates a box on a wooden surface with a blue cube nearby.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q07e7773ad34d85f6",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0005",
+            "after": "arm lowered, gripper closed, grasping the pink object",
+            "b": "f0002",
+            "before": "arm extended, gripper open, positioned above pink and yellow objects",
+            "object": "robotic arm"
+          },
+          {
+            "a": "f0008",
+            "after": "arm holding pink object, gripper closed, slightly repositioned over yellow platform",
+            "b": "f0007",
+            "before": "arm holding pink object, gripper closed, positioned over yellow platform",
+            "object": "robotic arm"
+          },
+          {
+            "a": "f0011",
+            "after": "released onto wooden surface, now separate from arm",
+            "b": "f0010",
+            "before": "held by robotic arm, positioned above yellow platform",
+            "object": "pink object"
+          }
+        ],
+        "context": "A robotic arm is positioned over a wooden surface with scattered blocks and a yellow platform.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q0d6f6ef3062d4d34",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0005",
+            "after": "extended toward box",
+            "b": "f0003",
+            "before": "retracted",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0011",
+            "after": "releasing orange top",
+            "b": "f0008",
+            "before": "holding orange top",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0014",
+            "after": "extended toward box",
+            "b": "f0011",
+            "before": "retracted",
+            "object": "robot arm"
+          }
+        ],
+        "context": "A robotic arm and a blue cube are on a wooden surface near a transparent box with an orange top.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "c1a",
+            "after": "arm fully visible, gripping an object on the box",
+            "b": "c0a",
+            "before": "arm partially visible, positioned above the box",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0008",
+            "after": "box top surface is removed, revealing an empty interior",
+            "b": "f0005",
+            "before": "box has a solid top surface with an object on it",
+            "object": "box"
+          },
+          {
+            "a": "f0014",
+            "after": "arm has released the object, now stationary",
+            "b": "f0011",
+            "before": "arm holding an object over the box",
+            "object": "robot arm"
+          }
+        ],
+        "context": "A robot arm interacts with a box on a wooden surface, with a blue cube nearby.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q675f22bca6b91b54",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0007",
+            "after": "placed on yellow platform",
+            "b": "f0005",
+            "before": "held by robot arm",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0008",
+            "after": "placed on yellow platform",
+            "b": "f0006",
+            "before": "held by robot arm",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0014",
+            "after": "on yellow platform",
+            "b": "f0011",
+            "before": "on yellow platform",
+            "object": "blue cube"
+          }
+        ],
+        "context": "A robot arm manipulates blocks on a wooden surface near a yellow platform with other blocks.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "qbb0dbd57d63ce6a9",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "c1a",
+            "after": "arm retracted, gray block still on yellow platform",
+            "b": "c0a",
+            "before": "arm extended over yellow platform with gray block on it",
+            "object": "robotic arm"
+          },
+          {
+            "a": "c1a",
+            "after": "moved onto yellow platform by robotic arm",
+            "b": "c1b",
+            "before": "visible on wooden surface near yellow platform",
+            "object": "pink block"
+          },
+          {
+            "a": "f0014",
+            "after": "arm retracted to initial position",
+            "b": "f0000",
+            "before": "arm extended over yellow platform",
+            "object": "robotic arm"
+          }
+        ],
+        "context": "A robotic arm is positioned over a wooden surface with scattered blocks and a yellow platform.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "qcde827bb66b99fd4",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0005",
+            "after": "extended over yellow platform",
+            "b": "f0000",
+            "before": "retracted",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0011",
+            "after": "moved to side of platform",
+            "b": "f0005",
+            "before": "on platform",
+            "object": "pink block"
+          },
+          {
+            "a": "f0014",
+            "after": "on platform with pink block",
+            "b": "f0008",
+            "before": "on platform",
+            "object": "green bar"
+          }
+        ],
+        "context": "Robot arm and blocks on wooden surface with grid floor in background.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "qf2bed1caaecc37a0",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0007",
+            "after": "placed into transparent box",
+            "b": "f0005",
+            "before": "held by robot",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0008",
+            "after": "placed into transparent box",
+            "b": "f0006",
+            "before": "held by robot",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0014",
+            "after": "inside transparent box",
+            "b": "f0011",
+            "before": "inside transparent box",
+            "object": "blue cube"
+          }
+        ],
+        "context": "A robot manipulates a blue cube on a wooden surface near a transparent box with an orange lid.",
+        "coverage": "complete"
+      }
+    }
+  ],
+  "pairs": [],
+  "transition_counts": {},
+  "unexecuted_query_records": []
+}

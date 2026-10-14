@@ -1,0 +1,79 @@
+{
+  "TOPReward": {
+    "Bplus_vs_B0_delta": {
+      "left": -5.875,
+      "right": -2.5,
+      "difference": -3.375,
+      "direction": "higher",
+      "outcome": "loss"
+    },
+    "Bplus_vs_U0_delta": {
+      "left": -5.875,
+      "right": -1.75,
+      "difference": -4.125,
+      "direction": "higher",
+      "outcome": "loss"
+    },
+    "Hminus_vs_N0_delta": {
+      "left": -1.5,
+      "right": -1.125,
+      "difference": -0.375,
+      "direction": "lower",
+      "outcome": "win"
+    },
+    "Hminus_vs_N0_post": {
+      "left": -27.0,
+      "right": -26.375,
+      "difference": -0.625,
+      "direction": "lower",
+      "outcome": "win"
+    },
+    "Gplus_vs_N0_delta": {
+      "left": 10.375,
+      "right": -1.125,
+      "difference": 11.5,
+      "direction": "higher",
+      "outcome": "win"
+    }
+  },
+  "Robometer": null,
+  "Robometer_PR33_dtype_compat": {
+    "Bplus_vs_B0_delta": {
+      "left": 0.10224561393260956,
+      "right": 0.2692950963973999,
+      "difference": -0.16704948246479034,
+      "direction": "higher",
+      "outcome": "loss"
+    },
+    "Bplus_vs_U0_delta": {
+      "left": 0.10224561393260956,
+      "right": 0.14786215126514435,
+      "difference": -0.04561653733253479,
+      "direction": "higher",
+      "outcome": "loss"
+    },
+    "Hminus_vs_N0_delta": {
+      "left": 0.5605596750974655,
+      "right": 0.1954406350851059,
+      "difference": 0.3651190400123596,
+      "direction": "lower",
+      "outcome": "loss"
+    },
+    "Hminus_vs_N0_post": {
+      "left": 0.7275632619857788,
+      "right": 0.3597356975078583,
+      "difference": 0.36782756447792053,
+      "direction": "lower",
+      "outcome": "loss"
+    },
+    "Gplus_vs_N0_delta": {
+      "left": 0.7490223348140717,
+      "right": 0.1954406350851059,
+      "difference": 0.5535816997289658,
+      "direction": "higher",
+      "outcome": "win"
+    }
+  },
+  "strict_original_robometer_reason": "Unmodified official script failed on first forward with mixed FP32/BF16; environment failure is not a model miss or tie.",
+  "metric": "post 12-14 s median minus pre 0-2 s median; native scales"
+}

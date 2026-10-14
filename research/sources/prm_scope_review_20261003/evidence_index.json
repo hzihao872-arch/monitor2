@@ -1,0 +1,30 @@
+{
+  "paper_url": "https://arxiv.org/html/2608.14284v1",
+  "paper_sha256": "6632afa5c918a34e3112555cb92ea7fa2b6ecde58a005b4a3dc5e725f71226e0",
+  "sections_read": [
+    "S2",
+    "S3 introductory text",
+    "S5",
+    "A2.SS1",
+    "A3",
+    "A4",
+    "A6.SS1"
+  ],
+  "table8_author_reported_accuracy": {
+    "Robo-Dopamine Forward": {
+      "Rising": 0.844,
+      "Falling": 0.408,
+      "Overall": 0.746
+    },
+    "RoboMeter": {
+      "Rising": 0.951,
+      "Falling": 0.901,
+      "Overall": 0.94
+    }
+  },
+  "table8_subset_ids_and_per_example_predictions": "Not supplied in C.5.2; not found in inspected toolkit tree",
+  "table7_denominator": "155 intervals annotated Falling, not established as 155 judge prediction errors",
+  "scope": "source review, no new model experiment or independent labels",
+  "next_source": "https://github.com/robometer/robometer/blob/352d160389daa964788de1ec933d1925f3a6de4f/robometer/evals/eval_server.py",
+  "remaining_question": "Frame visibility of use_frame_steps on server; then whether native/adapted strong method can answer condition validity"
+}

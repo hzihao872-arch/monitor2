@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Diagnose, Correct, and Learn from Manipulation Failures via Visual Symbols</title>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Google+Sans:wght@400;500;700&family=Noto+Sans&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.ico">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
+  <style>
+    /* 全局基础优化：抗锯齿与极简背景 */
+    body {
+      font-family: 'Inter', 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #424245; 
+      background-color: #fafafa;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* 标题高级感：紧致的字间距与重字重 */
+    .publication-title {
+      font-family: 'Inter', sans-serif !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.04em !important;
+      color: #1d1d1f !important;
+      line-height: 1.15 !important;
+      text-wrap: balance;
+    }
+
+    /* 标题主题关键词调色：琥珀黄、翡翠绿、智慧蓝 */
+    .color-diagnose {
+      color: #e5a000; 
+    }
+    .color-correct {
+      color: #10b981; 
+    }
+    .color-learn {
+      color: #0071e3; 
+    }
+
+    .title.is-3 {
+      font-weight: 700;
+      color: #1d1d1f;
+      margin-bottom: 2.5rem !important;
+      position: relative;
+      display: inline-block;
+    }
+    
+    /* 二级标题下划线装饰 */
+    .title.is-3::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background-color: #1d1d1f;
+      border-radius: 2px;
+    }
+
+    /* 作者与链接的微调 */
+    .publication-authors a {
+      color: #0071e3;
+      transition: color 0.2s ease;
+    }
+    .publication-authors a:hover {
+      color: #004494;
+      text-decoration: underline;
+    }
+
+    /* 实验室标志样式：字号放大，拉宽字距提升阵列感 */
+    .lab-link {
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #515154 !important;
+      font-size: 1.25rem !important; /* 显著放大 */
+      transition: color 0.3s ease;
+    }
+    .lab-link:hover {
+      color: #1d1d1f !important;
+    }
+
+    /* 顶会标签增强：高饱和实色渐变 + 弥散阴影 */
+    .venue-tag {
+      display: inline-block;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      background: linear-gradient(135deg, #a41034 0%, #d82b4a 100%);
+      padding: 10px 30px; /* 更饱满 */
+      border-radius: 30px;
+      letter-spacing: 1.5px;
+      font-size: 1.25rem !important;
+      box-shadow: 0 8px 20px rgba(164, 16, 52, 0.25);
+      text-transform: uppercase;
+      transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+    }
+    .venue-tag:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 12px 25px rgba(164, 16, 52, 0.35);
+    }
+
+    /* 按钮优化：胶囊形毛玻璃质感与弹性悬浮动画 */
+    .external-link.button.is-dark {
+      background-color: rgba(29, 29, 31, 0.85) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 100px !important; 
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .external-link.button.is-dark:hover {
+      background-color: rgba(29, 29, 31, 1) !important;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* --- 透明图片高级化处理 (重点) --- */
+    
+    /* 对所有 section 内的非视频图片进行 drop-shadow 处理，移除笨重的 card 阴影 */
+    .section img, .hero.teaser img {
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      /* 真正的物理弥散阴影，跟随透明图片的边缘 */
+      filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.1));
+      transition: filter 0.4s ease, transform 0.4s ease;
+    }
+    
+    .section img:hover, .hero.teaser img:hover {
+      transform: translateY(-5px) scale(1.01);
+      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.15));
+    }
+
+    /* 视频依旧保持圆角卡片质感 */
+    video {
+      border-radius: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- 特别加强 Pipeline (Teaser) 的“舞台”效果 --- */
+    .hero.teaser {
+      /* 在 pipeline 图片背后添加一个极柔和的径向渐变，使其呈现“悬浮舞台”感 */
+      background: radial-gradient(circle at center, rgba(0,113,227,0.03) 0%, rgba(250,250,250,1) 70%);
+      padding: 3rem 0;
+    }
+    
+    #teaser {
+      /* 增强 Teaser 的阴影深度 */
+      filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.12)) !important;
+    }
+    
+    /* 摘要文字排版优化 */
+    .content p {
+      line-height: 1.8;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+      color: #515154;
+    }
+
+    /* BibTeX 区域：极客暗黑风 */
+    #BibTeX pre {
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* 章节容器优化：增加呼吸感 */
+    .section {
+      padding: 5rem 1.5rem;
+      background-color: #ffffff;
+      border-radius: 30px;
+      margin: 20px auto;
+      max-width: 1200px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+    }
+
+    /* 去除 is-light 区块的突兀背景，保持统一 */
+    .hero.is-light {
+      background: transparent !important; 
+    }
+
+    a { color: #0071e3; }
+    a:hover { color: #0077ed; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">
+            <span class="color-diagnose">Diagnose</span>, 
+            <span class="color-correct">Correct</span>, and 
+            <span class="color-learn">Learn</span> 
+            from Manipulation Failures via Visual Symbols
+          </h1>
+          
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><a href="https://openreview.net/profile?id=~Xianchao_Zeng1">Xianchao Zeng</a><sup>1,2⚖️</sup>,</span>
+            <span class="author-block"><a href="https://scholar.google.com/citations?user=WwfRjAcAAAAJ&hl=en">Xinyu Zhou</a><sup>2,3⚖️</sup>,</span>
+            <span class="author-block"><a href="https://openreview.net/profile?id=~Youcheng_Li3">Youcheng Li</a><sup>1,2</sup>,</span>
+            <span class="author-block"><a href="https://openreview.net/profile?id=~Jiayou_Shi1">Jiayou Shi</a><sup>4</sup>,</span>
+            <span class="author-block"><a href="https://openreview.net/profile?id=~Tianle_Li9">Tianle Li</a><sup>4</sup>,</span>
+            <br>
+            <span class="author-block"><a href="https://faculty.sustech.edu.cn/?tagid=chenlm6&iscss=1&snapid=1&orderby=date&go=2&lang=en">Liangming Chen</a><sup>3✉️</sup>,</span>
+            <span class="author-block"><a href="https://scholar.google.com/citations?user=BcSIgFEAAAAJ&hl=en&oi=ao">Lei Ren</a><sup>1✉️</sup>,</span>
+            <span class="author-block"><a href="https://dirtyharrylyl.github.io">Yong-Lu Li</a><sup>2,4✉️</sup></span>
+          </div>
+          
+          <div class="is-size-5 publication-authors" style="margin-top: 1.5rem; margin-bottom: 0.8rem;">
+            <a href="http://mvig-rhos.com" target="_blank" class="lab-link">- RHOS Lab -</a>
+          </div>
+
+          <div class="is-size-5 publication-authors" style="color: #6e6e73;">
+            <span class="author-block"><sup>1</sup>Beihang University,</span>
+            <span class="author-block"><sup>2</sup>Shanghai Innovation Institute,</span>
+            <br>
+            <span class="author-block"><sup>3</sup>Southern University of Science and Technology,</span>
+            <span class="author-block"><sup>4</sup>Shanghai Jiao Tong University</span>
+            <br>
+            <span style="font-size: 0.9rem;">⚖️ Equal contribution. ✉️ Corresponding authors.</span>
+          </div>
+
+          <div class="is-size-3 publication-authors" style="margin-top: 2rem; margin-bottom: 2rem;">
+            <span class="author-block venue-tag">CVPR 2026</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="https://arxiv.org/pdf/2512.02787" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2512.02787" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://github.com/x1nyuzhou/ViFailback" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>Code</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://huggingface.co/sii-rhos-ai/ViFailback-8B" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-cube"></i></span>
+                  <span>Model</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/sii-rhos-ai/ViFailback-Dataset" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="far fa-images"></i></span>
+                  <span>Data</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/sii-rhos-ai/vifailback-dataset-lerobot" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="far fa-images"></i></span>
+                  <span>LeRobot</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body has-text-centered">
+      <img id="teaser" src="./static/images/pipeline.png" alt="Pipeline" style="width:75%;">
+      <h2 class="subtitle has-text-centered" style="margin-top: 2rem; font-size: 1.2rem; color: #515154; font-weight: 400; line-height: 1.5; text-wrap: balance;">
+        Our pipeline leverages real-world failure data to build a dataset and train <strong style="color: #1d1d1f;">ViFailback-8B</strong> for failure diagnosis and correction.
+      </h2>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-light is-small" style="background-color: #fbfbfd;">
+  <div class="hero-body">
+    <div class="container">
+      <div class="video-stack" style="display: flex; flex-direction: row; justify-content: center; gap: 24px;">
+        <div class="item" style="flex: 1;"><video autoplay controls muted loop playsinline width="100%"><source src="./static/videos/Task1.mp4" type="video/mp4"></video></div>
+        <div class="item" style="flex: 1;"><video autoplay controls muted loop playsinline width="100%"><source src="./static/videos/Task2.mp4" type="video/mp4"></video></div>
+        <div class="item" style="flex: 1;"><video autoplay controls muted loop playsinline width="100%"><source src="./static/videos/Task3.mp4" type="video/mp4"></video></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Vision-Language-Action (VLA) models have recently achieved remarkable progress in robotic manipulation, yet they remain limited in failure diagnosis and learning from failures. Additionally, existing failure datasets are mostly generated programmatically in simulation, which limits their generalization to the real world. In light of these, we introduce <strong style="color: #1d1d1f;">ViFailback</strong>, a framework designed to diagnose robotic manipulation failures and provide both textual and visual correction guidance.
+          </p>
+          <p>
+            Our framework utilizes explicit visual symbols to enhance annotation efficiency. We further release the ViFailback dataset, a large-scale collection of 58,128 Visual Question Answering (VQA) pairs along with their corresponding 5,202 real-world manipulation trajectories.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-centered has-text-centered" style="margin-top: 4.5rem;">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Overview</h2>
+        <div class="content has-text-justified">
+          <p style="text-align: center;">
+            <strong style="color: #1d1d1f;">Overview of ViFailback Framework.</strong><br> 
+            <span style="font-size: 0.95em; color: #86868b;">Left: Real-world trajectory collection. Middle: Dataset comprising 58,126 VQA pairs. Right: Fine-tuning Qwen3-VL-8B as an external supervisor.</span>
+          </p>
+        </div>
+        <img src="./static/images/overall.png" alt="Overview" width="100%">
+      </div>
+    </div>
+
+    <div class="columns is-centered has-text-centered" style="margin-top: 5rem;">
+      <div class="column is-full-width">
+        <h2 class="title is-3">ViFailback Benchmark</h2>
+        <img src="./static/images/bench.png" alt="Benchmark" width="100%">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="has-text-centered" style="margin-bottom: 3.5rem;">
+      <h2 class="title is-3">Experiments</h2>
+    </div>
+    
+    <h3 class="title is-4 has-text-centered" style="margin-bottom: 2rem;">Benchmark Results</h3>
+    <div class="content has-text-centered">
+      <img src="static/images/bench_all.png" alt="Results" style="max-width: 50%; margin-bottom: 4rem;">
+    </div>
+
+    <h3 class="title is-4 has-text-centered" style="margin-bottom: 2rem;">Real-world Experimental Demos</h3>
+    <div class="columns is-vcentered is-multiline">
+      <div class="column is-12" style="margin-bottom: 2rem;">
+        <p style="text-align: center; margin-bottom: 15px; font-size: 1.1rem; color: #1d1d1f;">
+          <strong>VSF Method:</strong> Visual Symbols-Following
+        </p>
+        <video autoplay controls muted loop playsinline width="100%"><source src="./static/videos/VSF_demos.mp4" type="video/mp4"></video>
+      </div>
+      <div class="column is-12" style="margin-top: 1.5rem;">
+        <p style="text-align: center; margin-bottom: 15px; font-size: 1.1rem; color: #1d1d1f;">
+          <strong>PMC Method:</strong> Point-based Motion Control
+        </p>
+        <video autoplay controls muted loop playsinline width="100%"><source src="./static/videos/PMC_demos.mp4" type="video/mp4"></video>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="BibTeX" style="box-shadow: none; background-color: transparent;">
+  <div class="container is-max-desktop content">
+    <h2 class="title is-3 has-text-centered" style="margin-bottom: 2rem;">BibTeX</h2>
+    <pre><code>@inproceedings{zeng2026diagnose,
+  title={Diagnose, correct, and learn from manipulation failures via visual symbols},
+  author={Zeng, Xianchao and Zhou, Xinyu and Li, Youcheng and Shi, Jiayou and Li, Tianle and Chen, Liangming and Ren, Lei and Li, Yong-Lu},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={42386--42395},
+  year={2026}
+}</code></pre>
+  </div>
+</section>
+
+<footer class="footer" style="padding: 3rem 0; background-color: #fafafa; border-top: 1px solid #eaeaea;">
+  <div class="content has-text-centered">
+    <p style="font-size: 0.9rem; color: #86868b; font-weight: 500;">
+      This website was built off of <a href="https://github.com/nerfies/nerfies.github.io" target="_blank" style="color: #0071e3; transition: opacity 0.2s;"><span style="text-decoration: underline;">nerfies</span></a>.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

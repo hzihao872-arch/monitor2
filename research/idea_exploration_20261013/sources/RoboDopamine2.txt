@@ -1,0 +1,4318 @@
+0001: Robo-Dopamine 2.0: History-Conditioned and OOD-Aware Process Reward Modeling for Robotic Manipulation
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2608.15680v1 [cs.RO] 16 Aug 2026
+0010: Robo-Dopamine 2.0: History-Conditioned and OOD-Aware Process Reward Modeling for Robotic Manipulation
+0011: Yijie Xu
+0012: Haopeng Jin
+0013: Run Zhou
+0014: Shengbang Liu
+0015: Sixiang Chen
+0016: Hongyang Cheng
+0017: Sicheng Hu
+0018: Peterson Co
+0019: Jinwen Luo
+0020: Huajie Tan
+0021: Shanghang Zhang
+0022: \corresponding
+0023: Abstract
+0024: Vision-language-action (VLA) models have improved robotic manipulation, yet
+0025: their policies remain vulnerable to compounding errors, unseen scene changes,
+0026: and off-trajectory states. Reinforcement learning (RL) offers a promising
+0027: route to refine pretrained VLA policies, but its effectiveness depends on
+0028: informative rewards. Sparse success signals make exploration inefficient,
+0029: whereas manually engineered dense rewards are costly, brittle, and
+0030: task-specific. Learned visual reward models provide dense feedback, but
+0031: existing robotic reward models often rely on static before–after observations
+0032: and struggle to capture execution context and failure semantics. This leads to
+0033: temporal ambiguity
+0034: , where similar observations correspond to different
+0035: latent progress due to hidden contact events, repeated phases, or reordered
+0036: subgoals, and limits their ability to distinguish robustness-preserving
+0037: variations from task-invalid failures under out-of-distribution (OOD)
+0038: execution. We introduce
+0039: Robo-Dopamine 2.0
+0040: , a history- and OOD-aware process
+0041: reward model that retains a pairwise prediction interface.
+0042: Robo-Dopamine 2.0 improves progress estimation under these conditions through two
+0043: complementary designs: (1) a history-conditioned pairwise reward formulation
+0044: that uses source-aligned reference panels for synthetic OOD queries and
+0045: observed rollout history for online queries, while preserving the actual queried
+0046: endpoints;
+0047: and (2) an OOD-aware signed progress space that organizes positive,
+0048: robustness-preserving, and negative states into a unified progress
+0049: representation. To improve optimization of fine-grained progress ordering, we
+0050: further develop a
+0051: Signed-Hop Curriculum
+0052: with transition-aware replay
+0053: that progressively learns coarse execution ordering before fine-grained
+0054: progress calibration. We also construct an OOD trajectory dataset and a
+0055: five-family benchmark for comprehensive evaluation. Reference panels improve mean visual order consistency (VOC) from 0.967 to
+0056: 0.986 and OOD-robust VOC from 0.906 to 0.958. Under the same 400K pairwise-reward budget, Signed-Hop training with 25%
+0057: replay reaches 0.9872 mean VOC, compared with 0.9858 for a matched-pool
+0058: shuffled control. In downstream RL, the full model reaches 86.8% mean
+0059: RoboTwin success and 71/80 successful real-world insertions.
+0060: 1
+0061: State Key Laboratory of Multimedia Information Processing, School of Computer Science, Peking University
+0062: 2
+0063: EvoPhys AI
+0064: 3
+0065: Beijing University of Posts and Telecommunications
+0066: 4
+0067: Tencent
+0068: 5
+0069: Renmin University of China
+0070: 6
+0071: Sun Yat-sen University
+0072: Introduction
+0073: Large-scale imitation learning and vision-language-action models have
+0074: substantially improved visuomotor policy generalization from diverse
+0075: demonstrations
+0076: (
+0077: Brohan et al. 2023
+0078: ;
+0079: Zitkovich et al. 2023
+0080: ;
+0081: Kim et al. 2025b
+0082: )
+0083: .
+0084: However, long-horizon, contact-rich manipulation remains challenging due to
+0085: compounding errors, unseen scene changes, and off-trajectory states that
+0086: require recovery.
+0087: Reinforcement learning can improve policies through interaction, but its
+0088: practical deployment on real robots critically depends on rewards that are
+0089: dense, task-relevant, and reliable beyond the demonstration distribution.
+0090: Sparse terminal rewards make exploration inefficient, whereas handcrafted
+0091: dense rewards are brittle, task-specific, and expensive to
+0092: engineer
+0093: (
+0094: Lee et al. 2021
+0095: ;
+0096: Wang et al. 2024
+0097: ;
+0098: Sontakke et al. 2023
+0099: )
+0100: .
+0101: Recent visual and language-conditioned reward models address this bottleneck by
+0102: learning dense feedback from observations and task descriptions
+0103: (
+0104: Ma et al. 2023b
+0105: ;
+0106: Ma et al. 2023a
+0107: ;
+0108: Baumli et al. 2023
+0109: ;
+0110: Wang et al. 2024
+0111: )
+0112: ; robot-specific methods
+0113: further introduce stage- or process-aware progress estimation
+0114: (
+0115: Hung et al. 2025
+0116: ;
+0117: Tan et al. 2026
+0118: ;
+0119: Chen et al. 2026a
+0120: ;
+0121: Zhang et al. 2026
+0122: )
+0123: .
+0124: Nevertheless, existing approaches remain limited in accurately evaluating
+0125: execution progress under challenging manipulation scenarios.
+0126: First
+0127: , static endpoint pairs suffer from
+0128: temporal aliasing
+0129: : visually
+0130: similar states may correspond to different latent progress due to hidden
+0131: contact events, repeated phases, or reordered subgoals
+0132: (
+0133: Ni et al. 2022
+0134: ;
+0135: Guhur et al. 2023
+0136: ;
+0137: Fu et al. 2024
+0138: )
+0139: .
+0140: Second
+0141: , robust execution requires distinguishing semantics-preserving
+0142: variations from true failures: occlusions or distractors may preserve task
+0143: progress, whereas failed grasps, wrong-object interactions, and incomplete
+0144: releases should receive negative feedback. However, successful
+0145: in-distribution trajectories provide limited supervision for learning such
+0146: failure-aware distinctions.
+0147: To address these challenges, we introduce
+0148: Robo-Dopamine 2.0
+0149: , a
+0150: history- and OOD-aware pairwise reward learning framework that retains the
+0151: pairwise progress formulation used in prior process reward
+0152: modeling
+0153: (
+0154: Tan et al. 2026
+0155: )
+0156: . Robo-Dopamine 2.0 improves phase-aware and
+0157: failure-aware progress estimation through two complementary designs:
+0158: (1) a history-conditioned pairwise reward formulation
+0159: that
+0160: uses same-episode expert history for standard queries and observed rollout
+0161: history for online queries, while synthetic OOD queries use phase-aligned
+0162: successful-reference panels without replacing their edited endpoints; and
+0163: (2) an OOD-aware signed progress space
+0164: that
+0165: organizes execution states into positive, robustness-preserving, and negative
+0166: branches, enabling the model to represent valid progress,
+0167: semantics-preserving variations, failures, and recovery within a unified
+0168: pairwise training interface.
+0169: Furthermore, we introduce a
+0170: Signed-Hop Curriculum
+0171: with
+0172: transition-aware replay to progressively learn execution ordering.
+0173: The curriculum first captures coarse-grained ordering between successful,
+0174: robust, and failed states, and then refines fine-grained progress differences.
+0175: The replay strategy preserves informative large-transition pairs during
+0176: training, improving progress calibration under diverse execution scenarios.
+0177: We evaluate Robo-Dopamine 2.0 through a trajectory-level visual order consistency (VOC)
+0178: evaluation across five benchmark families covering in-distribution, temporal,
+0179: and OOD scenarios.
+0180: Our contributions are summarized as follows:
+0181: •
+0182: We propose
+0183: Robo-Dopamine 2.0
+0184: , a history- and OOD-aware pairwise reward framework that supports source-reference context for synthetic OOD queries and observed rollout context for online reward inference, together with a signed progress space for valid progress, robustness, failure, and recovery.
+0185: •
+0186: We develop a
+0187: Signed-Hop Curriculum
+0188: with transition-aware replay that
+0189: improves learning of global execution ordering and fine-grained progress
+0190: calibration.
+0191: •
+0192: We present a trajectory-level visual order consistency (VOC)
+0193: evaluation across five benchmark families covering in-distribution, temporal,
+0194: and OOD scenarios, including controlled studies of static versus
+0195: history-conditioned reward modeling.
+0196: Figure 1:
+0197: Overview of Robo-Dopamine 2.0. Standard queries use same-episode expert
+0198: history, online queries use the observed rollout history, and synthetic OOD
+0199: queries use source-aligned successful-reference panels while preserving their
+0200: edited endpoints. All context modes share the same pairwise GRM interface.
+0201: Related Work
+0202: Generalist Robot Policies.
+0203: Generalist robot policies and vision-language-action models scale visuomotor
+0204: learning and semantic generalization across tasks and embodiments. RT-1 studies
+0205: large-scale real-world robot control, RT-2 transfers web-scale semantic
+0206: knowledge into action prediction, and OpenVLA provides an open model for
+0207: adaptation to new manipulation domains
+0208: (
+0209: Brohan et al. 2023
+0210: ;
+0211: Zitkovich et al. 2023
+0212: ;
+0213: Kim et al. 2025b
+0214: )
+0215: .
+0216: These works establish the foundation for general robot policies, but do not
+0217: address process reward modeling for off-trajectory recovery. Robo-Dopamine 2.0 instead
+0218: focuses on the reward layer for refining policies under long-horizon and
+0219: out-of-distribution execution.
+0220: Visual Reward Learning.
+0221: Reward learning explores preference supervision
+0222: (
+0223: Lee et al. 2021
+0224: )
+0225: ,
+0226: language-conditioned state changes
+0227: (
+0228: Nair et al. 2022
+0229: )
+0230: , and feedback derived from
+0231: visual or video-language representations
+0232: (
+0233: Sontakke et al. 2023
+0234: ;
+0235: Ma et al. 2023b
+0236: ;
+0237: Ma et al. 2023a
+0238: ;
+0239: Alakuijala et al. 2024
+0240: )
+0241: . Recent foundation-model approaches learn pairwise
+0242: visual preferences, general-purpose rewards, or failure-aware feedback
+0243: (
+0244: Wang et al. 2024
+0245: ;
+0246: Baumli et al. 2023
+0247: ;
+0248: Yang et al. 2024
+0249: )
+0250: , while VICtoR introduces
+0251: stage-aware vision-instruction rewards
+0252: (
+0253: Hung et al. 2025
+0254: )
+0255: . Despite these
+0256: advances, existing methods remain largely endpoint-oriented or success-centric
+0257: and do not combine query-dependent temporal context with explicit OOD
+0258: failure/recovery supervision. Robo-Dopamine 2.0 complements these approaches by jointly
+0259: modeling temporal-context-conditioned pairs and signed OOD progress within a
+0260: unified reward formulation.
+0261: Temporal and Process-aware Reward Modeling.
+0262: Temporal context has been explored in recurrent RL, history-aware manipulation
+0263: policies, and order-sensitive proxy rewards
+0264: (
+0265: Ni et al. 2022
+0266: ;
+0267: Guhur et al. 2023
+0268: ;
+0269: Fu et al. 2024
+0270: )
+0271: .
+0272: These methods primarily introduce memory into policies or trajectory matching,
+0273: whereas Robo-Dopamine 2.0 targets temporal ambiguity within pairwise reward estimation.
+0274: Meanwhile, robotic process reward models investigate multi-view relative
+0275: progress, large-scale reward data, stage-aware estimation, and critic-like
+0276: architectures
+0277: (
+0278: Tan et al. 2026
+0279: ;
+0280: Lee et al. 2026
+0281: ;
+0282: Zhang et al. 2026
+0283: ;
+0284: Chen et al. 2026a
+0285: ;
+0286: Mao et al. 2026
+0287: )
+0288: ;
+0289: failure- and stage-reasoning models provide complementary diagnostics
+0290: (
+0291: Duan et al. 2025
+0292: ;
+0293: Zhou et al. 2026
+0294: )
+0295: . Robo-Dopamine 2.0 bridges these directions by using
+0296: query-dependent temporal context—same-episode expert history for standard
+0297: queries, observed rollout history for online queries, and source-aligned
+0298: successful-reference panels for synthetic OOD queries—and by unifying semantics-preserving variations, failures, and
+0299: recovery within a signed pairwise progress space.
+0300: Method
+0301: Figure
+0302: 1
+0303: summarizes Robo-Dopamine 2.0: ordered temporal context
+0304: addresses ambiguous endpoints, signed OOD supervision models valid progress,
+0305: failure, and recovery, and a Signed-Hop curriculum improves global-to-local
+0306: ordering. Closed-loop inference converts pairwise predictions into an online
+0307: potential for reinforcement learning.
+0308: History-Conditioned Pairwise Reward Formulation
+0309: Robo-Dopamine 2.0 preserves the pairwise interface of prior process reward
+0310: modeling
+0311: (
+0312: Tan et al. 2026
+0313: )
+0314: . Given an instruction
+0315: c
+0316: c
+0317: , task-reference
+0318: anchors
+0319: ℛ
+0320: =
+0321: (
+0322: r
+0323: s
+0324: ,
+0325: r
+0326: g
+0327: )
+0328: \mathcal{R}=(r_{s},r_{g})
+0329: , ordered temporal context
+0330: 𝒞
+0331: b
+0332: ​
+0333: a
+0334: \mathcal{C}_{ba}
+0335: , and an ordered pair
+0336: (
+0337: X
+0338: b
+0339: ,
+0340: X
+0341: a
+0342: )
+0343: (X_{b},X_{a})
+0344: , the General Reward
+0345: Model (GRM) predicts signed relative progress:
+0346: y
+0347: ^
+0348: b
+0349: ​
+0350: a
+0351: =
+0352: f
+0353: θ
+0354: ​
+0355: (
+0356: c
+0357: ,
+0358: ℛ
+0359: ,
+0360: 𝒞
+0361: b
+0362: ​
+0363: a
+0364: ,
+0365: X
+0366: b
+0367: ,
+0368: X
+0369: a
+0370: )
+0371: .
+0372: \hat{y}_{ba}=f_{\theta}(c,\mathcal{R},\mathcal{C}_{ba},X_{b},X_{a}).
+0373: (1)
+0374: Here
+0375: X
+0376: b
+0377: X_{b}
+0378: and
+0379: X
+0380: a
+0381: X_{a}
+0382: are the actual queried multi-view states. The reference
+0383: anchors specify the task start and goal but are not treated as observed
+0384: execution history. The static baseline sets
+0385: 𝒞
+0386: b
+0387: ​
+0388: a
+0389: =
+0390: ∅
+0391: \mathcal{C}_{ba}=\varnothing
+0392: .
+0393: Let
+0394: X
+0395: b
+0396: =
+0397: (
+0398: b
+0399: h
+0400: ,
+0401: b
+0402: l
+0403: ,
+0404: b
+0405: r
+0406: )
+0407: X_{b}=(b^{h},b^{l},b^{r})
+0408: and
+0409: X
+0410: a
+0411: =
+0412: (
+0413: a
+0414: h
+0415: ,
+0416: a
+0417: l
+0418: ,
+0419: a
+0420: r
+0421: )
+0422: X_{a}=(a^{h},a^{l},a^{r})
+0423: , where
+0424: h
+0425: ,
+0426: l
+0427: ,
+0428: r
+0429: h,l,r
+0430: denote the
+0431: canonical head/third-person, left-wrist, and right-wrist view slots. For a pair with temporal indices
+0432: t
+0433: b
+0434: t_{b}
+0435: and
+0436: t
+0437: a
+0438: t_{a}
+0439: , we define
+0440: 𝒲
+0441: pre
+0442: \displaystyle\mathcal{W}_{\mathrm{pre}}
+0443: =
+0444: {
+0445: t
+0446: :
+0447: 0
+0448: ≤
+0449: t
+0450: <
+0451: min
+0452: ⁡
+0453: (
+0454: t
+0455: b
+0456: ,
+0457: t
+0458: a
+0459: )
+0460: }
+0461: ,
+0462: \displaystyle=\{t:0\leq t<\min(t_{b},t_{a})\},
+0463: (2)
+0464: 𝒲
+0465: mid
+0466: \displaystyle\mathcal{W}_{\mathrm{mid}}
+0467: =
+0468: {
+0469: t
+0470: :
+0471: min
+0472: ⁡
+0473: (
+0474: t
+0475: b
+0476: ,
+0477: t
+0478: a
+0479: )
+0480: <
+0481: t
+0482: <
+0483: max
+0484: ⁡
+0485: (
+0486: t
+0487: b
+0488: ,
+0489: t
+0490: a
+0491: )
+0492: }
+0493: .
+0494: \displaystyle=\{t:\min(t_{b},t_{a})<t<\max(t_{b},t_{a})\}.
+0495: For standard and online queries, these are indices in the queried episode or
+0496: rollout; for synthetic OOD pairs, they are indices in the aligned source
+0497: episode. Pair order determines the target direction, while panel frames remain
+0498: chronological. Each window is uniformly sampled into panels
+0499: M
+0500: pre
+0501: 1
+0502: :
+0503: K
+0504: M_{\mathrm{pre}}^{1:K}
+0505: and
+0506: M
+0507: mid
+0508: 1
+0509: :
+0510: L
+0511: M_{\mathrm{mid}}^{1:L}
+0512: . The two input
+0513: layouts are
+0514: ℐ
+0515: static
+0516: \displaystyle\mathcal{I}_{\mathrm{static}}
+0517: =
+0518: [
+0519: r
+0520: s
+0521: ,
+0522: r
+0523: g
+0524: ,
+0525: X
+0526: b
+0527: ,
+0528: X
+0529: a
+0530: ]
+0531: ,
+0532: \displaystyle=[r_{s},r_{g},X_{b},X_{a}],
+0533: (3)
+0534: ℐ
+0535: ref
+0536: \displaystyle\mathcal{I}_{\mathrm{ref}}
+0537: =
+0538: [
+0539: r
+0540: s
+0541: ,
+0542: r
+0543: g
+0544: ,
+0545: M
+0546: pre
+0547: 1
+0548: :
+0549: K
+0550: ,
+0551: X
+0552: b
+0553: ,
+0554: \displaystyle=[r_{s},r_{g},M_{\mathrm{pre}}^{1:K},X_{b},
+0555: M
+0556: mid
+0557: 1
+0558: :
+0559: L
+0560: ,
+0561: X
+0562: a
+0563: ]
+0564: .
+0565: \displaystyle M_{\mathrm{mid}}^{1:L},X_{a}].
+0566: Frames in each panel are ordered left-to-right and top-to-bottom. Empty cells
+0567: use a fixed padding image, and the prompt records the actual panel count so
+0568: that image and text positions remain aligned. Panels may be rendered offline
+0569: or assembled and cached by the data loader under the same ordering and padding
+0570: contract. For same-episode queries, pre-query and between-state panels summarize the
+0571: actual events preceding and separating the endpoints. For synthetic OOD pairs,
+0572: they instead provide nominal successful progression at the aligned source
+0573: indices.
+0574: Context provenance follows the query type. Standard training pairs use
+0575: temporal panels from the same expert episode as the queried states. Synthetic
+0576: OOD pairs use panels exclusively from the aligned successful source episode,
+0577: while
+0578: X
+0579: b
+0580: X_{b}
+0581: and
+0582: X
+0583: a
+0584: X_{a}
+0585: remain the edited observations; we refer to these as
+0586: source-only reference panels
+0587: . Online inference instead constructs panels from the observed rollout history,
+0588: as described in the
+0589: Closed-Loop Reward Framework
+0590: subsection.
+0591: Structured OOD Data Construction
+0592: We use OOD to denote counterfactual states outside the distribution of
+0593: successful source executions. Successful trajectories are drawn from the
+0594: RoboCasa
+0595: (
+0596: Nasiriany et al. 2024
+0597: )
+0598: and LIBERO
+0599: (
+0600: Liu et al. 2023
+0601: )
+0602: simulation
+0603: benchmarks and from real-robot AgiBot World
+0604: trajectories
+0605: (
+0606: AgiBot-World Contributors and others 2025
+0607: )
+0608: . Dataset-specific camera streams are
+0609: mapped to common view slots; unavailable auxiliary views are padded and masked
+0610: according to their availability. Data splits are formed at the source-episode
+0611: level before OOD generation, and every edited descendant remains in the same
+0612: split as its source episode.
+0613: Given a successful source trajectory
+0614: τ
+0615: \tau
+0616: and instruction
+0617: c
+0618: c
+0619: , we apply a
+0620: task- and phase-aware edit operator to construct an aligned counterfactual
+0621: trajectory:
+0622: τ
+0623: ~
+0624: z
+0625: \displaystyle\tilde{\tau}_{z}
+0626: =
+0627: ℰ
+0628: z
+0629: ​
+0630: (
+0631: τ
+0632: ,
+0633: c
+0634: )
+0635: ,
+0636: \displaystyle=\mathcal{E}_{z}(\tau,c),
+0637: (4)
+0638: z
+0639: \displaystyle z
+0640: ∈
+0641: 𝒵
+0642: rob
+0643: ∪
+0644: 𝒵
+0645: neg
+0646: .
+0647: \displaystyle\in\mathcal{Z}_{\mathrm{rob}}\cup\mathcal{Z}_{\mathrm{neg}}.
+0648: Here
+0649: z
+0650: z
+0651: denotes the edit type,
+0652: ℰ
+0653: z
+0654: \mathcal{E}_{z}
+0655: applies it over a phase-valid
+0656: interval, and
+0657: τ
+0658: ~
+0659: z
+0660: \tilde{\tau}_{z}
+0661: contains source-index-aligned edited endpoints.
+0662: The sets
+0663: 𝒵
+0664: rob
+0665: \mathcal{Z}_{\mathrm{rob}}
+0666: and
+0667: 𝒵
+0668: neg
+0669: \mathcal{Z}_{\mathrm{neg}}
+0670: contain
+0671: semantics-preserving and task-invalid operators, respectively.
+0672: Negative operators include wrong-object interaction, empty grasp, non-release,
+0673: and target replacement, whereas robust operators include partial occlusion,
+0674: background variation, irrelevant distractors, and non-target color changes.
+0675: Operator availability is primitive-dependent, and each edited sequence uses one
+0676: operator specification over a phase-valid interval and across all available
+0677: camera views. Each edited frame retains its source episode,
+0678: frame index, view, and operator metadata for aligned pair compilation. Full
+0679: prompt, temporal-localization, and view-specific editing details are provided
+0680: in the supplementary.
+0681: For synthetic OOD pairs, the task-reference anchors and all temporal panels are
+0682: drawn from the aligned successful source episode, while the intervention
+0683: affects only the queried endpoints. Edited observations never enter these
+0684: source-reference panels. Online deployment follows the rollout-history construction described below and
+0685: therefore does not require source selection or source-index alignment.
+0686: OOD-aware Signed Progress Space
+0687: For a successful source trajectory
+0688: τ
+0689: =
+0690: {
+0691: s
+0692: 0
+0693: ,
+0694: …
+0695: ,
+0696: s
+0697: T
+0698: −
+0699: 1
+0700: }
+0701: \tau=\{s_{0},\ldots,s_{T-1}\}
+0702: , define
+0703: g
+0704: i
+0705: =
+0706: i
+0707: T
+0708: −
+0709: 1
+0710: .
+0711: g_{i}=\frac{i}{T-1}.
+0712: (5)
+0713: Here
+0714: P
+0715: i
+0716: P_{i}
+0717: and
+0718: R
+0719: i
+0720: R_{i}
+0721: denote the original positive state and its aligned
+0722: semantics-preserving robust state, respectively;
+0723: N
+0724: i
+0725: N_{i}
+0726: denotes an aligned
+0727: task-invalid state instantiated only at phase-valid indices
+0728: i
+0729: >
+0730: 0
+0731: i>0
+0732: . For each
+0733: instantiated state, we assign
+0734: Φ
+0735: ⁡
+0736: (
+0737: P
+0738: i
+0739: )
+0740: =
+0741: Φ
+0742: ⁡
+0743: (
+0744: R
+0745: i
+0746: )
+0747: =
+0748: g
+0749: i
+0750: ,
+0751: Φ
+0752: ⁡
+0753: (
+0754: N
+0755: i
+0756: )
+0757: =
+0758: −
+0759: g
+0760: i
+0761: .
+0762: \Phi(P_{i})=\Phi(R_{i})=g_{i},\qquad\Phi(N_{i})=-g_{i}.
+0763: (6)
+0764: The sign separates valid execution from task-invalid failure, while
+0765: |
+0766: Φ
+0767: ⁡
+0768: (
+0769: N
+0770: i
+0771: )
+0772: |
+0773: =
+0774: g
+0775: i
+0776: |\Phi(N_{i})|=g_{i}
+0777: indexes failure depth by the aligned source phase.
+0778: Thus,
+0779: −
+0780: g
+0781: i
+0782: -g_{i}
+0783: is a designed supervision coordinate rather than a calibrated
+0784: failure probability or a literal percentage of negative completion. Since
+0785: every instantiated negative state satisfies
+0786: i
+0787: >
+0788: 0
+0789: i>0
+0790: , we have
+0791: Φ
+0792: ⁡
+0793: (
+0794: N
+0795: i
+0796: )
+0797: <
+0798: 0
+0799: \Phi(N_{i})<0
+0800: ;
+0801: such states represent task-invalid execution rather than arbitrary difficulty
+0802: or visual novelty.
+0803: Define
+0804: b
+0805: ⁡
+0806: (
+0807: P
+0808: i
+0809: )
+0810: =
+0811: b
+0812: ⁡
+0813: (
+0814: R
+0815: i
+0816: )
+0817: =
+0818: 0
+0819: b(P_{i})=b(R_{i})=0
+0820: and
+0821: b
+0822: ⁡
+0823: (
+0824: N
+0825: i
+0826: )
+0827: =
+0828: 1
+0829: b(N_{i})=1
+0830: , where
+0831: b
+0832: ⁡
+0833: (
+0834: ⋅
+0835: )
+0836: b(\cdot)
+0837: is the binary
+0838: negative-branch indicator. For a pair
+0839: (
+0840: X
+0841: b
+0842: ,
+0843: X
+0844: a
+0845: )
+0846: (X_{b},X_{a})
+0847: , let
+0848: ϕ
+0849: b
+0850: \displaystyle\phi_{b}
+0851: =
+0852: Φ
+0853: ⁡
+0854: (
+0855: X
+0856: b
+0857: )
+0858: ,
+0859: \displaystyle=\Phi(X_{b}),
+0860: ϕ
+0861: a
+0862: \displaystyle\phi_{a}
+0863: =
+0864: Φ
+0865: ⁡
+0866: (
+0867: X
+0868: a
+0869: )
+0870: ,
+0871: \displaystyle=\Phi(X_{a}),
+0872: (7)
+0873: Δ
+0874: b
+0875: ​
+0876: a
+0877: \displaystyle\Delta_{ba}
+0878: =
+0879: ϕ
+0880: a
+0881: −
+0882: ϕ
+0883: b
+0884: ,
+0885: \displaystyle=\phi_{a}-\phi_{b},
+0886: L
+0887: b
+0888: ​
+0889: a
+0890: \displaystyle L_{ba}
+0891: =
+0892: −
+0893: max
+0894: ⁡
+0895: {
+0896: b
+0897: ⁡
+0898: (
+0899: X
+0900: b
+0901: )
+0902: ,
+0903: b
+0904: ⁡
+0905: (
+0906: X
+0907: a
+0908: )
+0909: }
+0910: .
+0911: \displaystyle=-\max\{b(X_{b}),b(X_{a})\}.
+0912: Here
+0913: L
+0914: b
+0915: ​
+0916: a
+0917: L_{ba}
+0918: selects the lower endpoint of the normalization interval:
+0919: L
+0920: b
+0921: ​
+0922: a
+0923: =
+0924: 0
+0925: L_{ba}=0
+0926: for valid-only pairs and
+0927: L
+0928: b
+0929: ​
+0930: a
+0931: =
+0932: −
+0933: 1
+0934: L_{ba}=-1
+0935: whenever either endpoint
+0936: belongs to the negative branch. The signed Hop target is
+0937: ℋ
+0938: b
+0939: ​
+0940: a
+0941: =
+0942: {
+0943: 0
+0944: ,
+0945: Δ
+0946: b
+0947: ​
+0948: a
+0949: =
+0950: 0
+0951: ,
+0952: Δ
+0953: b
+0954: ​
+0955: a
+0956: 1
+0957: −
+0958: ϕ
+0959: b
+0960: ,
+0961: Δ
+0962: b
+0963: ​
+0964: a
+0965: >
+0966: 0
+0967: ,
+0968: Δ
+0969: b
+0970: ​
+0971: a
+0972: ϕ
+0973: b
+0974: −
+0975: L
+0976: b
+0977: ​
+0978: a
+0979: ,
+0980: Δ
+0981: b
+0982: ​
+0983: a
+0984: <
+0985: 0
+0986: ,
+0987: \mathcal{H}_{ba}=\begin{cases}0,&\Delta_{ba}=0,\\[2.0pt]
+0988: \dfrac{\Delta_{ba}}{1-\phi_{b}},&\Delta_{ba}>0,\\[6.0pt]
+0989: \dfrac{\Delta_{ba}}{\phi_{b}-L_{ba}},&\Delta_{ba}<0,\end{cases}
+0990: (8)
+0991: The corresponding regression label is
+0992: y
+0993: b
+0994: ​
+0995: a
+0996: =
+0997: 100
+0998: ​
+0999: clip
+1000: ⁡
+1001: (
+1002: ℋ
+1003: b
+1004: ​
+1005: a
+1006: ,
+1007: −
+1008: 1
+1009: ,
+1010: 1
+1011: )
+1012: ,
+1013: y_{ba}=100\,\operatorname{clip}(\mathcal{H}_{ba},-1,1),
+1014: (9)
+1015: where the factor
+1016: 100
+1017: 100
+1018: preserves the output scale of the original GRM
+1019: interface; it does not turn the continuous Hop into a three-class target. Zero
+1020: denotes same-progress invariance rather than uncertainty or a generic neutral
+1021: class.
+1022: Following the Hop normalization of
+1023: Tan et al. (2026)
+1024: ,
+1025: ℋ
+1026: b
+1027: ​
+1028: a
+1029: \mathcal{H}_{ba}
+1030: measures the fraction of the available potential range in the
+1031: queried direction: positive transitions are normalized toward the goal
+1032: 1
+1033: 1
+1034: ,
+1035: whereas negative transitions are normalized toward the branch floor
+1036: L
+1037: b
+1038: ​
+1039: a
+1040: L_{ba}
+1041: .
+1042: Replacing the original floor
+1043: 0
+1044: 0
+1045: with the pair-dependent
+1046: L
+1047: b
+1048: ​
+1049: a
+1050: L_{ba}
+1051: extends the
+1052: same invertible mapping to failure and recovery; clipping is used only as a
+1053: numerical safeguard.
+1054: Training includes valid pairs
+1055: U
+1056: i
+1057: →
+1058: V
+1059: j
+1060: U_{i}{\to}V_{j}
+1061: with
+1062: U
+1063: ,
+1064: V
+1065: ∈
+1066: {
+1067: P
+1068: ,
+1069: R
+1070: }
+1071: U,V\in\{P,R\}
+1072: , failure
+1073: pairs
+1074: U
+1075: i
+1076: →
+1077: N
+1078: j
+1079: U_{i}{\to}N_{j}
+1080: , recovery pairs
+1081: N
+1082: i
+1083: →
+1084: U
+1085: j
+1086: N_{i}{\to}U_{j}
+1087: , and within-failure pairs
+1088: N
+1089: i
+1090: →
+1091: N
+1092: j
+1093: N_{i}{\to}N_{j}
+1094: . A same-index pair
+1095: P
+1096: i
+1097: ↔
+1098: R
+1099: i
+1100: P_{i}{\leftrightarrow}R_{i}
+1101: has zero Hop and
+1102: explicitly supervises invariance, whereas cross-index robust pairs such as
+1103: R
+1104: i
+1105: →
+1106: R
+1107: j
+1108: R_{i}{\to}R_{j}
+1109: retain nonzero progress or regression according to
+1110: g
+1111: j
+1112: −
+1113: g
+1114: i
+1115: g_{j}-g_{i}
+1116: .
+1117: We train the GRM with mean-squared regression:
+1118: ℒ
+1119: pair
+1120: ​
+1121: (
+1122: θ
+1123: )
+1124: =
+1125: 𝔼
+1126: (
+1127: X
+1128: b
+1129: ,
+1130: X
+1131: a
+1132: )
+1133: ∼
+1134: 𝒟
+1135: ​
+1136: [
+1137: (
+1138: y
+1139: ^
+1140: b
+1141: ​
+1142: a
+1143: −
+1144: y
+1145: b
+1146: ​
+1147: a
+1148: )
+1149: 2
+1150: ]
+1151: .
+1152: \mathcal{L}_{\mathrm{pair}}(\theta)=\mathbb{E}_{(X_{b},X_{a})\sim\mathcal{D}}\left[(\hat{y}_{ba}-y_{ba})^{2}\right].
+1153: (10)
+1154: We retain start- and goal-anchored comparisons and use fixed family quotas so
+1155: that abundant positive and within-branch pairs do not dominate robust, failure,
+1156: and recovery pairs.
+1157: Signed-Hop Curriculum
+1158: The signed Hop also provides a task-aligned measure of training difficulty. We
+1159: rank examples by
+1160: |
+1161: ℋ
+1162: b
+1163: ​
+1164: a
+1165: |
+1166: |\mathcal{H}_{ba}|
+1167: within each pair family, so that frequent
+1168: families do not dominate selection. The large-Hop pool
+1169: 𝒟
+1170: large
+1171: \mathcal{D}_{\mathrm{large}}
+1172: contains the top 40% of examples by
+1173: |
+1174: ℋ
+1175: b
+1176: ​
+1177: a
+1178: |
+1179: |\mathcal{H}_{ba}|
+1180: within each family, while
+1181: 𝒟
+1182: fine
+1183: \mathcal{D}_{\mathrm{fine}}
+1184: contains the remaining small-Hop and zero-Hop
+1185: calibration examples.
+1186: Training uses two 200K-example pairwise-reward stages, totaling 400K pairwise
+1187: examples. Stage 1 samples from
+1188: 𝒟
+1189: large
+1190: \mathcal{D}_{\mathrm{large}}
+1191: to learn global
+1192: progress, failure, and recovery geometry. Stage 2 primarily samples from
+1193: 𝒟
+1194: fine
+1195: \mathcal{D}_{\mathrm{fine}}
+1196: to improve local calibration and robust invariance
+1197: while replaying a fraction
+1198: ρ
+1199: \rho
+1200: of large-Hop examples:
+1201: 𝒟
+1202: 2
+1203: =
+1204: \displaystyle\mathcal{D}_{2}={}
+1205: (
+1206: 1
+1207: −
+1208: ρ
+1209: )
+1210: ​
+1211: 𝒟
+1212: fine
+1213: \displaystyle(1-\rho)\mathcal{D}_{\mathrm{fine}}
+1214: (11)
+1215: +
+1216: ρ
+1217: ​
+1218: 𝒟
+1219: large
+1220: .
+1221: \displaystyle+\rho\mathcal{D}_{\mathrm{large}}.
+1222: We use
+1223: ρ
+1224: =
+1225: 0.25
+1226: \rho=0.25
+1227: , so 25% of Stage 2 examples are replayed large-Hop
+1228: examples and 75% are fine or zero-Hop examples. The replay ratio changes only
+1229: the Stage 2 mixture; it does not alter the Stage 1 composition or the 40%
+1230: large-Hop selection rule.
+1231: Closed-Loop Reward Framework
+1232: At rollout step
+1233: t
+1234: t
+1235: , let
+1236: X
+1237: 0
+1238: X_{0}
+1239: ,
+1240: X
+1241: G
+1242: =
+1243: r
+1244: g
+1245: X_{G}=r_{g}
+1246: ,
+1247: X
+1248: t
+1249: −
+1250: 1
+1251: X_{t-1}
+1252: , and
+1253: X
+1254: t
+1255: X_{t}
+1256: denote the
+1257: initial state, goal reference, previous observed state, and current observed
+1258: state. Online inference constructs temporal panels directly from observations
+1259: available in the current rollout and therefore requires neither a successful
+1260: source episode nor an endpoint-to-source alignment. To avoid repeatedly writing
+1261: the full GRM input, define the normalized query
+1262: h
+1263: θ
+1264: \displaystyle h_{\theta}
+1265: (
+1266: X
+1267: b
+1268: ,
+1269: X
+1270: a
+1271: ,
+1272: 𝒞
+1273: )
+1274: \displaystyle(X_{b},X_{a};\mathcal{C})
+1275: (12)
+1276: =
+1277: clip
+1278: ⁡
+1279: (
+1280: f
+1281: θ
+1282: ​
+1283: (
+1284: c
+1285: ,
+1286: ℛ
+1287: ,
+1288: 𝒞
+1289: ,
+1290: X
+1291: b
+1292: ,
+1293: X
+1294: a
+1295: )
+1296: 100
+1297: ,
+1298: −
+1299: 1
+1300: ,
+1301: 1
+1302: )
+1303: .
+1304: \displaystyle=\operatorname{clip}\!\left(\frac{f_{\theta}(c,\mathcal{R},\mathcal{C},X_{b},X_{a})}{100},-1,1\right).
+1305: The online context is constructed separately for each query from the observed
+1306: rollout prefix. For the forward-anchored query
+1307: X
+1308: 0
+1309: →
+1310: X
+1311: t
+1312: X_{0}{\to}X_{t}
+1313: , the pre-query
+1314: panel is empty and observations strictly between
+1315: X
+1316: 0
+1317: X_{0}
+1318: and
+1319: X
+1320: t
+1321: X_{t}
+1322: populate the
+1323: between-state panels, yielding
+1324: 𝒞
+1325: t
+1326: F
+1327: \mathcal{C}_{t}^{F}
+1328: . For the incremental query
+1329: X
+1330: t
+1331: −
+1332: 1
+1333: →
+1334: X
+1335: t
+1336: X_{t-1}{\to}X_{t}
+1337: , observations before
+1338: X
+1339: t
+1340: −
+1341: 1
+1342: X_{t-1}
+1343: populate the pre-query panels,
+1344: while any observations between
+1345: X
+1346: t
+1347: −
+1348: 1
+1349: X_{t-1}
+1350: and
+1351: X
+1352: t
+1353: X_{t}
+1354: populate the between-state
+1355: panels, yielding
+1356: 𝒞
+1357: t
+1358: I
+1359: \mathcal{C}_{t}^{I}
+1360: . The goal observation
+1361: X
+1362: G
+1363: X_{G}
+1364: is a non-temporal task anchor, so the
+1365: backward-anchored query is evaluated without temporal panels. When an
+1366: explicitly aligned expert episode is available, the same slots may optionally
+1367: use its source-reference frames.
+1368: The three normalized predictions are therefore
+1369: h
+1370: ^
+1371: t
+1372: F
+1373: \displaystyle\hat{h}_{t}^{F}
+1374: =
+1375: h
+1376: θ
+1377: ​
+1378: (
+1379: X
+1380: 0
+1381: ,
+1382: X
+1383: t
+1384: ,
+1385: 𝒞
+1386: t
+1387: F
+1388: )
+1389: ,
+1390: \displaystyle=h_{\theta}(X_{0},X_{t};\mathcal{C}_{t}^{F}),
+1391: (13)
+1392: h
+1393: ^
+1394: t
+1395: B
+1396: \displaystyle\hat{h}_{t}^{B}
+1397: =
+1398: h
+1399: θ
+1400: ​
+1401: (
+1402: X
+1403: G
+1404: ,
+1405: X
+1406: t
+1407: ,
+1408: ∅
+1409: )
+1410: ,
+1411: \displaystyle=h_{\theta}(X_{G},X_{t};\varnothing),
+1412: h
+1413: ^
+1414: t
+1415: I
+1416: \displaystyle\hat{h}_{t}^{I}
+1417: =
+1418: h
+1419: θ
+1420: ​
+1421: (
+1422: X
+1423: t
+1424: −
+1425: 1
+1426: ,
+1427: X
+1428: t
+1429: ,
+1430: 𝒞
+1431: t
+1432: I
+1433: )
+1434: .
+1435: \displaystyle=h_{\theta}(X_{t-1},X_{t};\mathcal{C}_{t}^{I}).
+1436: All online temporal panels contain only observations available before or at
+1437: rollout step
+1438: t
+1439: t
+1440: ; no query uses future rollout observations. We denote the
+1441: resulting augmented online state by
+1442: s
+1443: ¯
+1444: t
+1445: =
+1446: (
+1447: X
+1448: t
+1449: ,
+1450: 𝒞
+1451: t
+1452: ,
+1453: m
+1454: t
+1455: )
+1456: \bar{s}_{t}=(X_{t},\mathcal{C}_{t},m_{t})
+1457: , where
+1458: 𝒞
+1459: t
+1460: \mathcal{C}_{t}
+1461: collects the temporal
+1462: query context and
+1463: m
+1464: t
+1465: m_{t}
+1466: denotes the recursive estimator memory.
+1467: Because the initial state has potential zero, a negative forward-anchored score
+1468: operationally indicates the negative branch. For
+1469: t
+1470: ≥
+1471: 1
+1472: t\geq 1
+1473: , we define
+1474: b
+1475: ^
+1476: t
+1477: \displaystyle\hat{b}_{t}
+1478: =
+1479: 𝕀
+1480: [
+1481: h
+1482: ^
+1483: t
+1484: F
+1485: <
+1486: 0
+1487: ]
+1488: ,
+1489: \displaystyle=\mathbb{I}[\hat{h}_{t}^{F}<0],
+1490: b
+1491: ^
+1492: 0
+1493: \displaystyle\hat{b}_{0}
+1494: =
+1495: 0
+1496: ,
+1497: \displaystyle=0,
+1498: (14)
+1499: L
+1500: t
+1501: F
+1502: \displaystyle L_{t}^{F}
+1503: =
+1504: L
+1505: t
+1506: B
+1507: =
+1508: −
+1509: b
+1510: ^
+1511: t
+1512: ,
+1513: \displaystyle=L_{t}^{B}=-\hat{b}_{t},
+1514: L
+1515: t
+1516: I
+1517: \displaystyle L_{t}^{I}
+1518: =
+1519: −
+1520: max
+1521: ⁡
+1522: {
+1523: b
+1524: ^
+1525: t
+1526: −
+1527: 1
+1528: ,
+1529: b
+1530: ^
+1531: t
+1532: }
+1533: .
+1534: \displaystyle=-\max\{\hat{b}_{t-1},\hat{b}_{t}\}.
+1535: Here
+1536: b
+1537: ^
+1538: t
+1539: \hat{b}_{t}
+1540: is the online branch gate:
+1541: L
+1542: t
+1543: F
+1544: L_{t}^{F}
+1545: and
+1546: L
+1547: t
+1548: B
+1549: L_{t}^{B}
+1550: depend on the
+1551: current branch, while
+1552: L
+1553: t
+1554: I
+1555: L_{t}^{I}
+1556: depends on both adjacent branches so that a
+1557: negative-to-valid recovery pair retains the floor
+1558: −
+1559: 1
+1560: -1
+1561: .
+1562: We invert a normalized Hop using
+1563: Γ
+1564: ⁡
+1565: (
+1566: h
+1567: ,
+1568: ϕ
+1569: ,
+1570: L
+1571: )
+1572: =
+1573: {
+1574: ϕ
+1575: +
+1576: h
+1577: ⁡
+1578: (
+1579: 1
+1580: −
+1581: ϕ
+1582: )
+1583: ,
+1584: h
+1585: ≥
+1586: 0
+1587: ,
+1588: ϕ
+1589: +
+1590: h
+1591: ⁡
+1592: (
+1593: ϕ
+1594: −
+1595: L
+1596: )
+1597: ,
+1598: h
+1599: <
+1600: 0
+1601: .
+1602: \Gamma(h;\phi,L)=\begin{cases}\phi+h(1-\phi),&h\geq 0,\\
+1603: \phi+h(\phi-L),&h<0.\end{cases}
+1604: (15)
+1605: The three recovered potential estimates are
+1606: Φ
+1607: ^
+1608: t
+1609: F
+1610: \displaystyle\hat{\Phi}_{t}^{F}
+1611: =
+1612: Γ
+1613: ⁡
+1614: (
+1615: h
+1616: ^
+1617: t
+1618: F
+1619: ,
+1620: 0
+1621: ,
+1622: L
+1623: t
+1624: F
+1625: )
+1626: ,
+1627: \displaystyle=\Gamma(\hat{h}_{t}^{F};0,L_{t}^{F}),
+1628: (16)
+1629: Φ
+1630: ^
+1631: t
+1632: B
+1633: \displaystyle\hat{\Phi}_{t}^{B}
+1634: =
+1635: Γ
+1636: ⁡
+1637: (
+1638: h
+1639: ^
+1640: t
+1641: B
+1642: ,
+1643: 1
+1644: ,
+1645: L
+1646: t
+1647: B
+1648: )
+1649: ,
+1650: \displaystyle=\Gamma(\hat{h}_{t}^{B};1,L_{t}^{B}),
+1651: Φ
+1652: ^
+1653: t
+1654: I
+1655: \displaystyle\hat{\Phi}_{t}^{I}
+1656: =
+1657: Γ
+1658: ⁡
+1659: (
+1660: h
+1661: ^
+1662: t
+1663: I
+1664: ,
+1665: Φ
+1666: ^
+1667: t
+1668: −
+1669: 1
+1670: ,
+1671: L
+1672: t
+1673: I
+1674: )
+1675: ,
+1676: \displaystyle=\Gamma(\hat{h}_{t}^{I};\hat{\Phi}_{t-1},L_{t}^{I}),
+1677: and are fused as
+1678: Φ
+1679: ^
+1680: t
+1681: =
+1682: clip
+1683: ⁡
+1684: (
+1685: Φ
+1686: ^
+1687: t
+1688: F
+1689: +
+1690: Φ
+1691: ^
+1692: t
+1693: B
+1694: +
+1695: Φ
+1696: ^
+1697: t
+1698: I
+1699: 3
+1700: ,
+1701: −
+1702: 1
+1703: ,
+1704: 1
+1705: )
+1706: ,
+1707: Φ
+1708: ^
+1709: 0
+1710: =
+1711: 0
+1712: .
+1713: \hat{\Phi}_{t}=\operatorname{clip}\!\left(\frac{\hat{\Phi}_{t}^{F}+\hat{\Phi}_{t}^{B}+\hat{\Phi}_{t}^{I}}{3},-1,1\right),\qquad\hat{\Phi}_{0}=0.
+1714: (17)
+1715: After inverse normalization, the three terms provide complementary estimates
+1716: of the context-conditioned online potential, denoted
+1717: Φ
+1718: ^
+1719: t
+1720: ≡
+1721: Φ
+1722: ^
+1723: ​
+1724: (
+1725: s
+1726: ¯
+1727: t
+1728: )
+1729: \hat{\Phi}_{t}\equiv\hat{\Phi}(\bar{s}_{t})
+1730: . We retain the fixed unweighted
+1731: multi-anchor aggregation used by
+1732: Tan et al. (2026)
+1733: ; the fusion weights
+1734: are neither learned nor selected on the evaluation set.
+1735: Finally, the reward supplied to the downstream RL algorithm is
+1736: r
+1737: t
+1738: GRM
+1739: =
+1740: r
+1741: t
+1742: task
+1743: +
+1744: γ
+1745: RL
+1746: ​
+1747: Φ
+1748: ^
+1749: t
+1750: +
+1751: 1
+1752: −
+1753: Φ
+1754: ^
+1755: t
+1756: ,
+1757: r_{t}^{\mathrm{GRM}}=r_{t}^{\mathrm{task}}+\gamma_{\mathrm{RL}}\hat{\Phi}_{t+1}-\hat{\Phi}_{t},
+1758: (18)
+1759: where
+1760: r
+1761: t
+1762: task
+1763: r_{t}^{\mathrm{task}}
+1764: is the original environment reward,
+1765: γ
+1766: RL
+1767: \gamma_{\mathrm{RL}}
+1768: is the discount factor used by policy optimization, and
+1769: Φ
+1770: ^
+1771: t
+1772: =
+1773: Φ
+1774: ^
+1775: ​
+1776: (
+1777: s
+1778: ¯
+1779: t
+1780: )
+1781: \hat{\Phi}_{t}=\hat{\Phi}(\bar{s}_{t})
+1782: . With the GRM fixed during policy optimization,
+1783: using the same discount and assigning zero potential to the absorbing terminal
+1784: state retains the standard potential-based shaping form on the augmented
+1785: process
+1786: (
+1787: Ng et al. 1999
+1788: )
+1789: . The resulting potential is designed to be
+1790: insensitive to semantics-preserving appearance changes, responsive to
+1791: task-invalid failures, and positive for valid recovery transitions.
+1792: Experiments and Results
+1793: Experimental Setup
+1794: Training matrix.
+1795: GRM-8B-Pro, released by
+1796: Tan et al. (2026)
+1797: , serves as a prior baseline;
+1798: Robo-Dopamine 2.0-8B uses Qwen3-VL-8B. We vary OOD supervision, disabled or
+1799: 2
+1800: ×
+1801: 2
+1802: 2{\times}2
+1803: /
+1804: 3
+1805: ×
+1806: 3
+1807: 3{\times}3
+1808: temporal context panels, prebuilt or runtime construction, and
+1809: visual-QA mixing. The main model uses 400K signed pairs with OOD supervision and prebuilt
+1810: 3
+1811: ×
+1812: 3
+1813: 3{\times}3
+1814: panels: standard pairs use same-episode expert history, whereas
+1815: synthetic OOD pairs use source-aligned successful-reference history. The RM is
+1816: not trained on downstream rollout trajectories. A fixed 200K visual-QA mix
+1817: (QA200K) is excluded from the signed-pair budget. Runtime variants construct
+1818: the same ordered panels at data-loading time and pad missing views. QA200K is
+1819: included identically across runs to preserve broad visual-language
+1820: understanding and instruction following.
+1821: Curriculum controls.
+1822: All Signed-Hop variants fix the Qwen3-VL-8B backbone
+1823: (
+1824: Bai et al. 2025
+1825: )
+1826: , OOD
+1827: supervision, prebuilt
+1828: 3
+1829: ×
+1830: 3
+1831: 3{\times}3
+1832: panels with one between-state panel, token
+1833: budget, QA200K mix, and 400K signed pairs split evenly across two stages. We
+1834: compare random mixing (E0), the matched E4 pool without ordering (E1), reverse
+1835: fine-to-large training (E2), large-to-fine training without replay (E3), and
+1836: large-to-fine training with
+1837: ρ
+1838: =
+1839: 0.25
+1840: \rho=0.25
+1841: replay (E4). E1 isolates ordering; E3
+1842: isolates replay. The same QA200K auxiliary mix is fixed across curriculum
+1843: variants and excluded from the signed-pair budget; each curriculum stage
+1844: contains 200K examples.
+1845: Evaluation protocol.
+1846: We report trajectory-level visual order consistency (VOC): pairwise progress
+1847: predictions are accumulated along each trajectory and correlated with the
+1848: ground-truth order using Spearman correlation. Five families cover
+1849: in-distribution success (ID), temporal memory, OOD-negative, OOD-robust, and
+1850: OOD-temporal cases, evaluated with
+1851: static8
+1852: and
+1853: history_panel
+1854: inputs. Temporal cases include multi-stage,
+1855: multi-object, and mid-episode trajectories; OOD-temporal cases add edits such
+1856: as non-release. Temporal-memory examples come from dedicated temporal manifests
+1857: and trajectories explicitly marked as history-dependent. We report aggregate
+1858: VOC for each family rather than a per-cause breakdown. Together, these families
+1859: probe event-, phase-, and order-dependent progress instead of endpoint success
+1860: alone. Offline synthetic-OOD evaluation uses source-reference panels aligned by
+1861: dataset metadata, whereas simulation and real-robot RL use panels constructed
+1862: from the observed rollout history.
+1863: Offline Results
+1864: Model
+1865: Input
+1866: ID
+1867: Temp.
+1868: Neg.
+1869: Rob.
+1870: OOD-T
+1871: Avg.
+1872: GRM
+1873: static
+1874: 0.974
+1875: 0.977
+1876: 0.951
+1877: 0.939
+1878: 0.948
+1879: 0.958
+1880: Robo-Dopamine 2.0
+1881: static
+1882: 0.981
+1883: 0.984
+1884: 0.985
+1885: 0.906
+1886: 0.979
+1887: 0.967
+1888: Robo-Dopamine 2.0
+1889: panel
+1890: 0.991
+1891: 0.994
+1892: 0.994
+1893: 0.958
+1894: 0.991
+1895: 0.986
+1896: Table 1:
+1897: Trajectory-level VOC across five benchmark families. GRM denotes the
+1898: GRM-8B-Pro baseline; Robo-Dopamine 2.0 is one QA200K-mixed Qwen3-VL-8B checkpoint evaluated
+1899: with static or prebuilt
+1900: 3
+1901: ×
+1902: 3
+1903: 3{\times}3
+1904: panel inputs. ID, Temp., Neg., Rob., and
+1905: OOD-T denote in-distribution, temporal-memory, OOD-negative, OOD-robust, and
+1906: OOD-temporal evaluation. Avg. is the unweighted mean; higher is better.
+1907: Panels raise Robo-Dopamine 2.0 average VOC from 0.967 to 0.986 and OOD-robust
+1908: VOC from 0.906 to 0.958; GRM-8B-Pro reaches 0.958 average static VOC. The
+1909: same-checkpoint comparison isolates the benefit of training-aligned temporal
+1910: context from model capacity and training data.
+1911: Figure 2:
+1912: Task-completion classification accuracy on 60 episodes. We compare
+1913: GPT-5.5, Gemini-3-Pro, Claude-Opus-4.8, Qwen3.5-397B-A17B-fp8, RoboBrain 2.0,
+1914: and Robo-Dopamine 2.0-8B. This discrete label metric is distinct from VOC.
+1915: Robo-Dopamine 2.0-8B obtains 96.1% task-completion accuracy, versus GPT-5.5 (81.1%)
+1916: (
+1917: OpenAI 2026
+1918: )
+1919: , Claude-Opus-4.8 (79.4%)
+1920: (
+1921: Anthropic 2026
+1922: )
+1923: , Gemini-3-Pro (77.2%)
+1924: (
+1925: Google 2025
+1926: )
+1927: , Qwen3.5-397B-A17B-fp8 (76.1%)
+1928: (
+1929: Qwen Team 2026
+1930: )
+1931: , and RoboBrain 2.0 (61.7%)
+1932: (
+1933: BAAI RoboBrain Team et al. 2025
+1934: )
+1935: .
+1936: Temporal Context and OOD Ablations
+1937: Base
+1938: Training condition
+1939: Static
+1940: Panel
+1941: Gain
+1942: GRM
+1943: baseline
+1944: 0.958
+1945: 0.965
+1946: +0.007
+1947: Robo-Dopamine 2.0
+1948: 3
+1949: ×
+1950: 3
+1951: 3{\times}3
+1952: +QA
+1953: 0.967
+1954: 0.986
+1955: +0.019
+1956: GRM
+1957: OOD+no panel+QA
+1958: 0.967
+1959: 0.977
+1960: +0.010
+1961: GRM
+1962: OOD+
+1963: 2
+1964: ×
+1965: 2
+1966: 2{\times}2
+1967: 0.957
+1968: 0.985
+1969: +0.028
+1970: GRM
+1971: OOD+
+1972: 3
+1973: ×
+1974: 3
+1975: 3{\times}3
+1976: 0.955
+1977: 0.988
+1978: +0.033
+1979: Robo-Dopamine 2.0
+1980: OOD+no panel
+1981: 0.965
+1982: 0.974
+1983: +0.009
+1984: Robo-Dopamine 2.0
+1985: OOD+
+1986: 2
+1987: ×
+1988: 2
+1989: 2{\times}2
+1990: 0.962
+1991: 0.985
+1992: +0.023
+1993: Robo-Dopamine 2.0
+1994: OOD+
+1995: 3
+1996: ×
+1997: 3
+1998: 3{\times}3
+1999: 0.960
+2000: 0.987
+2001: +0.027
+2002: Table 2:
+2003: Temporal-context and OOD ablations in average VOC. Static and Panel query the
+2004: same checkpoint;
+2005: +
+2006: QA
+2007: +\mathrm{QA}
+2008: denotes QA200K. Full results are supplementary.
+2009: Structured panels provide the largest gain: moving from OOD no-panel
+2010: training to
+2011: 3
+2012: ×
+2013: 3
+2014: 3{\times}3
+2015: panels raises panel VOC from 0.977 to 0.988 for GRM and
+2016: from 0.974 to 0.987 for Robo-Dopamine 2.0. OOD supervision also improves panel VOC
+2017: over no-OOD, no-panel training, but the panel contribution is larger. QA200K
+2018: acts as a weak regularizer for no-panel models, with a smaller marginal effect
+2019: once structured temporal context is available. Across
+2020: backbones, one or two between-state panels perform best; larger panels are not
+2021: monotonic under a fixed visual-token budget, and prebuilt panels outperform
+2022: runtime construction. The non-monotonic trend reflects a trade-off between
+2023: additional temporal evidence and the visual-token budget. Runtime construction
+2024: also changes panel provenance, image order, and prompt tokens relative to the
+2025: training distribution. Full panel-size, panel-count, and construction
+2026: factorials are provided in the supplementary material.
+2027: Signed-Hop Curriculum
+2028: Signed-Hop first learns global geometry from large-Hop pairs, then refines local
+2029: calibration with small and zero-Hop pairs while replaying large-Hop examples.
+2030: Under the fixed 400K budget, 25% replay reaches 0.9872 average VOC, exceeding
+2031: the matched-pool shuffled control (0.9858) and no replay (0.9866). The shuffled
+2032: control uses exactly the same sample pool as the replay curriculum, isolating
+2033: ordering from data composition; the no-replay variant isolates retention of
+2034: large-Hop geometry during local refinement.
+2035: Figure 3:
+2036: Per-family VOC gains of Signed-Hop over its matched-pool shuffled
+2037: control. Replay sensitivity is provided in the supplementary material.
+2038: Figure
+2039: 3
+2040: shows gains in every family, especially
+2041: OOD-robust and OOD-temporal cases. Curriculum gains complement the larger gains
+2042: from temporal context panels. Signed-Hop is training-only: large-Hop pairs establish
+2043: global progress, failure, and recovery geometry before small and zero-Hop pairs
+2044: refine local calibration. The full replay sweep and branch-wise diagnostics are
+2045: provided in the supplementary material.
+2046: Reinforcement Learning
+2047: In all downstream RL experiments, the RM remains frozen and the history-enabled
+2048: conditions populate the same panel slots causally from the observed rollout
+2049: prefix; no source alignment or repetition labels are used.
+2050: Simulation on RoboTwin
+2051: We optimize task-specific OpenVLA-OFT
+2052: (
+2053: Kim et al. 2025a
+2054: )
+2055: policies with
+2056: GRPO
+2057: (
+2058: Shao et al. 2024
+2059: )
+2060: in RLinf
+2061: (
+2062: Yu et al. 2025
+2063: )
+2064: on three
+2065: RoboTwin 2.0 tasks
+2066: (
+2067: Chen et al. 2026b
+2068: )
+2069: :
+2070: place_empty_cup
+2071: ,
+2072: place_container_plate
+2073: , and
+2074: handover_block
+2075: . Conditions
+2076: share policy initialization, environment, optimizer, and evaluation protocol,
+2077: so the controlled factorial tests whether OOD supervision and temporal context
+2078: improve policy learning. RLinf Sparse uses only a termination-triggered success
+2079: reward (scale 5) for 1,000 epochs; C00–C11 use the shaping interface in
+2080: Eq. (
+2081: 18
+2082: ) for 300 epochs. C00 enables neither OOD supervision
+2083: nor rollout-history panels, C01 adds rollout-history panels, C10 adds OOD
+2084: supervision, and C11 uses both. Complete policy, GRPO, evaluation,
+2085: and task-specific hyperparameters are supplementary.
+2086: Reward condition
+2087: OOD
+2088: Hist.
+2089: Cup
+2090: Plate
+2091: Hand.
+2092: Avg.
+2093: RLinf Sparse
+2094: –
+2095: –
+2096: 94.2
+2097: 95.0
+2098: 68.2
+2099: 85.8
+2100: C00 Controlled
+2101: ×
+2102: \times
+2103: ×
+2104: \times
+2105: 77.5
+2106: 82.1
+2107: 57.0
+2108: 72.2
+2109: C01 History
+2110: ×
+2111: \times
+2112: ✓
+2113: \checkmark
+2114: 79.5
+2115: 88.6
+2116: 57.1
+2117: 75.1
+2118: C10 OOD
+2119: ✓
+2120: \checkmark
+2121: ×
+2122: \times
+2123: 85.2
+2124: 89.5
+2125: 67.1
+2126: 80.6
+2127: C11 Full
+2128: ✓
+2129: \checkmark
+2130: ✓
+2131: \checkmark
+2132: 96.2
+2133: 94.6
+2134: 69.7
+2135: 86.8
+2136: Table 3:
+2137: RoboTwin success rate (%). Sparse uses 1,000 epochs; C00–C11 use
+2138: 300. Avg. is the unweighted task mean.
+2139: Within 300 epochs, rollout-history panels raise mean success from 72.2% (C00) to
+2140: 75.1% (C01), OOD supervision raises it to 80.6% (C10), and their combination
+2141: reaches 86.8% (C11). C11 exceeds the 1,000-epoch sparse baseline (85.8%)
+2142: overall and on two of three tasks, supporting complementary gains from
+2143: rollout history and OOD supervision. Relative to C10 and C01, C11 improves
+2144: the mean by 6.2 and 11.7 points, respectively. It is best on
+2145: place_empty_cup
+2146: and
+2147: handover_block
+2148: ; the sparse baseline
+2149: remains 0.4 points higher on
+2150: place_container_plate
+2151: .
+2152: Real-World Repeated Insertions
+2153: We evaluate ConRFT
+2154: (
+2155: Chen et al. 2025
+2156: )
+2157: on dual Franka arms with multi-view
+2158: RGB observations. In
+2159: Insert Square
+2160: , one arm aligns a four-hole block
+2161: with four pegs for
+2162: K
+2163: =
+2164: 4
+2165: K=4
+2166: consecutive attempts. Event Sparse uses a reward after
+2167: each insertion; C00–C11 add GRM shaping. A terminal-only pilot did not learn.
+2168: C00–C11 use 200 online episodes and Event Sparse uses 300; all conditions use
+2169: 20 evaluation trials and shared controls. Details are supplementary.
+2170: Repeated insertion produces visually similar endpoints at different cumulative
+2171: phases. The observed rollout history supplies event and phase information for
+2172: interpreting recurring endpoint observations. Matched real-robot traces show
+2173: non-monotonic progress jumps with static queries and more order-consistent
+2174: estimates with history panels; these
+2175: traces are provided in the supplementary material.
+2176: Figure 4:
+2177: Dual-Franka repeated
+2178: Insert Square
+2179: setup with ConRFT. The
+2180: numbered callouts identify the four-hole square, target pegs, and acting arm.
+2181: Each trial has
+2182: K
+2183: =
+2184: 4
+2185: K=4
+2186: attempts, creating visually similar states at different
+2187: cumulative progress.
+2188: Reward
+2189: OOD
+2190: Hist.
+2191: Inserts / 80
+2192: Full / 20
+2193: Event Sparse
+2194: –
+2195: –
+2196: 48
+2197: 8
+2198: C00 Controlled
+2199: ×
+2200: \times
+2201: ×
+2202: \times
+2203: 46
+2204: 7
+2205: C01 History
+2206: ×
+2207: \times
+2208: ✓
+2209: \checkmark
+2210: 67
+2211: 13
+2212: C10 OOD
+2213: ✓
+2214: \checkmark
+2215: ×
+2216: \times
+2217: 50
+2218: 9
+2219: C11 Full
+2220: ✓
+2221: \checkmark
+2222: ✓
+2223: \checkmark
+2224: 71
+2225: 15
+2226: Table 4:
+2227: Repeated
+2228: Insert Square
+2229: . Event Sparse uses only the per-insertion
+2230: event reward; C00–C11 additionally use GRM shaping. Inserts counts successes
+2231: over 80 attempts; Full counts 20 trials completing all four attempts.
+2232: Rollout-history panels provide the largest gain: relative to C00 and C10, C01 and C11
+2233: each add 21 successful insertions and 6 full-sequence successes. C11 reaches 71/80
+2234: insertions and 15/20 full successes, versus 48/80 and 8/20 for Event Sparse,
+2235: using 200 rather than 300 online episodes.
+2236: Conclusion
+2237: Robo-Dopamine 2.0 combines history-conditioned pairwise prediction, an OOD-aware signed
+2238: progress space, and a Signed-Hop curriculum in one reward interface. Standard
+2239: queries use same-episode expert context, synthetic OOD queries retain edited
+2240: endpoints with aligned successful-reference panels, and online queries use
+2241: observed rollout history. The signed space models valid progress,
+2242: robustness-preserving variations, task-invalid failures, and recovery, while
+2243: the curriculum learns large transitions before fine-grained calibration.
+2244: Offline and downstream RL results show complementary gains from temporal
+2245: context, OOD supervision, curriculum ordering, and replay across offline
+2246: ordering, simulation, and real-world manipulation settings. The same pairwise
+2247: interface supports offline progress estimation and closed-loop reward shaping.
+2248: Future work will broaden task, OOD, and real-world evaluation.
+2249: References
+2250: AgiBot-World Contributors
+2251: et al.
+2252: (2025)
+2253: AgiBot-World Contributors
+2254: et al.
+2255: AgiBot world colosseo: a large-scale manipulation platform for scalable and intelligent embodied systems
+2256: .
+2257: External Links:
+2258: 2503.06669
+2259: ,
+2260: Document
+2261: Cited by:
+2262: Structured OOD Data Construction
+2263: .
+2264: Alakuijala
+2265: et al.
+2266: (2024)
+2267: M. Alakuijala, R. McLean, I. Woungang, N. Farsad, S. Kaski, P. Marttinen, and K. Yuan
+2268: Video-language critic: transferable reward functions for language-conditioned robotics
+2269: .
+2270: External Links:
+2271: 2405.19988
+2272: ,
+2273: Document
+2274: ,
+2275: Link
+2276: Cited by:
+2277: Related Work
+2278: .
+2279: Anthropic (2026)
+2280: Anthropic
+2281: Introducing Claude Opus 4.8
+2282: .
+2283: Note:
+2284: https://www.anthropic.com/research/claude-opus-4-8
+2285: Model ID: claude-opus-4-8. Accessed: 2026-07-24
+2286: Cited by:
+2287: Offline Results
+2288: .
+2289: BAAI RoboBrain Team
+2290: et al.
+2291: (2025)
+2292: BAAI RoboBrain Team, M. Cao, H. Tan, Y. Ji, M. Lin, Z. Li, Z. Cao, P. Wang, E. Zhou, Y. Han, Y. Tang, X. Xu, W. Guo, Y. Lyu, Y. Xu, J. Shi, M. Du, C. Chi, M. Zhao, X. Hao, J. Zhao, X. Zhang, S. Rong, H. Lyu, Z. Cai, Y. Fu, N. Chen, B. Zhang, L. Zhang, S. Zhang, D. Liu, X. Feng, S. Wang, X. Liu, Y. Jiao, M. Lyu, Z. Chen, C. He, Y. Ao, X. Sun, Z. He, J. Zheng, X. Yang, D. Shi, K. Xie, B. Zhang, S. Nie, C. Men, Y. Lin, Z. Wang, T. Huang, and S. Zhang
+2293: RoboBrain 2.0 technical report
+2294: .
+2295: External Links:
+2296: 2507.02029
+2297: Cited by:
+2298: Offline Results
+2299: .
+2300: Bai
+2301: et al.
+2302: (2025)
+2303: S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge, W. Ge, Z. Guo, Q. Huang, J. Huang, F. Huang, B. Hui, S. Jiang, Z. Li, M. Li, M. Li, K. Li, Z. Lin, J. Lin, X. Liu, J. Liu, C. Liu, Y. Liu, D. Liu, S. Liu, D. Lu, R. Luo, C. Lv, R. Men, L. Meng, X. Ren, X. Ren, S. Song, Y. Sun, J. Tang, J. Tu, J. Wan, P. Wang, P. Wang, Q. Wang, Y. Wang, T. Xie, Y. Xu, H. Xu, J. Xu, Z. Yang, M. Yang, J. Yang, A. Yang, B. Yu, F. Zhang, H. Zhang, X. Zhang, B. Zheng, H. Zhong, J. Zhou, F. Zhou, J. Zhou, Y. Zhu, and K. Zhu
+2304: Qwen3-VL technical report
+2305: .
+2306: External Links:
+2307: 2511.21631
+2308: Cited by:
+2309: Experimental Setup
+2310: .
+2311: Baumli
+2312: et al.
+2313: (2023)
+2314: K. Baumli, S. Baveja, F. Behbahani, H. Chan, G. Comanici, S. Flennerhag, M. Gazeau, K. Holsheimer, D. Horgan, M. Laskin, C. Lyle, H. Masoom, K. McKinney, V. Mnih, A. Neitz, D. Nikulin, F. Pardo, J. Parker-Holder, J. Quan, T. Rocktäschel, H. Sahni, T. Schaul, Y. Schroecker, S. Spencer, R. Steigerwald, L. Wang, and L. Zhang
+2315: Vision-language models as a source of rewards
+2316: .
+2317: External Links:
+2318: 2312.09187
+2319: Cited by:
+2320: Introduction
+2321: ,
+2322: Related Work
+2323: .
+2324: Brohan
+2325: et al.
+2326: (2023)
+2327: A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu, J. Ibarz, B. Ichter, A. Irpan, T. Jackson, S. Jesmonth, N. Joshi, R. Julian, D. Kalashnikov, Y. Kuang, I. Leal, K. Lee, S. Levine, Y. Lu, U. Malla, D. Manjunath, I. Mordatch, O. Nachum, C. Parada, J. Peralta, E. Perez, K. Pertsch, J. Quiambao, K. Rao, M. S. Ryoo, G. Salazar, P. R. Sanketi, K. Sayed, J. Singh, S. Sontakke, A. Stone, C. Tan, H. Tran, V. Vanhoucke, S. Vega, Q. H. Vuong, F. Xia, T. Xiao, P. Xu, S. Xu, T. Yu, and B. Zitkovich
+2328: RT-1: robotics transformer for real-world control at scale
+2329: .
+2330: In
+2331: Proceedings of Robotics: Science and Systems
+2332: ,
+2333: Daegu, Republic of Korea
+2334: .
+2335: External Links:
+2336: Document
+2337: Cited by:
+2338: Introduction
+2339: ,
+2340: Related Work
+2341: .
+2342: Chen
+2343: et al.
+2344: (2026a)
+2345: Q. Chen, J. Yu, M. Schwager, P. Abbeel, F. Shentu, and P. Wu
+2346: SARM: stage-aware reward modeling for long horizon robot manipulation
+2347: .
+2348: In
+2349: The Fourteenth International Conference on Learning Representations
+2350: ,
+2351: Cited by:
+2352: Introduction
+2353: ,
+2354: Related Work
+2355: .
+2356: Chen
+2357: et al.
+2358: (2026b)
+2359: T. Chen, Z. Chen, B. Chen, Z. Cai, Y. Liu, Z. Li, Q. Liang, X. Lin, Y. Ge, Z. Gu, W. Deng, Y. Guo, T. Nian, X. Xie, Q. Chen, K. Su, T. Xu, G. Liu, M. Hu, H. Gao, K. Wang, Z. Liang, Y. Qin, X. Yang, P. Luo, and Y. Mu
+2360: RoboTwin 2.0: a scalable data generator and benchmark with strong domain randomization for robust bimanual robotic manipulation
+2361: .
+2362: In
+2363: Proceedings of the 43rd International Conference on Machine Learning
+2364: ,
+2365: Cited by:
+2366: Simulation on RoboTwin
+2367: .
+2368: Chen
+2369: et al.
+2370: (2025)
+2371: Y. Chen, S. Tian, S. Liu, Y. Zhou, H. Li, and D. Zhao
+2372: ConRFT: a reinforced fine-tuning method for VLA models via consistency policy
+2373: .
+2374: External Links:
+2375: 2502.05450
+2376: ,
+2377: Document
+2378: ,
+2379: Link
+2380: Cited by:
+2381: Real-World Repeated Insertions
+2382: .
+2383: Duan
+2384: et al.
+2385: (2025)
+2386: J. Duan, W. Pumacay, N. Kumar, Y. R. Wang, S. Tian, W. Yuan, R. Krishna, D. Fox, A. Mandlekar, and Y. Guo
+2387: AHA: a vision-language-model for detecting and reasoning over failures in robotic manipulation
+2388: .
+2389: In
+2390: The Thirteenth International Conference on Learning Representations
+2391: ,
+2392: Cited by:
+2393: Related Work
+2394: .
+2395: Fu
+2396: et al.
+2397: (2024)
+2398: Y. Fu, H. Zhang, D. Wu, W. Xu, and B. Boulet
+2399: Robot policy learning with temporal optimal transport reward
+2400: .
+2401: In
+2402: Advances in Neural Information Processing Systems
+2403: ,
+2404: Vol.
+2405: 37
+2406: ,
+2407: pp. 122078–122103
+2408: .
+2409: External Links:
+2410: Document
+2411: Cited by:
+2412: Introduction
+2413: ,
+2414: Related Work
+2415: .
+2416: Google (2025)
+2417: Google
+2418: Gemini 3 Pro Preview
+2419: .
+2420: Note:
+2421: https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-preview
+2422: Model ID: gemini-3-pro-preview. Accessed: 2026-07-24
+2423: Cited by:
+2424: Offline Results
+2425: .
+2426: Guhur
+2427: et al.
+2428: (2023)
+2429: P. Guhur, S. Chen, R. G. Pinel, M. Tapaswi, I. Laptev, and C. Schmid
+2430: Instruction-driven history-aware policies for robotic manipulations
+2431: .
+2432: In
+2433: Proceedings of the 6th Conference on Robot Learning
+2434: ,
+2435: K. Liu, D. Kulic, and J. Ichnowski (Eds.)
+2436: ,
+2437: Proceedings of Machine Learning Research
+2438: , Vol.
+2439: 205
+2440: ,
+2441: pp. 175–187
+2442: .
+2443: External Links:
+2444: Link
+2445: Cited by:
+2446: Introduction
+2447: ,
+2448: Related Work
+2449: .
+2450: Hung
+2451: et al.
+2452: (2025)
+2453: K. Hung, P. Lo, J. Yeh, H. Hsu, Y. Chen, and W. H. Hsu
+2454: VICtoR: learning hierarchical vision-instruction correlation rewards for long-horizon manipulation
+2455: .
+2456: In
+2457: The Thirteenth International Conference on Learning Representations
+2458: ,
+2459: Cited by:
+2460: Introduction
+2461: ,
+2462: Related Work
+2463: .
+2464: Kim
+2465: et al.
+2466: (2025a)
+2467: M. J. Kim, C. Finn, and P. Liang
+2468: Fine-tuning vision-language-action models: optimizing speed and success
+2469: .
+2470: In
+2471: Proceedings of Robotics: Science and Systems
+2472: ,
+2473: Los Angeles, CA, USA
+2474: .
+2475: External Links:
+2476: Document
+2477: Cited by:
+2478: Simulation on RoboTwin
+2479: .
+2480: Kim
+2481: et al.
+2482: (2025b)
+2483: M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. P. Foster, P. R. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn
+2484: OpenVLA: an open-source vision-language-action model
+2485: .
+2486: In
+2487: Proceedings of the 8th Conference on Robot Learning
+2488: ,
+2489: P. Agrawal, O. Kroemer, and W. Burgard (Eds.)
+2490: ,
+2491: Proceedings of Machine Learning Research
+2492: , Vol.
+2493: 270
+2494: ,
+2495: pp. 2679–2713
+2496: .
+2497: Cited by:
+2498: Introduction
+2499: ,
+2500: Related Work
+2501: .
+2502: Lee
+2503: et al.
+2504: (2021)
+2505: K. Lee, L. M. Smith, and P. Abbeel
+2506: PEBBLE: feedback-efficient interactive reinforcement learning via relabeling experience and unsupervised pre-training
+2507: .
+2508: In
+2509: Proceedings of the 38th International Conference on Machine Learning
+2510: ,
+2511: M. Meila and T. Zhang (Eds.)
+2512: ,
+2513: Proceedings of Machine Learning Research
+2514: , Vol.
+2515: 139
+2516: ,
+2517: pp. 6152–6163
+2518: .
+2519: External Links:
+2520: Link
+2521: Cited by:
+2522: Introduction
+2523: ,
+2524: Related Work
+2525: .
+2526: Lee
+2527: et al.
+2528: (2026)
+2529: T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+2530: RoboReward: general-purpose vision-language reward models for robotics
+2531: .
+2532: External Links:
+2533: 2601.00675
+2534: Cited by:
+2535: Related Work
+2536: .
+2537: Liu
+2538: et al.
+2539: (2023)
+2540: B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+2541: LIBERO: benchmarking knowledge transfer for lifelong robot learning
+2542: .
+2543: In
+2544: Advances in Neural Information Processing Systems
+2545: ,
+2546: Vol.
+2547: 36
+2548: .
+2549: Cited by:
+2550: Structured OOD Data Construction
+2551: .
+2552: Ma
+2553: et al.
+2554: (2023a)
+2555: Y. J. Ma, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+2556: LIV: language-image representations and rewards for robotic control
+2557: .
+2558: In
+2559: Proceedings of the 40th International Conference on Machine Learning
+2560: ,
+2561: A. Krause, E. Brunskill, K. Cho, B. Engelhardt, S. Sabato, and J. Scarlett (Eds.)
+2562: ,
+2563: Proceedings of Machine Learning Research
+2564: , Vol.
+2565: 202
+2566: ,
+2567: pp. 23301–23320
+2568: .
+2569: Cited by:
+2570: Introduction
+2571: ,
+2572: Related Work
+2573: .
+2574: Ma
+2575: et al.
+2576: (2023b)
+2577: Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+2578: VIP: towards universal visual reward and representation via value-implicit pre-training
+2579: .
+2580: In
+2581: The Eleventh International Conference on Learning Representations
+2582: ,
+2583: External Links:
+2584: Link
+2585: Cited by:
+2586: Introduction
+2587: ,
+2588: Related Work
+2589: .
+2590: Mao
+2591: et al.
+2592: (2026)
+2593: Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+2594: ARM: advantage reward modeling for long-horizon manipulation
+2595: .
+2596: In
+2597: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops
+2598: ,
+2599: pp. 4468–4477
+2600: .
+2601: Cited by:
+2602: Related Work
+2603: .
+2604: Nair
+2605: et al.
+2606: (2022)
+2607: S. Nair, E. Mitchell, K. Chen, B. Ichter, S. Savarese, and C. Finn
+2608: Learning language-conditioned robot behavior from offline data and crowd-sourced annotation
+2609: .
+2610: In
+2611: Proceedings of the 5th Conference on Robot Learning
+2612: ,
+2613: A. Faust, D. Hsu, and G. Neumann (Eds.)
+2614: ,
+2615: Proceedings of Machine Learning Research
+2616: , Vol.
+2617: 164
+2618: ,
+2619: pp. 1303–1315
+2620: .
+2621: External Links:
+2622: Link
+2623: Cited by:
+2624: Related Work
+2625: .
+2626: Nasiriany
+2627: et al.
+2628: (2024)
+2629: S. Nasiriany, A. Maddukuri, L. Zhang, A. Parikh, A. Lo, A. Joshi, A. Mandlekar, and Y. Zhu
+2630: RoboCasa: large-scale simulation of household tasks for generalist robots
+2631: .
+2632: In
+2633: Proceedings of Robotics: Science and Systems
+2634: ,
+2635: External Links:
+2636: Document
+2637: Cited by:
+2638: Structured OOD Data Construction
+2639: .
+2640: Ng
+2641: et al.
+2642: (1999)
+2643: A. Y. Ng, D. Harada, and S. J. Russell
+2644: Policy invariance under reward transformations: theory and application to reward shaping
+2645: .
+2646: In
+2647: Proceedings of the Sixteenth International Conference on Machine Learning
+2648: ,
+2649: San Francisco, CA, USA
+2650: ,
+2651: pp. 278–287
+2652: .
+2653: Cited by:
+2654: Closed-Loop Reward Framework
+2655: .
+2656: Ni
+2657: et al.
+2658: (2022)
+2659: T. Ni, B. Eysenbach, and R. Salakhutdinov
+2660: Recurrent model-free RL can be a strong baseline for many POMDPs
+2661: .
+2662: In
+2663: Proceedings of the 39th International Conference on Machine Learning
+2664: ,
+2665: K. Chaudhuri, S. Jegelka, L. Song, C. Szepesvari, G. Niu, and S. Sabato (Eds.)
+2666: ,
+2667: Proceedings of Machine Learning Research
+2668: , Vol.
+2669: 162
+2670: ,
+2671: pp. 16691–16723
+2672: .
+2673: External Links:
+2674: Link
+2675: Cited by:
+2676: Introduction
+2677: ,
+2678: Related Work
+2679: .
+2680: OpenAI (2026)
+2681: OpenAI
+2682: GPT-5.5 system card
+2683: .
+2684: Note:
+2685: https://openai.com/index/gpt-5-5-system-card/
+2686: Accessed: 2026-07-24
+2687: Cited by:
+2688: Offline Results
+2689: .
+2690: Qwen Team (2026)
+2691: Qwen Team
+2692: Qwen3.5-397B-A17B-FP8
+2693: .
+2694: Note:
+2695: https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8
+2696: Accessed: 2026-07-24
+2697: Cited by:
+2698: Offline Results
+2699: .
+2700: Shao
+2701: et al.
+2702: (2024)
+2703: Z. Shao, P. Wang, Q. Zhu, R. Xu, J. Song, X. Bi, H. Zhang, M. Zhang, Y. K. Li, Y. Wu, and D. Guo
+2704: DeepSeekMath: pushing the limits of mathematical reasoning in open language models
+2705: .
+2706: External Links:
+2707: 2402.03300
+2708: Cited by:
+2709: Simulation on RoboTwin
+2710: .
+2711: Sontakke
+2712: et al.
+2713: (2023)
+2714: S. Sontakke, J. Zhang, S. Arnold, K. Pertsch, E. Bıyık, D. Sadigh, C. Finn, and L. Itti
+2715: RoboCLIP: one demonstration is enough to learn robot policies
+2716: .
+2717: In
+2718: Advances in Neural Information Processing Systems
+2719: ,
+2720: Vol.
+2721: 36
+2722: ,
+2723: pp. 55681–55693
+2724: .
+2725: External Links:
+2726: Document
+2727: Cited by:
+2728: Introduction
+2729: ,
+2730: Related Work
+2731: .
+2732: Tan
+2733: et al.
+2734: (2026)
+2735: H. Tan, S. Chen, Y. Xu, Z. Wang, C. Chi, Y. Ji, Y. Lyu, Z. Zhao, X. Chen, P. Co, S. Xie, G. Yao, P. Wang, Z. Wang, and S. Zhang
+2736: General process reward modeling for robotic reinforcement learning
+2737: .
+2738: In
+2739: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2740: ,
+2741: pp. 22412–22422
+2742: .
+2743: Cited by:
+2744: Introduction
+2745: ,
+2746: Introduction
+2747: ,
+2748: Related Work
+2749: ,
+2750: History-Conditioned Pairwise Reward Formulation
+2751: ,
+2752: OOD-aware Signed Progress Space
+2753: ,
+2754: Closed-Loop Reward Framework
+2755: ,
+2756: Experimental Setup
+2757: .
+2758: Wang
+2759: et al.
+2760: (2024)
+2761: Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson
+2762: RL-VLM-F: reinforcement learning from vision language foundation model feedback
+2763: .
+2764: In
+2765: Proceedings of the 41st International Conference on Machine Learning
+2766: ,
+2767: R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, and F. Berkenkamp (Eds.)
+2768: ,
+2769: Proceedings of Machine Learning Research
+2770: , Vol.
+2771: 235
+2772: ,
+2773: pp. 51484–51501
+2774: .
+2775: External Links:
+2776: Link
+2777: Cited by:
+2778: Introduction
+2779: ,
+2780: Introduction
+2781: ,
+2782: Related Work
+2783: .
+2784: Yang
+2785: et al.
+2786: (2024)
+2787: Y. Yang, M. Chen, Q. Qiu, J. Wu, W. Wang, B. Lin, Z. Guan, and X. He
+2788: Adapt2Reward: adapting video-language models to generalizable robotic rewards via failure prompts
+2789: .
+2790: In
+2791: Computer Vision – ECCV 2024
+2792: ,
+2793: pp. 163–180
+2794: .
+2795: External Links:
+2796: Document
+2797: Cited by:
+2798: Related Work
+2799: .
+2800: Yu
+2801: et al.
+2802: (2025)
+2803: C. Yu, Y. Wang, Z. Guo, H. Lin, S. Xu, H. Zang,
+2804: et al.
+2805: RLinf: flexible and efficient large-scale reinforcement learning via macro-to-micro flow transformation
+2806: .
+2807: External Links:
+2808: 2509.15965
+2809: ,
+2810: Document
+2811: ,
+2812: Link
+2813: Cited by:
+2814: Simulation on RoboTwin
+2815: .
+2816: Zhang
+2817: et al.
+2818: (2026)
+2819: Q. Zhang, S. Zhai, S. Zhang, L. Liu, T. Zhang, F. Huang, and M. Zhou
+2820: A generalist pair-wise progress critic model for vision-language-action robots
+2821: .
+2822: In
+2823: Proceedings of the 43rd International Conference on Machine Learning
+2824: ,
+2825: Cited by:
+2826: Introduction
+2827: ,
+2828: Related Work
+2829: .
+2830: Zhou
+2831: et al.
+2832: (2026)
+2833: X. Zhou, X. Chen, S. Zhang, X. Li, S. Wan, X. Hu, L. Yuan, L. Gan, and D. Zhan
+2834: MARVL: multi-stage guidance for robotic manipulation via vision-language models
+2835: .
+2836: External Links:
+2837: 2602.15872
+2838: Cited by:
+2839: Related Work
+2840: .
+2841: Zitkovich
+2842: et al.
+2843: (2023)
+2844: B. Zitkovich, T. Yu, S. Xu, P. Xu, T. Xiao, F. Xia, J. Wu, P. Wohlhart, S. Welker, A. Wahid, Q. Vuong, V. Vanhoucke, H. Tran, R. Soricut, A. Singh, J. Singh, P. Sermanet, P. R. Sanketi, G. Salazar, M. S. Ryoo, K. Reymann, K. Rao, K. Pertsch, I. Mordatch, H. Michalewski, Y. Lu, S. Levine, L. Lee, T. E. Lee, I. Leal, Y. Kuang, D. Kalashnikov, R. Julian, N. J. Joshi, A. Irpan, B. Ichter, J. Hsu, A. Herzog, K. Hausman, K. Gopalakrishnan, C. Fu, P. Florence, C. Finn, K. A. Dubey, D. Driess, T. Ding, K. M. Choromanski, X. Chen, Y. Chebotar, J. Carbajal, N. Brown, A. Brohan, M. G. Arenas, and K. Han
+2845: RT-2: vision-language-action models transfer web knowledge to robotic control
+2846: .
+2847: In
+2848: Proceedings of the 7th Conference on Robot Learning
+2849: ,
+2850: J. Tan, M. Toussaint, and K. Darvish (Eds.)
+2851: ,
+2852: Proceedings of Machine Learning Research
+2853: , Vol.
+2854: 229
+2855: ,
+2856: pp. 2165–2183
+2857: .
+2858: Cited by:
+2859: Introduction
+2860: ,
+2861: Related Work
+2862: .
+2863: Supplementary Material
+2864: Appendix A
+2865: OOD Data Construction Pipeline
+2866: We construct synthetic OOD data from successful trajectories in the
+2867: RoboCasa, LIBERO, and RoboTwin 2.0 simulation benchmarks, together with
+2868: real-robot AgiBot World data. Task- and phase-aware edits produce
+2869: source-aligned counterfactual observations rather than arbitrary visual
+2870: variation. Negative edits change a task-relevant execution condition, whereas
+2871: robust edits change nuisance appearance while preserving the intended task
+2872: state.
+2873: Figure
+2874: 5
+2875: illustrates the synthetic-OOD
+2876: provenance contract. Task-reference frames and temporal panels are drawn from
+2877: the aligned successful source episode, while edited before–after views remain
+2878: the actual query evidence. Standard training instead uses same-episode expert
+2879: history, and online inference uses the observed rollout history, following the
+2880: context contract in the main paper.
+2881: Figure 5:
+2882: OOD provenance case study. All task-reference and temporal-context
+2883: images are drawn from the aligned successful source episode, while only the
+2884: queried before–after views contain the OOD edits.
+2885: Given a successful source trajectory from dataset
+2886: d
+2887: d
+2888: ,
+2889: τ
+2890: \displaystyle\tau
+2891: =
+2892: {
+2893: o
+2894: i
+2895: v
+2896: |
+2897: i
+2898: ∈
+2899: {
+2900: 0
+2901: ,
+2902: …
+2903: ,
+2904: T
+2905: −
+2906: 1
+2907: }
+2908: ,
+2909: v
+2910: ∈
+2911: 𝒱
+2912: d
+2913: }
+2914: ,
+2915: \displaystyle=\left\{o_{i}^{v}\,\middle|\,i\in\{0,\ldots,T-1\},\;v\in\mathcal{V}_{d}\right\},
+2916: (19)
+2917: τ
+2918: ~
+2919: z
+2920: \displaystyle\tilde{\tau}_{z}
+2921: =
+2922: {
+2923: o
+2924: ~
+2925: i
+2926: v
+2927: |
+2928: i
+2929: ∈
+2930: 𝒮
+2931: z
+2932: (
+2933: τ
+2934: )
+2935: ,
+2936: v
+2937: ∈
+2938: 𝒱
+2939: d
+2940: }
+2941: ,
+2942: \displaystyle=\left\{\tilde{o}_{i}^{v}\,\middle|\,i\in\mathcal{S}_{z}(\tau),\;v\in\mathcal{V}_{d}\right\},
+2943: where
+2944: 𝒱
+2945: d
+2946: ⊆
+2947: {
+2948: h
+2949: ,
+2950: l
+2951: ,
+2952: r
+2953: }
+2954: \mathcal{V}_{d}\subseteq\{h,l,r\}
+2955: is the available camera set after
+2956: mapping dataset-specific streams to canonical high/third-person, left-wrist,
+2957: and right-wrist slots. Unavailable slots are padded and masked by the data
+2958: loader. The variable
+2959: z
+2960: z
+2961: denotes one OOD operator, and
+2962: 𝒮
+2963: z
+2964: ​
+2965: (
+2966: τ
+2967: )
+2968: \mathcal{S}_{z}(\tau)
+2969: is its phase-valid interval. The same operator
+2970: specification is applied throughout the interval, using references from the
+2971: corresponding source camera.
+2972: Pipeline overview.
+2973: The construction proceeds in six steps:
+2974: (i)
+2975: normalize the instruction, identify the task-relevant target, and
+2976: map the task to manipulation primitives;
+2977: (ii)
+2978: assign a semantically compatible negative or robustness operator;
+2979: (iii)
+2980: localize the trajectory phase in which the intervention is
+2981: meaningful;
+2982: (iv)
+2983: construct a multi-reference editing request for every selected
+2984: frame and camera;
+2985: (v)
+2986: generate the edited observation under operator-specific, geometric,
+2987: and view-specific constraints; and
+2988: (vi)
+2989: retain source-episode, frame, camera, prompt, and reference
+2990: provenance for downstream reward-pair construction.
+2991: Task Parsing and Operator Assignment
+2992: The task instruction is first normalized and mapped to one or more manipulation
+2993: primitives. We use seven primitive categories:
+2994: grasp–lift
+2995: ,
+2996: place–transfer
+2997: ,
+2998: open
+2999: ,
+3000: close
+3001: ,
+3002: toggle-on
+3003: ,
+3004: toggle-off
+3005: , and
+3006: push–move
+3007: . A pick-and-place instruction, for
+3008: example, activates both grasp–lift and place–transfer, whereas opening a
+3009: drawer, toggling a device, or pushing an object activates the corresponding
+3010: interaction primitive.
+3011: We additionally extract a target phrase from the instruction. The parser
+3012: removes the action prefix and truncates the remaining phrase at spatial or
+3013: relational markers such as “into,” “onto,” “from,” or “next to.” The
+3014: resulting phrase is inserted into the generation prompt and used to distinguish
+3015: the task object from non-target scene objects.
+3016: Primitive-to-operator mapping.
+3017: Grasp–lift tasks admit the negative operators
+3018: wrong object
+3019: ,
+3020: empty grasp
+3021: , and
+3022: target replacement
+3023: , together with all robust
+3024: operators. Place–transfer tasks admit
+3025: wrong object
+3026: ,
+3027: non-release
+3028: ,
+3029: and
+3030: target replacement
+3031: , again together with all robust operators. Open,
+3032: close, toggle, and push tasks use the robust operators
+3033: foreground
+3034: occlusion
+3035: ,
+3036: background change
+3037: ,
+3038: distractor addition or removal
+3039: ,
+3040: and
+3041: non-target color change
+3042: , which preserve the relevant articulated,
+3043: on/off, or displacement state.
+3044: We apply two semantic guards before assigning an operator. First, for
+3045: instructions involving multiple legitimate task objects, identity-changing
+3046: edits such as
+3047: wrong object
+3048: and
+3049: target replacement
+3050: are avoided
+3051: when another valid negative operator is available. This prevents ambiguous
+3052: correspondences among multiple admissible targets. Second, when the instruction
+3053: explicitly specifies a target color, the
+3054: non-target color change
+3055: operator is restricted to non-target objects. Each generated OOD trajectory is
+3056: assigned a single operator, so its edited frames form a temporally coherent
+3057: counterfactual trajectory rather than a sequence of unrelated perturbations.
+3058: Phase-Aware Temporal Localization
+3059: Applying a failure edit to an arbitrary frame may produce a visibly different
+3060: image without changing the task interpretation. We therefore
+3061: localize each interaction-related operator to a primitive-dependent temporal
+3062: window. For sampled frame index
+3063: i
+3064: i
+3065: , normalized source-trajectory progress is
+3066: defined as
+3067: p
+3068: i
+3069: =
+3070: i
+3071: T
+3072: −
+3073: 1
+3074: .
+3075: p_{i}=\frac{i}{T-1}.
+3076: (20)
+3077: Each frame is assigned an active primitive
+3078: π
+3079: i
+3080: \pi_{i}
+3081: . For common composite
+3082: instructions, the active primitive changes according to source-trajectory
+3083: progress. Grasp-to-place and open-to-place tasks switch to place–transfer at
+3084: p
+3085: i
+3086: =
+3087: 0.45
+3088: p_{i}=0.45
+3089: ; place-to-close tasks switch to close at
+3090: p
+3091: i
+3092: =
+3093: 0.65
+3094: p_{i}=0.65
+3095: ; and
+3096: toggle-to-place tasks switch to place–transfer at
+3097: p
+3098: i
+3099: =
+3100: 0.35
+3101: p_{i}=0.35
+3102: .
+3103: The valid progress intervals are
+3104: [
+3105: 0.18
+3106: ,
+3107: 0.80
+3108: ]
+3109: [0.18,0.80]
+3110: for grasp–lift,
+3111: [
+3112: 0.28
+3113: ,
+3114: 0.95
+3115: ]
+3116: [0.28,0.95]
+3117: for place–transfer,
+3118: [
+3119: 0.15
+3120: ,
+3121: 0.85
+3122: ]
+3123: [0.15,0.85]
+3124: for open and close,
+3125: [
+3126: 0.10
+3127: ,
+3128: 0.75
+3129: ]
+3130: [0.10,0.75]
+3131: for toggle-on and toggle-off, and
+3132: [
+3133: 0.12
+3134: ,
+3135: 0.85
+3136: ]
+3137: [0.12,0.85]
+3138: for push–move.
+3139: These windows cover the principal interaction phases—approach, contact,
+3140: transport, articulation, release, or displacement—while excluding early
+3141: frames whose appearance is not yet informative for the selected intervention.
+3142: Let
+3143: G
+3144: z
+3145: ​
+3146: (
+3147: π
+3148: ,
+3149: p
+3150: )
+3151: ∈
+3152: {
+3153: KEEP
+3154: ,
+3155: EDIT
+3156: }
+3157: G_{z}(\pi,p)\in\{\operatorname{KEEP},\operatorname{EDIT}\}
+3158: denote the fixed operator-specific eligibility rule. For
+3159: non-release
+3160: , the rule activates only in the release subphase; the
+3161: remaining interaction-related operators activate at their first eligible
+3162: task phase. The intervention onset is
+3163: i
+3164: start
+3165: =
+3166: min
+3167: ⁡
+3168: {
+3169: i
+3170: |
+3171: G
+3172: z
+3173: ​
+3174: (
+3175: π
+3176: i
+3177: ,
+3178: p
+3179: i
+3180: )
+3181: =
+3182: EDIT
+3183: }
+3184: .
+3185: i_{\mathrm{start}}=\min\left\{i\,\middle|\,G_{z}(\pi_{i},p_{i})=\operatorname{EDIT}\right\}.
+3186: (21)
+3187: The corresponding operator-specific rule is used for
+3188: wrong object
+3189: ,
+3190: empty grasp
+3191: ,
+3192: non-release
+3193: ,
+3194: target replacement
+3195: , and
+3196: foreground occlusion
+3197: . In contrast,
+3198: background change
+3199: ,
+3200: distractor addition or removal
+3201: , and
+3202: non-target color change
+3203: begin at the first sampled state because they represent persistent scene-level
+3204: nuisance variation. Applying these operators throughout the trajectory avoids
+3205: an artificial appearance discontinuity at the interaction boundary.
+3206: For a standard single-stage or pick-and-place trajectory, the intervention is
+3207: propagated over the selected suffix:
+3208: 𝒮
+3209: z
+3210: ​
+3211: (
+3212: τ
+3213: )
+3214: =
+3215: {
+3216: i
+3217: start
+3218: ,
+3219: …
+3220: ,
+3221: T
+3222: −
+3223: 1
+3224: }
+3225: .
+3226: \mathcal{S}_{z}(\tau)=\left\{i_{\mathrm{start}},\ldots,T-1\right\}.
+3227: (22)
+3228: The active primitive supplied to the prompt may still change from grasping to
+3229: transport or release as the trajectory progresses. For explicitly multi-stage
+3230: instructions containing distinct subgoals, the selected interval is restricted
+3231: to the contiguous segment governed by the primitive active at
+3232: i
+3233: start
+3234: i_{\mathrm{start}}
+3235: . This prevents an edit defined for one subgoal from being
+3236: propagated into a later subgoal with a different task meaning.
+3237: Multi-Reference Edit Construction
+3238: A single queried frame may not reveal the identity or original location of the
+3239: target. This occurs when the target is already held, partially occluded by the
+3240: gripper, visually similar to nearby objects, or absent from the current field
+3241: of view. We therefore condition each edit on an ordered set of observations
+3242: from the same successful source trajectory.
+3243: For queried frame
+3244: i
+3245: i
+3246: , the pipeline selects
+3247: K
+3248: i
+3249: ≤
+3250: 13
+3251: K_{i}\leq 13
+3252: reference indices:
+3253: 𝒥
+3254: i
+3255: =
+3256: {
+3257: r
+3258: 1
+3259: ,
+3260: …
+3261: ,
+3262: r
+3263: K
+3264: i
+3265: }
+3266: ,
+3267: r
+3268: k
+3269: ≠
+3270: i
+3271: .
+3272: \mathcal{J}_{i}=\left\{r_{1},\ldots,r_{K_{i}}\right\},\qquad r_{k}\neq i.
+3273: (23)
+3274: The indices are distributed over the complete sampled trajectory and retained
+3275: in chronological order. When fewer than 13 alternative frames are available,
+3276: all available source frames are used. For camera
+3277: v
+3278: v
+3279: , the visual input is
+3280: 𝒬
+3281: i
+3282: v
+3283: =
+3284: [
+3285: o
+3286: r
+3287: 1
+3288: v
+3289: ,
+3290: …
+3291: ,
+3292: o
+3293: r
+3294: K
+3295: i
+3296: v
+3297: ,
+3298: o
+3299: i
+3300: v
+3301: ]
+3302: .
+3303: \mathcal{Q}_{i}^{v}=\left[o_{r_{1}}^{v},\ldots,o_{r_{K_{i}}}^{v},o_{i}^{v}\right].
+3304: (24)
+3305: Thus, each request contains
+3306: K
+3307: i
+3308: K_{i}
+3309: read-only references followed by one editable
+3310: image;
+3311: K
+3312: i
+3313: =
+3314: 13
+3315: K_{i}=13
+3316: whenever at least 13 alternative frames are available. The queried frame is excluded from the reference set, and the
+3317: final image in the sequence is always the only image that may be modified.
+3318: All references satisfy three alignment constraints: they originate from the
+3319: same successful episode as the queried frame, use exactly the same camera, and
+3320: are passed to the editor in temporal order. A head-camera query therefore
+3321: receives only head-camera references, while a left- or right-wrist query uses
+3322: references from the corresponding wrist camera. This prevents the editor from
+3323: transferring the projection, visible object surfaces, or gripper geometry of
+3324: one camera to another.
+3325: The ordered reference stack serves complementary roles. Early frames provide
+3326: the initial target identity, target location, object inventory, and unmodified
+3327: scene layout. Frames around the interaction phase reveal how the target
+3328: approaches or enters the gripper. Later frames provide evidence about
+3329: successful transport, release, or the final articulated state. The references
+3330: are used to interpret the task and reconstruct local content; their global
+3331: camera pose or complete image layout may not be copied into the queried frame.
+3332: Each available camera view is edited through a separate view-specific request:
+3333: o
+3334: ~
+3335: i
+3336: v
+3337: =
+3338: 𝒢
+3339: ⁡
+3340: (
+3341: 𝒬
+3342: i
+3343: v
+3344: ,
+3345: 𝒫
+3346: ⁡
+3347: (
+3348: c
+3349: ,
+3350: π
+3351: i
+3352: ,
+3353: z
+3354: ,
+3355: v
+3356: )
+3357: )
+3358: ,
+3359: \tilde{o}_{i}^{v}=\mathcal{G}\!\left(\mathcal{Q}_{i}^{v};\mathcal{P}(c,\pi_{i},z,v)\right),
+3360: (25)
+3361: where
+3362: 𝒢
+3363: \mathcal{G}
+3364: denotes the instruction-following image editor and
+3365: 𝒫
+3366: \mathcal{P}
+3367: denotes the structured prompt. The source index, OOD type, and
+3368: task semantics are shared across the three requests, whereas geometric
+3369: constraints are specialized to each camera.
+3370: Structured Prompt Design
+3371: The generation prompt is composed from a fixed set of functional blocks:
+3372: 𝒫
+3373: =
+3374: \displaystyle\mathcal{P}={}
+3375: 𝒫
+3376: input
+3377: ⊕
+3378: 𝒫
+3379: scene
+3380: ⊕
+3381: 𝒫
+3382: task
+3383: ⊕
+3384: 𝒫
+3385: target
+3386: \displaystyle\mathcal{P}_{\mathrm{input}}\oplus\mathcal{P}_{\mathrm{scene}}\oplus\mathcal{P}_{\mathrm{task}}\oplus\mathcal{P}_{\mathrm{target}}
+3387: (26)
+3388: ⊕
+3389: 𝒫
+3390: operator
+3391: ⊕
+3392: 𝒫
+3393: view
+3394: ⊕
+3395: 𝒫
+3396: physical
+3397: ⊕
+3398: 𝒫
+3399: output
+3400: .
+3401: \displaystyle\oplus\mathcal{P}_{\mathrm{operator}}\oplus\mathcal{P}_{\mathrm{view}}\oplus\mathcal{P}_{\mathrm{physical}}\oplus\mathcal{P}_{\mathrm{output}}.
+3402: This decomposition separates the required intervention from the quantities that
+3403: must remain invariant.
+3404: Input contract.
+3405: The prompt first states that the request is an image-editing task rather than
+3406: text-to-image generation.Images
+3407: 1
+3408: 1
+3409: through
+3410: K
+3411: i
+3412: K_{i}
+3413: are declared read-only references, and image
+3414: K
+3415: i
+3416: +
+3417: 1
+3418: K_{i}+1
+3419: is declared the only editable image. The editor is
+3420: prohibited from returning a reference image or reconstructing the scene from a
+3421: different camera pose.
+3422: The output must preserve the queried resolution of
+3423: 320
+3424: ×
+3425: 240
+3426: 320{\times}240
+3427: , field of
+3428: view, crop, perspective, exposure, white balance, color temperature, sharpness,
+3429: noise level, depth of field, and compression characteristics. The prompt
+3430: explicitly prohibits global enhancement, denoising, restyling, or unnecessary
+3431: full-image redrawing.
+3432: Scene and target binding.
+3433: The prompt contains the complete task instruction, current frame ID, ordered
+3434: reference-frame IDs, and camera identity. It states that all references come
+3435: from the same successful trajectory and should be interpreted jointly to
+3436: recover the original task process. When a target phrase can be extracted, it is
+3437: included explicitly and used together with the trajectory references to
+3438: identify the task object. If several visually similar target candidates exist,
+3439: a rule that removes, preserves, or moves the target is applied consistently to
+3440: all relevant candidates unless the operator is explicitly defined for one
+3441: instruction-referenced instance.
+3442: Primitive-specific task block.
+3443: A task block specifies whether the current frame belongs to grasping, placement,
+3444: opening, closing, toggling, or pushing. The grasp block, for example, identifies
+3445: the object originally intended for acquisition, whereas the placement block
+3446: emphasizes the transported object, support surface, and target placement region.
+3447: This block prevents a visually plausible edit from becoming semantically
+3448: inconsistent with the active manipulation stage.
+3449: Operator contract.
+3450: The operator block defines the exact counterfactual intervention. For negative
+3451: states, it specifies the task-relevant relation to invalidate, such as object occupancy
+3452: inside the gripper, target identity, or release completion. For robust states,
+3453: it specifies the nuisance factor that may change and explicitly states that the
+3454: target, robot state, and task outcome must remain unchanged.
+3455: Global physical constraints.
+3456: Across all OOD types, the prompt prohibits moving, rotating, reshaping, or
+3457: repositioning the robot arm. Joint configuration, link geometry, and
+3458: end-effector pose must remain identical to those in the queried source image.
+3459: The gripper position, orientation, and opening are also preserved, except for
+3460: the minimal local reconstruction required when removing or inserting held
+3461: content.
+3462: Every moved, removed, added, replaced, or occluding object must respect the
+3463: source perspective, support relation, contact geometry, illumination, shadow
+3464: direction, material response, depth ordering, and occlusion pattern. Removed
+3465: regions must be completed using surrounding scene texture without duplicated
+3466: boundaries, smearing, holes, or inconsistent gripper geometry.
+3467: View-specific constraints.
+3468: The prompt contains an additional block specialized to the queried camera.
+3469: Head-camera prompts emphasize global scene consistency and the projected grasp
+3470: corridor. Wrist-camera prompts restrict editing to the gripper, target, and
+3471: immediately adjacent region while preserving visible finger geometry and local
+3472: occlusion ordering.
+3473: Output contract.
+3474: The editor is instructed to return exactly one image: the edited version of the
+3475: final input image. No text, explanation, alternative image, or intermediate
+3476: result is permitted. The requested intervention must remain visually
+3477: identifiable, but realism and local consistency take priority over exaggerated
+3478: change.
+3479: In abbreviated form, every prompt specifies
+3480: (i)
+3481: which images are read-only references;
+3482: (ii)
+3483: which final image is editable;
+3484: (iii)
+3485: the instruction, target, and active primitive;
+3486: (iv)
+3487: the OOD intervention and its state-dependent branch;
+3488: (v)
+3489: camera, robot, object, geometry, lighting, and image-quality
+3490: invariants; and
+3491: (vi)
+3492: the single-image output requirement.
+3493: Negative Counterfactual Operators
+3494: Negative operators change a task-relevant execution condition while keeping the
+3495: source robot pose and trajectory phase fixed.
+3496: Wrong object.
+3497: If the gripper is empty or approaching the target, the task target in the grasp
+3498: corridor is replaced by a visually distinct non-target object, while the
+3499: original target is relocated to a plausible position outside the corridor.
+3500: This makes the impending interaction correspond to the wrong object rather
+3501: than an empty grasp. If the gripper is occupied, only the held content is
+3502: replaced by an object with a different category, dominant color, and
+3503: silhouette. The original target remains naturally situated elsewhere whenever
+3504: visible.
+3505: Empty grasp.
+3506: The defining condition is an empty region between the gripper fingers. If the
+3507: gripper is approaching an object, the target and any object intersecting the
+3508: opening, closing region, or forward grasp corridor are moved laterally outside
+3509: the grasp path. If the gripper already contains an object, that object is
+3510: removed without changing the gripper pose or opening. Only the minimal local
+3511: region is reconstructed to recover the visible fingers, interior background,
+3512: shadows, and reflections. The target is returned to its source-scene location
+3513: when this location is supported by the trajectory references.
+3514: Non-release.
+3515: The
+3516: non-release
+3517: operator converts a successful release or near-release
+3518: state into a continued-holding state. If the target has already left the
+3519: gripper, the same target is inserted back into the current gripper and its
+3520: released instance is removed to avoid duplication. The gripper pose is not
+3521: replaced by an earlier source pose. If the target is already held, its identity
+3522: and appearance are preserved while the continued-holding configuration remains
+3523: unchanged.
+3524: Target replacement.
+3525: Only the instruction-referenced target is replaced. The replacement preserves
+3526: the original target’s approximate image footprint, location, local support or
+3527: grasp relation, and occlusion order, but differs clearly in category and
+3528: silhouette. All surrounding objects, articulated states, and robot geometry
+3529: remain fixed. The resulting state therefore preserves the local spatial
+3530: arrangement while violating task-object identity. Unlike
+3531: wrong object
+3532: , this operator changes the identity of the
+3533: instruction-referenced scene target rather than the identity of the object
+3534: currently approached or held by the gripper.
+3535: Robustness-Preserving Operators
+3536: Robustness operators change image appearance without changing task semantics and
+3537: therefore retain the same progress value as their aligned source states.
+3538: Foreground occlusion.
+3539: A plausible close-range occluder, such as a hand, board, box, or cloth region,
+3540: is inserted in front of the critical interaction area. The occluder may
+3541: partially hide the target or gripper, but it may not cover the complete image.
+3542: The underlying robot–object state, target identity, contact state, task
+3543: outcome, and all pre-existing scene objects remain unchanged. The occluder is
+3544: placed according to the queried camera’s depth ordering rather than used to
+3545: redraw the hidden interaction into a different state.
+3546: Background change.
+3547: One or two small modifications are applied to secondary background regions,
+3548: such as a minor layout adjustment or local appearance variation away from the
+3549: interaction area. Target identity and location, robot and gripper state,
+3550: articulated-object state, and the geometry of the critical contact region remain
+3551: unchanged.
+3552: Distractor addition or removal.
+3553: A small number of non-target objects are added to or removed from background or
+3554: secondary regions. Added objects must have plausible scale, support, material,
+3555: illumination, and shadow; removed regions are completed using neighboring scene
+3556: texture. New objects are not placed adjacent to the gripper or target, and no
+3557: task-relevant object or receptacle may be removed.
+3558: Non-target color change.
+3559: A small, natural change in color, saturation, or brightness is applied to one or
+3560: two non-target objects. No object is added, removed, moved, rotated, or
+3561: replaced. The target color and identity, object geometry, scene layout, robot
+3562: state, contact relations, and task outcome remain fixed. When color is part of
+3563: the instruction, the target color is protected by both operator selection and
+3564: the prompt.
+3565: Camera-Specific Geometric Constraints
+3566: The same semantic edit requires different geometric instructions under the head
+3567: and wrist cameras. We therefore append a camera-specific block to each prompt.
+3568: Head camera.
+3569: The head view exposes the global scene layout and the projected grasp corridor.
+3570: For
+3571: empty grasp
+3572: , the prompt gives highest priority to clearing the
+3573: region between the fingers, directly below the gripper, and along its projected
+3574: approach path. For
+3575: wrong object
+3576: , it verifies that no valid target
+3577: remains within the visually reachable region around an empty gripper. For
+3578: non-release
+3579: , it verifies that the final edited gripper is visibly
+3580: non-empty.
+3581: Wrist cameras.
+3582: Wrist views are treated as local close-up observations. Editing is restricted
+3583: to the gripper, target, and immediately adjacent image region. The prompt
+3584: prohibits expanding an object surface that is occluded in the queried wrist
+3585: view, copying geometry from the head camera, or producing the opposite wrist’s
+3586: observation. The left-wrist prompt preserves the visible left finger, contact
+3587: boundary, and local reflection pattern; the right-wrist prompt applies the
+3588: analogous constraint to the visible right-side geometry.
+3589: When an object is inserted, removed, or replaced inside the gripper, its
+3590: boundary must remain behind the visible metal finger edges according to source
+3591: depth ordering. If the robot itself occludes the interaction region, that
+3592: occlusion is preserved rather than removed merely to make the edit more
+3593: explicit. These constraints encourage the available edited views to express the same
+3594: trajectory-level OOD semantics while respecting their distinct projections
+3595: and visible local geometry.
+3596: Generation and Provenance
+3597: The OOD construction uses Gemini 3.1 Flash Image as the
+3598: instruction-following image-editing backend in batch mode. Each
+3599: frame–camera pair is submitted as one editing request containing the ordered
+3600: reference images, the final queried image, and the fully instantiated prompt.
+3601: Every request receives a unique identifier. Its record contains the source dataset, task instruction, episode ID, frame ID,
+3602: normalized frame index, camera, active primitive, OOD type, OOD group,
+3603: reference-frame IDs, generation prompt, backend identifier, generation
+3604: timestamp, and source path. The identifier is subsequently used to associate each returned
+3605: image with the exact source frame and camera. At the trajectory level, a
+3606: manifest records the selected source-frame interval, operator, OOD group, onset
+3607: mode, primary primitive, multi-stage indicator, multi-object indicator,
+3608: reference configuration, and complete list of edited source-frame IDs.
+3609: This metadata preserves the alignment
+3610: o
+3611: ~
+3612: i
+3613: v
+3614: ⟷
+3615: o
+3616: i
+3617: v
+3618: ⟷
+3619: (
+3620: τ
+3621: ,
+3622: i
+3623: ,
+3624: v
+3625: ,
+3626: z
+3627: )
+3628: .
+3629: \tilde{o}_{i}^{v}\longleftrightarrow o_{i}^{v}\longleftrightarrow(\tau,i,v,z).
+3630: (27)
+3631: The downstream loader can therefore reconstruct both the original successful
+3632: observation and its edited counterpart at the same source progress index:
+3633: X
+3634: i
+3635: \displaystyle X_{i}
+3636: =
+3637: {
+3638: o
+3639: i
+3640: v
+3641: ∣
+3642: v
+3643: ∈
+3644: 𝒱
+3645: d
+3646: }
+3647: ,
+3648: \displaystyle=\left\{o_{i}^{v}\mid v\in\mathcal{V}_{d}\right\},
+3649: (28)
+3650: X
+3651: ~
+3652: i
+3653: z
+3654: \displaystyle\tilde{X}_{i}^{z}
+3655: =
+3656: {
+3657: o
+3658: ~
+3659: i
+3660: v
+3661: ∣
+3662: v
+3663: ∈
+3664: 𝒱
+3665: d
+3666: }
+3667: .
+3668: \displaystyle=\left\{\tilde{o}_{i}^{v}\mid v\in\mathcal{V}_{d}\right\}.
+3669: For every OOD pair, all task-reference and temporal-context images are
+3670: reconstructed exclusively from the aligned successful source episode. The
+3671: generated trajectory contributes only the queried before–after observations.
+3672: This source-only context contract preserves the source phase and panel ordering
+3673: without replacing the wrong-object, empty-grasp, non-release,
+3674: target-replacement, occlusion, or background-perturbation evidence contained
+3675: in the OOD query.
+3676: The recorded provenance keeps the successful source state, edited observation,
+3677: camera projection, and temporal context separately traceable. Negative and
+3678: robust states are therefore compiled into the signed progress space using their
+3679: shared source index rather than independently sampled trajectories.
+3680: Appendix B
+3681: Computing Infrastructure and Training Cost
+3682: Reward-model fine-tuning and RoboTwin simulation policy learning use eight
+3683: NVIDIA H100 GPUs with 80 GB of memory per GPU (640 GB aggregate accelerator
+3684: memory) for every training run. Real-world ConRFT training instead uses one
+3685: NVIDIA RTX 4090. The retained experiment records do not provide verified host
+3686: CPU, system RAM, operating-system, or CUDA details, so we report only the
+3687: accelerator allocations rather than inferring unverified model or version
+3688: information.
+3689: A complete reward-model training run takes approximately 20 hours in this
+3690: eight-GPU setting. Reward-model training uses 400K signed pairs across two
+3691: 200K stages, together with the fixed QA200K auxiliary mix excluded from this
+3692: pairwise budget. Each trainable reward-model configuration and policy-learning
+3693: condition is trained once, and the GRM remains frozen in all downstream RL
+3694: experiments.
+3695: Appendix C
+3696: Simulation Reinforcement Learning Details
+3697: We optimize task-specific OpenVLA-OFT SFT checkpoints with GRPO in RLinf on
+3698: the RoboTwin 2.0 tasks
+3699: place_empty_cup
+3700: ,
+3701: place_container_plate
+3702: , and
+3703: handover_block
+3704: . The GRM
+3705: remains frozen, and history-enabled conditions construct panels from the
+3706: observed rollout prefix. The policy receives head-camera RGB and 14-D
+3707: proprioception, predicts 14-D actions in 25-action chunks, and is LoRA-tuned
+3708: in BF16 with FSDP. GRPO uses 128 parallel environments, groups of eight
+3709: rollouts, normalized group-relative advantages, and
+3710: γ
+3711: =
+3712: 1
+3713: \gamma=1
+3714: .
+3715: The sparse baseline is trained for 1,000 epochs and C00–C11 for 300 epochs. We
+3716: run deterministic 128-episode evaluations every 20 epochs over fixed reset
+3717: states. For
+3718: place_empty_cup
+3719: ,
+3720: place_container_plate
+3721: , and
+3722: handover_block
+3723: , respectively, the episode horizons are 200, 150, and
+3724: 400 steps and the learning rates are
+3725: 10
+3726: −
+3727: 4
+3728: 10^{-4}
+3729: ,
+3730: 2
+3731: ×
+3732: 10
+3733: −
+3734: 4
+3735: 2{\times}10^{-4}
+3736: , and
+3737: 2
+3738: ×
+3739: 10
+3740: −
+3741: 4
+3742: 2{\times}10^{-4}
+3743: .
+3744: Appendix D
+3745: Real-World Experiments
+3746: Platform, Observations, and Task
+3747: The physical workcell contains two Franka manipulators, a Pika teleoperation
+3748: interface, and calibrated ZED cameras. The camera system supplies synchronized
+3749: wrist and third-person RGB observations to both the reward model and the
+3750: policy. The GRM remains frozen during online policy learning. History-enabled
+3751: conditions construct temporal panels from the observed rollout prefix; no
+3752: successful source alignment or repetition label is provided online.
+3753: We evaluate the single-arm
+3754: Insert Square
+3755: task. The acting arm grasps a
+3756: square block containing four holes, adjusts its position and orientation, and
+3757: inserts it onto four upright pegs on the target board. Successful insertion
+3758: requires millimeter-scale alignment. To expose temporal aliasing rather than
+3759: only one-shot manipulation accuracy, each trial contains
+3760: K
+3761: =
+3762: 4
+3763: K=4
+3764: consecutive
+3765: back-and-forth insertion attempts. Consequently, similar pickup, alignment, and insertion observations recur at
+3766: different cumulative progress levels.
+3767: Figure
+3768: 6
+3769: compares representative static
+3770: and rollout-history-conditioned progress traces.
+3771: Figure 6:
+3772: Logged progress predictions from matched static and
+3773: rollout-history-conditioned executions of repeated
+3774: Insert Square
+3775: .
+3776: Tick
+3777: I
+3778: k
+3779: I_{k}
+3780: ,
+3781: k
+3782: ∈
+3783: {
+3784: 1
+3785: ,
+3786: …
+3787: ,
+3788: 4
+3789: }
+3790: k\in\{1,\ldots,4\}
+3791: , denotes the
+3792: k
+3793: k
+3794: -th insertion attempt, and
+3795: the gray dashed line denotes execution order. Static predictions exhibit
+3796: non-monotonic jumps at recurring states, whereas rollout-history conditioning
+3797: produces more order-consistent estimates.
+3798: Offline-to-Online ConRFT Protocol
+3799: We use ConRFT as the policy-optimization procedure. Its
+3800: policy retains a frozen Octo-Small observation backbone and replaces the
+3801: original action head with a consistency policy; a learned critic supplies the
+3802: Q objective. Offline initialization uses 40 teleoperated trajectories in a
+3803: demonstration buffer
+3804: 𝒟
+3805: \mathcal{D}
+3806: . The policy is optimized with behavior
+3807: cloning and calibrated Q-learning, while the critic includes a conservative
+3808: penalty to stabilize value estimates outside the demonstration distribution.
+3809: During online adaptation, autonomous transitions are appended to replay buffer
+3810: ℛ
+3811: \mathcal{R}
+3812: . A human operator intervenes when an action is unsafe or likely to
+3813: cause failure, and corrected trajectories are returned to demonstration buffer
+3814: 𝒟
+3815: \mathcal{D}
+3816: . Updates sample equally from
+3817: 𝒟
+3818: \mathcal{D}
+3819: and
+3820: ℛ
+3821: \mathcal{R}
+3822: .
+3823: The online policy retains the behavior-cloning and Q terms with weights shifted
+3824: toward reward-driven improvement, while the critic uses the Bellman error
+3825: without the offline conservative penalty. Intervention and data-routing rules
+3826: are identical across reward conditions.
+3827: Table
+3828: 5
+3829: summarizes the real-world
+3830: optimization settings.
+3831: Hyperparameter
+3832: Symbol
+3833: Value
+3834: Global batch size
+3835: –
+3836: 256
+3837: Learning rate
+3838: –
+3839: 3
+3840: ×
+3841: 10
+3842: −
+3843: 4
+3844: 3{\times}10^{-4}
+3845: Reward discount
+3846: γ
+3847: \gamma
+3848: 0.98
+3849: Demonstrations
+3850: –
+3851: 40
+3852: Insertion attempts / trial
+3853: K
+3854: K
+3855: 4
+3856: Online episodes (C00–C11)
+3857: –
+3858: 200
+3859: Online episodes (Sparse)
+3860: –
+3861: 300
+3862: Evaluation trials / condition
+3863: –
+3864: 20
+3865: Insertion attempts / condition
+3866: –
+3867: 80
+3868: Offline BC weight
+3869: β
+3870: \beta
+3871: 1.0
+3872: Offline Q weight
+3873: η
+3874: \eta
+3875: 0.1
+3876: Conservative penalty
+3877: α
+3878: \alpha
+3879: 0.1
+3880: Online BC weight
+3881: β
+3882: ′
+3883: \beta^{\prime}
+3884: 0.5
+3885: Online Q weight
+3886: η
+3887: ′
+3888: \eta^{\prime}
+3889: 1.0
+3890: Compute
+3891: –
+3892: 1
+3893: ×
+3894: 1{\times}
+3895: RTX 4090
+3896: Table 5:
+3897: Optimization settings for the real-world ConRFT experiments.
+3898: Controlled Comparison and Metrics
+3899: Every reported condition uses the same event-sparse task reward, emitted once
+3900: after each successful insertion. The Event Sparse baseline uses only this
+3901: reward, whereas C00–C11 add GRM shaping. A terminal-only pilot rewarding only
+3902: completion of all four attempts did not learn and is excluded from the reported
+3903: comparison. All reported variants start from the same policy initialization and
+3904: use identical demonstration data, observations, resets, interventions, and
+3905: evaluation. C00–C11 use 200 online episodes and Event Sparse uses 300. Each condition is then evaluated in 20 trials under the shared evaluation
+3906: protocol.
+3907: This design isolates the effects of OOD supervision and ordered history while
+3908: making the larger sparse-reward interaction budget explicit. We report the
+3909: number of successful insertions among the resulting 80 attempts and the number
+3910: of full-sequence successes among 20 trials. A trial contributes to the latter
+3911: count only when all four insertion attempts succeed.
+3912: Appendix E
+3913: Additional Ablation Details
+3914: Additional Signed-Hop Diagnostics
+3915: The main paper reports the curriculum controls and the per-family improvement
+3916: of the selected schedule. Here we separate the Stage 2 movement for the two
+3917: large-to-fine variants and provide the complete replay-rate sensitivity sweep.
+3918: The first 200K large-Hop examples are shared by E3 and E4; their second stages
+3919: differ only in whether large-Hop pairs are replayed.
+3920: Strategy
+3921: Step
+3922: Temp.
+3923: Neg.
+3924: Rob.
+3925: OOD-T
+3926: No replay
+3927: 200K
+3928: 0.9860
+3929: 0.9945
+3930: 0.9510
+3931: 0.9870
+3932: No replay
+3933: 400K
+3934: 0.9950
+3935: 0.9937
+3936: 0.9606
+3937: 0.9924
+3938: 25% replay
+3939: 200K
+3940: 0.9860
+3941: 0.9945
+3942: 0.9510
+3943: 0.9870
+3944: 25% replay
+3945: 400K
+3946: 0.9953
+3947: 0.9945
+3948: 0.9618
+3949: 0.9931
+3950: Table 6:
+3951: Stage 2 VOC for the two large-to-fine curricula. Moderate replay
+3952: yields slightly higher final scores on the reported temporal and OOD
+3953: families.
+3954: Figure 7:
+3955: Sensitivity to the fraction
+3956: ρ
+3957: \rho
+3958: of Stage 2 samples replayed from
+3959: the large-Hop pool. The shaded neighborhood marks the moderate-replay regime
+3960: around the selected
+3961: ρ
+3962: =
+3963: 0.25
+3964: \rho=0.25
+3965: setting.
+3966: The replay rate changes only the Stage 2 mixture; it does not redefine the
+3967: large-Hop pool used in Stage 1. Average VOC increases from 0.9866 without
+3968: replay to 0.98724 at
+3969: ρ
+3970: =
+3971: 0.25
+3972: \rho=0.25
+3973: , remains nearly unchanged at
+3974: ρ
+3975: =
+3976: 0.30
+3977: \rho=0.30
+3978: (0.98722), and decreases to 0.98668 at
+3979: ρ
+3980: =
+3981: 0.60
+3982: \rho=0.60
+3983: (Figure
+3984: 7
+3985: ). The shallow maximum near
+3986: ρ
+3987: =
+3988: 0.25
+3989: \rho=0.25
+3990: is consistent with moderate replay retaining large-transition
+3991: examples while preserving most of the fine- and zero-Hop calibration budget.
+3992: OOD-negative VOC increases from 0.9937 at
+3993: ρ
+3994: =
+3995: 0
+3996: \rho=0
+3997: to 0.9948 at
+3998: ρ
+3999: =
+4000: 0.60
+4001: \rho=0.60
+4002: , whereas OOD-robust and OOD-temporal VOC peak near moderate replay
+4003: and decline at larger ratios. The selected
+4004: ρ
+4005: =
+4006: 0.25
+4007: \rho=0.25
+4008: achieves the highest
+4009: observed overall average rather than the best score on every branch. Replay is
+4010: used only during reward-model training and is unrelated to inference-time
+4011: memory or the RL replay buffer.
+4012: Trajectory-Level Case Studies
+4013: Figure
+4014: 8
+4015: complements the aggregate VOC results
+4016: with representative trajectory-level progress curves.
+4017: Figure 8:
+4018: Episode-level progress traces on two held-out cases. Top: progress
+4019: curves for a RoboCasa sink-spout episode with foreground occlusion and an
+4020: in-distribution LIBERO middle-drawer episode. Bottom left: the source-reference
+4021: pre-query panel for the sink-spout case. Bottom right: the same-episode
+4022: pre-query panel for the drawer case. Gray cells denote fixed padding.
+4023: On the foreground-occlusion case, the static GRM remains close to zero through
+4024: the middle of the episode and then jumps late. OOD supervision without history
+4025: recovers much of the trend, while the panel-conditioned model follows the
+4026: reference ordering most closely in the early and middle phases. The remaining
+4027: late-episode gap shows that history does not eliminate all sensitivity to a
+4028: strong foreground edit.
+4029: The in-distribution drawer case serves as a calibration check rather than an
+4030: OOD stress test. All three learned curves preserve the episode order and reach
+4031: completion. The same-episode panel-conditioned curve follows the reference
+4032: closely over most of the rollout but saturates early at the final evaluated
+4033: states. We retain this behavior rather than smoothing or selecting only
+4034: favorable points, exposing both the benefit of temporal context and the
+4035: remaining endpoint-calibration error.
+4036: Compact Ablation Tables
+4037: Table
+4038: 7
+4039: reports the complete checkpoint and
+4040: configuration comparisons underlying the main ablation summary.
+4041: Base
+4042: Cond.
+4043: Type
+4044: Stat.
+4045: Hist.
+4046: Gain
+4047: GRM
+4048: base
+4049: Obs.
+4050: 0.958
+4051: 0.965
+4052: +0.007
+4053: Robo-Dopamine 2.0
+4054: 3
+4055: ×
+4056: 3
+4057: 3{\times}3
+4058: +QA
+4059: Obs.
+4060: 0.967
+4061: 0.986
+4062: +0.019
+4063: GRM
+4064: no OOD
+4065: Swp.
+4066: 0.954
+4067: 0.962
+4068: +0.008
+4069: GRM
+4070: OOD+QA
+4071: Swp.
+4072: 0.967
+4073: 0.977
+4074: +0.010
+4075: GRM
+4076: OOD+
+4077: 2
+4078: ×
+4079: 2
+4080: 2{\times}2
+4081: Swp.
+4082: 0.957
+4083: 0.985
+4084: +0.028
+4085: GRM
+4086: OOD+
+4087: 3
+4088: ×
+4089: 3
+4090: 3{\times}3
+4091: Swp.
+4092: 0.955
+4093: 0.988
+4094: +0.033
+4095: GRM
+4096: OOD+
+4097: 3
+4098: ×
+4099: 3
+4100: 3{\times}3
+4101: +QA
+4102: Swp.
+4103: 0.958
+4104: 0.988
+4105: +0.030
+4106: Robo-Dopamine 2.0
+4107: OOD
+4108: Swp.
+4109: 0.965
+4110: 0.974
+4111: +0.009
+4112: Robo-Dopamine 2.0
+4113: OOD+QA
+4114: Swp.
+4115: 0.967
+4116: 0.977
+4117: +0.010
+4118: Robo-Dopamine 2.0
+4119: OOD+
+4120: 2
+4121: ×
+4122: 2
+4123: 2{\times}2
+4124: Swp.
+4125: 0.962
+4126: 0.985
+4127: +0.023
+4128: Robo-Dopamine 2.0
+4129: OOD+
+4130: 3
+4131: ×
+4132: 3
+4133: 3{\times}3
+4134: Swp.
+4135: 0.960
+4136: 0.987
+4137: +0.027
+4138: Robo-Dopamine 2.0
+4139: OOD+
+4140: 3
+4141: ×
+4142: 3
+4143: 3{\times}3
+4144: +QA
+4145: Swp.
+4146: 0.967
+4147: 0.986
+4148: +0.019
+4149: Table 7:
+4150: Compact ablation grid supporting the main summary. Obs.
+4151: denotes the main reported checkpoint comparison, and Swp. denotes the
+4152: controlled configuration sweep. Stat. and Hist. denote
+4153: static8
+4154: and
+4155: history_panel
+4156: VOC, respectively.
+4157: The controlled sweep shows complementary effects from OOD supervision and
+4158: structured temporal panels. The QA mix provides a smaller additional effect
+4159: once history panels are enabled.
+4160: Table
+4161: 8
+4162: further examines the interaction between
+4163: panel resolution and the number of between-state panels.
+4164: Grid
+4165: B
+4166: =
+4167: 0
+4168: B{=}0
+4169: B
+4170: =
+4171: 1
+4172: B{=}1
+4173: B
+4174: =
+4175: 2
+4176: B{=}2
+4177: B
+4178: =
+4179: 3
+4180: B{=}3
+4181: B
+4182: =
+4183: 4
+4184: B{=}4
+4185: B
+4186: =
+4187: 5
+4188: B{=}5
+4189: GRM
+4190: 1
+4191: ×
+4192: 1
+4193: 1{\times}1
+4194: 0.965
+4195: 0.971
+4196: 0.969
+4197: 0.967
+4198: 0.963
+4199: 0.959
+4200: 2
+4201: ×
+4202: 2
+4203: 2{\times}2
+4204: 0.980
+4205: 0.986
+4206: 0.984
+4207: 0.981
+4208: 0.978
+4209: 0.974
+4210: 3
+4211: ×
+4212: 3
+4213: 3{\times}3
+4214: 0.988
+4215: 0.992
+4216: 0.991
+4217: 0.989
+4218: 0.986
+4219: 0.982
+4220: 4
+4221: ×
+4222: 4
+4223: 4{\times}4
+4224: 0.981
+4225: 0.987
+4226: 0.985
+4227: 0.983
+4228: 0.979
+4229: 0.975
+4230: Robo-Dopamine 2.0
+4231: 1
+4232: ×
+4233: 1
+4234: 1{\times}1
+4235: 0.966
+4236: 0.972
+4237: 0.970
+4238: 0.967
+4239: 0.964
+4240: 0.960
+4241: 2
+4242: ×
+4243: 2
+4244: 2{\times}2
+4245: 0.981
+4246: 0.987
+4247: 0.985
+4248: 0.982
+4249: 0.979
+4250: 0.975
+4251: 3
+4252: ×
+4253: 3
+4254: 3{\times}3
+4255: 0.991
+4256: 0.993
+4257: 0.992
+4258: 0.992
+4259: 0.991
+4260: 0.988
+4261: 4
+4262: ×
+4263: 4
+4264: 4{\times}4
+4265: 0.982
+4266: 0.988
+4267: 0.986
+4268: 0.984
+4269: 0.980
+4270: 0.976
+4271: Table 8:
+4272: Memory-layout sweep.
+4273: B
+4274: B
+4275: denotes the number of between-state
+4276: panels. Both backbones perform best with
+4277: 3
+4278: ×
+4279: 3
+4280: 3{\times}3
+4281: panels and one or two
+4282: between-state panels.
+4283: Increasing panel capacity is not uniformly beneficial. Both backbones favor
+4284: 3
+4285: ×
+4286: 3
+4287: 3{\times}3
+4288: panels with one or two between-state panels, whereas larger grids
+4289: or panel counts provide no consistent improvement.
+4290: Figure
+4291: 9
+4292: visualizes the same panel-count trend for the
+4293: 3
+4294: ×
+4295: 3
+4296: 3{\times}3
+4297: configuration.
+4298: Figure 9:
+4299: 3
+4300: ×
+4301: 3
+4302: 3{\times}3
+4303: memory-panel sweep over between-state panel count.
+4304: Both backbones peak with one or two between-state panels; additional panels
+4305: do not monotonically improve VOC.
+4306: The curve confirms that the main benefit comes from adding a limited amount of
+4307: between-state evidence rather than continuously increasing the visual-token
+4308: load. Runtime panel construction is retained as a diagnostic because it also
+4309: tests data-loading-time assembly and prompt alignment.
+4310: Overall, the ablations consistently favor structured
+4311: 3
+4312: ×
+4313: 3
+4314: 3{\times}3
+4315: panels with
+4316: one or two between-state panels. OOD supervision supplies the main robustness
+4317: gain, while QA mixing and additional panel capacity have smaller effects once
+4318: structured temporal context is available.

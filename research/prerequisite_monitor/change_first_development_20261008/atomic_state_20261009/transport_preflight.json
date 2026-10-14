@@ -1,0 +1,7 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; /root/autodl-tmp/monitor2/.venv-topreward/bin/python -c \"from transformers import AutoTokenizer; import torch,transformers,json; t=AutoTokenizer.from_pretrained('/root/autodl-tmp/hf/hub/models--Qwen--Qwen3-VL-8B-Instruct/snapshots/0c351dd01ed87e9c1b53cbc748cba10e6187ff3b',local_files_only=True);print(json.dumps({'tokens':{s:t.encode(s,add_special_tokens=False) for s in ['True','False','Unknown']},'torch':torch.__version__,'transformers':transformers.__version__}))\"; sha256sum /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_diag_20261009_v9/runs/window_v9/requests.jsonl",
+  "stdout": "Fri Oct  9 14:05:00 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"tokens\": {\"True\": [2514], \"False\": [4049], \"Unknown\": [13790]}, \"torch\": \"2.8.0+cu128\", \"transformers\": \"4.57.1\"}\na7a5904fa74d299b3c3d7c2eb08cad371b9ae95115ba47fd96b61f306c1b3cbf  /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_diag_20261009_v9/runs/window_v9/requests.jsonl\n",
+  "stderr": "",
+  "exit_code": 0,
+  "utc": "2026-10-09T14:05:02.854814+00:00"
+}

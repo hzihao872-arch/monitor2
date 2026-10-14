@@ -1,0 +1,50 @@
+From 19562e8fe0e63f74b64aa06f8e8fbfaf76127ea7 Mon Sep 17 00:00:00 2001
+From: lassepe <lasse.peters@mailbox.org>
+Date: Fri, 19 Jun 2026 17:09:38 -0700
+Subject: [PATCH] Unify parameter dtype after load to fix unsloth inference
+ crash
+
+The released checkpoints set use_unsloth=true, and unsloth loads the model
+with mixed precision (e.g. float32 token embeddings and the vision patch_embed
+alongside bf16 linears) for training stability. This breaks inference: float32
+activations meet bf16 weights and the forward raises
+"expected scalar type BFloat16 but found Float" (and an analogous
+"mat1 and mat2 must have the same dtype" in the language-model attention).
+
+load_model_from_hf returns an eval-only model, so cast every floating-point
+parameter to the configured torch_dtype after load. Buffers (e.g. rotary
+inv_freq) are left untouched.
+
+Reproduces with the shipped example on robometer/Robometer-4B across
+transformers 4.57.x and 5.x.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+---
+ robometer/utils/save.py | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/robometer/utils/save.py b/robometer/utils/save.py
+index 6a71385..3cdb3c2 100644
+--- a/robometer/utils/save.py
++++ b/robometer/utils/save.py
+@@ -920,6 +920,20 @@ class _ConfigSafeLoader(yaml.SafeLoader):
+         exp_config.model, str(resolved_path), peft_config=peft_config
+     )
+     reward_model = reward_model.to(device)
++
++    # Unsloth loads models with mixed precision (e.g. float32 token embeddings and the
++    # vision patch_embed alongside bf16 linears) for training stability. That mismatch
++    # breaks inference: float32 activations flow into bf16 weights and the forward
++    # raises "expected scalar type BFloat16 but found Float" (and an analogous error in
++    # the language-model attention). Since this loader returns an eval-only model, cast
++    # every floating-point parameter to the configured dtype so the forward is
++    # dtype-consistent. Integer parameters and buffers (e.g. rotary inv_freq, which RoPE
++    # recomputes in float32) are intentionally left untouched.
++    target_dtype = getattr(torch, exp_config.model.torch_dtype, torch.bfloat16)
++    for param in reward_model.parameters():
++        if param.is_floating_point() and param.dtype != target_dtype:
++            param.data = param.data.to(target_dtype)
++
+     reward_model.eval()
+ 
+     return exp_config, tokenizer, processor, reward_model

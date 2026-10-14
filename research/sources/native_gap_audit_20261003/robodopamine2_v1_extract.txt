@@ -1,0 +1,110 @@
+Sx3.SSx1
+History-Conditioned Pairwise Reward Formulation Robo-Dopamine 2.0 preserves the pairwise interface of prior process reward
+modeling ( Tan et al. 2026 ) . Given an instruction c c , task-reference
+anchors ℛ = ( r s , r g ) \mathcal{R}=(r_{s},r_{g}) , ordered temporal context 𝒞 b ​ a \mathcal{C}_{ba} , and an ordered pair ( X b , X a ) (X_{b},X_{a}) , the General Reward
+Model (GRM) predicts signed relative progress: y ^ b ​ a = f θ ​ ( c , ℛ , 𝒞 b ​ a , X b , X a ) . \hat{y}_{ba}=f_{\theta}(c,\mathcal{R},\mathcal{C}_{ba},X_{b},X_{a}). (1) Here X b X_{b} and X a X_{a} are the actual queried multi-view states. The reference
+anchors specify the task start and goal but are not treated as observed
+execution history. The static baseline sets 𝒞 b ​ a = ∅ \mathcal{C}_{ba}=\varnothing . Let X b = ( b h , b l , b r ) X_{b}=(b^{h},b^{l},b^{r}) and X a = ( a h , a l , a r ) X_{a}=(a^{h},a^{l},a^{r}) , where h , l , r h,l,r denote the
+canonical head/third-person, left-wrist, and right-wrist view slots. For a pair with temporal indices t b t_{b} and t a t_{a} , we define 𝒲 pre \displaystyle\mathcal{W}_{\mathrm{pre}} = { t : 0 ≤ t < min ⁡ ( t b , t a ) } , \displaystyle=\{t:0\leq t<\min(t_{b},t_{a})\}, (2) 𝒲 mid \displaystyle\mathcal{W}_{\mathrm{mid}} = { t : min ⁡ ( t b , t a ) < t < max ⁡ ( t b , t a ) } . \displaystyle=\{t:\min(t_{b},t_{a})<t<\max(t_{b},t_{a})\}. For standard and online queries, these are indices in the queried episode or
+rollout; for synthetic OOD pairs, they are indices in the aligned source
+episode. Pair order determines the target direction, while panel frames remain
+chronological. Each window is uniformly sampled into panels M pre 1 : K M_{\mathrm{pre}}^{1:K} and M mid 1 : L M_{\mathrm{mid}}^{1:L} . The two input
+layouts are ℐ static \displaystyle\mathcal{I}_{\mathrm{static}} = [ r s , r g , X b , X a ] , \displaystyle=[r_{s},r_{g},X_{b},X_{a}], (3) ℐ ref \displaystyle\mathcal{I}_{\mathrm{ref}} = [ r s , r g , M pre 1 : K , X b , \displaystyle=[r_{s},r_{g},M_{\mathrm{pre}}^{1:K},X_{b}, M mid 1 : L , X a ] . \displaystyle M_{\mathrm{mid}}^{1:L},X_{a}]. Frames in each panel are ordered left-to-right and top-to-bottom. Empty cells
+use a fixed padding image, and the prompt records the actual panel count so
+that image and text positions remain aligned. Panels may be rendered offline
+or assembled and cached by the data loader under the same ordering and padding
+contract. For same-episode queries, pre-query and between-state panels summarize the
+actual events preceding and separating the endpoints. For synthetic OOD pairs,
+they instead provide nominal successful progression at the aligned source
+indices. Context provenance follows the query type. Standard training pairs use
+temporal panels from the same expert episode as the queried states. Synthetic
+OOD pairs use panels exclusively from the aligned successful source episode,
+while X b X_{b} and X a X_{a} remain the edited observations; we refer to these as source-only reference panels . Online inference instead constructs panels from the observed rollout history,
+as described in the Closed-Loop Reward Framework subsection.
+
+Sx4.SSx1
+Experimental Setup Training matrix. GRM-8B-Pro, released by Tan et al. (2026) , serves as a prior baseline;
+Robo-Dopamine 2.0-8B uses Qwen3-VL-8B. We vary OOD supervision, disabled or 2 × 2 2{\times}2 / 3 × 3 3{\times}3 temporal context panels, prebuilt or runtime construction, and
+visual-QA mixing. The main model uses 400K signed pairs with OOD supervision and prebuilt 3 × 3 3{\times}3 panels: standard pairs use same-episode expert history, whereas
+synthetic OOD pairs use source-aligned successful-reference history. The RM is
+not trained on downstream rollout trajectories. A fixed 200K visual-QA mix
+(QA200K) is excluded from the signed-pair budget. Runtime variants construct
+the same ordered panels at data-loading time and pad missing views. QA200K is
+included identically across runs to preserve broad visual-language
+understanding and instruction following. Curriculum controls. All Signed-Hop variants fix the Qwen3-VL-8B backbone ( Bai et al. 2025 ) , OOD
+supervision, prebuilt 3 × 3 3{\times}3 panels with one between-state panel, token
+budget, QA200K mix, and 400K signed pairs split evenly across two stages. We
+compare random mixing (E0), the matched E4 pool without ordering (E1), reverse
+fine-to-large training (E2), large-to-fine training without replay (E3), and
+large-to-fine training with ρ = 0.25 \rho=0.25 replay (E4). E1 isolates ordering; E3
+isolates replay. The same QA200K auxiliary mix is fixed across curriculum
+variants and excluded from the signed-pair budget; each curriculum stage
+contains 200K examples. Evaluation protocol. We report trajectory-level visual order consistency (VOC): pairwise progress
+predictions are accumulated along each trajectory and correlated with the
+ground-truth order using Spearman correlation. Five families cover
+in-distribution success (ID), temporal memory, OOD-negative, OOD-robust, and
+OOD-temporal cases, evaluated with static8 and history_panel inputs. Temporal cases include multi-stage,
+multi-object, and mid-episode trajectories; OOD-temporal cases add edits such
+as non-release. Temporal-memory examples come from dedicated temporal manifests
+and trajectories explicitly marked as history-dependent. We report aggregate
+VOC for each family rather than a per-cause breakdown. Together, these families
+probe event-, phase-, and order-dependent progress instead of endpoint success
+alone. Offline synthetic-OOD evaluation uses source-reference panels aligned by
+dataset metadata, whereas simulation and real-robot RL use panels constructed
+from the observed rollout history.
+
+Sx4.SSx2
+Offline Results Model Input ID Temp. Neg. Rob. OOD-T Avg. GRM static 0.974 0.977 0.951 0.939 0.948 0.958 Robo-Dopamine 2.0 static 0.981 0.984 0.985 0.906 0.979 0.967 Robo-Dopamine 2.0 panel 0.991 0.994 0.994 0.958 0.991 0.986 Table 1: Trajectory-level VOC across five benchmark families. GRM denotes the
+GRM-8B-Pro baseline; Robo-Dopamine 2.0 is one QA200K-mixed Qwen3-VL-8B checkpoint evaluated
+with static or prebuilt 3 × 3 3{\times}3 panel inputs. ID, Temp., Neg., Rob., and
+OOD-T denote in-distribution, temporal-memory, OOD-negative, OOD-robust, and
+OOD-temporal evaluation. Avg. is the unweighted mean; higher is better. Panels raise Robo-Dopamine 2.0 average VOC from 0.967 to 0.986 and OOD-robust
+VOC from 0.906 to 0.958; GRM-8B-Pro reaches 0.958 average static VOC. The
+same-checkpoint comparison isolates the benefit of training-aligned temporal
+context from model capacity and training data. Figure 2: Task-completion classification accuracy on 60 episodes. We compare
+GPT-5.5, Gemini-3-Pro, Claude-Opus-4.8, Qwen3.5-397B-A17B-fp8, RoboBrain 2.0,
+and Robo-Dopamine 2.0-8B. This discrete label metric is distinct from VOC. Robo-Dopamine 2.0-8B obtains 96.1% task-completion accuracy, versus GPT-5.5 (81.1%) ( OpenAI 2026 ) , Claude-Opus-4.8 (79.4%) ( Anthropic 2026 ) , Gemini-3-Pro (77.2%) ( Google 2025 ) , Qwen3.5-397B-A17B-fp8 (76.1%) ( Qwen Team 2026 ) , and RoboBrain 2.0 (61.7%) ( BAAI RoboBrain Team et al. 2025 ) . Temporal Context and OOD Ablations Base Training condition Static Panel Gain GRM baseline 0.958 0.965 +0.007 Robo-Dopamine 2.0 3 × 3 3{\times}3 +QA 0.967 0.986 +0.019 GRM OOD+no panel+QA 0.967 0.977 +0.010 GRM OOD+ 2 × 2 2{\times}2 0.957 0.985 +0.028 GRM OOD+ 3 × 3 3{\times}3 0.955 0.988 +0.033 Robo-Dopamine 2.0 OOD+no panel 0.965 0.974 +0.009 Robo-Dopamine 2.0 OOD+ 2 × 2 2{\times}2 0.962 0.985 +0.023 Robo-Dopamine 2.0 OOD+ 3 × 3 3{\times}3 0.960 0.987 +0.027 Table 2: Temporal-context and OOD ablations in average VOC. Static and Panel query the
+same checkpoint; + QA +\mathrm{QA} denotes QA200K. Full results are supplementary. Structured panels provide the largest gain: moving from OOD no-panel
+training to 3 × 3 3{\times}3 panels raises panel VOC from 0.977 to 0.988 for GRM and
+from 0.974 to 0.987 for Robo-Dopamine 2.0. OOD supervision also improves panel VOC
+over no-OOD, no-panel training, but the panel contribution is larger. QA200K
+acts as a weak regularizer for no-panel models, with a smaller marginal effect
+once structured temporal context is available. Across
+backbones, one or two between-state panels perform best; larger panels are not
+monotonic under a fixed visual-token budget, and prebuilt panels outperform
+runtime construction. The non-monotonic trend reflects a trade-off between
+additional temporal evidence and the visual-token budget. Runtime construction
+also changes panel provenance, image order, and prompt tokens relative to the
+training distribution. Full panel-size, panel-count, and construction
+factorials are provided in the supplementary material. Signed-Hop Curriculum Signed-Hop first learns global geometry from large-Hop pairs, then refines local
+calibration with small and zero-Hop pairs while replaying large-Hop examples.
+Under the fixed 400K budget, 25% replay reaches 0.9872 average VOC, exceeding
+the matched-pool shuffled control (0.9858) and no replay (0.9866). The shuffled
+control uses exactly the same sample pool as the replay curriculum, isolating
+ordering from data composition; the no-replay variant isolates retention of
+large-Hop geometry during local refinement. Figure 3: Per-family VOC gains of Signed-Hop over its matched-pool shuffled
+control. Replay sensitivity is provided in the supplementary material. Figure 3 shows gains in every family, especially
+OOD-robust and OOD-temporal cases. Curriculum gains complement the larger gains
+from temporal context panels. Signed-Hop is training-only: large-Hop pairs establish
+global progress, failure, and recovery geometry before small and zero-Hop pairs
+refine local calibration. The full replay sweep and branch-wise diagnostics are
+provided in the supplementary material.
+
+A5.SSx2
+Trajectory-Level Case Studies Figure 8 complements the aggregate VOC results
+with representative trajectory-level progress curves. Figure 8: Episode-level progress traces on two held-out cases. Top: progress
+curves for a RoboCasa sink-spout episode with foreground occlusion and an
+in-distribution LIBERO middle-drawer episode. Bottom left: the source-reference
+pre-query panel for the sink-spout case. Bottom right: the same-episode
+pre-query panel for the drawer case. Gray cells denote fixed padding. On the foreground-occlusion case, the static GRM remains close to zero through
+the middle of the episode and then jumps late. OOD supervision without history
+recovers much of the trend, while the panel-conditioned model follows the
+reference ordering most closely in the early and middle phases. The remaining
+late-episode gap shows that history does not eliminate all sensitivity to a
+strong foreground edit. The in-distribution drawer case serves as a calibration check rather than an
+OOD stress test. All three learned curves preserve the episode order and reach
+completion. The same-episode panel-conditioned curve follows the reference
+closely over most of the rollout but saturates early at the final evaluated
+states. We retain this behavior rather than smoothing or selecting only
+favorable points, exposing both the benefit of temporal context and the
+remaining endpoint-calibration error.

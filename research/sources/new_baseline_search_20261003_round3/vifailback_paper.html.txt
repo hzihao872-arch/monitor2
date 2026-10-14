@@ -1,0 +1,928 @@
+Diagnose, Correct, and Learn from Manipulation Failures via Visual Symbols
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+2 Related Work
+2.1 Robotic Manipulation with Imitation Learning
+2.2 Failure Detection and Recovery
+2.3 Visual Prompt for Robot Learning
+3 ViFailback
+3.1 Visual Symbols of ViFailback
+3.2 Fine-Grained Task Definition
+3.3 Dataset and Benchmark
+3.3.1 Data Collection
+3.3.2 Data Annotation Pipeline
+3.3.3 ViFailback-Bench
+4 Experiment
+4.1 Experiment Setup
+4.2 Main Results
+4.3 Application in Real-world Manipulation
+5 Discussion
+6 Conclusion
+References
+1 Table of Content
+2 Design of Visual Symbols
+3 Task Design and Data Annotation
+3.1 Task Designing Details
+3.2 Data Annotation Tools
+4 Details of Dataset and Benchmark
+4.1 VQA Design and Examples
+4.1.1 Design of Closed-ended VQA
+4.1.2 Design of Open-ended VQA
+4.2 Dataset Statistics
+4.3 Benchmark Statistics
+5 Details of Fine-tuning and Evaluation
+5.1 Training Details
+5.2 Evaluation Details
+5.2.1 Model Configuration
+5.2.2 Open-ended VQA Evaluation
+6 Details of Real-world Experiments
+6.1 Experiment Setup
+6.2 The Mask Details of VSF Method
+6.3 Visualization of Experimental Results
+6.3.1 Low-level Textual and Visual Guidance
+6.3.2 Failure Reason and High-level Guidance
+License: arXiv.org perpetual non-exclusive license
+arXiv:2512.02787v1 [cs.RO] 02 Dec 2025
+Diagnose, Correct, and Learn from Manipulation Failures via Visual Symbols
+Xianchao Zeng
+Affiliation: Beihang University
+Email: yongluli@sjtu.edu.cn
+Xinyu Zhou
+Affiliation: Shanghai Innovation Institute
+Youcheng Li
+Affiliation: Beihang University
+Affiliation: Shanghai Innovation Institute
+Jiayou Shi
+Affiliation: Shanghai Jiao Tong University
+Tianle Li
+Affiliation: Shanghai Jiao Tong University
+Liangming Chen
+Affiliation: Southern University of Science and Technology
+Lei Ren
+Affiliation: Beihang University
+Yong-Lu Li
+Affiliation: Shanghai Innovation Institute
+Abstract
+Vision-Language-Action (VLA) models have recently achieved remarkable progress in robotic manipulation, yet they remain limited in failure diagnosis and learning from failures. Additionally, existing failure datasets are mostly generated programmatically in simulation, which limits their generalization to the real world. In light of these, we introduce ViFailback, a framework designed to diagnose robotic manipulation failures and provide both textual and visual correction guidance.
+Our framework utilizes explicit visual symbols to enhance annotation efficiency. We further release the ViFailback dataset, a large-scale collection of 58,126 Visual Question Answering (VQA) pairs along with their corresponding 5,202 real-world manipulation trajectories. Based on the dataset, we establish ViFailback-Bench, a benchmark of 11 fine-grained VQA tasks designed to assess the failure diagnosis and correction abilities of Vision-Language Models (VLMs), featuring ViFailback-Bench Lite for closed-ended and ViFailback-Bench Hard for open-ended evaluation.
+To demonstrate the effectiveness of our framework, we built the ViFailback-8B VLM, which not only achieves significant overall performance improvement on ViFailback-Bench but also generates visual symbols for corrective action guidance.
+Finally, by integrating ViFailback-8B with a VLA model, we conduct real-world robotic experiments demonstrating its ability to assist the VLA model in recovering from failures.
+Project Website.
+1 Introduction
+Figure 1: The pipeline leverages real-world failure data to build a dataset and train ViFailback-8B for failure diagnosis and correction.
+Imitation learning has emerged as a simple but efficient paradigm for robot control, allowing robots to directly master diverse manipulation skills from expert demonstration data. Recently, as large-scale, high-quality robotic datasets have become available, Vision-Language-Action (VLA) models [4, 19, 25] have shown impressive performance in robotic manipulation.
+However, when deployed in the real world, these models inevitably encounter out-of-distribution (OOD) conditions, where input observations deviate from the training data distribution. In such cases, the generated actions can lead to failures. Therefore, enabling robotic systems to diagnose, learn, and recover from failures is crucial for achieving robust general-purpose manipulation in open-world environments.
+The latest progress in Vision-Language Models (VLMs) [34, 1, 15, 30] has enabled exceptional performance in robotic task planning, spatial reasoning, and trajectory prediction. However, these models often struggle to accurately analyze and correct failures in robotic manipulation tasks. Some recent works [9, 8, 27] have focused on automatically generating large-scale failure datasets, typically by injecting perturbations in simulation, which are subsequently used to finetune VLMs and improve their failure diagnosis and correction performance. This strategy is fundamentally constrained by the sim-to-real gap, limiting its efficiency in real-world settings. In fact, during teleoperation data collection or policy rollout, it is common for robots to produce a certain amount of failure data alongside successful demonstrations. However, annotating these data in a simple and efficient manner remains a significant challenge.
+To leverage real-world failure data, we propose a framework for robotic manipulation failure diagnosis and correction. As illustrated in Figure 1, given a robotic manipulation video, human annotators can perform efficient and low-cost annotation by drawing visual symbols with a mouse and leveraging a VLM to assist the labeling process.
+We collected 5,202 real-world trajectories via teleoperation and policy rollouts, covering 100 distinct tasks and spanning four major categories of manipulation failures. Using the ViFailback framework, we generated the ViFailback dataset, comprising 58,126 Visual Question Answering (VQA) pairs tailored for robotic failure diagnosis and correction.
+Given this dataset, we fine-tuned Qwen3-VL-8B [2] to create ViFailback-8B and proposed the ViFailback-bench for evaluating VLMs in both closed-ended and open-ended settings.
+Experiments show ViFailback-8B significantly outperforms other open-source and proprietary models on our benchmark.
+Furthermore, we deploy ViFailback-8B as an external supervisor during robot task execution, allowing it to intervene in policy execution to recover from failures, which is an essential component for a policy to truly learn from its failures. Compared with baselines without ViFailback-8B, this integration leads to an average performance improvement of 22.2%. We summarize our contributions as follows:
+•
+We propose ViFailback, a scalable framework for efficiently annotating real-world robotic failure videos with both textual explanations and visual symbols.
+•
+We release a dataset with 58,126 high-quality VQA pairs for failure diagnosis and correction, spanning 11 different question types. We then establish the ViFailback-Bench to comprehensively evaluate the failure diagnosis and correction abilities of VLMs.
+•
+Our experiments on ViFailback-Bench demonstrate the effectiveness of ViFailback in improving the diagnosis and correction capabilities of general VLMs for robotic failures. Moreover, our real-world experiments confirm that this leads to a measurable improvement in the policy’s capacity to recover from failures.
+2 Related Work
+2.1 Robotic Manipulation with Imitation Learning
+Imitation learning allows robots to acquire manipulation skills from expert demonstrations, showing immense potential in robot learning. Among recent advancements, Diffusion Policy [6] and its variants [38, 35] based on diffusion models to denoise sampled trajectories, have achieved performance comparable to the expert demonstrations. Furthermore, Vision-Language-Action (VLA) models [19, 4, 25, 43] pre-trained on large-scale robotics datasets have demonstrated impressive capabilities in general-purpose manipulation. However, the policies trained exclusively on these successful datasets, despite their rapid skill acquisition, are prone to failure when encountering OOD scenarios. This exposes a crucial blind spot: VLAs are unable to identify, let alone correct failures. [13, 36] Consequently, the development of methods for robotic failure diagnosis and correction becomes imperative.
+2.2 Failure Detection and Recovery
+Recent efforts tackle robotic failure detection and correction using external Visual Language Models (VLMs). YAY [32] refines corrective instructions via human-in-the-loop feedback but faces scalability challenges. Other works [9, 8, 27, 22] synthesize failure data in simulation, yet their utility is constrained by the sim-to-real gap, while Fail2Progress [16] uses real failures primarily to bootstrap simulation for skill-effect modeling.
+Meanwhile, several benchmarks study VLM reasoning in robotics: Robo2VLM [5] provides 684k in-the-wild QA pairs for spatial and goal-conditioned reasoning; ManipBench [40] evaluates low-level manipulation reasoning. These benchmarks assess what to do and how to do it, but not what went wrong and why.
+In contrast, we build ViFailback-Bench, a large-scale real-world VQA dataset and benchmark for fine-grained failure reasoning. Although prior methods [27, 9, 26] grant VLMs some diagnostic or corrective abilities, their feedback remains mostly textual, limiting robotic recovery due to the fragile instruction-following abilities of current VLA models [11, 24].
+2.3 Visual Prompt for Robot Learning
+Recent progress has explored using visual prompts to guide robot policies. Early work introduced trajectory-conditioned models [41, 12, 33, 28], which overlay 2D end-effector trajectories onto images but cannot revise these trajectories when execution deviates. Later approaches adopt semantic visual prompts for instruction, such as keypoint and grid-cell cues in MOKA [23], images of objects or scenes in VIMA [18], and hand-drawn symbolic representations (e.g., arrows, circles) in RoVI [21] and CrayonRobo [20]. However, these symbolic prompts focus on initial guidance rather than real-time correction. In contrast, our method enables a VLM to generate both textual and visual prompts for failure recovery and provides a structured mechanism that guides VLA models to adjust their actions based on our designed visual symbols.
+Figure 2: Overview of ViFailback Framework. Left: We collect real-world manipulation trajectories via teleoperation and policy rollout, then use our high-efficiency, visual-symbol-based annotation framework to generate VQA pairs for the dataset. Middle: Our dataset comprises 58,126 VQA pairs from 5,202 real-world trajectories. We extract ViFailback-Bench (Lite and Hard) from this dataset to evaluate VLM failure diagnosis and correction capabilities. Right: We fine-tune Qwen3-VL-8B on our VQA pairs to obtain ViFailback-8B. This model is deployed as an external supervisor to assist the policy in recovering from failures.
+3 ViFailback
+We propose a framework named ViFailback (as illustrated in Figure 2) for systematically annotating real-world robotic failure data. The framework decomposes the annotation process into two components: diagnosis and correction, and leverages visual symbols to facilitate semi-automated annotation.
+In this section, we detail the ViFailback annotation pipeline, including the design of visual symbols and task definition. Based on this framework, we construct the ViFailback dataset and establish the ViFailback-Bench, a benchmark that enables a comprehensive evaluation of VLMs in diagnosing and correcting robotic manipulation failures.
+3.1 Visual Symbols of ViFailback
+In contrast to failure data generated in simulation, real-world failure data requires extensive manual labeling. The annotation process is particularly inefficient for complex and abstract categories such as task planning failures, failure reason, and high-level corrective guidance, as it typically relies on manual textual descriptions. To address this, our framework employs visual symbols, which can be drawn directly onto video frames, to streamline the manual annotation process. Guided by these visual cues, VLM can then automate the generation of desired annotations for these complex categories, bypassing the need for manual textual labeling.
+As shown in the left part of Figure 2, we propose 7 distinct visual symbols to provide corrective action guidance. To clearly delineate their functions, we group these symbols into the following three categories:
+Motion Symbols.
+This category represents the translation and rotation of the robot end-effector.
+•
+Colored Straight Arrow. To enable 2D arrows to represent 3D spatial movement, we use color to indicate the direction of motion. The three colors used are Red, Green, and Blue, corresponding directly to the three orthogonal directions: Red for forward-backward, Green for left-right, and Blue for up-down.
+•
+Semi-circular Arrow. The semi-circular arrow is used to indicate the rotation of the end-effector, while the pointing direction of the arrow indicates the expected rotation direction (clockwise or counterclockwise).
+Spatial Relation Symbols. This category specifies the correct target object in the scene or the desired alignment between two objects.
+•
+Dual Crosshairs. The dual crosshairs icon, linked by a dashed line, denotes that two targets are intended to be aligned.
+•
+Crosshair. The crosshair icon is used to highlight an ideal object or area in the video frame.
+State Symbols. This category indicates the desired state of the target object.
+•
+ON/OFF Labels. The ON/OFF labels are used to indicate the ideal state of the robot end-effector (open or closed).
+•
+Prohibition Icon. The prohibition icon placed on the end-effector represents that the end-effector is expected to halt.
+•
+Rewind Icon. The rewind icon, placed on an end-effector or object, signifies that the specified component must return to a previous state.
+In our annotation pipeline, we record the key elements for each visual symbol—such as its category, start points, and end points—so that the VLM can learn to draw visual correction guidance just as a human annotator would.
+Figure 3: An overview of ViFailback-Bench. Left: The Lite benchmark uses closed-ended VQA to test VLM failure diagnosis (e.g., detection, localization) and low-level correction guidance. Right: The Hard benchmark uses open-ended VQA to test failure reason and high-level/CoT-based guidance.
+3.2 Fine-Grained Task Definition
+In the ViFailback framework, failure analysis consists of two key components: failure diagnosis and corrective action guidance. The former involves identifying, localizing, and analyzing the cause of the failure; the latter provides the robot with the necessary actions or tasks to either avoid the impending failure or recover from it.
+Failure Diagnosis. We define failure diagnosis as the comprehensive analysis of a robotic manipulation video, encompassing the following five components:
+•
+Failure detection: Determining whether the robotic manipulation task in the video was completed.
+•
+Failure keyframe localization: Localizing the keyframe signifying an impending failure.
+•
+Failure subtask localization: Localizing the subtask where the failure first began to occur.
+•
+Failure type identification: Identifying the type of failure that occurred. The failure types are categorized into 4 main types: (1) Task planning: Errors in the high-level task plan, such as targeting an incorrect interaction object or location, improper subtask sequencing, or the omission of a necessary subtask. (2) Gripper 6d-pose: The gripper fails to reach its correct position or orientation. (3) Gripper state: The gripper does not close or open properly, or its level of closure or opening is insufficient. (4) Human intervention: Disruptions from external forces that prevent task continuation.
+•
+Failure reason: Reasoning about the failure’s root cause and providing a detailed explanation.
+Corrective Action Guidance ViFailback requires models to provide textual and visual guidance for avoiding and correcting failures in robotic manipulation tasks.
+•
+Low-level textual guidance: Providing specific movement and rotation directions for the end-effector to avoid or correct the failure.
+•
+High-level textual guidance: Formulating high-level strategic advice (e.g., subtask plan reformulation) to recover from the failure.
+•
+Visual guidance: Providing visual guidance by overlaying visual symbols with integrated semantic information onto keyframes.
+3.3 Dataset and Benchmark
+We collected 5,202 robotic manipulation trajectories and their corresponding ego-centric videos from 100 diverse real-world tasks. Using the ViFailback framework, we thoroughly annotated detailed information for failure diagnosis and correction, culminating in the ViFailback dataset, which features 58,126 high-quality VQA pairs. Furthermore, to enable a comprehensive evaluation of VLMs in failure diagnosis and correction, we propose the ViFailback-Bench benchmark.
+3.3.1 Data Collection
+Our 100 designed tasks cover a diverse manipulation skills (e.g., place, pull, transfer, and pour). We collected trajectories using the ALOHA dual-arm teleoperation platform [10], which includes 657 successful and 4,545 failed trajectories. Among these, 4,995 trajectories were gathered from human teleoperation, and the others were collected by executing the tasks with π0.5 model [4], a leading VLA model, which was fine-tuned on the successful teleoperated samples. The distribution of failure types across all collected trajectories is shown in middle part of Figure 2.
+3.3.2 Data Annotation Pipeline
+To ensure the high efficiency and quality of data annotation, we design a multi-stage data annotation pipeline as shown in the Figure 2. The pipeline consists of three main stages:
+(1) basic task semantic information filling, (2) textual guidance choosing and visual symbols drawing, and (3) open-ended description generation and refining.
+In Stage 1, the annotators finish the failure diagnosis annotations (detection, keyframe localization, etc.) through simple UI controls, like sliders and buttons with task descriptions decomposed into subtasks by Qwen2.5-Max [3].
+In Stage 2, based on the selected keyframes, the annotators choose appropriate action correction options from predefined categories and draw visual symbols by dragging the mouse to indicate the corrective actions.
+In Stage 3, we prompt Qwen3-VL-235B [2] with all the annotated information and visual symbols to generate high-level descriptions for failure reasoning and high-level textual guidance. These outputs are then manually verified and refined to ensure high quality.
+3.3.3 ViFailback-Bench
+The ViFailback-Bench benchmark includes 500 trajectories across 22 distinct tasks. As depicted in Figure 3, ViFailback-Bench comprises two complementary settings: ViFailback-Bench Lite and ViFailback-Bench Hard.
+The Lite version utilizes closed-ended VQA to assess core failure diagnosis abilities and low-level corrective action guidance grounded on provided keyframes.
+Then, the Hard version employs open-ended VQA to probe failure reasoning and correction capabilities.
+The low-level guidance tasks in the Hard setting are more complex, mandating the model to first detect and localize the failure, then output the guidance in a Chain-of-Thought (CoT) [37] format.
+4 Experiment
+In this section, we first conduct a comprehensive evaluation of 16 state-of-the-art models, encompassing both open-source and proprietary ones, on the ViFailback-Bench. To evaluate the effectiveness of our dataset, we then fine-tune Qwen3-VL-8B[2] on the ViFailback dataset to build ViFailback-8B, assessing its ability to enhance failure diagnosis and correction. Finally, we explore the real-world application of ViFailback-8B in assisting a VLA model with failure recovery to improve task success rates.
+4.1 Experiment Setup
+Baseline. We compare our model against 2 leading proprietary VLMs (GPT-4o [17] and Gemini-2.5-Pro [7]), 10 open-source general VLMs (Qwen2.5-VL series [3], Qwen3-VL series [2] and InternVL3 series [42]) and 4 open-source embodied VLMs (RoboBrain2.0 series [34] and Cosmos-Reason1-7B [1]).
+Evaluation Metrics. For multiple-choice questions, we use the percentage of correctly answered samples as the accuracy metric. For open-ended questions, we employ the GPT-4o-based evaluator to comprehensively assess the quality of the generated output. This evaluator scores the output across three dimensions: semantic similarity, content completeness, and functional equivalence. Finally, we average the scores from these dimensions to calculate a total score, thereby providing an overall evaluation of the output quality. The evaluation details are available in the appendix.
+Table 1: Comparison of overall model performance on ViFailback-Bench. All metrics are reported as accuracy (%). Bold scores indicate the best performance, and underlined scores indicate the second best performance.
+| Model
+| Lite
+| Hard
+| Average
+| General Open-Source Models
+| Qwen2.5-VL-3B-Instruct[3]
+| 38.10
+| 22.10
+| 30.81
+| Qwen2.5-VL-7B-Instruct[3]
+| 42.41
+| 19.26
+| 31.87
+| Qwen2.5-VL-32B-Instruct[3]
+| 46.30
+| 32.50
+| 40.02
+| Qwen2.5-VL-72B-Instruct[3]
+| 50.61
+| 36.56
+| 44.21
+| Qwen3-VL-2B-Instruct[2]
+| 35.16
+| 20.28
+| 28.39
+| Qwen3-VL-4B-Instruct[2]
+| 41.11
+| 33.37
+| 37.59
+| Qwen3-VL-8B-Instruct[2]
+| 38.33
+| 33.04
+| 35.92
+| Qwen3-VL-32B-Instruct[2]
+| 47.79
+| 35.23
+| 42.07
+| InternVL3-8B[42]
+| 36.48
+| 29.82
+| 33.45
+| InternVL3-78B[42]
+| 42.81
+| 30.77
+| 37.33
+| Embodied Models
+| RoboBrain2.0-3B[34]
+| 40.39
+| 21.21
+| 31.65
+| RoboBrain2.0-7B[34]
+| 40.62
+| 19.15
+| 30.84
+| RoboBrain2.0-32B[34]
+| 49.92
+| 29.22
+| 40.50
+| Cosmos-Reason1-7B[1]
+| 38.06
+| 28.60
+| 33.75
+| General Closed-Source Models
+| GPT-4o[17]
+| 48.21
+| 40.00
+| 44.47
+| Gemini-2.5-Pro[7]
+| 54.64
+| 32.45
+| 44.54
+Table 2: Comparison of model performance on ViFailback-Bench Lite. All metrics are reported as accuracy (%).
+| Model
+| Failure
+| Failure Keyframe
+| Failure Subtask
+| Failure Type
+| Low-level
+| Low-level
+| Average
+|
+| Detection
+| Localization
+| Localization
+| Identification
+| Avoidance
+| Correction
+|
+| General Open-Source Models
+| Qwen2.5-VL-3B-Instruct[3]
+| 81.20
+| 23.15
+| 17.98
+| 20.22
+| 32.74
+| 48.60
+| 38.10
+| Qwen2.5-VL-7B-Instruct[3]
+| 91.40
+| 30.34
+| 13.26
+| 32.13
+| 35.03
+| 45.80
+| 42.41
+| Qwen2.5-VL-32B-Instruct[3]
+| 74.20
+| 26.74
+| 11.69
+| 66.52
+| 44.42
+| 51.15
+| 46.30
+| Qwen2.5-VL-72B-Instruct[3]
+| 88.80
+| 26.07
+| 28.76
+| 49.89
+| 44.42
+| 61.58
+| 50.61
+| Qwen3-VL-2B-Instruct[2]
+| 55.20
+| 29.21
+| 12.81
+| 43.37
+| 29.19
+| 38.42
+| 35.16
+| Qwen3-VL-4B-Instruct[2]
+| 92.20
+| 32.81
+| 20.22
+| 43.60
+| 27.41
+| 20.10
+| 41.11
+| Qwen3-VL-8B-Instruct[2]
+| 90.00
+| 31.24
+| 10.34
+| 37.08
+| 31.98
+| 20.10
+| 36.56
+| Qwen3-VL-32B-Instruct[2]
+| 93.60
+| 36.18
+| 26.07
+| 48.99
+| 38.83
+| 34.86
+| 47.79
+| InternVL3-8B[42]
+| 63.00
+| 27.39
+| 12.56
+| 39.95
+| 34.11
+| 38.6
+| 36.48
+| InternVL3-78B[42]
+| 75.40
+| 27.64
+| 29.40
+| 38.94
+| 39.36
+| 41.52
+| 42.81
+| Embodied Models
+| RoboBrain2.0-3B[34]
+| 85.40
+| 29.89
+| 12.58
+| 19.10
+| 30.46
+| 60.56
+| 40.39
+| RoboBrain2.0-7B[34]
+| 90.20
+| 32.13
+| 8.31
+| 17.98
+| 36.8
+| 53.18
+| 40.62
+| RoboBrain2.0-32B[34]
+| 84.80
+| 38.43
+| 11.46
+| 68.31
+| 37.82
+| 53.44
+| 49.92
+| Cosmos-Reason1-7B[1]
+| 78.40
+| 20.67
+| 14.61
+| 37.75
+| 32.74
+| 38.68
+| 38.06
+| General Closed-Source Models
+| GPT-4o[17]
+| 93.40
+| 46.97
+| 13.93
+| 40.90
+| 44.16
+| 43.26
+| 48.21
+| Gemini-2.5-Pro[7]
+| 93.13
+| 47.64
+| 33.48
+| 40.73
+| 58.10
+| 49.87
+| 54.64
+| ViFailback-8B (Ours)
+| 98.20
+| 92.58
+| 93.48
+| 90.79
+| 93.15
+| 95.93
+| 93.70
+Finetuning with the ViFailback dataset. We construct a training split from the ViFailback dataset and use LoRA [14] to fine-tune the Qwen3-VL-8B model for 1 epoch, yielding the model ViFailback-8B.
+Table 3: Comparison of model performance on ViFailback-Bench Hard. All metrics are reported as accuracy (%).
+| Model
+| Low-level
+| Low-level
+| Failure
+| High-level
+| High-level
+| Average
+|
+| Avoidance (CoT)
+| Correction (CoT)
+| Reason
+| Avoidance
+| Correction
+|
+| General Open-Source Models
+| Qwen2.5-VL-3B-Instruct[3]
+| 3.62
+| 7.88
+| 31.16
+| 31.94
+| 37.09
+| 22.10
+| Qwen2.5-VL-7B-Instruct[3]
+| 12.77
+| 13.64
+| 33.10
+| 18.95
+| 18.28
+| 19.26
+| Qwen2.5-VL-32B-Instruct[3]
+| 9.91
+| 9.67
+| 51.92
+| 44.22
+| 48.47
+| 32.50
+| Qwen2.5-VL-72B-Instruct[3]
+| 13.05
+| 18.04
+| 54.26
+| 47.78
+| 51.22
+| 36.56
+| Qwen3-VL-2B-Instruct[2]
+| 0.00
+| 2.63
+| 31.16
+| 31.94
+| 37.09
+| 20.28
+| Qwen3-VL-4B-Instruct[2]
+| 11.23
+| 13.94
+| 57.01
+| 44.83
+| 41.37
+| 33.37
+| Qwen3-VL-8B-Instruct[2]
+| 12.77
+| 16.45
+| 51.98
+| 43.47
+| 41.89
+| 33.04
+| Qwen3-VL-32B-Instruct[2]
+| 14.11
+| 19.34
+| 60.53
+| 40.44
+| 43.09
+| 35.23
+| InternVL3-8B[42]
+| 5.23
+| 5.51
+| 44.01
+| 47.32
+| 48.85
+| 29.82
+| InternVL3-78B[42]
+| 8.39
+| 11.45
+| 39.30
+| 46.64
+| 49.63
+| 30.77
+| Embodied Models
+| RoboBrain2.0-3B[34]
+| 6.47
+| 2.68
+| 40.81
+| 27.19
+| 30.11
+| 21.21
+| RoboBrain2.0-7B[34]
+| 4.80
+| 1.18
+| 35.07
+| 26.02
+| 29.89
+| 19.15
+| RoboBrain2.0-32B[34]
+| 3.55
+| 8.57
+| 52.36
+| 38.37
+| 44.95
+| 29.22
+| Cosmos-Reason1-7B[1]
+| 9.20
+| 8.30
+| 36.27
+| 44.02
+| 46.69
+| 28.60
+| General Closed-Source Models
+| GPT-4o[17]
+| 18.93
+| 18.86
+| 59.28
+| 49.53
+| 54.96
+| 40.00
+| Gemini-2.5-Pro[7]
+| 13.04
+| 26.90
+| 53.74
+| 21.85
+| 47.62
+| 32.45
+| ViFailback-8B (Ours)
+| 47.95
+| 65.33
+| 83.97
+| 85.36
+| 81.79
+| 72.64
+4.2 Main Results
+Overall Model Performance. As shown in Table 1, the capabilities of all models for robotic manipulation failure diagnosis and correction are far from satisfactory. This performance degradation is even more pronounced in the open-ended setting. The best performance in the closed-ended setting was 54.64%, achieved by Gemini-2.5-Pro, while GPT-4o achieved the top score of 40.00% in the open-ended setting.
+Closed-Ended Performance Analysis. Results in Table 2 show the performance comparison on the ViFailback-Bench Lite. While baselines achieve high accuracy on failure detection, they fall short in the crucial tasks of failure localization and low-level guidance. By supervised fine-tuning on our dataset, ViFailback-8B achieves a 39.14% performance gain over the best-performing baseline, Gemini-2.5-Pro.
+Open-Ended Performance Analysis. As illustrated in Table 3, GPT-4o achieves the overall best performance in the baseline. Notably, in the Failure reason task, the open-source Qwen3-VL-32B-Instruct even surpasses the proprietary models, reaching the highest accuracy of 60.53%. In contrast, ViFailback-8B demonstrates a 39.6% performance gain over its zero-shot counterpart and significantly outperforms all baseline models. Furthermore, by comparing Table 2 and Table 3, we also observe that when multi-step reasoning is required to localize failures and determine low-level corrective actions, the performance of all models drops substantially—indicating that current VLMs struggle to generate step-by-step guidance (from failure detection and localization to guiding avoidance or correction) for robotic manipulation failures.
+Performance Scales with Data Size. We construct the training split from ViFailback dataset. Our full training set comprises 52,416 VQA pairs generated from 4,702 trajectories, covering 95 distinct tasks. To analyze the impact of data scaling, we create and evaluate training subsets of increasing sizes, specifically using data from 1,200, 2,400, 3,600, and the full 4,702 trajectories. As depicted in Figure 4, increasing the training data volume generally leads to improved model performance across most VQA types. Significant gains are observed in the ViFailback-Bench Lite tasks, even when fine-tuning with limited data (e.g., 1,200 trajectories). This may be because the tasks are related to the VLM’s basic capabilities, but the VQA formats of ViFailback-Bench Hard are rare in the base models’ pre-training data. Furthermore, we examine the models’ ability in visual symbols generation. The results of “Generating Visual Symbols’ Codes” in Figure 4 show performance on this task scales consistently with the training data volume, reaching 38.73%. In terms of annotation efficiency, relative to the zero-shot baseline, each additional person-hour of annotation yields an average 0.64% accuracy improvement. Crucially, this performance trend has not yet reached saturation, indicating that further data expansion could yield additional improvements.
+Figure 4: Fine-tuning results. Qwen3-VL-8B with increasing training data of the ViFailback dataset from 1,200 trajectories to 4,702 trajectories’ corresponding VQA pairs. Accuracy improvements are observed across most VQA types as the training data increases. All metrics are reported as accuracy (%)
+4.3 Application in Real-world Manipulation
+Real-world Experiment Setup. To further demonstrate the effectiveness of ViFailback-8B in enhancing the ability of VLA models to handle failures in downstream robotic manipulation tasks, we integrate it with a leading VLA model, π0.5[4], into a unified control system. The system facilitates failure recovery by providing π0.5 with corrective visual and textual guidance from ViFailback-8B. We conduct experiments on the ALOHA dual-arm robot platform, equipped with two wrist cameras and one head camera. The π0.5 model takes observations from all three cameras as input, while ViFailback-8B uses only the head camera’s observations for failure diagnosis and correction. Given that the original π0.5 model lacks a native capability for direct visual symbols following, we devised two distinct experimental setups to address this limitation:
+•
+Incorporating Visual Symbols-Following Dataset (VSF Method). We constructed a visual symbols-following dataset by collecting low-level motion trajectories (e.g., move the left gripper to the left) and annotating them with visual symbols. Inspired by PEEK [39], we mask out irrelevant regions in the head camera view and the entire observation from the wrist camera which receives no guidance. Then the visual symbols-following data are used to fine-tune the π0.5 together with the task-specific expert demonstrations to enable the π0.5 to end-to-end follow the visual symbols.
+•
+Point-based Motion Control (PMC Method). We employ a low-level motion controller to drive the end-effector to follow the visual symbols. For example, when a movement is required, the end-effector first moves to the target point indicated by the visual symbol. If grasping is needed, we further use GraspNet[29] to estimate the appropriate grasp pose.
+For each task, we collect 20 expert demonstrations for fine-tuning. To analyze the potential impact of visual symbols-following data on models trained with original demonstrations, the baseline experiments use two versions of fine-tuned π0.5 models: one is fine-tuned with only expert demonstrations (base data), and the other is fine-tuned with both base data and visual symbols-following data (symbol data).
+Workflow of the Policy Correction System. The ALOHA robot first attempts to complete the manipulation task using the fine-tuned π0.5 model under the normal textual task prompt, and our ViFailback-8B simultaneously listens to the robot’s video stream at a set interval. If ViFailback-8B detects a failure, it generates a CoT-based diagnosis and low-level guidance, especially the code for drawing visual symbols based on the current observation of the robot. The visual symbols are then overlaid on the robot’s camera view and fed into the fine-tuned π0.5 model along with the textual prompt of the correction guidance to guide the robot to recover from the failure.
+Table 4: Success rates comparison across different methods on three tasks.
+| Method
+| PlaceOne
+| PlaceTwo
+| Pull&Place
+| Average
+| w/o ViFailback Correction
+| π0.5 (base & symbol)
+| 14/21
+| 9/21
+| 10/21
+| 52.4%
+| π0.5 (base)
+| 13/21
+| 9/21
+| 10/21
+| 50.8%
+| w/ ViFailback Correction
+| π0.5 (base & symbol) + VSF
+| 18/21
+| 13/21
+| 15/21
+| 73.0%
+| π0.5 (base) + PMC
+| 19/21
+| 16/21
+| 12/21
+| 74.6%
+Figure 5: Under the visual symbols’ guidance generated by ViFailback-8B in real-time, the robot successfully recovers from failures in three representative manipulation tasks: PlaceOne, PlaceTwo, and Pull&Place in the real-world experiments.
+Real-world Experiment Results.
+We conduct experiments on three representative manipulation tasks: PlaceOne: “Use the left arm to place the stapler into the top drawer.”, PlaceTwo: “Use the left arm to put the eraser into the pink bowl. Then use the right arm to put the red cube into the blue bowl.”, and Pull&Place: “Use the right arm to pull the bottom drawer open. Then use the left arm to place the blue cube into the drawer.”. All three tasks are unseen in the ViFailback dataset. To ensure a fair comparison, we first randomly initialize the objects’ positions and ensure the same initial layout and setup for the test of each method. For each task, we conduct 21 trials and record the success rates of each method, as shown in Table 4. Comparing the success rates of the two baseline methods that do not use ViFailback-8B, we observe no significant difference, indicating that the visual symbols-following data does not affect the performance of the π0.5 model executing the original tasks. When the ViFailback-8B is integrated into the system, the success rates of the π0.5 model with VSF method and PMC method are significantly improved—by 21.4% and 23.8%, respectively—indicating that the ViFailback-8B can effectively assist the VLA model in recovering from failures in real-world manipulation tasks. Notably, PMC outperforms VSF in two tasks, which may be due to the lack of visual symbols-following data for the π0.5 model to learn the low-level guidance action following.
+5 Discussion
+In this work, we focus on learning from failure videos to enable diagnosis and correction. We believe that correcting VLA failures based on visual symbols is a more direct and effective approach than language instructions, and critically, it provides the actionable supervisory signal to bridge real-time correction with policy learning. While our framework provides this learning signal from videos, the action distribution of failure trajectories also contains a wealth of valuable information that needs to be utilized in future work.
+6 Conclusion
+In this paper, we introduced ViFailback, a novel framework centered on intuitive visual symbols to diagnose, correct, and ultimately learn from robotic manipulation failures. These symbols serve as both a high-efficiency annotation tool and a direct, interpretable mechanism for corrective guidance. Using this methodology, we constructed the ViFailback dataset (58,126 VQA pairs) and the ViFailback-Bench (Lite and Hard). Our fine-tuned model, ViFailback-8B, not only significantly outperforms state-of-the-art models on our benchmark, but also learns to generate visual symbols itself. We validated this in real-world experiments, where ViFailback-8B’s visual guidance significantly improved VLA task success, demonstrating a critical step towards enabling policies to truly learn from failure.
+References
+[1]
+Alisson Azzolini, Junjie Bai, Hannah Brandon, Jiaxin Cao, Prithvijit Chattopadhyay, Huayu Chen, Jinju Chu, Yin Cui, Jenna Diamond, Yifan Ding, et al.
+Cosmos-reason1: From physical common sense to embodied reasoning.
+arXiv preprint arXiv:2503.15558, 2025.
+[2]
+Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu.
+Qwen3-vl technical report.
+arXiv preprint arXiv:2511.21631, 2025a.
+[3]
+Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al.
+Qwen2. 5-vl technical report.
+arXiv preprint arXiv:2502.13923, 2025b.
+[4]
+Kevin Black, Noah Brown, James Darpinian, Karan Dhabalia, Danny Driess, Adnan Esmail, Michael Robert Equi, Chelsea Finn, Niccolo Fusai, Manuel Y Galliker, et al.
+π0.5: a vision-language-action model with open-world generalization.
+In 9th Annual Conference on Robot Learning, 2025.
+[5]
+Kaiyuan Chen, Shuangyu Xie, Zehan Ma, Pannag R Sanketi, and Ken Goldberg.
+Robo2vlm: Improving visual question answering using large-scale robot manipulation data.
+In The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track.
+[6]
+Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, and Shuran Song.
+Diffusion policy: Visuomotor policy learning via action diffusion.
+The International Journal of Robotics Research, 44(10-11):1684–1704, 2025.
+[7]
+Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al.
+Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities.
+arXiv preprint arXiv:2507.06261, 2025.
+[8]
+Yinpei Dai, Jayjun Lee, Nima Fazeli, and Joyce Chai.
+Racer: Rich language-guided failure recovery policies for imitation learning.
+In 2025 IEEE International Conference on Robotics and Automation (ICRA), pages 15657–15664. IEEE, 2025.
+[9]
+Jiafei Duan, Wilbert Pumacay, Nishanth Kumar, Yi Ru Wang, Shulin Tian, Wentao Yuan, Ranjay Krishna, Dieter Fox, Ajay Mandlekar, and Yijie Guo.
+Aha: A vision-language-model for detecting and reasoning over failures in robotic manipulation.
+arXiv preprint arXiv:2410.00371, 2024.
+[10]
+Zipeng Fu, Tony Z Zhao, and Chelsea Finn.
+Mobile aloha: Learning bimanual mobile manipulation with low-cost whole-body teleoperation.
+arXiv preprint arXiv:2401.02117, 2024.
+[11]
+Catherine Glossop, William Chen, Arjun Bhorkar, Dhruv Shah, and Sergey Levine.
+Cast: Counterfactual labels improve instruction following in vision-language-action models.
+arXiv preprint arXiv:2508.13446, 2025.
+[12]
+Jiayuan Gu, Sean Kirmani, Paul Wohlhart, Yao Lu, Montserrat Gonzalez Arenas, Kanishka Rao, Wenhao Yu, Chuyuan Fu, Keerthana Gopalakrishnan, Zhuo Xu, et al.
+Rt-trajectory: Robotic task generalization via hindsight trajectory sketches.
+arXiv preprint arXiv:2311.01977, 2023.
+[13]
+Qiao Gu, Yuanliang Ju, Shengxiang Sun, Igor Gilitschenski, Haruki Nishimura, Masha Itkina, and Florian Shkurti.
+Safe: Multitask failure detection for vision-language-action models.
+arXiv preprint arXiv:2506.09937, 2025.
+[14]
+Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen, et al.
+Lora: Low-rank adaptation of large language models.
+ICLR, 1(2):3, 2022.
+[15]
+Haoxu Huang, Fanqi Lin, Yingdong Hu, Shengjie Wang, and Yang Gao.
+Copa: General robotic manipulation through spatial constraints of parts with foundation models.
+In 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pages 9488–9495. IEEE, 2024.
+[16]
+Yixuan Huang, Novella Alvina, Mohanraj Devendran Shanthi, and Tucker Hermans.
+Fail2progress: Learning from real-world robot failures with stein variational inference.
+arXiv preprint arXiv:2509.01746, 2025.
+[17]
+Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al.
+Gpt-4o system card.
+arXiv preprint arXiv:2410.21276, 2024.
+[18]
+Yunfan Jiang, Agrim Gupta, Zichen Zhang, Guanzhi Wang, Yongqiang Dou, Yanjun Chen, Li Fei-Fei, Anima Anandkumar, Yuke Zhu, and Linxi Fan.
+Vima: General robot manipulation with multimodal prompts.
+arXiv preprint arXiv:2210.03094, 2(3):6, 2022.
+[19]
+Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, et al.
+Openvla: An open-source vision-language-action model.
+arXiv preprint arXiv:2406.09246, 2024.
+[20]
+Xiaoqi Li, Lingyun Xu, Mingxu Zhang, Jiaming Liu, Yan Shen, Iaroslav Ponomarenko, Jiahui Xu, Liang Heng, Siyuan Huang, Shanghang Zhang, et al.
+Crayonrobo: Object-centric prompt-driven vision-language-action model for robotic manipulation.
+arXiv preprint arXiv:2505.02166, 2025a.
+[21]
+Yanbang Li, Ziyang Gong, Haoyang Li, Xiaoqi Huang, Haolan Kang, Guangping Bai, and Xianzheng Ma.
+Robotic visual instruction.
+In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 12155–12165, 2025b.
+[22]
+Zijun Lin, Jiafei Duan, Haoquan Fang, Dieter Fox, Ranjay Krishna, Cheston Tan, and Bihan Wen.
+Failsafe: Reasoning and recovery from failures in vision-language-action models.
+arXiv preprint arXiv:2510.01642, 2025.
+[23]
+Fangchen Liu, Kuan Fang, Pieter Abbeel, and Sergey Levine.
+Moka: Open-vocabulary robotic manipulation through mark-based visual prompting.
+In First Workshop on Vision-Language Models for Navigation and Manipulation at ICRA 2024, 2024a.
+[24]
+Huihan Liu, Alice Chen, Yuke Zhu, Adith Swaminathan, Andrey Kolobov, and Ching-An Cheng.
+Interactive robot learning from verbal correction.
+arXiv preprint arXiv:2310.17555, 2023a.
+[25]
+Songming Liu, Lingxuan Wu, Bangguo Li, Hengkai Tan, Huayu Chen, Zhengyi Wang, Ke Xu, Hang Su, and Jun Zhu.
+Rdt-1b: a diffusion foundation model for bimanual manipulation.
+arXiv preprint arXiv:2410.07864, 2024b.
+[26]
+Zeyi Liu, Arpit Bahety, and Shuran Song.
+Reflect: Summarizing robot experiences for failure explanation and correction.
+arXiv preprint arXiv:2306.15724, 2023b.
+[27]
+Weifeng Lu, Minghao Ye, Zewei Ye, Ruihan Tao, Shuo Yang, and Bo Zhao.
+Robofac: A comprehensive framework for robotic failure analysis and correction.
+arXiv preprint arXiv:2505.12224, 2025.
+[28]
+Shaunak A Mehta, Heramb Nemlekar, Hari Sumant, and Dylan P Losey.
+L2d2: Robot learning from 2d drawings.
+arXiv preprint arXiv:2505.12072, 2025.
+[29]
+Arsalan Mousavian, Clemens Eppner, and Dieter Fox.
+6-dof graspnet: Variational grasp generation for object manipulation.
+In Proceedings of the IEEE/CVF international conference on computer vision, pages 2901–2910, 2019.
+[30]
+Zekun Qi, Wenyao Zhang, Yufei Ding, Runpei Dong, Xinqiang Yu, Jingwen Li, Lingyun Xu, Baoyu Li, Xialin He, Guofan Fan, et al.
+Sofar: Language-grounded orientation bridges spatial reasoning and object manipulation.
+arXiv preprint arXiv:2502.13143, 2025.
+[31]
+Samyam Rajbhandari, Jeff Rasley, Olatunji Ruwase, and Yuxiong He.
+Zero: Memory optimizations toward training trillion parameter models.
+In SC20: International Conference for High Performance Computing, Networking, Storage and Analysis, pages 1–16. IEEE, 2020.
+[32]
+Lucy Xiaoyang Shi, Zheyuan Hu, Tony Z Zhao, Archit Sharma, Karl Pertsch, Jianlan Luo, Sergey Levine, and Chelsea Finn.
+Yell at your robot: Improving on-the-fly from language corrections.
+arXiv preprint arXiv:2403.12910, 2024.
+[33]
+Priya Sundaresan, Quan Vuong, Jiayuan Gu, Peng Xu, Ted Xiao, Sean Kirmani, Tianhe Yu, Michael Stark, Ajinkya Jain, Karol Hausman, et al.
+Rt-sketch: Goal-conditioned imitation learning from hand-drawn sketches.
+In 8th Annual Conference on Robot Learning, 2024.
+[34]
+BAAI RoboBrain Team, Mingyu Cao, Huajie Tan, Yuheng Ji, Xiansheng Chen, Minglan Lin, Zhiyu Li, Zhou Cao, Pengwei Wang, Enshen Zhou, et al.
+Robobrain 2.0 technical report.
+arXiv preprint arXiv:2507.02029, 2025.
+[35]
+Dian Wang, Stephen Hart, David Surovik, Tarik Kelestemur, Haojie Huang, Haibo Zhao, Mark Yeatman, Jiuguang Wang, Robin Walters, and Robert Platt.
+Equivariant diffusion policy.
+arXiv preprint arXiv:2407.01812, 2024.
+[36]
+Zhijie Wang, Zhehua Zhou, Jiayang Song, Yuheng Huang, Zhan Shu, and Lei Ma.
+Vlatest: Testing and evaluating vision-language-action models for robotic manipulation.
+Proceedings of the ACM on Software Engineering, 2(FSE):1615–1638, 2025.
+[37]
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al.
+Chain-of-thought prompting elicits reasoning in large language models.
+Advances in neural information processing systems, 35:24824–24837, 2022.
+[38]
+Yanjie Ze, Gu Zhang, Kangning Zhang, Chenyuan Hu, Muhan Wang, and Huazhe Xu.
+3d diffusion policy: Generalizable visuomotor policy learning via simple 3d representations.
+arXiv preprint arXiv:2403.03954, 2024.
+[39]
+Jesse Zhang, Marius Memmel, Kevin Kim, Dieter Fox, Jesse Thomason, Fabio Ramos, Erdem Bıyık, Abhishek Gupta, and Anqi Li.
+Peek: Guiding and minimal image representations for zero-shot generalization of robot manipulation policies.
+arXiv preprint arXiv:2509.18282, 2025.
+[40]
+Enyu Zhao, Vedant Raval, Hejia Zhang, Jiageng Mao, Zeyu Shangguan, Stefanos Nikolaidis, Yue Wang, and Daniel Seita.
+Manipbench: Benchmarking vision-language models for low-level robot manipulation.
+arXiv preprint arXiv:2505.09698, 2025.
+[41]
+Ruijie Zheng, Yongyuan Liang, Shuaiyi Huang, Jianfeng Gao, Hal Daumé III, Andrey Kolobov, Furong Huang, and Jianwei Yang.
+Tracevla: Visual trace prompting enhances spatial-temporal awareness for generalist robotic policies.
+arXiv preprint arXiv:2412.10345, 2024.
+[42]
+Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al.
+Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models.
+arXiv preprint arXiv:2504.10479, 2025.
+[43]
+Brianna Zitkovich, Tianhe Yu, Sichun Xu, Peng Xu, Ted Xiao, Fei Xia, Jialin Wu, Paul Wohlhart, Stefan Welker, Ayzaan Wahid, et al.
+Rt-2: Vision-language-action models transfer web knowledge to robotic control.
+In Conference on Robot Learning, pages 2165–2183. PMLR, 2023.
+Supplementary Material
+1 Table of Content
+This supplementary material contains:
+•
+Sec. 2 Design of Visual Symbols
+•
+Sec. 3 Task Design and Data Annotation
+•
+Sec. 4 Details of Dataset and Benchmark
+•
+Sec. 5 Details of Fine-tuning and Evaluation
+•
+Sec. 6 Details of Real-world Experiments
+2 Design of Visual Symbols
+In this section, we present concrete examples to illustrate the application of individual visual symbols, as well as their usage in combination. As shown in Figure 1, the visual symbols in each instance have the following meanings:
+(a)
+Move the left gripper to the right significantly, forward significantly, and downward significantly, aligning the held object with the green cube for placement.
+(b)
+Rotate the right gripper clockwise to achieve the correct grasp pose for the marker.
+(c)
+The correct target (as indicated by the crosshair) is the top drawer handle rather than the bottom one.
+(d)
+The dual crosshairs linked by a dashed line indicates an alignment requirement between the two targeted objects—in this instance, placing the held object into the transparent box.
+(e)
+Open the right gripper, thereby releasing the spatula into the drawer.
+(f)
+Keep the right gripper closed, preventing the coke from slipping during movement.
+(g)
+Hold the left arm still until the human intervention is removed.
+(h)
+Move the right arm back to its initial pose.
+(i)
+Move the left gripper to the right slightly and rotate it clockwise, achieving the correct grasp pose for the lid.
+(j)
+Move the left gripper to the right slightly and backward slightly to align the vial with the specific slot.
+(k)
+Hold the left arm still and align the right gripper with the edge of the blue plate for grasping.
+(l)
+The left arm targets the wrong object, resets to the initial state, and then grasps the correct target—the doll.
+Figure 1: Examples of individual visual symbols and their combination. Top and Middle Rows: Instances of individual visual symbols. Bottom Row: Instances of their usage in combination.
+3 Task Design and Data Annotation
+3.1 Task Designing Details
+As mentioned in Section 3.3.1, our designed 100 real-world manipulation tasks cover diverse manipulation skills. All 100 tasks and their corresponding trajectory counts are listed in Figure 2.
+Figure 2: Full list of our designed tasks. (Continued on next page)
+Figure 3: Full list of our designed tasks (continued).
+3.2 Data Annotation Tools
+The front-end annotation tool is illustrated in Figure 4. Annotators can complete the preliminary annotation via click-and-drag mouse operations. Annotations are performed based on the head camera view. Additionally, the wrist camera view (if available) can be loaded to assist annotators in determining spatial positions. Finally, we sample the video at 1 fps and add the selected keyframes to the sampling list.
+Figure 4: The front-end UI for annotation, including (a) the main annotation interface, (b) the visual symbol drawing interface for avoiding failure, and (c) the visual symbol drawing interface for recovering from failure.
+4 Details of Dataset and Benchmark
+4.1 VQA Design and Examples
+Figure 5: VQA question templates for failure detection, failure keyframe localization, failure subtask localization, and failure type identification.
+Figure 6: VQA question templates for low-level textual guidance (low-level avoidance and low-level correction).
+4.1.1 Design of Closed-ended VQA
+The closed-ended VQA question types include failure detection, failure keyframe localization, failure subtask localization, failure type identification, and low-level textual guidance (avoidance and correction). For all tasks excluding low-level textual guidance, we randomly sample the corresponding annotation pools to construct distractor candidates. The question templates are shown in Figure 5.
+For low-level textual guidance, we construct three challenging distractors using a hybrid sampling strategy. We combine a static pool of common hard-coded actions (e.g., “Hold still”, “Open gripper”) with a larger, dynamic pool of all possible commands, ensuring that all sampled distractors are unique and not the ground truth. To increase difficulty, distractors are semantically constrained to match the active gripper (e.g., “left” or “right”) of the correct answer, making all options contextually plausible. The question templates are shown in Figure 6.
+Figure 7: VQA question templates for failure reason and high-level textual guidance (avoidance and correction).
+Figure 8: VQA question templates for CoT form of low-level textual guidance (avoidance and correction).
+4.1.2 Design of Open-ended VQA
+The open-ended VQA question types include failure reason, CoT form of low-level textual guidance (avoidance and correction), and high-level textual guidance (avoidance and correction). The evaluation of open-ended VQA is introduced in Section 5.2.2. The question templates are shown in Figure 7 and Figure 8.
+Additionally, there is a special type of VQA called visual guidance, introduced in Section 3.2 and 4.2, which is used to train and evaluate our VLM model’s ability to generate code elements and draw our designed visual symbols. The question and answer templates are shown in Figure 9 and Figure 10.
+Figure 9: VQA templates for generating low-level visual guidance of avoidance (CoT).
+Figure 10: VQA templates for generating low-level visual guidance of correction (CoT).
+4.2 Dataset Statistics
+All the VQA pairs in our dataset are generated from 5202 real-world manipulation trajectories of an ALOHA robot. The distribution of trajectory durations is listed in Table 1, which indicates that our trajectory data encompasses both short-horizon and long-horizon episodes, with a predominance of short-horizon episodes (more conducive to failure analysis).
+Table 1: Distribution of trajectory durations in the dataset
+| Duration (Second)
+| Count
+| 0 – 4
+| 156
+| 4 – 8
+| 2013
+| 8 – 12
+| 1682
+| 12 – 16
+| 708
+| 16 – 20
+| 412
+| 20 – 24
+| 164
+| ≥ 24
+| 67
+4.3 Benchmark Statistics
+The tasks within the benchmark and their respective trajectory counts are illustrated in Figure 2. Notably, five tasks (Task ID: 43–47) are entirely OOD.
+5 Details of Fine-tuning and Evaluation
+5.1 Training Details
+We use LoRA[14] to fine-tune the Qwen3-VL-8B[2] model for 1 epoch, with a LoRA rank of 32 and a scaling factor α of 64, yielding the model ViFailback-8B. We unfreeze both the LLM backbone and the adapter parameters, and train the model using deepspeed zero2 stage [31] to ensure stable training. Each GPU processes a batch size of 1, with a gradient accumulation step of 4 and a learning rate of 1e-5. The training is performed on 4 NVIDIA Hopper GPUs.
+5.2 Evaluation Details
+5.2.1 Model Configuration
+For consistency, all models are set the temperature to 0 and the maximum generation length to 2,048 tokens.
+5.2.2 Open-ended VQA Evaluation
+For open-ended questions, we employ the GPT-4o-based evaluator to assess the quality of the generated outputs comprehensively. Specifically, we compare the model outputs with the ground truth across three dimensions: Semantic Similarity, Content Completeness, and Functional Equivalence.
+•
+Semantic Similarity: The degree to which the two texts convey equivalent meanings and intentions, regardless of surface-level wording differences.
+•
+Content Completeness: Whether all critical information elements are present in both texts, including gripper specifications, movement directions, and command details.
+•
+Functional Equivalence: Whether the described actions achieve the same robotic manipulation goals and operational outcomes.
+The exact prompts used are shown in Figure 11.
+Figure 11: Prompts for scoring open-ended VQA pairs.
+6 Details of Real-world Experiments
+6.1 Experiment Setup
+For each task, we collected 20 expert demonstrations to fine-tune π0.5 [4] model as the actor. During inference, our ViFailback-8B serves as a supervisor, queried at intervals of 6 action chunks. By analyzing the visual observations of the past 5 seconds, it diagnoses failures and provides multimodal (textual and visual) guidance for failure recovery when necessary.
+6.2 The Mask Details of VSF Method
+To enable π0.5 to perform corrective actions based on visual symbols, we collected a visual symbols following dataset, which consists of trajectories where the robot performs atomic actions following specific visual symbols. To force the model to focus on the symbols, we mask out irrelevant regions in the observations (as shown in Figure 12). Specifically, in the head camera view, we define a Region of Interest (ROI) based on the visual symbol’s bounding box. This ROI is expanded by a 50-pixel margin, subject to a minimum dimension constraint of 50 pixels. Any visual content outside this ROI is masked with zeros. Additionally, the wrist camera observations for the idle arm are fully masked with zeros.
+6.3 Visualization of Experimental Results
+6.3.1 Low-level Textual and Visual Guidance
+By analyzing historical observations from the head camera, ViFailback-8B conducts failure diagnosis and correction. As illustrated in Figures 13–18, we show the model’s generated responses and the correction outcomes achieved by two types of visual symbol following approaches.
+Beyond diagnosing common Gripper 6d-pose errors, our model exhibits the capability to identify other types of failure, such as human intervention and gripper state depicted in Figure 19 and 20.
+6.3.2 Failure Reason and High-level Guidance
+Figure 21–23 illustrate ViFailback-8B identifying the root cause of failures and providing high-level guidance across three distinct tasks. These examples demonstrate its ability to understand failure contexts for effective correction.
+Figure 12: The mask in the visual symbols following dataset.
+Figure 13: Visualization of the PlaceOne task. Top & Middle: ViFailback-8B diagnoses failures and provides low-level multimodal (textual and visual) guidance. Bottom: The corrective actions are executed by the PMC method to recover from the failure.
+Figure 14: Visualization of the PlaceOne task. Top & Middle: ViFailback-8B diagnoses failures and provides low-level multimodal (textual and visual) guidance. Bottom: The corrective actions are executed by the VSF method to recover from the failure.
+Figure 15: Visualization of the PlaceTwo task. Top & Middle: ViFailback-8B diagnoses failures and provides low-level multimodal (textual and visual) guidance. Bottom: The corrective actions are executed by the PMC method to recover from the failure.
+Figure 16: Visualization of the PlaceTwo task. Top & Middle: ViFailback-8B diagnoses failures and provides low-level multimodal (textual and visual) guidance. Bottom: The corrective actions are executed by the VSF method to recover from the failure.
+Figure 17: Visualization of the Pull&Place task. Top & Middle: ViFailback-8B diagnoses failures and provides low-level multimodal (textual and visual) guidance. Bottom: The corrective actions are executed by the PMC method to recover from the failure.
+Figure 18: Visualization of the Pull&Place task. Top & Middle: ViFailback-8B diagnoses failures and provides low-level multimodal (textual and visual) guidance. Bottom: The corrective actions are executed by the VSF method to recover from the failure.
+Figure 19: Failure Type: Human Intervention. When human intervention is detected, ViFailback-8B provides guidance to pause execution, awaiting the removal of the intervention.
+Figure 20: Failure Type: Gripper State. The gripper failed to release the object during placement. ViFailback-8B generates guidance to open the gripper for successful placement.
+Figure 21: Failure reason and High-level guidance of the PlaceOne task.
+Figure 22: Failure reason and High-level guidance of the PlaceTwo task.
+Figure 23: Failure reason and High-level guidance of the Pull&Place task.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

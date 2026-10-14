@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_contrast_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_contrast_20261009_v1/rgb.log",
+  "stdout": "Fri Oct  9 14:29:43 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\":48,\"last\":\"inside_14_oracle_raw_opposed\",\"parent\":80,\"total\":128}{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"inside_07_rgb_raw_opposed\",\"issued\":28}\n{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"inside_14_rgb_chat_positive\",\"issued\":29}\n{\"alias\":\"False\",\"bare\":\"False\",\"id\":\"inside_14_rgb_chat_opposed\",\"issued\":30}\n{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"inside_14_rgb_raw_positive\",\"issued\":31}\n{\"alias\":\"False\",\"bare\":\"False\",\"id\":\"inside_14_rgb_raw_opposed\",\"issued\":32}\n",
+  "stderr": "",
+  "exit_code": 0
+}

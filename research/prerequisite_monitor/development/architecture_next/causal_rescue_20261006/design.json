@@ -1,0 +1,35 @@
+{
+  "design_version": "causal_rescue_20261006_v1",
+  "status": "frozen_before_new_model_outputs",
+  "scope": "one seen six-clip development mechanism; no blind-test claim",
+  "prior_raw_seal_sha256": "09edaceac2d967740692e6cfd6e1f10c5aa1da6ae3c225aedf253adbeb176676",
+  "source_input_zip_sha256": "c99543639e2ac7e8ddf270654d1394f42d6f121021463bf3f452648686183cfa",
+  "prior_model_side_code_zip_v3_sha256": "244ef6bdbeb93bc3360149a9801d929dc10c793345e443192bd77141290ea5c5",
+  "models": {
+    "TOPReward": {"repo_commit": "4877a0ee5098cbec18485125466631b1dcc4a573", "checkpoint": "Qwen/Qwen3-VL-8B-Instruct", "revision": "0c351dd01ed87e9c1b53cbc748cba10e6187ff3b", "output": "native_prefix_rewards"},
+    "Robometer_PR33_compat": {"base_repo_commit": "352d160389daa964788de1ec933d1925f3a6de4f", "compat_patch_sha256": "b560da190b4dccaa405684beb2e33a5950fefd035983dc98ae9d02406b9d2fac", "checkpoint": "robometer/Robometer-4B", "revision": "beef63bc914c5c189329d49c6d712d96d632aa34", "output": "native_progress; success_head_terminal_control_only"}
+  },
+  "arms": {
+    "R0": {"batch": "sealed_reference_only", "instruction": "Place the blue cube entirely inside the single green square with one whole face flat against the tabletop. Open the gripper and move it clear, then let the cube settle and stay still.", "video": "original_15_frames"},
+    "L1": {"batch": "first", "instruction": "Place the blue cube completely inside the green square, with one whole face resting directly on the tabletop. Release it, move the gripper clear, and let it settle.", "video": "original_15_frames"},
+    "L2": {"batch": "first", "instruction": "Set the blue cube flat on the tabletop so it lies entirely within the green square. Let go, move the gripper away, and leave the cube still.", "video": "original_15_frames"},
+    "V1": {"batch": "conditional_second", "instruction_ref": "R0", "video": "same_15_times_fixed_view_crop_or_paired_rerender; all three objects and critical motion visible at every relevant frame; no overlays; invalidate if visibility gate fails"},
+    "C1": {"batch": "conditional_second", "instruction": "Place the blue cube entirely inside the single green square with one whole face flat against the tabletop. Open the gripper and move it clear, then let the cube settle and stay still. A flat tabletop placement is possible only when the red cube does not occupy the green square.", "video": "original_15_frames", "identity": "prompted_relation_upper_bound"},
+    "Q1": {"batch": "conditional_second", "fact_question": "From frames at seconds 0, 7, and 14, state whether the red cube is inside or outside the green square at each time; whether it leaves and returns; whether the blue cube moves; and whether direct blue-cube contact with the tabletop is visibly established. Use unknown when the frames do not show enough.", "causal_question": "If the red cube remains in its current place and is not actively handled later, can the blue cube be placed entirely inside the green square with one whole face directly on the tabletop? Why? Use unknown if the visible geometry is insufficient.", "identity": "separate_fact_and_causal_diagnostic; base_4b_only_corroboration_not_robometer_internal_trace"}
+  },
+  "goal_equivalence_check": {
+    "L1": {"entirely_inside_green_square": true, "whole_face_direct_tabletop_contact": true, "gripper_release_and_clearance": true, "cube_settled_still": true},
+    "L2": {"entirely_inside_green_square": true, "whole_face_direct_tabletop_contact": true, "gripper_release_and_clearance": true, "cube_settled_still": true}
+  },
+  "video_protocol": {"anonymous_videos": 6, "decoded_frames_per_video": 15, "fps": 1, "size_px": [640, 480], "frame_indices_from_30fps": [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420], "allowed_model_input_files": ["0001.mp4", "0002.mp4", "0003.mp4", "0004.mp4", "0005.mp4", "0006.mp4", "instruction.txt", "manifest.jsonl", "media_hashes.json"], "server_forbidden": ["truth", "condition_map", "continuation", "old_scores"]},
+  "analysis": {
+    "primary_curve_delta": "median(t12,t13,t14)-median(t0,t1,t2)",
+    "prespecified_sensitivity_delta": "t14-median(t0,t1,t2)",
+    "ordered_pairs": ["B+>U0", "H-<U0", "H-<N0", "B+>B0", "G+>N0"],
+    "core_first_batch_gate": ["B+>U0", "H-<U0", "H-<N0", "G+>N0"],
+    "first_batch_decision": "If either L1 or L2 is correct on all four core pairs for both native methods under both prespecified deltas, fix that arm and proceed to new-sample replication. Otherwise proceed to V1/C1/Q1 after local second-batch gates. A tie, failed run, or contradictory delta does not count as correct.",
+    "B0_transient": "Report rise during red-cube exit and fall after return separately; do not demand zero throughout.",
+    "new_sample_plan_before_outputs": "Cost and group count to be fixed before viewing new outputs; target eight full six-condition groups, with seven-of-eight correct directions on each core pair as descriptive decision gate."
+  },
+  "stop_conditions": ["any input, checkpoint, or code identity mismatch", "missing cached weights or existing server", "insufficient GPU, disk, or remaining rental time", "V1 visibility failure", "B0 end-window not stable for new replication clips", "failed or missing outputs retained as failures; never silently rerun under same run ID"]
+}

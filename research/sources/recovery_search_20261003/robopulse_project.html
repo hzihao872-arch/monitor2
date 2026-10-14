@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>PRM-as-a-Judge</title>
+  <meta name="description"
+        content="PRM-as-a-Judge: A dense evaluation paradigm for robotics.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="apple-touch-icon" href="assets/images/logo.png">
+
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
+  <style>
+    body {
+      font-family: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fafafa;
+      color: #1a1a1a;
+      line-height: 1.7;
+    }
+
+    .site-nav {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1.5rem;
+      padding: 1.25rem 1.5rem;
+      max-width: 860px;
+      margin: 0 auto;
+      border-bottom: 1px solid #e8e8e8;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(250, 250, 250, 0.94);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+
+    .site-nav a {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+
+    .site-nav a:hover {
+      color: #1a1a1a;
+    }
+
+    .site-nav a.active {
+      color: #1a1a1a;
+      font-weight: 500;
+    }
+
+    .page-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    .home-hero {
+      text-align: center;
+      padding: 0 4%;
+    }
+
+    .home-hero h1 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .home-hero p {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+
+    .home-hero .title-with-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .title-logo {
+      height: 3.5rem;
+      width: auto;
+      margin-right: -0.4rem;
+    }
+
+    .home-links {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .home-links a {
+      display: inline-block;
+      padding: 0.55rem 0.9rem;
+      border: 1px solid #d9dee8;
+      border-radius: 8px;
+      color: #4d596d;
+      background: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    }
+
+    .home-links a:hover {
+      color: #245fb7;
+      border-color: #9db8e5;
+      background: #f5f8ff;
+    }
+
+    .home-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e8e8e8;
+    }
+
+    .home-section h2 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1a1a1a;
+    }
+
+    .news-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .news-list li {
+      margin-bottom: 0.75rem;
+      padding-left: 1.25rem;
+      position: relative;
+    }
+
+    .news-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #666;
+    }
+
+    .news-list a {
+      color: #1a1a1a;
+      text-decoration: none;
+    }
+
+    .news-date {
+      display: block;
+      color: #7a7a7a;
+      font-size: 0.9rem;
+      margin-bottom: 0.12rem;
+    }
+
+    .news-list a:hover {
+      color: #E8641B;
+      text-decoration: underline;
+    }
+
+    .home-collab {
+      margin-top: 3rem;
+      padding: 2rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .home-collab p {
+      color: #333;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .home-collab a {
+      color: #1a1a1a;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .home-collab a:hover {
+      color: #E8641B;
+    }
+
+    .home-community {
+      text-align: center;
+    }
+
+    .home-community-card {
+      max-width: 360px;
+      margin: 0 auto;
+      padding: 1.25rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    .home-community-card a {
+      display: inline-block;
+    }
+
+    .home-community-card img {
+      display: block;
+      width: min(100%, 280px);
+      height: auto;
+      margin: 0 auto;
+      border-radius: 6px;
+    }
+
+    .home-community-card p {
+      margin: 0.85rem 0 0;
+      color: #666;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="site-nav">
+    <a href="index.html" class="active">Home</a>
+    <a href="blog.html">Blog</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="doc.html">Usage</a>
+  </nav>
+
+  <main class="page-container">
+    <div class="home-hero">
+      <h1 class="title-with-logo">
+        <img src="assets/images/logo-clip.png" alt="PRM-as-a-Judge" class="title-logo">
+        <span>PRM-as-a-Judge</span>
+      </h1>
+      <p>
+        A dense evaluation paradigm that turns trajectory videos into a goldmine of progress signals. 
+        Moving beyond the "Pass/Fail" mirage in robotics.
+      </p>
+      <div class="home-links">
+        <a href="https://arxiv.org/abs/2608.14284" target="_blank" rel="noopener noreferrer">Paper 1.5</a>
+        <a href="https://arxiv.org/abs/2603.21669" target="_blank" rel="noopener noreferrer">Paper 1.0</a>
+        <a href="https://github.com/YuyangLiu2003/PRM-as-a-Judge" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://huggingface.co/datasets/lyy0715/RoboPulsePlusPlus" target="_blank" rel="noopener noreferrer">RoboPulse++ Benchmark</a>
+        <a href="doc.html">Quick Start</a>
+        <a href="leaderboard.html">Leaderboard</a>
+      </div>
+    </div>
+
+    <section class="home-section">
+      <h2>News 🎉</h2>
+      <ul class="news-list">
+        <li>
+          <span class="news-date">August 31, 2026</span>
+          <a href="https://huggingface.co/datasets/lyy0715/RoboPulsePlusPlus" target="_blank" rel="noopener noreferrer">RoboPulse++ is now open on Hugging Face — Explore the trajectory-level benchmark for progress-judge evaluation.</a>
+        </li>
+        <li>
+  <span class="news-date">August 16, 2026</span>
+  <a href="blog-introducing-prm-as-a-judge-1.5.html">PRM-as-a-Judge 1.5 technical report is now available — Introducing a comprehensive toolkit for dense robot trajectory evaluation and fine-grained process assessment.</a>
+</li>
+        <li>
+          <span class="news-date">July 20, 2026</span>
+          <a href="doc.html">PRM-as-a-Judge user guide is now available — Follow a streamlined Quick Start and a detailed Advanced Guide from manifest input to progress curves, metrics, and interactive reports.</a>
+        </li>
+        <li>
+          <span class="news-date">March 30, 2026</span>
+          <a href="https://huggingface.co/datasets/yuheng2000/RoboPulse" target="_blank" rel="noopener noreferrer">RoboPulse benchmark page is now live on Hugging Face — Explore microscopic evaluator verification across 1,800 pairwise samples</a>
+        </li>
+        <li>
+          <span class="news-date">March 23, 2026</span>
+          <a href="blog-introducing-prm-as-a-judge.html">Introducing PRM-as-a-Judge — Read the main article for methodology, OPD framework, and interactive demos</a>
+        </li>
+        <li>
+          <span class="news-date">March 20, 2026</span>
+          <a href="leaderboard.html">RoboChallenge task leaderboard now available — Check out rankings and submit your results</a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="home-section home-community" id="wechat-community">
+      <h2>WeChat Community</h2>
+      <div class="home-community-card">
+        <a href="https://github.com/YuyangLiu2003/PRM-as-a-Judge#wechat-community" target="_blank" rel="noopener noreferrer">
+          <img
+            src="https://raw.githubusercontent.com/YuyangLiu2003/PRM-as-a-Judge/main/figs/weixin.jpg"
+            alt="WeChat group QR code"
+            loading="lazy">
+        </a>
+        <p>Scan the QR code to join the WeChat community.</p>
+      </div>
+    </section>
+
+    <section class="home-collab">
+      <p>We welcome collaboration and feedback from the robotics community. If you have questions or would like to work with us on dense trajectory evaluation, please reach out at <a href="mailto:liuyuyang2025@ia.ac.cn">liuyuyang2025@ia.ac.cn</a>.</p>
+    </section>
+  </main>
+  <script src="assets/js/visit-counter.js"></script>
+</body>
+
+</html>

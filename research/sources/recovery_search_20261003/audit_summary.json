@@ -1,0 +1,42 @@
+{
+  "source_files": 211,
+  "saved_source_bytes": 32602719,
+  "verified_sha256": true,
+  "published_complete_view1_episodes": [
+    18,
+    19,
+    618,
+    621
+  ],
+  "h1_run": false,
+  "model_run": false,
+  "failures": [
+    {
+      "action": "first metadata inspection",
+      "reason": "Windows default GBK decoding; retried explicit UTF-8"
+    },
+    {
+      "action": "unexpanded ViFailback dataset API",
+      "reason": "response exceeded 5,000,000-byte per-file cap and was aborted; no partial file saved; retried expand=sha&expand=cardData"
+    }
+  ],
+  "snapshot_scope": "Original D049 batch; original top-level model_run=false describes that historical batch only.",
+  "latest_continuation": {
+    "decisions": [
+      "D050",
+      "D051"
+    ],
+    "source_files": 55,
+    "saved_source_bytes": 26105349,
+    "source_manifest": "upstream_trace/fetch_manifest.json",
+    "verification": "upstream_trace/verification_summary.json",
+    "all_59_frames_pixel_exact": true,
+    "model_run": true,
+    "model_calls": 62,
+    "valid_model_judgments": 0,
+    "diagnostic_audit": "upstream_trace/diagnostic_audit.json",
+    "independent_review": false,
+    "h1_run": false,
+    "stage8": false
+  }
+}

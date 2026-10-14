@@ -1,0 +1,28 @@
+{
+  "created_utc": "2026-10-03T08:36:35.517188+00:00",
+  "pass": false,
+  "reviewer": "single project executor; development only, not independent labels",
+  "observations": [
+    {
+      "run": "probe_neutral_q0",
+      "finding": "Correct basic blue-center / green-left / red-right arrangement, all separate on surface. No task-completion hallucination."
+    },
+    {
+      "run": "probe_joint_q0",
+      "finding": "Memory correctly says green not stacked and red not placed; H/C/G remain unknown. This is more grounded prose than the previous2B output, not evidence of accurate structured judgments or a size-only effect."
+    },
+    {
+      "run": "probe_joint_q2",
+      "finding": "Output H+/C+ and summary green placed on blue are not supported by the supplied q2/q0/q1 frames: green is partly occluded near left gripper while blue is visible separately. No evidence for released green on blue. Red-not-placed statement is supported. No independent truth assigned."
+    },
+    {
+      "run": "probe_joint_q6",
+      "finding": "No judgment generated: HTTP400 context rejection, server counts4457 input tokens versus4096 context."
+    }
+  ],
+  "gate_failure": [
+    "runtime failure at four-frame packet",
+    "q2 summary overclaims established placement under occlusion"
+  ],
+  "decision": "Stop this preregistered batch. No chain/full run, no4B fallback, no context expansion or output repair.8B remains a locally runnable candidate, not a validated strong baseline or author reproduction."
+}

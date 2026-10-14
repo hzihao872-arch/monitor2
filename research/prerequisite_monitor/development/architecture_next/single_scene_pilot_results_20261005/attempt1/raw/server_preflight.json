@@ -1,0 +1,68 @@
+{
+  "status": "pass",
+  "checks": {
+    "existing_base": true,
+    "existing_8b_venv": true,
+    "existing_4b_venv": true,
+    "existing_8b_config": true,
+    "existing_4b_config": true,
+    "pinned_8b_revision": true,
+    "pinned_4b_revision": true,
+    "input_zip_sha": true,
+    "code_zip_present": true,
+    "input_zip_integrity": true,
+    "input_zip_nine_allowed_files": true,
+    "code_zip_integrity": true,
+    "code_zip_model_side_only": true,
+    "topreward_commit": true,
+    "robometer_compat_base_commit": true,
+    "robometer_compat_patch_present": true,
+    "robometer_compat_script": true,
+    "topreward_client": true,
+    "gpu_available": true
+  },
+  "input_members": [
+    "0001.mp4",
+    "0002.mp4",
+    "0003.mp4",
+    "0004.mp4",
+    "0005.mp4",
+    "0006.mp4",
+    "instruction.txt",
+    "manifest.jsonl",
+    "media_hashes.json"
+  ],
+  "code_members": [
+    "pilot_pkg/__init__.py",
+    "pilot_pkg/monitor_contract.py",
+    "pilot_pkg/monitor_relation_endpoint_v1.py",
+    "pilot_pkg/preflight_single_scene_server.py",
+    "pilot_pkg/run_monitor_qwen.py",
+    "pilot_pkg/run_native_single_scene_pilot.py",
+    "pilot_pkg/run_relation_endpoint_pilot.py",
+    "pilot_pkg/run_semantic_checkpoint_probe.py",
+    "pilot_pkg/seal_single_scene_pilot.py"
+  ],
+  "input_zip_sha256": "c99543639e2ac7e8ddf270654d1394f42d6f121021463bf3f452648686183cfa",
+  "code_zip_sha256": "59d9bb247ffc1b476480ed6e835b952ce79f2d4d2f93dc9716281b3ae9138db1",
+  "top_git": {
+    "returncode": 0,
+    "stdout": "4877a0ee5098cbec18485125466631b1dcc4a573",
+    "stderr": ""
+  },
+  "robo_git": {
+    "returncode": 0,
+    "stdout": "352d160389daa964788de1ec933d1925f3a6de4f",
+    "stderr": ""
+  },
+  "robo_patch_sha256": "b560da190b4dccaa405684beb2e33a5950fefd035983dc98ae9d02406b9d2fac",
+  "gpu": {
+    "returncode": 0,
+    "stdout": "NVIDIA GeForce RTX 5090, 32607, 32110",
+    "stderr": ""
+  },
+  "disk_free_bytes": 48236826624,
+  "8b_config_sha256": "5cd452860dc1e9c29dd71cc3cef7f39b338b7a40793f7a260655c2d3568f3661",
+  "4b_config_sha256": "2287e93a95c1dcd5e471cf386cf5750e7643ee0b2c44a2544a1318b8b8f3c9be",
+  "note": "read only; no model loaded, rent, install, or download"
+}

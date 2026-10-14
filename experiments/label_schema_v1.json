@@ -1,0 +1,11 @@
+{
+  "version": "S6-draft-3-label-schema-1",
+  "status": "unpopulated",
+  "online_track_forbidden_keys": ["reference", "reference_labels", "ground_truth", "labels", "events", "online_judgment", "success"],
+  "reference_label_fields": ["trajectory_id", "tick", "object_id", "instruction_version", "field", "reference", "online", "visibility_reason", "annotator_id", "provenance"],
+  "reference_values": ["+", "-", "?"],
+  "event_fields": ["event_id", "trajectory_id", "object_id", "instruction_version", "side", "te_lower", "te_upper", "tv_lower", "tv_upper", "visible_intervals", "repair_time", "anchor_rationale", "reference_provenance"],
+  "event_side_values": ["negative", "positive"],
+  "interval_semantics": "Trajectory seconds; visible intervals are half-open [start,end); te/tv bounds are object-and-state-specific; a later occlusion ends the current interval.",
+  "scope": "Reference labels are stored separately and are read only by the scoring process after inference records exist. No H1 labels are populated yet."
+}

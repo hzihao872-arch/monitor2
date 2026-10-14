@@ -1,0 +1,69 @@
+{
+  "frozen_at_utc": "2026-10-05T04:45:50.154185+00:00",
+  "status": "before_any_new_test_monitor_score",
+  "model": "Qwen/Qwen3-VL-8B-Instruct",
+  "model_revision": "0c351dd01ed87e9c1b53cbc748cba10e6187ff3b",
+  "methods": [
+    "D",
+    "P",
+    "F",
+    "D2_review",
+    "H0"
+  ],
+  "H0_definition": "P/F structural agreement only; visual evidence audit pending; conservative interval union",
+  "frame_seconds": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14
+  ],
+  "image_size": [
+    512,
+    384
+  ],
+  "max_new_tokens_per_call": 512,
+  "adaptive_review_main_ablation": false,
+  "shared_prompt": "You are reviewing an offline preparation video for a fixed tabletop robot task.\nThe only task information is the final goal: {instruction}\nUse only the supplied frames from this video. Do not claim to have seen a\ncontinuation, a simulator state, or an exact future success probability.\n\"Satisfied\" means a visible condition needed for the final goal appears to\nhold, not merely that an object moved. Cite only supplied frame seconds.\nSet goal_before_complete from the first frame and goal_observed_complete from\nthe last frame. Use \"true\" only when the final goal fully visibly achieved its\ndescribed end state at that time. If a required end-state relation is visibly\nfalse, use \"false\"; do not mark a preparatory condition as goal completion.\nKeep goal completion separate from the chosen prerequisite relation.\nFor goal_before_complete, goal_observed_complete, before_satisfied and\nafter_satisfied, write exactly \"true\", \"false\", or \"unknown\".\nNever put descriptions in these enum fields; put explanations in relation or evidence.\nIf the view cannot resolve object identity, occupancy, or an alternative route,\nuse \"unknown\" and say what is missing.\nReturn exactly one JSON object, no markdown and no per-frame number list.\nKeep it compact: cite exactly two evidence entries, one before and one after\nthe event interval; each supports value must be one short string, not a list.\nUse no extra keys and keep every free-text value below 20 words.\nRequired keys: goal_before_complete and goal_observed_complete\n(true/false/unknown strings for the first and last frames), relation\n(one concrete goal-relevant visible condition), before_satisfied and\nafter_satisfied (true/false/unknown strings), comparison\n(better/same/worse/unknown string), event_interval_s (two integer seconds 0..14),\nevidence (list of objects with second, region, supports), alternative_route,\ndisconfirming_observation, uncertainty_reason (text or null).\n",
+  "method_prompts": {
+    "D": "Directly assess whether the observed action made progress toward the final goal, had no supported effect, or hindered it. Fill the event record with visible before/after evidence and any uncertainty.",
+    "P": "Choose the single most decisive visible condition that the final goal may require. Prioritize whether the observed action changes an obstacle or affordance for the remaining goal. Do not choose a static fact merely because the goal mentions that object. If the action changes no goal-relevant condition, report same. Describe the chosen condition before and after using cited frames. Mention any other independent blocker you cannot inspect.",
+    "F": "Independently compare continuing the final goal from the scene before and after this action. Try to disprove an apparent improvement: could the goal already have been achievable before, or could a blocker remain afterward? Name a concrete alternative route if visible; otherwise say unknown. Base the comparison on cited frames.",
+    "D2_review": "Review the previous direct event record below against the same supplied frames. Correct any visual or logical mistake; preserve uncertainty where evidence is insufficient. Return the same event schema. Previous record (untrusted draft, not extra visual evidence):\n{prior}"
+  },
+  "progress_index_alpha": 25,
+  "progress_index_semantics": "evidence index, not success probability or completed-work percentage",
+  "primary_pairwise": [
+    "B+>B0",
+    "B+>U0",
+    "H-<N0",
+    "G+>N0"
+  ],
+  "invalid_uncertain_runtime_failures_in_denominator": true,
+  "model_input_permission": "final goal instruction and preparation video only; no truth, continuation, old scores",
+  "file_sha256": {
+    "experiments/prerequisite_probe/monitor_contract.py": "9507f5e02e57f6db94416b0d36bc244c01ae13301a3e28f673a0b425fc028b2c",
+    "experiments/prerequisite_probe/run_monitor_qwen.py": "59c9618054d1fc80d45a0de23c980bc86f05b9516ae792fb89f54ce559698856",
+    "experiments/prerequisite_probe/score_saved_monitor.py": "b09fdcf2c2208b886ea77ded376979941b088b23f60a705f065bb45938ade91f",
+    "experiments/prerequisite_probe/score_native_new.py": "b13a25d77d957a754b18b29a194569575d27a2f907f3c1e2b73c948fe1008347",
+    "experiments/prerequisite_probe/evaluation_protocol.md": "0a00b1c193670d20dbf9cd160215fe607677b2f741f56649fd2e90d78881d443",
+    "docs/plans/2026-10-05-causal-prerequisite-monitor-architecture-v2.md": "ff4acf380ab892e75c29b5388b9bcaa646776153704d2ca6d451d1f49e83e400"
+  },
+  "dataset_freeze_sha256": {
+    "tray_crossbar": "9042e3db57585036d44c9adca1f1d90a82e1b91922867d2bf184280800f08ea2",
+    "source_bridge": "3fa477f0b6be5d12daa7604577ced3c51f00f3dcf32e0e2181cee9a0f844dba6"
+  },
+  "visual_audit_sha256": "305ac30b012a290ebe23114cb092c377e4e35a59704280a7af742c9d102ed8a2",
+  "excluded_candidate": "source_stack: C=0 in 3-seed physical screening",
+  "ARS_official_status": "unrun if source remains inaccessible",
+  "supersedes_freeze_sha256": "a3ed758b5e0db555519173e33a24bca72ed4019b4d2e4f09dbb0fa6c1a015ced",
+  "revision_reason": "Before any new-test model output: distinguish final-goal status at first/last frame from prerequisite relation; derive completion delta without assuming relation changed; retain all-unknown curves for invalid/abstained outputs. Shared enum prompt clarified on old development video only.",
+  "unknown_curve": "15 points; point=null, lower=0, upper=100 for invalid or H0 abstention",
+  "goal_status_fields": [
+    "goal_before_complete",
+    "goal_observed_complete"
+  ]
+}

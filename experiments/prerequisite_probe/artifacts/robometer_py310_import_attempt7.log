@@ -1,0 +1,24 @@
+Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.8.0+cpu).
+W1004 19:29:21.358000 54624 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+D:\monitor2\.venv-robometer\lib\site-packages\unsloth\__init__.py:1606: UserWarning: WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from ._gpu_init import *
+Traceback (most recent call last):
+  File "D:\monitor2\research\sources\robometer\scripts\example_inference_local.py", line 26, in <module>
+    from robometer.evals.eval_server import compute_batch_outputs
+  File "D:\monitor2\research\sources\robometer\robometer\evals\eval_server.py", line 54, in <module>
+    from robometer.utils.setup_utils import setup_model_and_processor, setup_batch_collator
+  File "D:\monitor2\research\sources\robometer\robometer\utils\setup_utils.py", line 7, in <module>
+    from unsloth import FastVisionModel
+  File "D:\monitor2\.venv-robometer\lib\site-packages\unsloth\__init__.py", line 1606, in <module>
+    from ._gpu_init import *
+  File "D:\monitor2\.venv-robometer\lib\site-packages\unsloth\_gpu_init.py", line 183, in <module>
+    import unsloth_zoo
+  File "D:\monitor2\.venv-robometer\lib\site-packages\unsloth_zoo\__init__.py", line 415, in <module>
+    from .device_type import (
+  File "D:\monitor2\.venv-robometer\lib\site-packages\unsloth_zoo\device_type.py", line 432, in <module>
+    DEVICE_TYPE : str = get_device_type()
+  File "D:\monitor2\.venv-robometer\lib\site-packages\unsloth_zoo\device_type.py", line 416, in get_device_type
+    raise NotImplementedError("Unsloth cannot find any torch accelerator? You need a GPU.")
+NotImplementedError: Unsloth cannot find any torch accelerator? You need a GPU.

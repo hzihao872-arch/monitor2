@@ -1,0 +1,1 @@
+TOPReward 与 Transformers 随附已取得的原许可证。Robometer 本地 README 声称 MIT，但本次未取得 LICENSE 文件，未臆造许可证。GVL 作者 demo 来源与固定 commit/SHA 见 sources_gvl/PINNED.json，未核验独立 LICENSE；保留来源元数据。各来源片段用于机制审计，不代表作者背书。

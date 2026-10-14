@@ -1,0 +1,248 @@
+{
+  "model_inference_run": false,
+  "github_revision": "354df56ff177018f4ed3849996b3b1fc9cadedc8",
+  "cases": [
+    {
+      "example": 1,
+      "global_episode_id": "ARX-data/human-data-1204-2cameras/20251130-162433-bad-purple cube-shaped building block/videos/chunk-000/observation.images.front/episode_000007",
+      "bucket": "test_nonexpert_seen",
+      "video_git_blob_sha1": "c5ecacd4ab0f4c2db12f5732514afe4c9cc0505c",
+      "matches_current_github_video": true,
+      "video_stats": {
+        "width": 640,
+        "height": 480,
+        "r_frame_rate": "30/1",
+        "nb_frames": "258"
+      },
+      "old_current_equal": {
+        "prompt": true,
+        "response": true,
+        "pred_curve_point_times_sec": true,
+        "pred_curve_point_progress": true
+      },
+      "dense_interpolation_max_abs_difference_from_author": 0.0,
+      "recomputed_dense_mae": 2.4426571920757962,
+      "author_curve_metrics": {
+        "point_count": 258,
+        "mae": 2.4426571920757962,
+        "rmse": 3.2500268666664343,
+        "pearson": 0.977103530223041,
+        "spearman": 0.9351348813030206
+      }
+    },
+    {
+      "example": 2,
+      "global_episode_id": "ARX-data/human-data-1204-2cameras/20251128-183101-bad-onion-express-box/videos/chunk-000/observation.images.front/episode_000000",
+      "bucket": "test_nonexpert_unseen",
+      "video_git_blob_sha1": "7bcc890fd36d6e965ca2ec1a94bed3ebb97d45b7",
+      "matches_current_github_video": true,
+      "video_stats": {
+        "width": 640,
+        "height": 480,
+        "r_frame_rate": "30/1",
+        "nb_frames": "289"
+      },
+      "old_current_equal": {
+        "prompt": true,
+        "response": true,
+        "pred_curve_point_times_sec": true,
+        "pred_curve_point_progress": true
+      },
+      "dense_interpolation_max_abs_difference_from_author": 0.0,
+      "recomputed_dense_mae": 6.6085736332179925,
+      "author_curve_metrics": {
+        "point_count": 289,
+        "mae": 6.6085736332179925,
+        "rmse": 7.729949344246744,
+        "pearson": 0.43327740758574307,
+        "spearman": 0.5164980259299339
+      }
+    },
+    {
+      "example": 3,
+      "global_episode_id": "ARX-data/human-data-0114/20260112-yuanshuaijun/20260111-204118-put-triangular-beaker-onto-tripod-good2/videos/chunk-000/observation.images.front/episode_000002",
+      "bucket": "test_expert_seen",
+      "video_git_blob_sha1": "9a9e705f4b88f17e20889d7f54561e97c1f7f97b",
+      "matches_current_github_video": true,
+      "video_stats": {
+        "width": 640,
+        "height": 480,
+        "r_frame_rate": "30/1",
+        "nb_frames": "172"
+      }
+    }
+  ],
+  "downloaded_sources_hash_verified": 19,
+  "public_prediction_paths": [
+    "examples/reference_outputs/example_01.jsonl",
+    "examples/reference_outputs/example_02.jsonl",
+    "examples/reference_outputs/example_03.jsonl",
+    "real_robot_rl/assets/tape/prediction.jsonl",
+    "real_robot_rl/assets/tennis_ball/prediction.jsonl",
+    "real_robot_rl/assets/tube/prediction.jsonl"
+  ],
+  "prefix_task_description_check": [
+    {
+      "file": "test_expert_seen_prefix.json.part",
+      "partial_file": true,
+      "complete_records_read": 5,
+      "records": [
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251125-212141-good-yellow square-delivery box/videos/chunk-000/observation.images.front/episode_000008",
+          "task_instruction": "抓取黄色方块使其落入纸盒中",
+          "task_description": "抓取黄色方块使其落入纸盒中：\n开始移动：0%\n爪夹靠近黄色方块：20%\n爪夹抓取黄色方块：40%\n爪夹抓住黄色方块接近纸盒：60%\n爪夹将黄色方块放入纸盒：80%\n爪夹松开，黄色方块落入纸盒中：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251126-102939-good-red-square-rice-cooker/videos/chunk-000/observation.images.front/episode_000008",
+          "task_instruction": "抓取红色方块使其落入饭锅中",
+          "task_description": "抓取红色方块使其落入饭锅中：\n开始移动：0%\n爪夹靠近红色方块：20%\n爪夹抓取红色方块：40%\n爪夹抓住红色方块接近饭锅：60%\n爪夹将红色方块放入饭锅：80%\n爪夹松开，红色方块落入饭锅中：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251126-111521-good-red-square-cylindrical-container/videos/chunk-000/observation.images.front/episode_000010",
+          "task_instruction": "抓取红色方块使其落入塑料盆中",
+          "task_description": "抓取红色方块使其落入塑料盆中：\n开始移动：0%\n爪夹靠近红色方块：20%\n爪夹抓取红色方块：40%\n爪夹抓住红色方块接近塑料盆：60%\n爪夹将红色方块放入塑料盆：80%\n爪夹松开，红色方块落入塑料盆中：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251126-005607-good-yellow square-rice cooker/videos/chunk-000/observation.images.front/episode_000004",
+          "task_instruction": "抓取黄色方块使其落入饭锅中",
+          "task_description": "抓取黄色方块使其落入饭锅中：\n开始移动：0%\n爪夹靠近黄色方块：20%\n爪夹抓取黄色方块：40%\n爪夹抓住黄色方块接近饭锅：60%\n爪夹将黄色方块放入饭锅：80%\n爪夹松开，黄色方块落入饭锅中：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251126-131821-good-socket-express-box/videos/chunk-000/observation.images.front/episode_000010",
+          "task_instruction": "抓取插座使其落入纸盒中",
+          "task_description": "抓取插座使其落入纸盒中：\n开始移动：0%\n爪夹靠近插座：20%\n爪夹抓取插座：40%\n爪夹抓住插座接近纸盒：60%\n爪夹将插座放入纸盒：80%\n爪夹松开，插座落入纸盒中：100%",
+          "contains_percent_symbol": true
+        }
+      ]
+    },
+    {
+      "file": "test_nonexpert_seen_prefix.json.part",
+      "partial_file": true,
+      "complete_records_read": 5,
+      "records": [
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251125-214322-bad-yellow square-delivery box/videos/chunk-000/observation.images.front/episode_000009",
+          "task_instruction": "抓取黄色方块使其落入纸盒中",
+          "task_description": "抓取黄色方块使其落入纸盒中：\n开始移动：0%\n爪夹靠近黄色方块：20%\n爪夹抓取黄色方块：40%\n爪夹抓住黄色方块接近纸盒：60%\n爪夹将黄色方块放入纸盒：80%\n爪夹松开，黄色方块落入纸盒中：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251125-034756-bad-medicine bottle-white tray/videos/chunk-000/observation.images.front/episode_000002",
+          "task_instruction": "把药瓶放进白色托盘里",
+          "task_description": "把药瓶放进白色托盘里\n爪夹开始移动：0\n爪夹接近药瓶：20%\n爪夹夹起药瓶：40%\n爪夹夹紧药瓶接近白色托盘：60%\n爪夹夹起药瓶放入白色托盘里：80%\n爪夹松开，药瓶落入白色托盘里：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251125-154912-bad-bottles-cylindrical-container/videos/chunk-000/observation.images.front/episode_000008",
+          "task_instruction": "把塑料瓶放进塑料盆里",
+          "task_description": "把塑料瓶放进塑料盆里\n爪夹开始移动：0\n爪夹接近塑料瓶：20%\n爪夹夹起塑料瓶：40%\n爪夹夹紧塑料瓶接近塑料盆：60%\n爪夹夹起塑料瓶放入塑料盆：80%\n爪夹松开，塑料瓶落入塑料盆：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251124-173759-bad-bule-red-yellow/videos/chunk-000/observation.images.front/episode_000009",
+          "task_instruction": "将红色立方体放在蓝色立方体上，然后黄色立方体放在红色立方体上。",
+          "task_description": "将红色立方体放在蓝色立方体上，然后黄色立方体放在红色立方体上。\n爪夹开始移动：0\n爪夹接近红色立方体：20%\n爪夹夹起红色立方体：30%\n爪夹夹紧红色立方体接近蓝色立方体：40%\n爪夹松开，红色立方体放在蓝色立方体上：50%\n爪夹接近黄色立方体：60%\n爪夹夹起黄色立方体：70%\n爪夹夹紧黄色立方体接近红色立方体：80%\n爪夹松开，黄色立方体放在红色立方体上：100%\n\n",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251126-145704-bad-coket-white-tary/videos/chunk-000/observation.images.front/episode_000000",
+          "task_instruction": "抓取插座使其落入白色托盘中",
+          "task_description": "抓取插座使其落入白色托盘中：\n开始移动：0%\n爪夹靠近插座：20%\n爪夹抓取插座：40%\n爪夹抓住插座接近白色托盘：60%\n爪夹将插座放入白色托盘：80%\n爪夹松开，插座落入白色托盘中：100%",
+          "contains_percent_symbol": true
+        }
+      ]
+    },
+    {
+      "file": "test_nonexpert_unseen_prefix.json.part",
+      "partial_file": true,
+      "complete_records_read": 4,
+      "records": [
+        {
+          "global_episode_id": "ARX-data/human-data-1128/20251125-044346-bad-medicine bottle-rice cooker/videos/chunk-000/observation.images.front/episode_000004",
+          "task_instruction": "拿起玉米，放入碗中。",
+          "task_description": "拿起玉米，放入碗中。\n准备移动：0%\n爪夹开始移动：10%\n爪夹靠近玉米：20%\n爪夹抓住玉米：40%\n爪夹抓住玉米并接近碗：60%\n爪夹保持合拢并移动到碗的上方：80%\n爪夹松开，使玉米落入碗里：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-0114/20260107-0113-lilingchu/20260108-lilingchu/20260108-135109-put-corn-white-box-mix/videos/chunk-000/observation.images.right/episode_000002",
+          "task_instruction": "爪夹把玉米放入白色盒子里。",
+          "task_description": "爪夹把玉米放入白色盒子里。\n开始移动:0%\n爪夹靠近玉米:20%\n爪夹抓取玉米:40%\n爪夹抓住玉米接近白色盒子:60%\n爪夹将玉米放入白色盒子:80%\n爪夹松开，玉米落入白色盒子:100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/human-data-0114/20260107-0113-lilingchu/20260113-lilingchu/20260113-152024-liquid-dropper-graduated cylinder-bad/videos/chunk-000/observation.images.right/episode_000000",
+          "task_instruction": "将溶液从橡胶头滴管滴入玻璃量杯中",
+          "task_description": "将溶液从橡胶头滴管滴入玻璃量杯中\n爪夹准备移动：0\n爪夹接近滴管：20%\n爪夹抓取滴管：40%\n爪夹夹住滴管接近量杯：60%\n爪夹将滴管移动至量杯正上方：80%\n爪夹挤压，溶液滴入玻璃量杯中：100%",
+          "contains_percent_symbol": true
+        },
+        {
+          "global_episode_id": "ARX-data/20260114-movetable/20260112-songjiaqi/20260112-164939-put-black pen-white-trash can-bad/videos/chunk-000/observation.images.bird/episode_000001",
+          "task_instruction": "抓起黑色的笔使其放入白色垃圾桶中",
+          "task_description": "抓起黑色的笔使其放入白色垃圾桶中:\n开始移动:0%\n爪夹靠近黑色的笔:20%\n爪夹抓取黑色的笔:40%\n爪夹抓住黑色的笔接近白色垃圾桶:60%\n爪夹抓住黑色的笔在白色垃圾桶正上方:80%\n爪夹松开，将黑色的笔放入白色垃圾桶中:100%",
+          "contains_percent_symbol": true
+        }
+      ]
+    }
+  ],
+  "onion_native_prediction_points": [
+    {
+      "native_output_time_sec": 0.0,
+      "frame": 0,
+      "native_pred_progress": 0.0,
+      "author_dense_gt_at_frame": 0.0
+    },
+    {
+      "native_output_time_sec": 2.3,
+      "frame": 69,
+      "native_pred_progress": 5.0,
+      "author_dense_gt_at_frame": 9.9
+    },
+    {
+      "native_output_time_sec": 3.3,
+      "frame": 99,
+      "native_pred_progress": 8.0,
+      "author_dense_gt_at_frame": 13.9
+    },
+    {
+      "native_output_time_sec": 4.3,
+      "frame": 129,
+      "native_pred_progress": 10.0,
+      "author_dense_gt_at_frame": 17.9
+    },
+    {
+      "native_output_time_sec": 5.1,
+      "frame": 153,
+      "native_pred_progress": -5.0,
+      "author_dense_gt_at_frame": 8.7
+    },
+    {
+      "native_output_time_sec": 6.1,
+      "frame": 183,
+      "native_pred_progress": -8.0,
+      "author_dense_gt_at_frame": 2.3
+    },
+    {
+      "native_output_time_sec": 7.1,
+      "frame": 213,
+      "native_pred_progress": -2.0,
+      "author_dense_gt_at_frame": -1.5
+    },
+    {
+      "native_output_time_sec": 8.3,
+      "frame": 249,
+      "native_pred_progress": 2.0,
+      "author_dense_gt_at_frame": -6.4
+    },
+    {
+      "native_output_time_sec": 9.5,
+      "frame": 285,
+      "native_pred_progress": 4.0,
+      "author_dense_gt_at_frame": -10.0
+    }
+  ],
+  "onion_error_present_without_interpolating_predictions": true
+}

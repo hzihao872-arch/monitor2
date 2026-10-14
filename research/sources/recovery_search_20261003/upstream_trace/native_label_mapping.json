@@ -1,0 +1,52 @@
+{
+  "upstream_license": "MIT declared on original and author-linked conversion cards; direct reuse of original source materials for local research; retain attribution and card snapshots",
+  "robopulse_license": "other; new aggregation/interval annotation terms unresolved; labels retained for provenance/screening, not used as evaluation truth or model inputs",
+  "reuse": [
+    {
+      "field": "task, subtasks, video, images",
+      "target": "Task and object binding / source provenance",
+      "missing": "Task-revision history not provided"
+    },
+    {
+      "field": "failure_detection=yes / episode_success=failure",
+      "target": "Whole-episode failure screening",
+      "cannot_infer": "All frames or all conditions failed"
+    },
+    {
+      "field": "failure_subtask=5, failure_type",
+      "target": "Original failure localization/category metadata",
+      "episodes": {
+        "618": "gripper 6d-pose",
+        "621": "task planning"
+      },
+      "cannot_infer": "Target relation loss/retention or physical contact mechanism"
+    },
+    {
+      "field": "avoid/correct keyframes",
+      "target": "Reference navigation anchors / source-frame correspondence",
+      "episodes": {
+        "618": [
+          277,
+          334
+        ],
+        "621": [
+          275,
+          338
+        ]
+      },
+      "cannot_infer": "Event onset, online tv, successful correction or actual recovery"
+    },
+    {
+      "field": "RoboPulse +1/0/-1 intervals",
+      "target": "Native whole-progress screening only",
+      "cannot_infer": "Per-condition H/C/P/G or irreversible failure"
+    }
+  ],
+  "minimum_missing_fields": [
+    "Independent relation status review at selected before/after anchors",
+    "P0 prefix-only visibility and q14 ambiguity",
+    "Conservative loss bracket and no-repair-within-record check",
+    "Task/object semantics acceptance; no added all-time constraint"
+  ],
+  "whole_library_annotation_required": false
+}

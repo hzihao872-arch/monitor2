@@ -1,0 +1,17 @@
+D:\monitor2\.venv\Lib\site-packages\sapien\wrapper\pinocchio_model.py:299: UserWarning: pinnochio package is not installed, robotics functionalities will not be available
+  warnings.warn(
+before
+made
+reset
+Windows fatal exception: access violation
+
+Current thread 0x0000a728 (most recent call first):
+  File "D:\monitor2\.venv\Lib\site-packages\mani_skill\utils\structs\render_camera.py", line 173 in get_picture
+  File "D:\monitor2\.venv\Lib\site-packages\mani_skill\sensors\camera.py", line 222 in get_obs
+  File "D:\monitor2\.venv\Lib\site-packages\mani_skill\envs\scene.py", line 1168 in get_human_render_camera_images
+  File "D:\monitor2\.venv\Lib\site-packages\mani_skill\envs\sapien_env.py", line 1377 in render_rgb_array
+  File "D:\monitor2\.venv\Lib\site-packages\mani_skill\envs\sapien_env.py", line 1431 in render
+  File "D:\monitor2\.venv\Lib\site-packages\gymnasium\core.py", line 337 in render
+  File "D:\monitor2\.venv\Lib\site-packages\gymnasium\wrappers\common.py", line 408 in render
+  File "D:\monitor2\.venv\Lib\site-packages\gymnasium\core.py", line 337 in render
+  File "<string>", line 1 in <module>

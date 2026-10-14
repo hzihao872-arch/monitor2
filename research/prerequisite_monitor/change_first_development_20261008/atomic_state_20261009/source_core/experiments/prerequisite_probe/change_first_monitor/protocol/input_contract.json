@@ -1,0 +1,12 @@
+{
+  "version": "change-first-v1",
+  "allowed": ["anonymous_final_goal", "RGB_frames_at_or_before_as_of_ms", "fixed_common_capabilities"],
+  "forbidden": ["future_frames", "full_source_video_path", "condition_name", "human_change_description", "ground_truth", "simulator_state", "event_time", "reference_success_video"],
+  "first_stage_goal_blind": true,
+  "query_mode": "independent_prefix_reconstruction_no_semantic_memory",
+  "main_arms": ["D4", "K4", "C4"],
+  "additional_control_entries": ["KPLUS4", "D4DIRECT"],
+  "shared_first_stage": true,
+  "stage_order": ["V1", "L2", "V3", "L4"],
+  "no_automatic_retries": true
+}

@@ -1,0 +1,32 @@
+{
+  "episodes": 100,
+  "tasks": 13,
+  "verdicts": {
+    "fail": 57,
+    "success": 43
+  },
+  "robots": {
+    "aloha": 30,
+    "so101": 70
+  },
+  "failure_types_multilabel": {
+    "wrong_object": 3,
+    "translation_error": 34,
+    "wrong_placement": 21,
+    "wrong_gripper": 2,
+    "closing_error": 8,
+    "wrong_sequence": 5,
+    "orientation_error": 4,
+    "open_error": 1
+  },
+  "prediction_outputs_found_in_inspected_repo_tree": [],
+  "paper_long_onset_at_half_second_count_if_57_denominator": 23,
+  "paper_long_onset_at_one_second_count_if_57_denominator": 28,
+  "note": "Metadata audit only. Counts inferred from rounded paper percentages are not recovered per-example model predictions.",
+  "protracer_commit": "63dafa9b703be0347d80f63d049304269f8d000f",
+  "sarm2_commit": "9978198d4c6601f34063fa40e63f9ddc5baf7f68",
+  "failtime_revision": "07aea9142616cf1f8047512bd53a4d9fcd5e7cee",
+  "source_files_verified": 49,
+  "source_bytes": 4386842,
+  "fetch_errors": []
+}

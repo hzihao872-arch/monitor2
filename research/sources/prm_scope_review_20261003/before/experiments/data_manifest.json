@@ -1,0 +1,416 @@
+{
+  "version": "S7-screening-4",
+  "created_local_date": "2026-10-03",
+  "role": "development_only_screening_and_exploratory_diagnostics",
+  "holdout_eligible": false,
+  "h1_development_eligible": false,
+  "sources": [
+    {
+      "name": "RoboCasa365 ArrangeBreadBasket LeRobot mirror",
+      "source_url": "https://huggingface.co/datasets/jellyho/robocasa365-ArrangeBreadBasket",
+      "revision": "36849b0dfe8fe372600b2195788586771f402700",
+      "license": "Mirror card Apache-2.0; upstream RoboCasa data/assets CC BY 4.0; apply upstream attribution conservatively",
+      "files": [
+        {
+          "path": "research/sources/stage7_screening/robocasa_info.json",
+          "sha256": "76a00307665016dcde4121da77b687a915cea90a60573bba46541ebf81f9a8df"
+        },
+        {
+          "path": "research/sources/stage7_screening/robocasa_tasks.parquet",
+          "sha256": "15a795eb61c4e8b5dd0ee9308f4fc07f92320a365f8f047f3f197eaaba44e083"
+        },
+        {
+          "path": "research/sources/stage7_screening/robocasa_episodes.parquet",
+          "sha256": "e5e98af8f8dc48c0f2795bcb96f01ae14148424709d042ae1b96d1aff4742c50"
+        }
+      ],
+      "available": "Dataset-level task-description text, 514 success-demonstration episode metadata, 20 Hz timestamps, 3 RGB camera streams, 16D state, 12D action, reward/done fields; individual large MP4/trajectory blocks not fetched",
+      "h1_missing": "Verification that dataset-level text was the per-episode execution instruction and any revisions; verified local-success-then-loss and matched retained event, reference object state transitions, P0-visible intervals, independent annotation"
+    },
+    {
+      "name": "RoboFAC official test QA supplement",
+      "source_url": "https://huggingface.co/datasets/MINT-SJTU/RoboFAC-dataset",
+      "revision": "d18353ab36db82ff888ebc9e8485c9fa77e1b25b",
+      "license": "MIT on official data card",
+      "files": [
+        {
+          "path": "research/sources/stage7_screening/robofac_qa_split0.json",
+          "sha256": "7c8f01f9d8a395dee097a84d88b59c9d1bc6941005b1808562f7ca5881254afb"
+        }
+      ],
+      "available": "168 video-level QA entries with task text linked to subaction clip paths; no complete episode alignment in this file",
+      "h1_missing": "Per-episode original instruction provenance, complete trajectory, prior-achievement and loss reference transitions, synchronized P0 visibility, matched retention"
+    },
+    {
+      "name": "Robometer official OOD metadata and conversion provenance",
+      "source_url": "https://huggingface.co/datasets/robometer/rbm-1m-ood",
+      "revision": "3f3ee69ecc0ee0db627684da7d599ec26d08175c",
+      "license": "Export card Apache-2.0; raw upstream permissions not verified",
+      "role": "screening_only",
+      "holdout_eligible": false,
+      "h1_development_eligible": false,
+      "files": [
+        {
+          "path": "research/sources/replan_r1/rbm_repo_info.json",
+          "sha256": "16fdf89a1f32536460158186a1e6444b561e5171385b304d943d024b3e893815"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_tree.json",
+          "sha256": "53960217a78f6d3a84f747fcc071bb64d10f3a4e40276fa04445efd3b5abbd8a"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_README.md",
+          "sha256": "8b18f5f91f1fcf6c0240b102c781492a63670f876b73459f7542f7df2e8c9dfe"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_info.json",
+          "sha256": "2d9651b2f5c2b15e545033abc0312df9e6ab15269f32f32d29076b3b7e2e22ba"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_export_summary.json",
+          "sha256": "8a7900faa781f71d63c7573a06320d79af1673cdbf7200f1af5c7a295b4db78e"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_categorical_maps.json",
+          "sha256": "48a1848edf11ed0e13faef5aeea4565f6405ac18867a28b3be734f5b28613972"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_tasks.parquet",
+          "sha256": "193f79cfd17b109d1f62356321e5fe2f9e49f5c7e21e1490b99ab0ced829f033"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_episodes.parquet",
+          "sha256": "0765cba1e2eb2356a9bf7ec0792fcec0199eb9a874dc9865ba97d4126a9b0d36"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_data.parquet",
+          "sha256": "174880169c7d156c357fd33ff6c73883b1222c80384ce146a8701d5cb4bb21a6"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_mit_metadata.parquet",
+          "sha256": "7c34b2a35223e3d8cf17f949d495bd6faa55407ae38cd373e5fdd2ccd6a0d23c"
+        },
+        {
+          "path": "research/sources/replan_r1/rbm_code_tree.json",
+          "sha256": "aebe2c161a24d785a83574d590e007ec7e5b39cfd6762c3b5f3d84fa6d7d487f"
+        }
+      ],
+      "available": "571 exported records; 570 have 32 frames; quality classes verified; all partial_success fields empty; source clock not preserved in inspected schema",
+      "h1_missing": "Qualified prior-achievement/loss and retained events, original time mapping, source task semantics and independent review",
+      "provenance_manifest": "research/sources/replan_r1/fetch_manifest.json"
+    },
+    {
+      "name": "Robometer author-linked MIT Franka raw movemouse examples",
+      "source_url": "https://drive.google.com/drive/folders/17UnU8d8O9R_n7bWXT1BgCvc6UHbMawFk",
+      "revision": "2026-10-03 HTTP snapshots, file IDs and hashes in fetch_manifest",
+      "license": "Publicly accessible; raw-video research reuse license pending, do not infer from export card",
+      "role": "screening_only",
+      "holdout_eligible": false,
+      "h1_development_eligible": false,
+      "files": [
+        {
+          "path": "research/sources/replan_r1/mit_raw_drive_folder.html",
+          "sha256": "3fca5b7c760b8a44fe245c31ccdd8d22e6e87952b9795689a6b3fcc1b018901a"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_folder.html",
+          "sha256": "3a80a6784ac49cbf62b4e8e10fc7ba8ae2dbfc65f17912b9cb08780ea7c946d4"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_failure.html",
+          "sha256": "e77c9e4e9d142fabeab7ea03d2af8354dd9deb8c2bd16aeaaad49f17356abc6d"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_suboptimal.html",
+          "sha256": "9e5a047dfa3e6e71a2c0c57931a6c756f4453d402d34bf893080f62f94abfc40"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_success.html",
+          "sha256": "0bfc611c3caef6a3660f9af9da6103dd2b517b2e118e295a37a7939a844a50bb"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_failure_first_ext.mp4",
+          "sha256": "35f82ca741ee0d0dc3e422aef232ff11e86ad0aba5a0f87750f5d6ef59dab328"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_success_first_ext.mp4",
+          "sha256": "63da5313ffaa070256f02d1f9f17cf0ff70cf087b0d65c8fd9a571aca09fef97"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_failure_2_ext.mp4",
+          "sha256": "38469395a8d996df6f07b9f59526124ddd88098391fbf9b915bf603724f37599"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_movemouse_failure_3_ext.mp4",
+          "sha256": "efbc285245a1b543e9d5182e229ef189cb3bc3f6af7b8347efd85d61474dc1d2"
+        }
+      ],
+      "available": "Public raw directory and four external-view MP4 obtained for internal inspection; 3 source failures and 1 source success; sampled frames inspected",
+      "h1_missing": "No verified H1 pair; initial tipped-cup-like object makes spill inference invalid; original task execution semantics, capture-time mapping, object reference, license and independent review",
+      "provenance_manifest": "research/sources/replan_r1/fetch_manifest.json"
+    },
+    {
+      "name": "Robometer author-linked MIT Franka raw putspoon next batch",
+      "source_url": "https://drive.google.com/drive/folders/1rcX85A68hgr3ca7vIyXadkrw_Zh449wD",
+      "revision": "2026-10-03 HTTP directory snapshots, source file IDs, Last-Modified and SHA-256; Drive has no pinned immutable revision",
+      "license": "Publicly accessible for screening; formal raw-video research reuse and redistribution license unverified; export-card Apache-2.0 not inherited",
+      "role": "screening_only",
+      "holdout_eligible": false,
+      "h1_development_eligible": false,
+      "files": [
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_folder.html",
+          "sha256": "e576f0316e98e4c6a15bb4eca862cd924981a22fb192137c025465b255218821"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_failure.html",
+          "sha256": "238ac814338c9230721f5caec4d36628cd846903b8edaed66a66765a0dde97bb"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_suboptimal.html",
+          "sha256": "59bc43dfc0e47a71dbc7bcfe434cbdaa0ca3d856b6ad5dc8663dbb92ed57c5f7"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_success.html",
+          "sha256": "5888af12777deee58faeb6e75bb508cd798a460fb9e8150790654beb919d6d2b"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_first_failure.mp4",
+          "sha256": "5c2e31601f27ef508d4e26508021a03ee6fa3995011e9f645b2ce3afa258ef87"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_second_failure.mp4",
+          "sha256": "440e55ca3ce01bb71d7cb794377567944b297fa5c7406a456ce828226530f8db"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_first_success.mp4",
+          "sha256": "67821c8968b4261948d30c1106b453913a7317368f6de7a48c5b13552ef196f2"
+        },
+        {
+          "path": "research/sources/replan_r1/mit_putspoon_first_suboptimal_adjustment_check.mp4",
+          "sha256": "4b74a29a49dc67b119cc2279be840456ecae0a58dd18683e0b7b6b5df8af2b38"
+        }
+      ],
+      "available": "16 file metadata rows = 8 physical ext/wrist pairs; four preregistered external videos sampled; official folder-to-task mapping and whole-trajectory quality labels",
+      "h1_missing": "No observed prior spoon-in-cup relation followed by loss or matched sustained retention; original capture clock, formal reuse license, reference event labels and independent review absent",
+      "provenance_manifest": "research/sources/replan_r1/mit_putspoon_fetch_manifest.json",
+      "screening_records": "research/sources/replan_r1/mit_putspoon_screening_records.json"
+    },
+    {
+      "name": "DoReMi official stack-block project-page demonstration",
+      "source_url": "https://sites.google.com/view/doremi-paper",
+      "revision": "2026-10-03 HTML snapshot and SHA-256; no immutable page revision",
+      "license": "Page is public; media formal research reuse/redistribution license not verified",
+      "role": "phenomenon_evidence_only",
+      "holdout_eligible": false,
+      "h1_development_eligible": false,
+      "files": [
+        {
+          "path": "research/sources/replan_r1/doremi_project_page.html",
+          "sha256": "94ada88553e0cf322bca356ce5951de079897f07ed8cbd3fcaf119f407b8ff93"
+        }
+      ],
+      "available": "Author page explicitly describes stack-block collapse/recovery and has two linked display GIFs; HTML captured, GIFs not downloaded after HEAD returned 403 on recheck",
+      "h1_missing": "No first-party unedited episode file, original time/task mapping, matched retention rollout, reusable media rights or independent event truth found in this snapshot",
+      "provenance_manifest": "research/sources/replan_r1/doremi_media_manifest.json"
+    },
+    {
+      "name": "RoboPulse++ and targeted upstream/alternative-source audit",
+      "source_url": "https://huggingface.co/datasets/lyy0715/RoboPulsePlusPlus",
+      "revision": "abcb94c1e924282c0005e53cff0b22a073de748a",
+      "license": "RoboPulse++ other, specific terms unresolved; upstream ViFailback MIT does not automatically license derived interval annotations",
+      "files": [
+        {
+          "path": "research/sources/recovery_search_20261003/fetch_manifest.json",
+          "sha256": "52aec1706cfdaad6c1822d4af3faa1c6f092581fcb9b3d6a7e8ba64dadd99595"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/screening_records.json",
+          "sha256": "955106118b37b953100f513f3f500ae52c903e3abea0552ac19dd9cae6c0dc09"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/robopulse_annotation_audit.json",
+          "sha256": "568f7ad3918c6761a1a49b40d370d2a9d603d05df743dd4616f57933fdfed552"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/audit_summary.json",
+          "sha256": "9e4011bdc90ada50dd7fe438250d9db316e93b23c68aa299d2e1a7c27647c29f"
+        }
+      ],
+      "available": "700 actual JSONL episodes with author rising/stagnation/falling intervals; complete published view1 sequences ep618/621 show candidate green-on-blue retention/loss. Single-reviewer observations only. Other reviewed candidates and metadata sources retained in audit.",
+      "h1_missing": "Original episode/task/time binding; concrete reuse terms; P0 observability and independent review; prompt/budget freeze. Complete published sampled frames are not original full-rate rollouts.",
+      "h1_development_eligible": false,
+      "report": "research/07_alternative_sources_review.md",
+      "historical_snapshot_decision": "D049; original available/missing statements retained as history; source/time/permission resolution is in D050 direct-upstream entry below"
+    },
+    {
+      "name": "ViFailback direct upstream ep1/episode_58 and ep2/episode_36 provenance / development diagnosis",
+      "source_url": "https://huggingface.co/datasets/sii-rhos-ai/ViFailback-Dataset",
+      "revision": "21df46c2585c52e5a62df5f4b946bae6cbc6fed7",
+      "lerobot_revision": "619791b94f61667333fe179d471051e0bca0e06f",
+      "license": "MIT declared on pinned original and author-linked conversion cards; direct upstream media/task used. RoboPulse added interval annotation license remains unresolved, no sublicense inference.",
+      "role": "exploratory_development_only",
+      "holdout_eligible": false,
+      "h1_development_eligible": false,
+      "files": [
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/fetch_manifest.json",
+          "sha256": "86801f209be0afadb695c4c3373270b3cb0e6b59cc99c2c1793b89d89ced35c1"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/source_mapping.json",
+          "sha256": "a325fef68787e336983c398ab740feaad443b85370109bdb6176566e5210f7cd"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/exact_pixel_correspondence.json",
+          "sha256": "afafe1b6a3d43297b53f2c6b226f75fd51cd3b279935aa243e73dfc448a6423c"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/time_and_annotation_audit.json",
+          "sha256": "d5eefb661bc2bded2ec5f4ccfd61c297ee0ed1c25c0b6a648a0cbcda1642a429"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/native_label_mapping.json",
+          "sha256": "f4f6cc8a616338ae1a8e5988059c533f455cc7e41ce724a192cee50931f8aa43"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/relation_labels_draft.json",
+          "sha256": "94ae92c5aabe9c6581d987b25b807782d471324747737ddea95ea20a0ea60358"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/diagnostic_preregistration.json",
+          "sha256": "df1473d2b35aa2489c349f79f172e66071fb4e0bfaabff61156e34f5a963808f"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/diagnostic_audit.json",
+          "sha256": "260201c7637bcaf74e7a16e3e4957d348748e9d70f1c31264cb012d0d0ef587c"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/verification_summary.json",
+          "sha256": "11638dc661748e71ffdd68b180b1067aec0efe9cf440b2e95219b4249f109afb"
+        },
+        {
+          "path": "research/sources/recovery_search_20261003/upstream_trace/review_response_template.json",
+          "sha256": "1ff44a606177ab7ed14826ff8576f456bd7070e79017cdf4e9cab1aae7ecd4e3"
+        },
+        {
+          "path": "experiments/artifacts/r1_interface_repair_20261003/preregistration.json",
+          "sha256": "82a4fc9342e94f9725902cafba566d0a29f352a146d11e08b85112ddfd397d07"
+        },
+        {
+          "path": "experiments/artifacts/r1_interface_repair_20261003/audit.json",
+          "sha256": "44ebc868f4c1379a2f5a715fa80d61ef22d7e2fdc006fa5c8a482f80f6c07304"
+        },
+        {
+          "path": "experiments/artifacts/r1_interface_repair_20261003/selection.json",
+          "sha256": "fb4c6c65ef42a0eb6a680f987874ec966ce4bf32acdf89ff8273e6503b81b19d"
+        },
+        {
+          "path": "experiments/artifacts/r1_summary_isolation_20261003/preregistration.json",
+          "sha256": "6e28169db69b57021a8287e5043d857208f6e4e3bc7731994290684a2edeabe0"
+        },
+        {
+          "path": "experiments/artifacts/r1_summary_isolation_20261003/audit.json",
+          "sha256": "b9ceea1d010abd2b769fe835fd03130debe8642024c704a5038226e05529d7c1"
+        },
+        {
+          "path": "experiments/artifacts/r1_summary_isolation_20261003/isolation_review.json",
+          "sha256": "afb67c91ba6086b5ec82e9116e5d3a025f563c8fe2664ce3e3a350489721d58d"
+        },
+        {
+          "path": "experiments/artifacts/r1_summary_isolation_20261003/input_boundary_audit.json",
+          "sha256": "6e40122d9fd463bc8bd32dc5541f971d154a04372c56f2ef362421d49d7685fd"
+        },
+        {
+          "path": "experiments/artifacts/r1_local_stronger_20261003/preregistration.json",
+          "sha256": "31d1b4781e2a6485e8e693eaf0fcb53e687527c55a76b746de57a3837320ee9f"
+        },
+        {
+          "path": "experiments/artifacts/r1_local_stronger_20261003/audit.json",
+          "sha256": "71042e42dc0cbb306fd5d58020d4df25bdc0289342c94d017c40378868eedd88"
+        },
+        {
+          "path": "experiments/artifacts/r1_local_stronger_20261003/probe_review.json",
+          "sha256": "6de4659f638f3a3573e7e572b319919ea4486cb251cf00abcdbf9d14cad62d45"
+        },
+        {
+          "path": "experiments/artifacts/r1_local_stronger_20261003/local_model_hashes.json",
+          "sha256": "bd1bd10037ec9b2b944b735136eaae62597b2952783d4ab87a62f5344d54f061"
+        }
+      ],
+      "available": "All 59 published view1 frames pixel-exact to original annotated source videos; exact original task/annotation binding; 376/361 frame videos, 25 FPS encoded time; LeRobot 5060/5197 parquet time/flags; ep621 right wrist reference; actual 256-square P0 packets; single-reviewer retention/loss draft. 62 local S0/S1 calls produced only invalid structured outputs; S1 memory never accepted. D052 added 12 prefix repair calls: six strictly valid but all-unknown S0 outputs; six invalid S1 outputs, no accepted summary. Full rerun not started. D053 added nine output-task isolation calls on ep618 q0/2/6; joint JSON structurally valid at all three anchors, but unsupported whole-task completion appears even in zero-history plain text. Content gate failed; no rolling or full run. D054 reused identical P0 in four local8B requests: q0 prose grounded, q2 overclaims, q6 rejected by context; no rolling/full comparison.",
+      "h1_missing": "Independent relation/P0 prefix review and adjudication; reliable strong S1 execution, no mechanism comparison. Raw hardware time not verified, so no physical latency claim. Approximately 15-second examples do not establish long-horizon generalization.",
+      "provenance_manifest": "research/sources/recovery_search_20261003/upstream_trace/fetch_manifest.json",
+      "report": "research/07_alternative_sources_review.md",
+      "original_hdf5_downloaded": false
+    }
+  ],
+  "reference_labels": "No independently admitted H1 truth; single-reviewer relation_labels_draft.json frozen before exploratory run. Synthetic fixture labels remain non-H1.",
+  "independent_review": "Not performed; one-person screening only",
+  "updated_local_date": "2026-10-03",
+  "continuation_plan": "docs/plans/2026-10-03-task-progress-research-replan.md",
+  "holdout_exclusions": {
+    "r1_lerobot_export": "All 571 metadata-reviewed records and related camera views/physical rollout duplicates",
+    "r1_movemouse": "Viewed task/source group, including matched wrist videos; never promote screened material by assigning a new UUID",
+    "r1_putspoon": "All eight metadata-reviewed physical rollouts and their ext/wrist views; four external videos sampled; no UUID or view reassignment into holdout",
+    "r1_doremi_page": "Public demonstration page and linked media reviewed as a lead; any future matching raw rollout must be assigned to development, not holdout",
+    "recovery_search_20261003": "RoboPulse++ 700 metadata-screened episodes, all inspected frame tracks and any upstream physical duplicates; all 249 records in three downloaded ViFailback stacking annotation files and their views; reviewed IMBench/REBOOT metadata. Conservative development-only marking, no UUID/view remapping into holdout.",
+    "upstream_trace": "All viewed upstream candidates and matched physical episodes, original raw duplicates, high/wrist views, converted versions and reviewed metadata groups; development only. No new UUID/view creates holdout eligibility."
+  },
+  "exploratory_diagnostics": {
+    "performed": true,
+    "preregistration": "research/sources/recovery_search_20261003/upstream_trace/diagnostic_preregistration.json",
+    "audit": "research/sources/recovery_search_20261003/upstream_trace/diagnostic_audit.json",
+    "model_calls": 62,
+    "valid_judgments": 0,
+    "s1_rolling_summary_successfully_executed": false,
+    "h1_comparison": false,
+    "interface_repair": {
+      "decision": "D052",
+      "preregistration": "experiments/artifacts/r1_interface_repair_20261003/preregistration.json",
+      "audit": "experiments/artifacts/r1_interface_repair_20261003/audit.json",
+      "selection": "experiments/artifacts/r1_interface_repair_20261003/selection.json",
+      "model_calls": 12,
+      "valid_judgments": 6,
+      "valid_judgments_scope": "S0 only; all H/C/P/G unknown on ep618 q0..2; format validity is not semantic accuracy",
+      "s1_valid_judgments": 0,
+      "s1_rolling_summary_successfully_executed": false,
+      "full_diagnostic_performed": false,
+      "h1_comparison": false,
+      "status": "both_candidates_failed_stop"
+    },
+    "cumulative_model_calls": 87,
+    "latest_status": "D054: local8B is runnable and improves q0 descriptive grounding, but q2 overclaims and four-image native context exceeds current budget; no chain/full run",
+    "summary_isolation": {
+      "decision": "D053",
+      "preregistration": "experiments/artifacts/r1_summary_isolation_20261003/preregistration.json",
+      "audit": "experiments/artifacts/r1_summary_isolation_20261003/audit.json",
+      "content_review": "experiments/artifacts/r1_summary_isolation_20261003/isolation_review.json",
+      "model_calls": 9,
+      "joint_format_valid": 3,
+      "joint_content_gate_pass": false,
+      "s1_rolling_summary_successfully_executed": false,
+      "full_diagnostic_performed": false,
+      "h1_comparison": false,
+      "status": "zero-history visually unsupported completion; content gate failed"
+    },
+    "local_stronger": {
+      "decision": "D054",
+      "model": "qwen3-vl:8b-instruct",
+      "model_digest": "0533d74300e4f9bc367d675d4e64ffd073d50ff16a2b4096cc2e8a1cf8c96319",
+      "quantization": "Q4_K_M",
+      "runtime": "Ollama0.35.0",
+      "preregistration": "experiments/artifacts/r1_local_stronger_20261003/preregistration.json",
+      "audit": "experiments/artifacts/r1_local_stronger_20261003/audit.json",
+      "call_attempts": 4,
+      "returned_generations": 3,
+      "runtime_failures": 1,
+      "s1_rolling_summary_successfully_executed": false,
+      "full_diagnostic_performed": false,
+      "h1_comparison": false,
+      "author_method_reproduction": false
+    },
+    "cumulative_model_call_attempts": 87,
+    "cumulative_count_note": "Count is request attempts; one D054 call rejected for context overflow before generation."
+  }
+}

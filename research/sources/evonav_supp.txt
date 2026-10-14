@@ -1,0 +1,310 @@
+ H ISTORY TO F UTURE       : Evolving Agent with Experience and Thought for
+                 Zero-shot Vision-and-Language Navigation
+                                             Supplementary Material
+   This document provides more details of datasets, visual-         B.2. Navigation Demos of the Real World
+ization examples, and discussion, which are organized as:
+                                                                    This supplement is for Figure 4 of the main paper. We vi-
+• Datasets Details (cf. § A);
+                                                                    sualize several navigation examples in the real-world envi-
+• Visualization Example (cf. § B).
+                                                                    ronments, as shown in Figure 2. Give a human instruction,
+• Discussion (cf. § C).
+                                                                    EvoNav can effectively adapt the general robot and navigate
+                                                                    to the target location. It proves its capability for navigation
+A. Experimental Details                                             in the real world.
+This supplement is for Section 5.1 of the main paper.
+                                                                    B.3. Prompt of Action Prediction
+A.1. R2R-CE Benchmark                                               This supplement is for Section 4.4 of the main paper. Fig-
+We evaluate our approach using the R2R-CE dataset within            ure 3 illustrates the complete prompts required for action
+simulated environments. R2R-CE is based on the Mat-                 prediction, which leverage historical experience and the fu-
+terport3D [1] scenes, and it converts the discrete paths            ture landmark to aid decision-making.
+of the original R2R dataset into continuous environments
+using the Habitat Simulator. For a fair comparison, we              C. Discussion
+strictly follow to the protocol of previous zero-shot ap-
+proaches [9, 13, 14, 19] across 100 episodes to ensure direct       This supplement is for Section 6 of the main paper.
+comparability. In the simulated evaluation, the model was           C.1. Lifelong Learning: Memory vs our Experience
+run on a single RTX 4090 GPU.
+                                                                    Recent works [5, 6, 16, 20] propose maintaining a global
+A.2. NavRAG-CE Benchmark                                            memory to store the 3D structure of the environment for
+Following the above protocol, we randomly sample 100                embodied tasks, offering a promising solution for life-
+trajectory-instruction pairs from more complex NavRAG-              long navigation. While sharing a similar spirit of evolv-
+CE [17] for a better evaluation, which requires the agent to        ing decision-making through historical experience, our ap-
+understand difficult human demands. Inspired by previous            proach diverges in three key aspects: (1) Dependency: Up-
+methods [1, 8, 10, 12, 15], NavRAG-CE set up several dif-           dating such memories typically necessitates computation-
+ferent user roles (with varying ages, genders, occupations,         ally heavy localization tools (e.g., SLAM [6, 16]) to con-
+lifestyles, and demands to the navigation agent) to simulate        struct explicit representations, whereas our framework is
+and record the instructions sent to the navigation agent dur-       SLAM-free, eliminating the need for complex geometric
+ing one day of this role. For each 3D scene, NavRAG con-            mapping; (2) Content: Existing methods primarily store
+structs a scene description tree [3] in a bottom-up manner          raw geometric structures that lack task-specific semantics,
+for hierarchical scene representations.                             while our method enhances policies via task-oriented ex-
+                                                                    perience and procedural reasoning; (3) Generalization:
+B. Visualization Example                                            Such memory systems are inherently limited to revisiting
+                                                                    the same environments, whereas EvoNav generalizes ef-
+B.1. Navigation Demos of Simulator                                  fectively to unseen environments. Overall, by shifting
+This supplement is for Figure 3 of the main paper. We vi-           from scene-specific geometry to generalizable semantic and
+sualize a navigation example in the simulated environments,         procedural knowledge, our approach offers stronger gener-
+as shown in Figure 1. Here, we also report navigation trajec-       alization, richer decision reuse, and higher scalability.
+tories of the baseline model (the bottom) for a better com-
+parison with our approach (the top). As shown in Figure 1,
+                                                                    C.2. Experience: Traditional Offline vs our Online
+the baseline model achieves navigation error as it obtains          For the obtained experience, we use chroma (a vector
+poor decision-making by Naive Reasoning [4, 9, 18], while           database enabling scalable storage and retrieval of embed-
+our EvoNav achieves correct decision-marking of naviga-             dings) to store it in the experience bank. Note that instead
+tion by promoting the agent with Feedback Reasoning of              of traditional RAG [2, 7, 11] workflows that primarily build
+history experience and future thought via History Chain-of-         an offline database, where it first executes all navigation
+Experience and future Chain-of-Thought.                             episodes in advance to collect the experience bank, and then
+
+                                                                1
+           Instruction: Walk through kitchen. Make left                                                                             History Trajectory experience            History Scene experience
+                                                                               Future thought
+           after spider plant. Wait at open door on left.                      Future action: Walk through kitchen.                 step1: <observation><thought><action>.
+                                                                               Future landmark: Kitchen                             ⋯
+                                                                                                                                    step6: <observation><thought><action>.
+
+                                                                 EvoNav     [Step 2]$input: <instruction> <sub-actions, landmarks>⋯<future thought> <history experience>
+                                                                            $output: observation: View 0 in Step 2: This view looks straight down a long, narrow
+                                                                            kitchen corridor. On the right is a large stainless steel refrigerator, approximately
+                                                  Viewpoint: 0
+                                                                            1 meter away. On the left are kitchen countertop, about 2 meters away.>,
+                                      Step 6                                thought: 'I am not finished the first action, "Walk through kitchen." The future
+                                                                            action is to "Walk through kitchen" and the future landmark is "kitchen". Therefore,
+                    Viewpoint: 1                                            I need to continue to search the kitchen. Viewpoints 6 and 7 lead into a side
+                                                                            pantry/room, which is not the correct path. From the trajectory experience, the
+                                                           Viewpoint: 6     kitchens are usually located near the dining room or living room, and the scene
+                                    Step 2                                  experience shows images of the kitchen area. Viewpoint 0 provides the most direct and
+                                        Step 1
+                                                                            clear path forward through the kitchen corridor.
+                                                                            prediction: '0'
+                                     Step 6
+
+                                                 Viewpoint: 7               [Step 2] $input: <task description> <sub-actions, landmarks>
+                                                                            $output: observation: 'Direction Rear Right (viewpoint: 7), range(right 135 to right
+                                                                            165) A counter with a sink and shelves above. A doorway is visible, leading to
+                                                                            another room about 2-3 meters away.',
+                                                                            thought: 'The instruction is to walk through the kitchen, make a left after the
+                                                                            spider plant, and wait at the open door on the left. The kitchen path continues in
+                                                                  SOTA      Viewpoint 0 and 1, but Viewpoint 7 and 6 show a doorway, which might be the open door
+                                                                            mentioned. I will move to Viewpoint 7 to explore the doorway further.
+                                                                            prediction: '7'
+
+
+   Figure 1. Navigation demo in simulated environment on R2R-CE. The left denotes navigation trajectories between the SOTA method
+   (Open-Nav [9]) and our EvoNav. For a better view, we also provide the navigation decision-making details of the key step, which highlight
+   the effect of the proposed future thoughts and historical experience.
+                         Move forward to the deep red table, turn right and walk through                                          Turn left at the corner ahead and stop in front of the fire
+                         hallway, stop before the round white table.                                                              extinguisher.
+
+                    Laboratory                                                                                                 Corridor
+Human instruction
+
+
+
+
+                                                                                                           Human instruction
+
+
+
+
+                                                                                        Steps                                                                                                           Steps
+                                                                                                                                  Search for the elevator along the corridor and stop in front of the
+                         Go directly to the first plant, then turn right to the second plant.
+                                                                                                                                  first elevator.
+
+                    Study Room                                                                                                 Elevator Lobby
+Human instruction
+
+
+
+
+                                                                                                           Human instruction
+
+
+
+
+                                                                                        Steps                                                                                                           Steps
+
+                Figure 2. Navigation demo in the real world. Give the instruction, EvoNav can effectively navigate to the target place (marked in red).
+
+   uses the experience bank to assist navigation evaluation.                                                          risk of data leaks. In contrast, we simultaneously collect
+   This paradigm, i.e., first utilizes all episodes to construct                                                      online experience and perform navigation, updating the ex-
+   the experience bank offline and then uses it for navigation,                                                       perience bank in real-time as navigation executes. This en-
+   not only expanding navigation time but also increasing the                                                         hances data reliability and experience flexibility.
+
+
+                                                                                                       2
+                'system': "You are a navigation robot that navigates in the real world. You need to understand visual environment and follow instruction to
+              move in an indoor environment with the least action steps, and ultimately find the destination to stop. At each navigation step, I will give you
+              one global instruction, a series of images of different directions of the environment, and information about landmarks. \
+                      In addition, I will also give you navigation history, estimation of executed actions, future landmark, and a few-shot navigation text and
+              image experience containing similar landmarks for reference. \
+                      The \“future landmark\" indicates a landmark prediction of the next step.
+                      The \"few-shot navigation text experience\" refers to memories of past navigation, containing the decision-making processes of similar
+              tasks in the past. You can refer to it for decision-making.
+                      The \"few-shot navigation image experience\" refers to refer to a few images similar to the current landmark. These images match your
+              current environments and help you accurately understand the landmark objects within your environment. \
+                      few-shot text and image experience. You can refer to it for decision-making. \
+                      You can observe the visual environment through provided visual images from multiple directional viewports around you. \
+                      Each direction images contains direction viewpoint ids you can move to. Your task is to predict moving to which direction viewpoint. \
+                      Your answer includes three parts: \"Observation\", \"Thought\", and \"Prediction\". \
+                   First, in the \"Observation\", your output must be a Python-style dictionary. Each key corresponds to a Viewpoint ID and maps to a
+              description paragraph for that viewpoint image. \
+                      The description must indicate both the Viewpoint ID and the current Step ID in the following forma
+                      Follow strictly this format for output: \
+                      Observation: {\"0\": \"Direction Viewpoint ID: 0 in Step ID 0: ...\", \"1\": \"Direction Viewpoint ID: 1 in Step ID 0: ...\", \"2\": \"Direction
+              Viewpoint ID: 2 in Step ID 0: ...\"} \
+                      For each value in the dictionary: \
+                      (1) List all recognizable objects in the image. \
+                      (2) According to the results of (1), identify the object located approximately at the center of the image. Then, describe what objects
+              appear to its front, back, left, and right (if any). \
+                      (3) Estimate how far these objects are from the camera, and provide the results in approximate meters. \
+                      \n \
+              Then, in the \"Thought\", you should think as detailed as possible following procedures: \
+                      (1) The viewpoint ID you predicted must be one of the Direction Viewpoint ID in Candidate Viewpoint IDs List. The Candidate Viewpoint
+              IDs List show the Direction Viewpoint ID that you should go. This means that there should be only a number after \"Prediction\" without any
+              other words or characters . \
+                      (2) Check whether the latest executed action has been completed by comparing current environment and landmark in the latest
+              executed action. \
+                      (3) Determine the action you should execute and landmark you should reach now. If the latest executed action have not been
+              completed, you should continue to execute it. Otherwise, you should execute the next action in the given instruction. \
+              Analyze which direction in the current environment is most suitable to execute the action you decide and explain your reason. \
+                      (4) Your thoughts need to refer to the information in \" future landmark \". \
+                      (5) Your thoughts also need to refer to the information in \"few-shot navigation text and image experience\". \
+                      (6) Predict moving to which direction viewpoint based on your thought process. \
+                      (7) The \"Thought\" you predicted should be a single paragraph. \
+                      (8) If you believe you have completed the instruction, you must still strictly follow the requirements to predict the next viewpoint in the
+              \"Prediction\". \
+                      (9) If you want to make a left turn, you usually need to select a viewpoint ID between 1 and 5. If you want to make a right turn, you
+              usually need to select a viewpoint ID between 7 and 11. However, the viewpoint ID you predict must be within the Current Environment.\
+                      (10) Your output after \"Prediction\" must be one of the number in Candidate Viewpoint IDs List without any other words. \
+                      \n \
+                      Last, in the \"Prediction\", please make decision on the next viewpoint. \
+                      Your decision is very important, must make it very carefully. \
+                      You need to double check the output in \"Prediction:\". The output must be in the Candidate Viewpoint IDs without any other words. \
+                      You also need to double check the output in \"Thought\". The output must be a single paragraph.",
+
+
+
+                'user': "Candidate Viewpoint IDs List: [{}] Step ID {} Instruction: {} Actions: {} Landmarks: {} Navigation History: {} \
+                     Estimation of Executed Actions: {} Future landmark: {} Few-shot Navigation text Experience: {} -> Observation: ... Thought: ...
+              Prediction: ... \
+                      You should simplify observation description as short and clear as possible. Your output after \"Observation\" MUST be a single
+              paragraph. \
+                     You should simplify navigation thought process as short and clear as possible. You ONLY need to summarize the what actions you did
+              and what landmarks you passed in \"Thought\" using ONLY a single paragraph. Do NOT include Direction information. \n \
+                     Your output after \"Prediction\" must be one of the number in Candidate Viewpoint IDs List without any other words."
+
+
+Figure 3. Action prediction prompt for LLMs. We here provide the complete prompt, including user and system prompt, to demonstrate
+the navigation details about the proposed future thought and history experience, for a better view.
+
+
+C.3. Evaluation protocol and GT trajectory                                                    imagined paths may not perfectly align with the GT, they
+                                                                                              function as critical experiences to diagnose reasoning flaws
+To clarify, EvoNav strictly adheres to the training-free                                      and refine future decision reliability. This experience-driven
+zero-shot protocol, utilizing only the agent’s own historical                                 mechanism simulates human-like reflection on failure with-
+path (H∗ ) and post-hoc metrics (SR/SPL) rather than sim-                                     out external supervision, ensuring a fair comparison with
+ulator ground truth (GT). The “corrected process” is gener-                                   Open-Nav by strictly avoiding training, GT storage, or
+ated via LLM Self-Reflection, where the model critiques                                       GT trajectory.
+its own trajectory against the original instructions to “re-
+imagine” a more logical navigational sequence. While these
+
+
+                                                                                         3
+References                                                                   the IEEE/CVF international conference on computer vision,
+                                                                             pages 9339–9347, 2019. 1
+ [1] Angel X. Chang, Angela Dai, Thomas A. Funkhouser, Ma-
+                                                                        [13] Xiangyu Shi, Zerui Li, Wenqi Lyu, Jiatong Xia, Feras Day-
+     ciej Halber, Matthias Nießner, Manolis Savva, Shuran Song,
+                                                                             oub, Yanyuan Qiao, and Qi Wu. Smartway: Enhanced way-
+     Andy Zeng, and Yinda Zhang. Matterport3d: Learning from
+                                                                             point prediction and backtracking for zero-shot vision-and-
+     RGB-D data in indoor environments. In 3DV, pages 667–
+                                                                             language navigation. In IROS, pages 16923–16930, 2025.
+     676, 2017. 1
+                                                                             1
+ [2] Jiawei Chen, Hongyu Lin, Xianpei Han, and Le Sun. Bench-
+                                                                        [14] Xiangyu Shi, Zerui Li, Yanyuan Qiao, and Qi Wu. Fast-
+     marking large language models in retrieval-augmented gen-
+                                                                             smartway: Panoramic-free end-to-end zero-shot vision-and-
+     eration. In Proceedings of the AAAI Conference on Artificial
+                                                                             language navigation. arXiv preprint arXiv:2511.00933,
+     Intelligence, pages 17754–17762, 2024. 1
+                                                                             2025. 1
+ [3] Jiaqi Chen et al. Mapgpt: Map-guided prompting for unified
+                                                                        [15] Andrew Szot, Alexander Clegg, Eric Undersander, Erik Wi-
+     vision-and-language navigation. In ACL, pages 9796–9810,
+                                                                             jmans, Yili Zhao, John Turner, Noah Maestre, Mustafa
+     2024. 1
+                                                                             Mukadam, Devendra Singh Chaplot, Oleksandr Maksymets,
+ [4] Kehan Chen, Dong An, Yan Huang, Xu, and et al.
+                                                                             Aaron Gokaslan, Vladimir Vondrus, Sameer Dharur,
+     Constraint-aware zero-shot vision-language navigation in
+                                                                             Franziska Meier, Wojciech Galuba, Angel X. Chang, Zsolt
+     continuous environments. IEEE TPAMI, 47(11):10441–
+                                                                             Kira, Vladlen Koltun, Jitendra Malik, Manolis Savva, and
+     10456, 2025. 1
+                                                                             Dhruv Batra. Habitat 2.0: Training home assistants to rear-
+ [5] Muhammad Fadhil Ginting, Dong-Ki Kim, Xiangyun Meng,                    range their habitat. In NeurIPS, pages 251–266, 2021. 1
+     Andrzej Reinke, Bandi Jai Krishna, Navid Kayhani, Ori-
+                                                                        [16] Zihan Wang, Seungjun Lee, and Gim Hee Lee. Dynam3d:
+     ana Peltzer, David D Fan, Amirreza Shaban, Sung-Kyun
+                                                                             Dynamic layered 3d tokens empower vlm for vision-and-
+     Kim, et al. Enter the mind palace: Reasoning and planning
+                                                                             language navigation. arXiv preprint arXiv:2505.11383,
+     for long-term active embodied question answering. arXiv
+                                                                             2025. 1
+     preprint arXiv:2507.12846, 2025. 1
+                                                                        [17] Zihan Wang, Yaohui Zhu, Gim Hee Lee, and Yachun Fan.
+ [6] Mukul Khanna, Ram Ramrakhya, Gunjan Chhablani, Sriram
+                                                                             Navrag: Generating user demand instructions for embodied
+     Yenamandra, Theophile Gervet, Matthew Chang, Zsolt Kira,
+                                                                             navigation through retrieval-augmented llm. arXiv preprint
+     Devendra Singh Chaplot, Dhruv Batra, and Roozbeh Mot-
+                                                                             arXiv:2502.11142, 2025. 1
+     taghi. Goat-bench: A benchmark for multi-modal lifelong
+                                                                        [18] Hang Yin, Haoyu Wei, Xiuwei Xu, Wenxuan Guo, Jie Zhou,
+     navigation. In CVPR, pages 16373–16383, 2024. 1
+                                                                             and Jiwen Lu. Gc-vln: Instruction as graph constraints for
+ [7] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio
+                                                                             training-free vision-and-language navigation. arXiv preprint
+     Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich
+                                                                             arXiv:2509.10454, 2025. 1
+     Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al.
+                                                                        [19] Jiazhao Zhang, Kunyu Wang, Rongtao Xu, Gengze Zhou,
+     Retrieval-augmented generation for knowledge-intensive nlp
+                                                                             Yicong Hong, Xiaomeng Fang, Qi Wu, Zhizheng Zhang,
+     tasks. Advances in neural information processing systems,
+                                                                             and He Wang. Navid: Video-based vlm plans the next
+     33:9459–9474, 2020. 1
+                                                                             step for vision-and-language navigation. arXiv preprint
+ [8] Rui Liu, Wenguan Wang, and Yi Yang. Vision-language nav-
+                                                                             arXiv:2402.15852, 2024. 1
+     igation with energy-based policy. Advances in Neural Infor-
+     mation Processing Systems, 37:108208–108230, 2024. 1               [20] Qi Zheng, Daqing Liu, Chaoyue Wang, Jing Zhang, Dadong
+                                                                             Wang, and Dacheng Tao. Esceme: Vision-and-language nav-
+ [9] Yanyuan Qiao, Wenqi Lyu, Hui Wang, Zixu Wang, Zerui Li,
+                                                                             igation with episodic scene memory. IJCV, 133(1):254–274,
+     Yuan Zhang, Mingkui Tan, and Qi Wu. Open-nav: Explor-
+                                                                             2025. 1
+     ing zero-shot vision-and-language navigation in continuous
+     environment with open-source llms. In ICRA, pages 6710–
+     6717, 2025. 1, 2
+[10] Santhosh K Ramakrishnan, Aaron Gokaslan, Erik Wijmans,
+     Oleksandr Maksymets, Alex Clegg, John Turner, Eric Un-
+     dersander, Wojciech Galuba, Andrew Westbury, Angel X
+     Chang, et al. Habitat-matterport 3d dataset (hm3d): 1000
+     large-scale 3d environments for embodied ai. arXiv preprint
+     arXiv:2109.08238, 2021. 1
+[11] Alireza Salemi and Hamed Zamani. Evaluating retrieval
+     quality in retrieval-augmented generation. In Proceedings
+     of the 47th International ACM SIGIR Conference on Re-
+     search and Development in Information Retrieval, pages
+     2395–2400, 2024. 1
+[12] Manolis Savva, Abhishek Kadian, Oleksandr Maksymets,
+     Yili Zhao, Erik Wijmans, Bhavana Jain, Julian Straub, Jia
+     Liu, Vladlen Koltun, Jitendra Malik, et al. Habitat: A
+     platform for embodied ai research. In Proceedings of
+
+
+                                                                    4
+

@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-04",
+  "scene": "cell",
+  "instruction": "Put the blue cube in the green tray.",
+  "raw_fps": 30,
+  "model_fps": 1,
+  "model_frame_indices": [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+    180,
+    210,
+    240,
+    270,
+    300,
+    330,
+    360,
+    390,
+    420
+  ],
+  "pre_window_seconds": [
+    0,
+    2
+  ],
+  "action_window_seconds": [
+    2,
+    12
+  ],
+  "post_window_seconds": [
+    12,
+    14
+  ],
+  "continuation_seeds": 20,
+  "control_noop_seconds": 15,
+  "continuation_seconds": 15,
+  "physical_thresholds": {
+    "effective_min_C": 0.3,
+    "ineffective_abs_max_C": 0.1,
+    "hindering_max_C": -0.3
+  },
+  "code_sha256": {
+    "experiments/prerequisite_probe/probe.py": "b1240e1cb0643ca5bf753ab2dbf0610a83e0c72b520dad30884c2d33faed260b",
+    "experiments/prerequisite_probe/produce.py": "cb617f376f9f304a73f7d5a4f8466ef3782979e722bded551e23db2de1ffceea",
+    "experiments/prerequisite_probe/evaluation_protocol.md": "0a00b1c193670d20dbf9cd160215fe607677b2f741f56649fd2e90d78881d443"
+  }
+}

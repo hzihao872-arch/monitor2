@@ -1,0 +1,13 @@
+Pinned robometer/Robometer-4B@beef63bc914c5c189329d49c6d712d96d632aa34; weights=['model-00001-of-00002.safetensors', 'model-00002-of-00002.safetensors']
+PROGRESS model-00001-of-00002.safetensors: 268435456/4965629698
+RETRY model-00001-of-00002.safetensors 402653184/4965629698: HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=40)
+PROGRESS model-00001-of-00002.safetensors: 536870912/4965629698
+PROGRESS model-00001-of-00002.safetensors: 805306368/4965629698
+PROGRESS model-00001-of-00002.safetensors: 1073741824/4965629698
+RETRY model-00002-of-00002.safetensors 234881024/3935034144: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+RETRY model-00002-of-00002.safetensors 234881024/3935034144: HTTPSConnectionPool(host='hf-mirror.com', port=443): Max retries exceeded with url: /robometer/Robometer-4B/resolve/beef63bc914c5c189329d49c6d712d96d632aa34/model-00002-of-00002.safetensors (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fa038b20ce0>: Failed to resolve 'hf-mirror.com' ([Errno -3] Temporary failure in name resolution)"))
+RETRY model-00001-of-00002.safetensors 1073741824/4965629698: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+RETRY model-00001-of-00002.safetensors 1107296256/4965629698: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+RETRY model-00001-of-00002.safetensors 1107296256/4965629698: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+RETRY model-00001-of-00002.safetensors 1107296256/4965629698: ('Connection broken: IncompleteRead(5269726 bytes read, 28284706 more expected)', IncompleteRead(5269726 bytes read, 28284706 more expected))
+RETRY model-00002-of-00002.safetensors 234881024/3935034144: ('Connection broken: IncompleteRead(18267533 bytes read, 15286899 more expected)', IncompleteRead(18267533 bytes read, 15286899 more expected))

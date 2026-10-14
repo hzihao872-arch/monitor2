@@ -1,0 +1,174 @@
+{
+  "issued": 24,
+  "completed": 24,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior": 204,
+  "cumulative": 228,
+  "counts": {
+    "n2_opposed_first": {
+      "n": 6,
+      "correct_ai": 6,
+      "unknown": 0,
+      "input_tokens": 2936
+    },
+    "n2_positive_first": {
+      "n": 6,
+      "correct_ai": 5,
+      "unknown": 0,
+      "input_tokens": 2936
+    },
+    "n8_opposed_first": {
+      "n": 6,
+      "correct_ai": 6,
+      "unknown": 0,
+      "input_tokens": 10220
+    },
+    "n8_positive_first": {
+      "n": 6,
+      "correct_ai": 6,
+      "unknown": 0,
+      "input_tokens": 10220
+    }
+  },
+  "pairs": [
+    {
+      "sample_count": 2,
+      "probe": "confirm_o_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 2,
+      "probe": "confirm_p_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 2,
+      "probe": "grasp_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 2,
+      "probe": "inside_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 2,
+      "probe": "opening_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 2,
+      "probe": "plate_14",
+      "reference_ai": "False",
+      "states": [
+        "True",
+        "False"
+      ],
+      "order_consistent": false,
+      "both_correct_ai": false
+    },
+    {
+      "sample_count": 8,
+      "probe": "confirm_o_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 8,
+      "probe": "confirm_p_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 8,
+      "probe": "grasp_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 8,
+      "probe": "inside_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 8,
+      "probe": "opening_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "sample_count": 8,
+      "probe": "plate_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    }
+  ],
+  "audit_errors": [],
+  "wall_seconds": 14.316954352427274,
+  "adapter_seconds": 6.079151131212711,
+  "input_tokens": 26312,
+  "peak_vram_gib": 16.861567974090576,
+  "status": "same query, automatic prefix sampling only; directed development predicates, not event discovery"
+}

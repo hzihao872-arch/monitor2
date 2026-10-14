@@ -1,0 +1,123 @@
+{
+  "instruction": "Put the blue cube in the green tray.",
+  "videos": [
+    "0001.mp4",
+    "0002.mp4",
+    "0003.mp4",
+    "0004.mp4",
+    "0005.mp4",
+    "0006.mp4"
+  ],
+  "input_frame_audit": {
+    "TOPReward": "cloud_topreward_decoded_frames.json",
+    "Robometer": "cloud_robometer_decoded_frames.json",
+    "frozen_truth_reference": "../truth/actual_frames.json",
+    "match": "six videos x 15 RGB frames exactly match frozen local frame SHA-256 lists"
+  },
+  "TOPReward": {
+    "group": "no additional reward model training",
+    "repository_commit": "4877a0ee5098cbec18485125466631b1dcc4a573",
+    "model": "Qwen/Qwen3-VL-8B-Instruct",
+    "model_revision": "0c351dd01ed87e9c1b53cbc748cba10e6187ff3b",
+    "result_status": "six valid original-model outputs",
+    "prefix_rewards": [
+      "topreward/0001.json",
+      "topreward/0002.json",
+      "topreward/0003.json",
+      "topreward/0004.json",
+      "topreward/0005.json",
+      "topreward/0006.json"
+    ],
+    "full_log": "topreward/cloud_run.log",
+    "run_script": "../../cloud_run_topreward_official.sh",
+    "weight_hashes": "official_weight_hashes.json"
+  },
+  "Robometer": {
+    "group": "pretrained reward model; zero-shot transfer to this task",
+    "repository_commit": "352d160389daa964788de1ec933d1925f3a6de4f",
+    "model": "robometer/Robometer-4B",
+    "model_revision": "beef63bc914c5c189329d49c6d712d96d632aa34",
+    "result_status": "尚无该模型结果",
+    "progress": null,
+    "success_head": null,
+    "failure": "unmodified official script fails at first forward: float != c10::BFloat16",
+    "failure_log": "robometer/0001.official_dtype_fail.log",
+    "full_log": "robometer/cloud_run.official_dtype_fail.log",
+    "run_script": "../../cloud_run_robometer_official.sh"
+  },
+  "Robometer_PR33_dtype_compat": {
+    "group": "separate compatibility run; not the strict unmodified original",
+    "model": "robometer/Robometer-4B",
+    "model_revision": "beef63bc914c5c189329d49c6d712d96d632aa34",
+    "base_model": "Qwen/Qwen3-VL-4B-Instruct",
+    "base_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "result_status": "six valid native outputs with PR #33 dtype patch",
+    "code_base_commit": "352d160389daa964788de1ec933d1925f3a6de4f",
+    "patch_commit": "19562e8fe0e63f74b64aa06f8e8fbfaf76127ea7",
+    "patch_file": "../../patches/robometer_pr33.patch",
+    "python": "3.10.22",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "unsloth": "2026.8.18",
+    "unsloth_zoo": "2026.8.17",
+    "progress": [
+      "robometer_pr33_compat/0001.npy",
+      "robometer_pr33_compat/0002.npy",
+      "robometer_pr33_compat/0003.npy",
+      "robometer_pr33_compat/0004.npy",
+      "robometer_pr33_compat/0005.npy",
+      "robometer_pr33_compat/0006.npy"
+    ],
+    "success_head": [
+      "robometer_pr33_compat/0001_success_probs.npy",
+      "robometer_pr33_compat/0002_success_probs.npy",
+      "robometer_pr33_compat/0003_success_probs.npy",
+      "robometer_pr33_compat/0004_success_probs.npy",
+      "robometer_pr33_compat/0005_success_probs.npy",
+      "robometer_pr33_compat/0006_success_probs.npy"
+    ],
+    "per_video_commands_and_logs": [
+      [
+        "robometer_pr33_compat/0001.command.txt",
+        "robometer_pr33_compat/0001.log"
+      ],
+      [
+        "robometer_pr33_compat/0002.command.txt",
+        "robometer_pr33_compat/0002.log"
+      ],
+      [
+        "robometer_pr33_compat/0003.command.txt",
+        "robometer_pr33_compat/0003.log"
+      ],
+      [
+        "robometer_pr33_compat/0004.command.txt",
+        "robometer_pr33_compat/0004.log"
+      ],
+      [
+        "robometer_pr33_compat/0005.command.txt",
+        "robometer_pr33_compat/0005.log"
+      ],
+      [
+        "robometer_pr33_compat/0006.command.txt",
+        "robometer_pr33_compat/0006.log"
+      ]
+    ],
+    "full_log": "robometer_pr33_compat/cloud_run.log",
+    "run_script": "../../cloud_run_robometer_pr33_compat.sh",
+    "weight_equivalence": "unsloth_qwen4_weight_equivalence.json"
+  },
+  "analysis": "analysis_native.json",
+  "model_action_curves": "native_action_curves.png",
+  "paired_rankings": "paired_sorting.json",
+  "noise_threshold": null,
+  "noise_threshold_reason": "One N0 development clip cannot establish a frozen noise threshold; no thresholded miss or false-award rate is claimed.",
+  "cloud": {
+    "provider": "SeetaCloud",
+    "gpu": "RTX 5090 32 GB",
+    "listed_price_cny_per_hour": 3.03,
+    "original_weights_sha256_verified": true,
+    "download_and_setup_logs": "cloud_logs/",
+    "dedicated_ssh_public_key_removed": true
+  },
+  "interpretation": "One frozen geometry family, one video per condition, one missing independent visual reviewer. These are development-probe observations, not proof of a general failure or a causal mechanism."
+}

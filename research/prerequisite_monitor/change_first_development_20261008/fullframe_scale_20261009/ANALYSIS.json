@@ -1,0 +1,205 @@
+{
+  "issued": 24,
+  "completed": 24,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior": 307,
+  "cumulative": 331,
+  "counts": {
+    "development_confirmation_opposed_first": {
+      "n": 4,
+      "baseline_correct_ai": 2,
+      "scale_correct_ai": 2
+    },
+    "development_confirmation_positive_first": {
+      "n": 4,
+      "baseline_correct_ai": 3,
+      "scale_correct_ai": 2
+    },
+    "development_seen_opposed_first": {
+      "n": 8,
+      "baseline_correct_ai": 5,
+      "scale_correct_ai": 5
+    },
+    "development_seen_positive_first": {
+      "n": 8,
+      "baseline_correct_ai": 7,
+      "scale_correct_ai": 6
+    }
+  },
+  "comparisons": [
+    {
+      "probe": "confirm_o_00",
+      "order": "opposed_first",
+      "reference_ai": "True",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "confirm_o_00",
+      "order": "positive_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "False"
+    },
+    {
+      "probe": "confirm_o_14",
+      "order": "opposed_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "confirm_o_14",
+      "order": "positive_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "confirm_p_00",
+      "order": "opposed_first",
+      "reference_ai": "False",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "confirm_p_00",
+      "order": "positive_first",
+      "reference_ai": "False",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "confirm_p_14",
+      "order": "opposed_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "confirm_p_14",
+      "order": "positive_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "grasp_07",
+      "order": "opposed_first",
+      "reference_ai": "True",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "grasp_07",
+      "order": "positive_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "grasp_14",
+      "order": "opposed_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "grasp_14",
+      "order": "positive_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "inside_07",
+      "order": "opposed_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "inside_07",
+      "order": "positive_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "inside_14",
+      "order": "opposed_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "inside_14",
+      "order": "positive_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "opening_00",
+      "order": "opposed_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "opening_00",
+      "order": "positive_first",
+      "reference_ai": "False",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "opening_14",
+      "order": "opposed_first",
+      "reference_ai": "True",
+      "baseline": "False",
+      "scaled": "False"
+    },
+    {
+      "probe": "opening_14",
+      "order": "positive_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "False"
+    },
+    {
+      "probe": "plate_00",
+      "order": "opposed_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "plate_00",
+      "order": "positive_first",
+      "reference_ai": "True",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "plate_14",
+      "order": "opposed_first",
+      "reference_ai": "False",
+      "baseline": "True",
+      "scaled": "True"
+    },
+    {
+      "probe": "plate_14",
+      "order": "positive_first",
+      "reference_ai": "False",
+      "baseline": "True",
+      "scaled": "True"
+    }
+  ],
+  "wall_seconds": 18.732839814852923,
+  "adapter_seconds": 10.705601774156094,
+  "input_tokens": 20624,
+  "peak_vram_gib": 16.619428157806396,
+  "status": "bicubic upsample, no new native details; changes visual tessellation and cost; directed development only"
+}

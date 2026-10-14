@@ -1,0 +1,9 @@
+# Development probe protocol and output boundaries
+
+- Fixed input: each numbered 1 FPS video has 15 decoded RGB frames at 640×480, sampled from raw 30 FPS frame indices `0,30,...,420`; only the instruction `Put the blue cube in the green tray.` accompanies it.
+- TOPReward: official Qwen client commit `4877a0ee5098cbec18485125466631b1dcc4a573`, Qwen3-VL-8B-Instruct revision `0c351dd01ed87e9c1b53cbc748cba10e6187ff3b`; 15 native prefixes, 1 FPS, `reduction=mean`, `use_video_description=False`, `add_chat_template=False`. Save raw `prefix_rewards`, never per-video min–max as the primary result.
+- Robometer: official local script commit `352d160389daa964788de1ec933d1925f3a6de4f`, Robometer-4B revision `beef63bc914c5c189329d49c6d712d96d632aa34`; `--fps 1`, save native progress and success-head probabilities separately.
+- Event windows fixed before scoring: pre-action 0–2 seconds; action 2–12 seconds; stable post-action 12–14 seconds. Compare native point medians and report pairwise ordering B+ versus B0/U0, H− versus no-op, G+ versus N0. Noise threshold must come from N0 development clips and remain frozen before unseen-template evaluation.
+- Physical label gate: `C=q_action-q_control` with the same 15-second blue-only continuation controller, 20 paired perturbation seeds, and a 15-second no-op control branch; effective `C>=0.30`, ineffective `|C|<=0.10`, hindering `C<=-0.30`. Each branch has 30 seconds total from original snapshot through continuation.
+- Isolation: `artifacts/model_input/` contains only numeric files and an instruction manifest. `artifacts/truth/` contains state snapshots, case mapping, control success arrays and visual audits. The model runners read only a numbered video and the single instruction. Auxiliary views are truth-only.
+- Current gate: second independent visual reviewer and both model-native output curves are missing. Model status is `尚无该模型结果` for each; null pairwise fields mean unavailable, not zero or tied.

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4JEVJSTQ6B"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4JEVJSTQ6B');
+  </script>
+
+  <!-- ===== Page title & metadata ===== -->
+  <title>DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation</title>
+  <meta name="description" content="DenseReward is a dense vision-language reward model for robotic manipulation, trained on 27k automatically synthesized success and failure trajectories. It predicts per-timestep task progress and improves downstream MPC and reinforcement learning." />
+  <meta name="keywords" content="robotics, reward model, dense reward, failure synthesis, reinforcement learning, manipulation, VLM" />
+
+  <!-- Open Graph (for social sharing previews) -->
+  <meta property="og:title" content="DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation" />
+  <meta property="og:description" content="A dense vision-language reward model trained on 27k automatically synthesized success and failure trajectories, providing per-timestep feedback for robot policy learning." />
+  <meta property="og:image" content="https://dense-reward.github.io/assets/images/overview.png" />
+  <meta property="og:url" content="https://dense-reward.github.io/" />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+
+  <!-- KaTeX (for math rendering) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css?v=2" />
+
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  HERO / TITLE SECTION                                       ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<header class="hero">
+  <div class="container">
+
+    <h1 class="paper-title">
+      DenseReward:<br/>
+      <span class="subtitle">Dense Reward Learning via Failure Synthesis for Robotic Manipulation</span>
+    </h1>
+
+    <!-- ===== AUTHORS ===== -->
+    <div class="author-list">
+      <div class="author"><a href="https://yuffish.github.io/" target="_blank">Yu Fang</a><sup>1*</sup></div>
+      <div class="author"><a href="https://wanxido.github.io/" target="_blank">Wanxi Dong</a><sup>1*</sup></div>
+      <div class="author"><a href="https://jiaaqiliu.github.io/" target="_blank">Jiaqi Liu</a><sup>1</sup></div>
+      <div class="author"><a href="https://yy-gx.github.io/" target="_blank">Yue Yang</a><sup>1</sup></div>
+      <div class="author"><a href="https://anthonyhuo.github.io/" target="_blank">Mingxiao Huo</a><sup>2</sup></div>
+      <span class="author-break" aria-hidden="true"></span>
+      <div class="author"><a href="https://yaomarkmu.github.io/" target="_blank">Yao Mu</a><sup>3</sup></div>
+      <div class="author"><a href="https://www.huaxiuyao.io/" target="_blank">Huaxiu Yao</a><sup>1</sup></div>
+      <div class="author"><a href="https://www.cs.columbia.edu/~lierranli/" target="_blank">Li Erran Li</a><sup>4</sup></div>
+      <div class="author"><a href="https://danszafir.com/" target="_blank">Daniel Szafir</a><sup>1</sup></div>
+      <div class="author"><a href="https://dingmyu.github.io/" target="_blank">Mingyu Ding</a><sup>1</sup></div>
+    </div>
+
+    <div class="affiliations">
+      <sup>1</sup> University of North Carolina at Chapel Hill &nbsp;&nbsp;
+      <sup>2</sup> Carnegie Mellon University<br/>
+      <sup>3</sup> Shanghai Jiao Tong University &nbsp;&nbsp;
+      <sup>4</sup> Amazon AWS AI
+    </div>
+    <p class="equal-contrib">* Equal contribution</p>
+
+    <!-- ===== QUICK LINKS ===== -->
+    <div class="link-buttons">
+      <a href="https://arxiv.org/abs/2607.13033" class="btn" target="_blank" rel="noopener"><i class="ai ai-arxiv"></i> arXiv</a>
+      <a href="https://github.com/dense-reward/dense-reward" class="btn" target="_blank" rel="noopener"><i class="fab fa-github"></i> Code</a>
+      <a href="https://huggingface.co/datasets/densereward/DenseReward" class="btn" target="_blank" rel="noopener"><i class="fas fa-database"></i> Dataset</a>
+      <a href="https://huggingface.co/densereward/models" class="btn" target="_blank" rel="noopener"><i class="fas fa-cube"></i> Models</a>
+    </div>
+  </div>
+</header>
+
+<!-- Compact sticky header bar (appears on scroll) -->
+<div class="sticky-header" id="sticky-header">
+  <div class="sticky-header-inner">
+    <a href="#" class="sticky-btn sticky-top" title="Back to top"
+       onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'});"><i class="fas fa-arrow-up"></i> Back to Top</a>
+    <div class="sticky-title">
+      <strong>DenseReward:</strong> Dense Reward Learning via Failure Synthesis for Robotic Manipulation
+    </div>
+    <div class="sticky-links">
+      <a href="https://arxiv.org/abs/2607.13033" class="sticky-btn" target="_blank" rel="noopener" title="arXiv"><i class="ai ai-arxiv"></i></a>
+      <a href="https://github.com/dense-reward/dense-reward" class="sticky-btn" target="_blank" rel="noopener" title="Code"><i class="fab fa-github"></i></a>
+      <a href="https://huggingface.co/datasets/densereward/DenseReward" class="sticky-btn" target="_blank" rel="noopener" title="Dataset"><i class="fas fa-database"></i></a>
+      <a href="https://huggingface.co/densereward/models" class="sticky-btn" target="_blank" rel="noopener" title="Models"><i class="fas fa-cube"></i></a>
+    </div>
+  </div>
+</div>
+
+<!-- Main content wrapper: positioning context for the sticky TOC rail -->
+<div class="page-main">
+
+<!-- Dynamic TOC (left rail, built from headings) -->
+<div class="toc-rail"><nav id="dynamic-toc" class="dynamic-toc"></nav></div>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  VIDEO SUMMARY                                               ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="section" id="video" style="padding-top: 1.5rem;">
+  <div class="container container-medium">
+    <details class="video-collapse" open>
+      <summary class="video-label">Video Summary</summary>
+      <video
+        class="media-video"
+        src="assets/videos/DenseReward.mp4"
+        controls playsinline preload="metadata"
+      ></video>
+    </details>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  OVERVIEW                                                    ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="section" id="overview" style="padding-top: 0;">
+  <div class="container container-medium">
+    <h2>Overview</h2>
+    <figure class="figure-full">
+      <img src="assets/images/overview.png" alt="DenseReward overview: automated failure data generation, per-timestep reward model, and downstream reinforcement learning" />
+    </figure>
+    <p>
+      We present a dense robotic reward model for vision-language-guided manipulation.
+      (a) We construct a 27k-episode dataset with <strong>automatically synthesized success and failure trajectories in simulation</strong>, providing diverse dense reward supervision.
+      (b) Given a task instruction and observations consisting of the current frame and historical frames, DenseReward <strong>predicts both the current execution state and a per-timestep dense reward score that reflects task progress</strong>. Unlike binary success/failure labels, this dense reward provides fine-grained feedback for intermediate states.
+      (c) The predicted rewards can be used in <strong>downstream reinforcement learning for policy improvement</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  ABSTRACT                                                    ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="section" id="abstract">
+  <div class="container container-medium">
+    <h2>Abstract</h2>
+    <p class="abstract-text">
+      Reinforcement learning holds great promise for improving robot policies beyond the limits of imitation learning. However, its practical adoption remains bottlenecked by the lack of reliable vision-language reward models that provide dense and informative feedback. Two key challenges remain: acquiring diverse failure data at scale and obtaining fine-grained reward signals beyond sparse trajectory-level success labels. Existing approaches reuse successful trajectories to construct negative or suboptimal examples through trajectory truncation, instruction relabeling, or trajectory comparisons, without generating new trajectories where physical interaction failures such as collisions, missed grasps, object drops, and recovery actually occur. Meanwhile, many existing reward models predict sparse binary or trajectory-level rewards, which provide limited guidance for efficient policy optimization.
+    </p>
+    <p class="abstract-text">
+      We introduce <strong>DenseReward</strong>, a dense robotic reward model that addresses both challenges. To train DenseReward, we develop an automated failure data generation pipeline that synthesizes physically realistic failure trajectories in simulation without manual annotation, covering diverse failure modes such as collisions, missed grasps, object drops, and recovery behaviors. DenseReward predicts dense frame-level reward scores from visual observations and language instructions, enabling fine-grained estimation of task progress throughout an episode.
+    </p>
+    <p class="abstract-text">
+      Experiments show that DenseReward outperforms general-purpose VLMs and existing robotic reward models in dense reward prediction across both simulated and real-world manipulation. We further demonstrate that DenseReward provides effective reward guidance for downstream model predictive control and reinforcement learning. We release the dataset, trained reward models, and evaluation suite to support the development of failure-aware dense reward modeling for robot learning.
+    </p>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  METHOD                                                      ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="section" id="method">
+  <div class="container container-medium">
+    <h2>Method</h2>
+    <p>
+      Our method consists of three components: 1) an <strong>automated data generation pipeline</strong> that generates trajectories with phase-aware dense reward labels, 2) <strong>failure synthesis</strong> that creates diverse failure trajectories through targeted perturbations, and 3) <strong>DenseReward models</strong> trained on the resulting mixture of successful and failure trajectories to estimate fine-grained task progress.
+    </p>
+    <figure class="figure-full">
+      <img src="assets/images/method.png" alt="Automated data generation with five manipulation phases and failure synthesis via targeted perturbations" />
+      <figcaption>
+        (a) Five-phase manipulation with dense rewards. (b) Targeted perturbations synthesize diverse failure modes.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  EXPERIMENTS                                                 ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="section" id="experiments">
+  <div class="container container-medium">
+    <h2>Experiments</h2>
+
+    <h3 id="reward-prediction">Dense Reward Prediction</h3>
+    <p>
+      We report the mean absolute error (MAE) with respect to the dense reward annotations in our evaluation set.
+      DenseReward achieves the lowest error across all evaluated data sources.
+    </p>
+    <div class="table-wrapper">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Overall</th>
+            <th>DROID</th>
+            <th>Isaac Sim</th>
+            <th>RoboSuite</th>
+            <th>LIBERO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Qwen3-VL-4B-Instruct</td><td>0.289</td><td>0.532</td><td>0.285</td><td>0.195</td><td>0.478</td></tr>
+          <tr><td>Qwen3-VL-8B-Instruct</td><td>0.293</td><td>0.538</td><td>0.305</td><td>0.180</td><td>0.502</td></tr>
+          <tr><td>Molmo2-4B</td><td>0.282</td><td>0.506</td><td>0.282</td><td>0.187</td><td>0.478</td></tr>
+          <tr><td>Molmo2-8B</td><td>0.335</td><td>0.480</td><td>0.307</td><td>0.303</td><td>0.455</td></tr>
+          <tr><td>RoboReward-4B</td><td>0.275</td><td>0.534</td><td>0.269</td><td>0.179</td><td>0.470</td></tr>
+          <tr><td>RoboReward-8B</td><td>0.230</td><td>0.484</td><td>0.185</td><td>0.172</td><td>0.431</td></tr>
+          <tr><td>Robometer</td><td>0.366</td><td>0.521</td><td>0.328</td><td>0.345</td><td>0.468</td></tr>
+          <tr class="highlight-row"><td><strong>DenseReward (Ours)</strong></td><td><strong>0.081</strong></td><td><strong>0.259</strong></td><td><strong>0.081</strong></td><td><strong>0.051</strong></td><td><strong>0.044</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="table-caption">Dense reward prediction results (mean absolute error, lower is better).</p>
+    </div>
+    <figure class="figure-full">
+      <img src="assets/images/results.png" alt="Qualitative comparison of dense reward prediction against Molmo2 and RoboReward" />
+      <figcaption>
+        DenseReward more closely follows task progress than strong VLM and robotic reward model baselines across successful and failed executions.
+      </figcaption>
+    </figure>
+
+    <div class="figure-grid cols-2">
+      <figure>
+        <video class="media-video" data-src="assets/videos/comparison_milk_success.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/comparison_milk_success.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Milk: success</figcaption>
+      </figure>
+      <figure>
+        <video class="media-video" data-src="assets/videos/comparison_soap_collision.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/comparison_soap_collision.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Soap: collision</figcaption>
+      </figure>
+      <figure>
+        <video class="media-video" data-src="assets/videos/comparison_lime_miss.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/comparison_lime_miss.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Lime: miss</figcaption>
+      </figure>
+      <figure>
+        <video class="media-video" data-src="assets/videos/comparison_hotdog_fall.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/comparison_hotdog_fall.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Hot dog: fall</figcaption>
+      </figure>
+    </div>
+
+    <h3 id="mpc">Model Predictive Control</h3>
+    <p>
+      We evaluate whether the learned reward signal can provide useful local guidance for action selection in a simple short-horizon control setting.
+      At each decision step, we sample 28 candidate actions (27 directions and gripper open/close), and use the reward model to score candidate transitions.
+      The simulator state is then restored, and the action with the highest predicted score is executed by the robot.
+      We evaluate this procedure on three object manipulation settings involving a can, cup, and lemon.
+      We evaluate the quality of local guidance using the minimum distance between the gripper and the target object, where a lower value indicates more effective guidance.
+    </p>
+    <div class="table-wrapper">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Can</th>
+            <th>Cup</th>
+            <th>Lemon</th>
+            <th>Avg.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>RoboReward-4B</td><td><strong>0.199</strong></td><td>0.307</td><td>0.295</td><td>0.267</td></tr>
+          <tr><td>RoboReward-8B</td><td>0.314</td><td>0.270</td><td>0.317</td><td>0.300</td></tr>
+          <tr><td>VLAC-2B</td><td>0.316</td><td>0.346</td><td>0.380</td><td>0.347</td></tr>
+          <tr><td>VLAC-8B</td><td>0.351</td><td>0.360</td><td>0.363</td><td>0.358</td></tr>
+          <tr class="highlight-row"><td><strong>DenseReward (Ours)</strong></td><td>0.219</td><td><strong>0.181</strong></td><td><strong>0.288</strong></td><td><strong>0.229</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="table-caption">MPC performance on three object manipulation tasks (minimum distance, lower is better).</p>
+    </div>
+
+    <div class="matrix-wrapper">
+      <div class="video-matrix">
+        <div></div>
+        <div class="matrix-col-head">Can</div>
+        <div class="matrix-col-head">Cup</div>
+        <div class="matrix-col-head">Lemon</div>
+
+        <div class="matrix-row-head">VLAC-8B</div>
+        <video data-src="assets/videos/vlac_8b_can.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/vlac_8b_can.mp4" type="video/mp4" />
+        </video>
+        <video data-src="assets/videos/vlac_8b_cup.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/vlac_8b_cup.mp4" type="video/mp4" />
+        </video>
+        <video data-src="assets/videos/vlac_8b_lemon.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/vlac_8b_lemon.mp4" type="video/mp4" />
+        </video>
+
+        <div class="matrix-row-head">RoboReward-4B</div>
+        <video data-src="assets/videos/roboreward_4b_can.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/roboreward_4b_can.mp4" type="video/mp4" />
+        </video>
+        <video data-src="assets/videos/roboreward_4b_cup.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/roboreward_4b_cup.mp4" type="video/mp4" />
+        </video>
+        <video data-src="assets/videos/roboreward_4b_lemon.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/roboreward_4b_lemon.mp4" type="video/mp4" />
+        </video>
+
+        <div class="matrix-row-head is-ours">DenseReward<br/>(Ours)</div>
+        <video data-src="assets/videos/densereward_4b_can.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/densereward_4b_can.mp4" type="video/mp4" />
+        </video>
+        <video data-src="assets/videos/densereward_4b_cup.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/densereward_4b_cup.mp4" type="video/mp4" />
+        </video>
+        <video data-src="assets/videos/densereward_4b_lemon.mp4" autoplay loop muted playsinline preload="none">
+          <source data-src="assets/videos/densereward_4b_lemon.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <p class="table-caption">Qualitative MPC rollouts guided by each reward model. DenseReward drives the end-effector toward the target object more reliably than VLAC-8B and RoboReward-4B.</p>
+    </div>
+
+    <h3 id="rl-libero">Reinforcement Learning on LIBERO</h3>
+    <p>
+      We apply DenseReward as a shaping signal for online PPO fine-tuning of a $\pi_0$ policy on LIBERO, combining the sparse simulator success reward with dense chunk-level feedback. PPO with DenseReward achieves competitive or improved performance compared with the sparse-reward PPO baseline.
+    </p>
+    <figure class="figure-full">
+      <img src="assets/images/libero.png" alt="PPO fine-tuning success rates with and without DenseReward on four LIBERO suites" />
+    </figure>
+
+    <h3 id="real-world">Real-World Policy Learning</h3>
+    <p>
+      We evaluate DenseReward for real-world online RL on a DROID platform, using DSRL to steer a frozen $\pi_0$ policy with only 10&ndash;20 real-world rollout trajectories. Adding DenseReward improves the success rate from <strong>60% to 80%</strong> on <em>stack the cups</em>, and from <strong>40% to 70%</strong> on <em>put ball in basket</em>, demonstrating effective dense feedback for real-world policy learning.
+    </p>
+    <figure class="figure-full">
+      <img src="assets/images/realworld.png" alt="Real-world DSRL experiments on stack the cups and put ball in basket" />
+    </figure>
+
+    <div class="figure-grid cols-2">
+      <figure>
+        <video
+          class="media-video"
+          data-src="assets/videos/realworld_collision.mp4"
+          autoplay loop muted playsinline controls preload="none"
+        >
+          <source data-src="assets/videos/realworld_collision.mp4" type="video/mp4" />
+        </video>
+        <figcaption>
+          <strong>Collision.</strong> The predicted reward rises as the robot grasps the ball and moves toward the basket, then drops once a collision disrupts the placement.
+        </figcaption>
+      </figure>
+      <figure>
+        <video
+          class="media-video"
+          data-src="assets/videos/realworld_miss.mp4"
+          autoplay loop muted playsinline controls preload="none"
+        >
+          <source data-src="assets/videos/realworld_miss.mp4" type="video/mp4" />
+        </video>
+        <figcaption>
+          <strong>Missed grasp and recovery.</strong> The reward degrades when the robot fails to grasp the ball, then climbs back to a high final score after it recovers and regrasps.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  CITATION                                                    ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="section alt-bg" id="citation">
+  <div class="container container-medium">
+    <h2>BibTeX</h2>
+    <div class="bibtex-block">
+      <button class="copy-btn" data-copy="bibtex-code" title="Copy to clipboard">
+        <i class="fas fa-copy"></i> Copy
+      </button>
+      <pre><code id="bibtex-code">@article{fang2026densereward,
+    title={DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation},
+    author={Fang, Yu and Dong, Wanxi and Liu, Jiaqi and Yang, Yue and Huo, Mingxiao and Mu, Yao and Yao, Huaxiu and Li, Li Erran and Szafir, Daniel and Ding, Mingyu},
+    journal={arXiv preprint arXiv:2607.13033},
+    year={2026}
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  FOOTER                                                      ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<footer class="footer">
+  <div class="container"></div>
+</footer>
+
+</div><!-- /.page-main -->
+
+<!-- JavaScript -->
+<script src="assets/js/script.js"></script>
+
+</body>
+</html>

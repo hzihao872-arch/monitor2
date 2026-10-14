@@ -1,0 +1,70 @@
+{
+  "scene": "source_bridge",
+  "total": 6,
+  "correct": 3,
+  "wrong": 2,
+  "uncertain": 1,
+  "invalid": 0,
+  "missing": 0,
+  "pairs": {
+    "B+>B0": null,
+    "B+>U0": false,
+    "H-<N0": false,
+    "G+>N0": true
+  },
+  "cases": {
+    "B+": {
+      "video": "0001.mp4",
+      "direction": "zero",
+      "expected": "positive",
+      "reason": "both_slots_unchanged",
+      "errors": []
+    },
+    "B0": {
+      "video": "0002.mp4",
+      "direction": "uncertain",
+      "expected": "zero",
+      "reason": "insufficient_endpoint_facts",
+      "errors": []
+    },
+    "U0": {
+      "video": "0003.mp4",
+      "direction": "zero",
+      "expected": "zero",
+      "reason": "both_slots_unchanged",
+      "errors": []
+    },
+    "H-": {
+      "video": "0004.mp4",
+      "direction": "positive",
+      "expected": "negative",
+      "reason": "visible_non_goal_slot_cleared_provisional",
+      "errors": []
+    },
+    "G+": {
+      "video": "0005.mp4",
+      "direction": "positive",
+      "expected": "positive",
+      "reason": "goal_observed_complete",
+      "errors": []
+    },
+    "N0": {
+      "video": "0006.mp4",
+      "direction": "zero",
+      "expected": "zero",
+      "reason": "caption_explicitly_static_provisional",
+      "errors": []
+    }
+  },
+  "budget": {
+    "calls": 12,
+    "input_tokens": 11448,
+    "output_tokens": 738,
+    "elapsed_ms": 21752,
+    "peak_vram_bytes_max": 18100664320
+  },
+  "model_output_sha256": "9bf48a047b63beb17448a70e5a66051d024c87aafb453cf631dab9db3ccb060f",
+  "truth_freeze_sha256": "3fa477f0b6be5d12daa7604577ced3c51f00f3dcf32e0e2181cee9a0f844dba6",
+  "evidence_audit": "pending",
+  "caveat": "Clearance-slot direction is provisional, not causal necessity proof."
+}

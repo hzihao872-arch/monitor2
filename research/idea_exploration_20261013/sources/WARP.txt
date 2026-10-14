@@ -1,0 +1,3067 @@
+0001: WARP-RM: A Warp-Augmented Relative Progress Reward Model for Data Curation
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2606.28320v4 [cs.RO] 06 Sep 2026
+0010: WARP-RM: A Warp-Augmented Relative Progress Reward Model for Data Curation
+0011: Justin Yu
+0012: Andrew Goldberg
+0013: Kavish Kondap
+0014: Karim El-Refai
+0015: Ethan Ransing
+0016: Affiliation:
+0017: University of California, Berkeley
+0018: Qianzhong Chen
+0019: Affiliation:
+0020: Stanford University
+0021: Mac Schwager
+0022: Affiliation:
+0023: Stanford University
+0024: Fred Shentu
+0025: Affiliation:
+0026: XDOF
+0027: *
+0028: Equal contribution.
+0029: Philipp Wu
+0030: Affiliation:
+0031: XDOF
+0032: *
+0033: Equal contribution.
+0034: Ken Goldberg
+0035: Affiliation:
+0036: University of California, Berkeley
+0037: Affiliation:
+0038: Corresponding author:
+0039: yujustin@berkeley.edu
+0040: Abstract
+0041: Scaling imitation learning requires large datasets, yet human teleoperation inevitably produces mixed-quality demonstrations containing hesitations, retries, and pauses. Prior frame-level progress reward models supervise on absolute temporal progress proxies that suffer from label noise, or require costly human annotations to define subtask boundaries. We present WARP (Warp-Augmented Relative Progress), a novel fully self-supervised algorithm for learning dense, signed relative progress magnitudes directly from successful demonstrations. WARP generates per-frame progress targets via time-warp augmentations of demonstrations (variable playback speeds and reversals) and we train WARP-RM to predict normalized signed temporal displacement from the start of each sampled window. Aggregating these predictions across overlapping windows yields a dense frame-level progress signal. We then introduce WARP-BC, which uses these scalar reward estimates to filter and reweight action chunks during behavior cloning. We evaluate our approach on a physical bimanual robot system performing a long-horizon deformable object manipulation task: folding T-shirts from a random crumpled start. To evaluate policy robustness against suboptimal data, we construct training datasets of varying quality using episode length as a proxy for teleoperation sub-optimality. Across these training tiers, WARP-BC improves successful-folding throughput by up to
+0042: ∼
+0043: 18
+0044: ×
+0045: \sim\!\textbf{18}\times
+0046: over vanilla BC. Furthermore, we evaluate bottle-in-bin placement in the real world and in simulation. Across 512 paired simulated scenes, WARP-BC achieves 290 bottles/hr versus 237 for vanilla BC and 271 for DemInf, with all curation methods retaining 31.5% of the data. We release open simulation data, code, checkpoints, and evaluation artifacts for end-to-end reproduction of the WARP pipeline.
+0047: Project page:
+0048: https://uynitsuj.github.io/warp-rm/
+0049: .
+0050: Figure 1:
+0051: WARP-RM signed progress measure
+0052: v
+0053: ^
+0054: t
+0055: \hat{v}_{t}
+0056: on an unseen mixed-quality teleoperated T-shirt-folding demonstration.
+0057: Large negative magnitudes occur when the right gripper drops the shirt in
+0058: (b)
+0059: , and near-zero magnitude during stagnation between
+0060: (g)
+0061: and
+0062: (h)
+0063: . These values are used to filter and weight downstream policy training. Predictions on more examples in Appendix
+0064: H
+0065: .
+0066: Keywords:
+0067: Robot Imitation Learning, Data Curation, Reward Models
+0068: 1
+0069: Introduction
+0070: Imitation learning has emerged as a powerful framework for long-horizon robot manipulation, enabling complex visuomotor behaviors from human teleoperated demonstrations. Recent advances in policy modeling and large-scale pretraining
+0071: [
+0072: 42
+0073: ,
+0074: 4
+0075: ,
+0076: 9
+0077: ,
+0078: 30
+0079: ,
+0080: 34
+0081: ,
+0082: 18
+0083: ,
+0084: 41
+0085: ,
+0086: 35
+0087: ,
+0088: 13
+0089: ]
+0090: have significantly improved expressivity and generalization. However, these methods remain highly sensitive to demonstration quality, particularly in long-horizon manipulation settings, as policies learn to mimic suboptimal pauses and fumbles present in human teleoperation
+0091: [
+0092: 28
+0093: ,
+0094: 3
+0095: ,
+0096: 5
+0097: ]
+0098: . If trained on, these behaviors can derail policy performance. However, suboptimal sequences often contain valuable recovery behaviors, akin to DAgger data
+0099: [
+0100: 31
+0101: ,
+0102: 25
+0103: ,
+0104: 37
+0105: ,
+0106: 22
+0107: ,
+0108: 20
+0109: ]
+0110: . Some approaches to data curation operate at the trajectory level, discarding entire episodes that fall below a quality threshold
+0111: [
+0112: 1
+0113: ,
+0114: 16
+0115: ,
+0116: 21
+0117: ]
+0118: . However, this coarse filtering may suffer from two limitations: it discards valuable, high-advantage segments embedded within otherwise suboptimal executions, while simultaneously failing to prune localized hesitations or fumbles within retained demonstrations.
+0119: To address the limitations of episode-level filtering, recent methods instead learn frame-level progress signals for localized data curation. Most existing progress reward models operate in an
+0120: absolute
+0121: progress regime. Methods like ReWiND
+0122: [
+0123: 39
+0124: ]
+0125: use normalized episode duration as a supervision target, while representation learning techniques like VIP
+0126: [
+0127: 27
+0128: ]
+0129: and LIV
+0130: [
+0131: 26
+0132: ]
+0133: rely on temporal contrastive alignment to globally map visual observations. However, equating elapsed timesteps or global temporal alignment with task progress introduces considerable label noise. Because temporal progression does not guarantee task progression, two demonstrations at the same normalized frame index may reflect entirely different stages of the task due to pauses, failed grasps, or varying operator strategies
+0134: [
+0135: 11
+0136: ]
+0137: .
+0138: More recent frame-level dense reward models address this noise with human annotations
+0139: [
+0140: 7
+0141: ,
+0142: 29
+0143: ]
+0144: , but this is costly to scale and often inconsistent.
+0145: We propose WARP, a fully self-supervised method that learns a local
+0146: relative
+0147: progress signal. We construct per-frame cumulative progress labels by replaying successful demonstrations at non-uniform velocities including in reverse. A model trained to predict these velocities from a sequence of images yields a frame-level progress-velocity signal of how fast and in which direction the task is advancing: large positive values during decisive forward progress, near zero during pauses or fumbles, and negative during state regression. Aggregating these predictions yields a dense progress signal that identifies decisive progress, stagnation, and regression. We then introduce WARP-BC, which uses these scores to filter and reweight action chunks during behavior cloning.
+0148: This paper makes four contributions:
+0149: 1.
+0150: WARP, a fully self-supervised algorithm that learns a dense relative task progress signal via a novel time-warping augmentation. We apply this method to train WARP-RM, a relative progress model that generates a signal indicating local task progress, given a demonstration.
+0151: 2.
+0152: WARP-BC, which uses WARP-RM’s frame-level estimates
+0153: to gate and reweight action chunks in the behavior cloning objective. We show (Sec.
+0154: 4
+0155: ) that gating and reweighting by the terminal-frame progress velocity outperforms chunk-mean aggregation.
+0156: 3.
+0157: We evaluate WARP-BC across
+0158: 420
+0159: real-world trials on a physical bimanual robot spanning two manipulation tasks. On T-shirt folding from a crumpled start, as the policy training dataset admits more inefficient demonstrations, vanilla BC collapses to a 2/20 success rate, while WARP-BC remains robust at 19/20 and yields up to an
+0160: ∼
+0161: 18
+0162: ×
+0163: \sim\!18\times
+0164: improvement in successful folding throughput. Additionally, we validate our approach on a real-world bottle-in-bin placement task, where WARP-BC similarly improves execution speed and task throughput.
+0165: 4.
+0166: Finally, we evaluate in a reproducible MuJoCo simulation of the bottle task built on the open-source ABC stack and dataset
+0167: [
+0168: 2
+0169: ]
+0170: : across 512 paired scenes, WARP-BC achieves 290 bottles/hr versus 237 for vanilla BC and 271 for DemInf at matched retention across curation methods. We release open data, code, and evaluation artifacts for end-to-end reproduction of the WARP pipeline.
+0171: 2
+0172: Related Work
+0173: Time Warping for Video Representation Learning
+0174: . Predicting temporal transformations has been explored as a self-supervised objective for video representation learning. Many methods apply a uniform speed transformation and use speed classification as a self-supervised objective
+0175: [
+0176: 38
+0177: ,
+0178: 36
+0179: ,
+0180: 6
+0181: ,
+0182: 17
+0183: ]
+0184: . A smaller body of work employs discrete, per-frame-independent warping, sampling the number of frames to skip at each timestep from a discrete set and training a classifier to predict the skip count per frame
+0185: [
+0186: 10
+0187: ,
+0188: 19
+0189: ]
+0190: . In contrast, WARP models time warping as a structured stochastic process that produces smoothly correlated, non-uniform speed variations spanning slow-motion to fast-forward playback. Rather than serving as a pretext task for representation learning, WARP uses time warping as an augmentation directly for its end task: progress estimation.
+0191: Data Curation for Robot Imitation Learning
+0192: .
+0193: Offline policy learning performance degrades substantially when training on mixed-quality human data containing variations in operator proficiency, trajectory length, and solution strategy
+0194: [
+0195: 28
+0196: ]
+0197: . Prior work has explored demonstration data curation at varying levels of granularity to address sensitivity to suboptimal demonstrations. At the dataset level, Re-Mix
+0198: [
+0199: 15
+0200: ]
+0201: optimizes over data sources to create large multi-dataset mixtures.
+0202: At the episode level, DemInf
+0203: [
+0204: 16
+0205: ]
+0206: uses a mutual information approach to curate episodes, while other works use influence function based approaches
+0207: [
+0208: 1
+0209: ,
+0210: 21
+0211: ]
+0212: .
+0213: Progress Reward Models
+0214: . Rather than operating at the episode level, reward and progress models learn a dense frame-level quality signal within a demonstration, enabling finer-grained data curation. Most prior progress models operate in an
+0215: absolute
+0216: progress regime: each
+0217: frame is assigned a target value on a globally normalized
+0218: [
+0219: 0
+0220: ,
+0221: 1
+0222: ]
+0223: [0,1]
+0224: completion axis, either from its position within the demonstration or from human-annotated subtask boundaries. ReWiND
+0225: [
+0226: 39
+0227: ]
+0228: supervises on normalized frame indices, while VIP
+0229: [
+0230: 27
+0231: ]
+0232: and LIV
+0233: [
+0234: 26
+0235: ]
+0236: use temporal contrastive learning to align representations with absolute task progression. We argue that this becomes a limitation for long-horizon teleoperation. Operators may pause, retry, or recover at different points, thus the same normalized timestamp can correspond to substantially different task states across demonstrations, injecting noise into any model that supervises against the absolute axis. In contrast, WARP models
+0237: relative progress velocity
+0238: : whether a short temporal segment moves the task forward or backward, and by how much. This formulation avoids requiring cross-demonstration temporal alignment while still producing a dense scalar signal suitable for action-chunk reweighting.
+0239: Closest to our work, SARM
+0240: [
+0241: 7
+0242: ]
+0243: and ARM
+0244: [
+0245: 29
+0246: ]
+0247: leverage human annotated data to train progress reward models and use the learned models to reweigh action chunks, performing Reward-Aligned Behavior Cloning (RA-BC). SCIZOR
+0248: [
+0249: 40
+0250: ]
+0251: trains a self-supervised progress estimator which predicts the time between two frames to curate large multi-task datasets for behavior cloning. WARP-BC additionally weights retained chunks in proportion to their magnitude.
+0252: Other works
+0253: [
+0254: 23
+0255: ,
+0256: 8
+0257: ,
+0258: 33
+0259: ,
+0260: 24
+0261: ]
+0262: explore multi-task reward modeling using large vision-language models (VLMs). While these methods demonstrate impressive semantic generalization, they often trade high-frequency temporal resolution for this breadth. For instance, methods relying on token-probability extraction
+0263: [
+0264: 8
+0265: ]
+0266: or trajectory-level preference comparisons
+0267: [
+0268: 23
+0269: ]
+0270: require VLM queries that necessitate coarser frame subsampling, limiting sensitivity to higher frequency temporal variations critical for dynamic control. Furthermore, because these models frequently anchor on absolute progress
+0271: [
+0272: 23
+0273: ]
+0274: or discretized semantic milestones
+0275: [
+0276: 33
+0277: ]
+0278: , they remain susceptible to cross-demonstration temporal alignment noise.
+0279: 3
+0280: Method
+0281: 3.1
+0282: Overview and Notation
+0283: We introduce the Warp-Augmented Relative Progress Reward Model (WARP-RM), a vision-based model that estimates the dense, per-frame progress velocity of a task directly from visual observations. To train WARP-RM without human annotations, we propose the WARP algorithm, a fully self-supervised method that trains the model to predict the normalized time delta for each frame relative to a starting frame, using a dataset of successful human teleoperated demonstrations. We hypothesize that time-warping video playback speed—and its corresponding progress label—provides a strong self-supervised signal: subsampling frames at wider intervals simulates faster execution, while sampling at narrower intervals simulates slower execution. By varying this time-warping augmentation non-uniformly, a single demonstration provides dense supervision over a continuous range of progress velocities.
+0284: A demonstration consists of a sequence of
+0285: T
+0286: T
+0287: RGB frames
+0288: o
+0289: 0
+0290: ,
+0291: …
+0292: ,
+0293: o
+0294: T
+0295: −
+0296: 1
+0297: o_{0},\dots,o_{T-1}
+0298: recorded at a fixed frequency
+0299: f
+0300: f
+0301: , from which a frozen visual encoder
+0302: ϕ
+0303: \phi
+0304: produces a per-frame feature vector. From each demonstration we sample a window of
+0305: N
+0306: N
+0307: frame indices
+0308: i
+0309: 0
+0310: ,
+0311: …
+0312: ,
+0313: i
+0314: N
+0315: −
+0316: 1
+0317: i_{0},\dots,i_{N-1}
+0318: via a time-warping procedure that replays the demonstration at varying speeds and directions, so the indices may be non-monotonic and non-linear. Each index has a corresponding pseudo-label
+0319: y
+0320: k
+0321: y_{k}
+0322: : the normalized time delta from
+0323: o
+0324: i
+0325: 0
+0326: o_{i_{0}}
+0327: to
+0328: o
+0329: i
+0330: k
+0331: o_{i_{k}}
+0332: , representing the cumulative temporal displacement from the start of the window.
+0333: WARP-RM is trained to predict
+0334: y
+0335: 1
+0336: ,
+0337: …
+0338: ​
+0339: y
+0340: N
+0341: −
+0342: 1
+0343: y_{1},...y_{N-1}
+0344: given the set of visual features
+0345: ϕ
+0346: ⁡
+0347: (
+0348: o
+0349: i
+0350: 0
+0351: )
+0352: ,
+0353: …
+0354: ,
+0355: ϕ
+0356: ⁡
+0357: (
+0358: o
+0359: i
+0360: N
+0361: −
+0362: 1
+0363: )
+0364: \phi(o_{i_{0}}),...,\phi(o_{i_{N-1}})
+0365: . At inference the model is given a sequence of frames spaced linearly with a canonical inter-frame stride of
+0366: S
+0367: S
+0368: seconds covering a window of
+0369: L
+0370: =
+0371: (
+0372: N
+0373: −
+0374: 1
+0375: )
+0376: ​
+0377: S
+0378: L=(N-1)S
+0379: seconds, and predictions are aggregated following the procedure in Sec.
+0380: 3.5
+0381: . This assigns each frame a scalar
+0382: signed progress velocity
+0383: v
+0384: t
+0385: v_{t}
+0386: measuring how fast and in which direction the task is progressing, calibrated so that:
+0387: v
+0388: ^
+0389: t
+0390: ≈
+0391: 1
+0392: \hat{v}_{t}\approx 1
+0393: matches the pace of the average reference demonstrations,
+0394: v
+0395: ^
+0396: t
+0397: ≈
+0398: 0
+0399: \hat{v}_{t}\approx 0
+0400: is stalling progress, and
+0401: v
+0402: ^
+0403: t
+0404: <
+0405: 0
+0406: \hat{v}_{t}<0
+0407: is regressing progress.
+0408: 3.2
+0409: Time-Warp Sampler
+0410: Figure 2:
+0411: Time-Warp Sampler.
+0412: WARP resamples trajectories using a warped playback schedule. (
+0413: 1
+0414: ): Playback speed varies to span slow-motion to fast-forward. Playback direction is randomly inverted to expose the model to negative progress (regression). (
+0415: 2
+0416: ): Accumulating these playback speeds yields a window of
+0417: 32
+0418: 32
+0419: source frames. The relative offset of each frame from the starting frame serves as the self-supervised progress label for the WARP-RM model to predict.
+0420: The sampler produces a set of indices
+0421: i
+0422: 0
+0423: ,
+0424: …
+0425: ​
+0426: i
+0427: N
+0428: −
+0429: 1
+0430: i_{0},...i_{N-1}
+0431: through the following procedure. First,
+0432: N
+0433: −
+0434: 1
+0435: N-1
+0436: relative log-velocities are drawn from a stationary AR(1) process with autocorrelation
+0437: α
+0438: \alpha
+0439: and marginal standard deviation
+0440: σ
+0441: ∞
+0442: \sigma_{\infty}
+0443: :
+0444: z
+0445: 0
+0446: ∼
+0447: 𝒩
+0448: (
+0449: 0
+0450: ,
+0451: σ
+0452: ∞
+0453: 2
+0454: )
+0455: ,
+0456: z
+0457: k
+0458: =
+0459: α
+0460: z
+0461: k
+0462: −
+0463: 1
+0464: +
+0465: 1
+0466: −
+0467: α
+0468: 2
+0469: σ
+0470: ∞
+0471: ϵ
+0472: k
+0473: ,
+0474: ϵ
+0475: k
+0476: ∼
+0477: 𝒩
+0478: (
+0479: 0
+0480: ,
+0481: 1
+0482: )
+0483: ,
+0484: k
+0485: =
+0486: 1
+0487: ,
+0488: …
+0489: ,
+0490: N
+0491: −
+0492: 2
+0493: z_{0}\sim\mathcal{N}(0,\,\sigma_{\infty}^{2}),\qquad z_{k}=\alpha\,z_{k-1}+\sqrt{1-\alpha^{2}}\,\sigma_{\infty}\,\epsilon_{k},\quad\epsilon_{k}\sim\mathcal{N}(0,\,1),\quad k=1,\dots,N-2
+0494: (1)
+0495: Exponentiating the log-velocities gives positive playback speeds
+0496: v
+0497: ~
+0498: k
+0499: =
+0500: e
+0501: z
+0502: k
+0503: \tilde{v}_{k}=e^{z_{k}}
+0504: . Log-space sampling treats a
+0505: 2
+0506: ×
+0507: 2\times
+0508: speedup and a
+0509: 0.5
+0510: ×
+0511: 0.5\times
+0512: slowdown symmetrically, while
+0513: α
+0514: \alpha
+0515: controls the smoothness of successive speed changes. We sample a path-length budget
+0516: ℓ
+0517: \ell
+0518: uniformly from
+0519: [
+0520: f
+0521: ​
+0522: L
+0523: /
+0524: 3
+0525: ,
+0526: 5
+0527: ​
+0528: f
+0529: ​
+0530: L
+0531: /
+0532: 3
+0533: ]
+0534: [fL/3,5fL/3]
+0535: source frames, cap it at
+0536: T
+0537: −
+0538: 1
+0539: T-1
+0540: , and rescale the speeds:
+0541: u
+0542: ~
+0543: k
+0544: =
+0545: ℓ
+0546: v
+0547: ~
+0548: k
+0549: /
+0550: ∑
+0551: j
+0552: =
+0553: 0
+0554: N
+0555: −
+0556: 2
+0557: v
+0558: ~
+0559: j
+0560: ,
+0561: k
+0562: =
+0563: 0
+0564: ,
+0565: …
+0566: ,
+0567: N
+0568: −
+0569: 2
+0570: .
+0571: \tilde{u}_{k}=\ell\,\tilde{v}_{k}\big/{\textstyle\sum_{j=0}^{N-2}\tilde{v}_{j}},\qquad k=0,\ldots,N-2.
+0572: (2)
+0573: Following ReWiND
+0574: [
+0575: 39
+0576: ]
+0577: , reversed playback supplies negative-displacement examples. We draw
+0578: R
+0579: =
+0580: min
+0581: ⁡
+0582: (
+0583: R
+0584: 0
+0585: ,
+0586: N
+0587: −
+0588: 2
+0589: )
+0590: R=\min(R_{0},N-2)
+0591: reversal points, with
+0592: R
+0593: 0
+0594: ∼
+0595: Poisson
+0596: ⁡
+0597: (
+0598: λ
+0599: rev
+0600: )
+0601: R_{0}\sim\mathrm{Poisson}(\lambda_{\mathrm{rev}})
+0602: , uniformly without replacement from
+0603: {
+0604: 1
+0605: ,
+0606: …
+0607: ,
+0608: N
+0609: −
+0610: 2
+0611: }
+0612: \{1,\ldots,N-2\}
+0613: . Each reversal flips the sign of subsequent increments; all signs are additionally flipped with probability
+0614: 0.5
+0615: 0.5
+0616: . The resulting signed increments
+0617: u
+0618: k
+0619: u_{k}
+0620: accumulate to
+0621: c
+0622: j
+0623: =
+0624: ∑
+0625: k
+0626: =
+0627: 0
+0628: j
+0629: −
+0630: 1
+0631: u
+0632: k
+0633: c_{j}=\sum_{k=0}^{j-1}u_{k}
+0634: , with
+0635: c
+0636: 0
+0637: =
+0638: 0
+0639: c_{0}=0
+0640: . Sampling a valid starting frame
+0641: i
+0642: 0
+0643: i_{0}
+0644: then gives
+0645: i
+0646: j
+0647: =
+0648: round
+0649: ⁡
+0650: (
+0651: i
+0652: 0
+0653: +
+0654: c
+0655: j
+0656: )
+0657: i_{j}=\mathrm{round}(i_{0}+c_{j})
+0658: . Reversals can make the visited span smaller than
+0659: ℓ
+0660: \ell
+0661: . Simulation retains this absolute path budget with a shorter label-normalization stride (App.
+0662: D
+0663: ).
+0664: Given the cumulative signed displacements
+0665: c
+0666: j
+0667: c_{j}
+0668: , draw
+0669: i
+0670: 0
+0671: i_{0}
+0672: uniformly from the integer range
+0673: [
+0674: ⌈
+0675: −
+0676: min
+0677: j
+0678: ⁡
+0679: c
+0680: j
+0681: ⌉
+0682: ,
+0683: ⌊
+0684: T
+0685: −
+0686: 1
+0687: −
+0688: max
+0689: j
+0690: ⁡
+0691: c
+0692: j
+0693: ⌋
+0694: ]
+0695: [\lceil-\min_{j}c_{j}\rceil,\lfloor T-1-\max_{j}c_{j}\rfloor]
+0696: . These bounds ensure that every sampled index lies within
+0697: [
+0698: 0
+0699: ,
+0700: T
+0701: −
+0702: 1
+0703: ]
+0704: [0,T-1]
+0705: .
+0706: 3.3
+0707: Progress Model Training
+0708: Relative Cumulative Progress Targets.
+0709: From the sampled indices, the per-frame cumulative progress pseudo-labels are computed as the signed displacement from the window start normalized by
+0710: C
+0711: norm
+0712: =
+0713: f
+0714: ⁡
+0715: (
+0716: N
+0717: −
+0718: 1
+0719: )
+0720: ​
+0721: S
+0722: C_{\text{norm}}=f(N-1)S
+0723: :
+0724: y
+0725: j
+0726: =
+0727: (
+0728: i
+0729: j
+0730: −
+0731: i
+0732: 0
+0733: )
+0734: /
+0735: C
+0736: norm
+0737: ,
+0738: j
+0739: =
+0740: 0
+0741: ,
+0742: …
+0743: ,
+0744: N
+0745: −
+0746: 1
+0747: y_{j}\;=\;(i_{j}-i_{0})/C_{\text{norm}},\qquad j=0,\dots,N{-}1
+0748: (3)
+0749: Categorical Objective.
+0750: Given the visual features
+0751: ϕ
+0752: ⁡
+0753: (
+0754: o
+0755: i
+0756: 0
+0757: )
+0758: ,
+0759: …
+0760: ,
+0761: ϕ
+0762: ⁡
+0763: (
+0764: o
+0765: i
+0766: N
+0767: −
+0768: 1
+0769: )
+0770: \phi(o_{i_{0}}),...,\phi(o_{i_{N-1}})
+0771: the progress model is trained to predict
+0772: y
+0773: 0
+0774: ,
+0775: …
+0776: ,
+0777: y
+0778: N
+0779: −
+0780: 1
+0781: y_{0},...,y_{N-1}
+0782: . Rather than regressing directly on
+0783: y
+0784: j
+0785: y_{j}
+0786: , WARP-RM predicts
+0787: N
+0788: N
+0789: separate probability distributions over evenly spaced categorical bins. The model is trained with a cross-entropy loss against a two-hot target encoding that encodes a continuous value by finding the coefficients for linear interpolation from the two nearest bin centers. This categorical classification approach mitigates optimization instabilities and capacity underutilization typically found in direct regression
+0790: [
+0791: 12
+0792: ]
+0793: .
+0794: 3.4
+0795: Model Architecture
+0796: Figure 3:
+0797: WARP-RM Architecture.
+0798: A 32-frame demonstration window (left) is encoded by a frozen DINOv3 backbone
+0799: ϕ
+0800: \phi
+0801: and aggregated by a bidirectional-attention transformer that emits a distribution over 30 cumulative-progress bins at each input frame. The yellow shaded region (bottom-left) illustrates one such sliding prediction window applied to the continuous episode. Their per-frame expectations form the window’s predicted cumulative progress vector
+0802: y
+0803: ^
+0804: ∈
+0805: ℝ
+0806: N
+0807: \hat{y}\in\mathbb{R}^{N}
+0808: . A discrete temporal derivative yields intra-window velocities
+0809: v
+0810: j
+0811: v_{j}
+0812: (bottom right), which are then averaged across overlapping windows to produce
+0813: v
+0814: ^
+0815: t
+0816: \hat{v}_{t}
+0817: . See Sections
+0818: 3.4
+0819: ,
+0820: 3.5
+0821: for details.
+0822: Similar to SARM
+0823: [
+0824: 7
+0825: ]
+0826: , the model architecture uses a frozen visual backbone and transformer temporal aggregator, but it replaces the stage classifier and subtask-progress regressor with a single progress velocity head (Figure
+0827: 3
+0828: ). WARP-RM uses a frozen DINOv3 ViT-B/16
+0829: [
+0830: 32
+0831: ]
+0832: as
+0833: ϕ
+0834: \phi
+0835: , yielding a
+0836: 768
+0837: 768
+0838: -dimensional feature vector per frame.
+0839: Each input token is formed by concatenating the frame embedding with its temporal difference:
+0840: [
+0841: ϕ
+0842: ⁡
+0843: (
+0844: o
+0845: i
+0846: j
+0847: )
+0848: ,
+0849: ϕ
+0850: ⁡
+0851: (
+0852: o
+0853: i
+0854: j
+0855: )
+0856: −
+0857: ϕ
+0858: ⁡
+0859: (
+0860: o
+0861: i
+0862: j
+0863: −
+0864: 1
+0865: )
+0866: ]
+0867: ∈
+0868: ℝ
+0869: 1536
+0870: [\phi(o_{i_{j}}),\,\phi(o_{i_{j}})-\phi(o_{i_{j-1}})]\in\mathbb{R}^{1536}
+0871: , with the difference set to zero for
+0872: j
+0873: =
+0874: 0
+0875: j=0
+0876: . Tokens are projected to the transformer dimension, augmented with fixed sinusoidal positional embeddings, and processed by a bidirectional Transformer encoder. Finally, a linear layer maps each output token to separate probability distributions. At inference, the predicted
+0877: y
+0878: ^
+0879: j
+0880: \hat{y}_{j}
+0881: is computed as the expectation of the predicted distribution.
+0882: 3.5
+0883: Warp-Augmented Relative Progress Behavior Cloning
+0884: WARP-BC aggregates predictions from WARP-RM into dense, per-frame progress velocities and uses them for binary filtering or continuous reweighting of action chunks.
+0885: Velocity Aggregation.
+0886: We apply WARP-RM in overlapping windows, each containing
+0887: N
+0888: N
+0889: frames separated by the canonical stride of
+0890: S
+0891: S
+0892: seconds, with consecutive windows shifted by a single source-frame. Within each window, consecutive expected cumulative progress predictions are differenced and scaled to produce a sequence of intra-window velocities:
+0893: v
+0894: j
+0895: =
+0896: (
+0897: N
+0898: −
+0899: 1
+0900: )
+0901: ​
+0902: (
+0903: y
+0904: ^
+0905: j
+0906: −
+0907: y
+0908: ^
+0909: j
+0910: −
+0911: 1
+0912: )
+0913: v_{j}=(N-1)(\hat{y}_{j}-\hat{y}_{j-1})
+0914: . Each interior source-frame
+0915: t
+0916: t
+0917: in the episode is covered by multiple overlapping windows. The final per-frame progress velocity,
+0918: v
+0919: ^
+0920: t
+0921: \hat{v}_{t}
+0922: , is computed as the mean of all intra-window velocity predictions
+0923: v
+0924: j
+0925: v_{j}
+0926: .
+0927: Action Chunk Weighting.
+0928: The behavior cloning policy is trained to predict one second action chunks. The velocity at the final frame of the action chunk,
+0929: v
+0930: ^
+0931: end
+0932: \hat{v}_{\text{end}}
+0933: , is used to compute the continuous reward-aligned behavior cloning (RA-BC) weight
+0934: w
+0935: ⁡
+0936: (
+0937: s
+0938: ,
+0939: a
+0940: )
+0941: w(s,a)
+0942: for each state-action pair:
+0943: w
+0944: ⁡
+0945: (
+0946: s
+0947: ,
+0948: a
+0949: )
+0950: =
+0951: v
+0952: ^
+0953: end
+0954: ⋅
+0955: 1
+0956: v
+0957: ^
+0958: end
+0959: >
+0960: τ
+0961: w(s,a)\;=\;\hat{v}_{\text{end}}\,\cdot\,\mathbf{1}_{\,\hat{v}_{\text{end}}\,>\,\tau\,}
+0962: (4)
+0963: The binary variant uses the same threshold but assigns unit weight to retained chunks:
+0964: w
+0965: ⁡
+0966: (
+0967: s
+0968: ,
+0969: a
+0970: )
+0971: =
+0972: 𝟏
+0973: v
+0974: ^
+0975: end
+0976: >
+0977: τ
+0978: w(s,a)=\mathbf{1}_{\hat{v}_{\text{end}}>\tau}
+0979: . Chunks with
+0980: w
+0981: ⁡
+0982: (
+0983: s
+0984: ,
+0985: a
+0986: )
+0987: =
+0988: 0
+0989: w(s,a)=0
+0990: are filtered out
+0991: prior
+0992: to training to avoid reducing effective batch size, following advantage-filtered behavior cloning
+0993: [
+0994: 14
+0995: ]
+0996: . Here
+0997: v
+0998: ^
+0999: end
+1000: \hat{v}_{\text{end}}
+1001: acts as an empirical progress velocity-based proxy for advantage rather than an explicitly estimated RL advantage with a value baseline.
+1002: Behavior Cloning Objective.
+1003: The final policy loss is the standard flow-matching loss weighted per-sample by
+1004: w
+1005: ⁡
+1006: (
+1007: s
+1008: ,
+1009: a
+1010: )
+1011: w(s,a)
+1012: :
+1013: ℒ
+1014: BC
+1015: =
+1016: 𝔼
+1017: (
+1018: s
+1019: ,
+1020: a
+1021: )
+1022: ∼
+1023: 𝒟
+1024: ​
+1025: [
+1026: w
+1027: ⁡
+1028: (
+1029: s
+1030: ,
+1031: a
+1032: )
+1033: ⋅
+1034: ℒ
+1035: flow
+1036: ​
+1037: (
+1038: π
+1039: θ
+1040: ,
+1041: s
+1042: ,
+1043: a
+1044: )
+1045: ]
+1046: .
+1047: \mathcal{L}_{\text{BC}}\;=\;\mathbb{E}_{(s,a)\sim\mathcal{D}}\,[w{(s,a)}\cdot\mathcal{L}_{\text{flow}}(\pi_{\theta};s,a)].
+1048: (5)
+1049: Dataset / Tier
+1050: Method
+1051: Metric
+1052: 𝒟
+1053: 1
+1054: \mathcal{D}_{1}
+1055: 𝒟
+1056: 2
+1057: \mathcal{D}_{2}
+1058: 𝒟
+1059: 3
+1060: \mathcal{D}_{3}
+1061: Vanilla BC
+1062: Success
+1063: ↑
+1064: \uparrow
+1065: 20/20
+1066: 2/20
+1067: 0/20
+1068: Mean TTC (s)
+1069: ↓
+1070: \downarrow
+1071: 113.8
+1072: 199.0
+1073: N/A
+1074: Thrput (/hr)
+1075: ↑
+1076: \uparrow
+1077: 31.6
+1078: 1.5
+1079: 0.0
+1080: Act. Chunks Kept
+1081: 100%
+1082: 100%
+1083: 100%
+1084: WARP-BC
+1085: Success
+1086: ↑
+1087: \uparrow
+1088: 20/20
+1089: 19/20
+1090: 14/20
+1091: Mean TTC (s)
+1092: ↓
+1093: \downarrow
+1094: 63.9
+1095: 118.8
+1096: 117.4
+1097: Thrput (/hr)
+1098: ↑
+1099: \uparrow
+1100: 56.3
+1101: 27.4
+1102: 16.3
+1103: Act. Chunks Kept
+1104: 35.7%
+1105: 34.4%
+1106: 22.5%
+1107: Table 1:
+1108: Cross-tier evaluation
+1109: on bimanual
+1110: T-shirt folding from a crumpled start compared across three training datasets that admit progressively more suboptimal demonstrations. We report success rates, mean time-to-completion (TTC), throughput, and % of action chunks kept for training. WARP-BC sustains higher throughput across tiers, whereas vanilla BC degrades as broader demonstrations are admitted into training.
+1111: Dataset / Tier
+1112: Method
+1113: Metric
+1114: 𝒟
+1115: 4
+1116: \mathcal{D}_{4}
+1117: 𝒟
+1118: 5
+1119: \mathcal{D}_{5}
+1120: SARM
+1121: [
+1122: 7
+1123: ]
+1124: Success
+1125: ↑
+1126: \uparrow
+1127: 19/20
+1128: 2/20
+1129: Mean TTC (s)
+1130: ↓
+1131: \downarrow
+1132: 90.5
+1133: 156.0
+1134: Thrput (/hr)
+1135: ↑
+1136: \uparrow
+1137: 34.9
+1138: 1.55
+1139: Act. Chunks Kept
+1140: 78.5%
+1141: 66.6%
+1142: DemInf
+1143: [
+1144: 16
+1145: ]
+1146: Success
+1147: ↑
+1148: \uparrow
+1149: 19/20
+1150: 18/20
+1151: Mean TTC (s)
+1152: ↓
+1153: \downarrow
+1154: 89.6
+1155: 115.8
+1156: Thrput (/hr)
+1157: ↑
+1158: \uparrow
+1159: 35.2
+1160: 25.3
+1161: Act. Chunks Kept
+1162: 45.6%
+1163: 33.7%
+1164: SCIZOR
+1165: [
+1166: 40
+1167: ]
+1168: Success
+1169: ↑
+1170: \uparrow
+1171: 19/20
+1172: 2/20
+1173: Mean TTC (s)
+1174: ↓
+1175: \downarrow
+1176: 98.4
+1177: 206.2
+1178: Thrput (/hr)
+1179: ↑
+1180: \uparrow
+1181: 32.4
+1182: 1.5
+1183: Act. Chunks Kept
+1184: 77.9%
+1185: 66.7%
+1186: WARP-BC
+1187: Success
+1188: ↑
+1189: \uparrow
+1190: 20/20
+1191: 20/20
+1192: Mean TTC (s)
+1193: ↓
+1194: \downarrow
+1195: 71.2
+1196: 80.7
+1197: Thrput (/hr)
+1198: ↑
+1199: \uparrow
+1200: 50.6
+1201: 44.6
+1202: Act. Chunks Kept
+1203: 45.6%
+1204: 33.7%
+1205: Table 2:
+1206: Matched baseline comparisons
+1207: on
+1208: 𝒟
+1209: 4
+1210: =
+1211: 𝒟
+1212: 1
+1213: ∪
+1214: 𝒟
+1215: A
+1216: \mathcal{D}_{4}=\mathcal{D}_{1}\cup\mathcal{D}_{A}
+1217: ,
+1218: 𝒟
+1219: 5
+1220: =
+1221: 𝒟
+1222: 2
+1223: ∪
+1224: 𝒟
+1225: A
+1226: \mathcal{D}_{5}=\mathcal{D}_{2}\cup\mathcal{D}_{A}
+1227: .
+1228: 4
+1229: Experiments
+1230: We evaluate in three settings: real-world T-shirt folding, real-world bottle-in-bin placement, and a reproducible simulated bottle-in-bin benchmark. In the T-shirt setting, each policy is evaluated on a bimanual I2RT YAM robot arm setup over
+1231: 20
+1232: 20
+1233: trials
+1234: 1
+1235: 1
+1236: 1
+1237: At
+1238: n
+1239: =
+1240: 20
+1241: n=20
+1242: , single-trial success differences (e.g., 19/20 vs. 20/20) fall within binomial sampling noise; only larger gaps should be read as meaningful. Where success rates are comparable, throughput and time-to-completion are more informative metrics.
+1243: of T-shirt folding using a variety of differently colored medium-sized T-shirts not seen during training. In each trial, the robot must retrieve a crumpled shirt from a bin containing a variable number of shirts, flatten it on the workspace, fold both sleeves inward, fold the shirt in half twice, and move it towards the top-left corner of the workspace to complete the task. If the policy does not complete the task within
+1244: 240 seconds, the trial is marked as a failure. This time budget is chosen as 2
+1245: ×
+1246: \times
+1247: the longest training demonstration, providing a generous margin for retry behaviors while bounding evaluation time. Time-to-completion (TTC) is reported as the average completion time for successful trials. Throughput is the number of successful folds per hour, with each failed trial contributing its four-minute timeout to the denominator; human reset time between trials is excluded from this calculation.
+1248: 4.1
+1249: Implementation Details
+1250: We use
+1251: N
+1252: =
+1253: 32
+1254: N=32
+1255: frames, stride
+1256: S
+1257: =
+1258: 1.5
+1259: ​
+1260: s
+1261: S=1.5s
+1262: , AR(1) parameters
+1263: α
+1264: =
+1265: 0.5
+1266: ,
+1267: σ
+1268: ∞
+1269: =
+1270: ln
+1271: ⁡
+1272: 2
+1273: \alpha=0.5,\sigma_{\infty}=\ln 2
+1274: , reversal rate
+1275: λ
+1276: r
+1277: ​
+1278: e
+1279: ​
+1280: v
+1281: =
+1282: 1
+1283: \lambda_{rev}=1
+1284: , and filtering threshold
+1285: τ
+1286: =
+1287: 1.0
+1288: \tau=1.0
+1289: (reweighting only chunks above the reference expert pace,
+1290: v
+1291: ^
+1292: end
+1293: >
+1294: 1
+1295: \hat{v}_{\text{end}}>1
+1296: ). See Appendix
+1297: E
+1298: for additional details.
+1299: 4.2
+1300: Policy Training Datasets and Tiers
+1301: We form three length-filtered tiers from one pool of successful teleoperated T-shirt demonstrations:
+1302: 𝒟
+1303: 1
+1304: \mathcal{D}_{1}
+1305: (
+1306: ≤
+1307: 60
+1308: \leq 60
+1309: s),
+1310: 𝒟
+1311: 2
+1312: \mathcal{D}_{2}
+1313: (
+1314: ≤
+1315: 90
+1316: \leq 90
+1317: s), and
+1318: 𝒟
+1319: 3
+1320: \mathcal{D}_{3}
+1321: (
+1322: ≤
+1323: 120
+1324: \leq 120
+1325: s). Longer episodes tend to contain more hesitations and retries, providing a coarse test of robustness to inefficient behavior. Vanilla BC and WARP-BC train on the same demonstrations within each tier. One WARP-RM, trained on the fixed set of 1,950 shortest demonstrations (
+1326: 𝒟
+1327: R
+1328: ​
+1329: M
+1330: \mathcal{D}_{RM}
+1331: ,
+1332: ≤
+1333: 59.8
+1334: \leq 59.8
+1335: s), scores all tiers. Ablations use
+1336: 𝒟
+1337: 2
+1338: \mathcal{D}_{2}
+1339: ; counts and distributions appear in App.
+1340: A
+1341: .
+1342: The tiers contain 2,427 episodes (36.1 hours), 4,124 (71.3 hours), and 6,473 (139.7 hours), respectively. Episode lengths have a dominant mode near 50–60 seconds and a broader tail beyond 85 seconds.
+1343: 4.3
+1344: Cross-tier Results
+1345: Figure 4:
+1346: Time-to-completion distribution for successes.
+1347: Performance is evaluated across three datasets tiered by increasing demonstration sub-optimality:
+1348: 𝒟
+1349: 1
+1350: \mathcal{D}_{1}
+1351: (
+1352: ≤
+1353: 60
+1354: \leq 60
+1355: s, efficient demonstrations),
+1356: 𝒟
+1357: 2
+1358: \mathcal{D}_{2}
+1359: (
+1360: ≤
+1361: 90
+1362: \leq 90
+1363: s, moderate inefficiencies), and
+1364: 𝒟
+1365: 3
+1366: \mathcal{D}_{3}
+1367: (
+1368: ≤
+1369: 120
+1370: \leq 120
+1371: s, demonstrations with more operator hesitations and recoveries). Policy rollouts which exceed 240 seconds are considered failures and are not shown.
+1372: As shown in Table
+1373: 1
+1374: and Figure
+1375: 4
+1376: , while both methods succeed on
+1377: 𝒟
+1378: 1
+1379: \mathcal{D}_{1}
+1380: , WARP-BC yields a 1.78
+1381: ×
+1382: \times
+1383: throughput improvement, with performance divergence increasing on
+1384: 𝒟
+1385: 2
+1386: \mathcal{D}_{2}
+1387: (
+1388: ∼
+1389: 18
+1390: ×
+1391: \sim 18\times
+1392: throughput improvement compared to vanilla BC) and
+1393: 𝒟
+1394: 3
+1395: \mathcal{D}_{3}
+1396: . From qualitative observation, vanilla BC on the later tiers often gets caught in repetitive, localized adjustments that fail to progress the task, often cycling through micro-adjustment behavior until the 240-second timeout is reached.
+1397: 4.4
+1398: Baseline Comparisons
+1399: Because SARM requires stage annotations, all methods use augmented datasets
+1400: 𝒟
+1401: 4
+1402: =
+1403: 𝒟
+1404: 1
+1405: ∪
+1406: 𝒟
+1407: A
+1408: \mathcal{D}_{4}=\mathcal{D}_{1}\cup\mathcal{D}_{A}
+1409: and
+1410: 𝒟
+1411: 5
+1412: =
+1413: 𝒟
+1414: 2
+1415: ∪
+1416: 𝒟
+1417: A
+1418: \mathcal{D}_{5}=\mathcal{D}_{2}\cup\mathcal{D}_{A}
+1419: ; other methods treat
+1420: 𝒟
+1421: A
+1422: \mathcal{D}_{A}
+1423: as unlabeled. On the broader tier, SARM and SCIZOR both fall from 19/20 to 2/20 successes, while DemInf retains 18/20 and WARP-BC achieves 20/20 (Table
+1424: 2
+1425: ). WARP-BC also yields the highest throughput on both tiers. WARP-BC and DemInf have matched retention budgets, whereas SARM and SCIZOR retain more data. The simulation comparison below controls this difference across all curation methods. Completion-time distributions appear in App.
+1426: G
+1427: .
+1428: 4.5
+1429: Ablations
+1430: Ablations
+1431: Variant
+1432: Success
+1433: Mean TTC (s)
+1434: Thrput (/hr)
+1435: Act. Chunks Kept
+1436: Weighting
+1437: τ
+1438: =
+1439: 0
+1440: \tau=0
+1441: 3/20
+1442: 201.4
+1443: 2.3
+1444: 97.0%
+1445: τ
+1446: =
+1447: 1
+1448: \tau=1
+1449: , binary
+1450: 16/20
+1451: 139.6
+1452: 18.0
+1453: 34.4%
+1454: τ
+1455: =
+1456: 1
+1457: \tau=1
+1458: , continuous
+1459: [WARP-BC]
+1460: 19/20
+1461: 118.8
+1462: 27.4
+1463: 34.4%
+1464: Aggregation
+1465: Mean
+1466: v
+1467: ^
+1468: \hat{v}
+1469: over chunk
+1470: 15/20
+1471: 127.0
+1472: 17.4
+1473: 34.0%
+1474: Mean
+1475: v
+1476: ^
+1477: \hat{v}
+1478: over chunk, future offset
+1479: 14/20
+1480: 124.2
+1481: 15.9
+1482: 34.3%
+1483: Terminal
+1484: v
+1485: ^
+1486: end
+1487: \hat{v}_{\text{end}}
+1488: [WARP-BC]
+1489: 19/20
+1490: 118.8
+1491: 27.4
+1492: 34.4%
+1493: Sampler
+1494: IID log-normal
+1495: 18/20
+1496: 131.0
+1497: 22.8
+1498: 28.7%
+1499: AR(1) process
+1500: [WARP-BC]
+1501: 19/20
+1502: 118.8
+1503: 27.4
+1504: 34.4%
+1505: Table 3:
+1506: Ablations
+1507: on
+1508: 𝒟
+1509: 2
+1510: \mathcal{D}_{2}
+1511: . Each row varies an algorithmic component
+1512: while holding others fixed. We investigate:
+1513: (i)
+1514: Weighting Function
+1515: (Eq.
+1516: 4
+1517: ), how scores are filtered or reweighted in policy training loss,
+1518: (ii)
+1519: Aggregation Strategy
+1520: , how frame-level progress is summarized over an action chunk, and
+1521: (iii)
+1522: Time-Warp Sampler
+1523: , comparing temporally independent vs. smoothly correlated AR(1) sampling.
+1524: We report success rate, mean time-to-completion (TTC) for successful rollouts, throughput, and the percent of action chunks kept for policy training.
+1525: Weighting and aggregation.
+1526: Binary and continuous weighting retain the same 34.4% of chunks, with 16/20 and 19/20 successes, respectively. Terminal-velocity aggregation yields 19/20 successes, compared with 15/20 for the aligned chunk mean and 14/20 for the future-offset mean (Table
+1527: 3
+1528: ). These small-sample differences are descriptive.
+1529: Time-warp sampler.
+1530: AR(1) and IID sampling yield similar success counts (19/20 vs. 18/20), while throughput is 27.4 vs. 22.8 folds/hr. Retention also differs (34.4% vs. 28.7%), so this comparison does not isolate temporal correlation from data selection. The simulation ablation below compares AR(1) and IID at matched retention.
+1531: 4.6
+1532: Bottle-in-Bin Placement Task in the Real World
+1533: Method
+1534: Bottles
+1535: Placed
+1536: ↑
+1537: \uparrow
+1538: Mean Time /
+1539: Bottle (s)
+1540: ↓
+1541: \downarrow
+1542: Thrput
+1543: (/hr)
+1544: ↑
+1545: \uparrow
+1546: Act. Chunks
+1547: Kept
+1548: Vanilla BC
+1549: 59/80
+1550: 15.9
+1551: 147.8
+1552: 100%
+1553: WARP-BC
+1554: 74/80
+1555: 11.3
+1556: 237.8
+1557: 30.6%
+1558: Table 4:
+1559: Real-world bottle-in-bin placement.
+1560: Each policy runs 20 four-bottle trials with a 90 s timeout (80 bottles total). Placement time averages intervals between successful drops; throughput counts placed bottles per hour and charges timed-out trials the full 90 s.
+1561: Figure 5:
+1562: Per-bottle placement-time distribution for the bottle-in-bin task.
+1563: Each point is the time to place a single bottle (interval between consecutive drops);
+1564: gray points are vanilla BC (
+1565: 59
+1566: 59
+1567: bottles placed) and blue are WARP-BC
+1568: (
+1569: 74
+1570: 74
+1571: bottles placed), with the total placed out of
+1572: 80
+1573: 80
+1574: shown under each label. Black
+1575: bars denote the mean (
+1576: 15.9
+1577: 15.9
+1578: s vs.
+1579: 11.3
+1580: 11.3
+1581: s). WARP-BC places bottles faster and
+1582: with a tighter distribution, while vanilla BC exhibits a heavier tail of slow placements.
+1583: Beyond T-shirt folding, we evaluate WARP-BC on a bottle-in-bin placement task, where the
+1584: robot places four plastic bottles into a bin (
+1585: 90
+1586: 90
+1587: s timeout,
+1588: 20
+1589: 20
+1590: trials per method).
+1591: Both policies train on the same dataset of bottle demonstrations, and WARP-RM uses
+1592: hyperparameters identical to the T-shirt setting (App.
+1593: B
+1594: ).
+1595: Table
+1596: 4
+1597: and Figure
+1598: 5
+1599: show WARP-BC
+1600: places
+1601: 74
+1602: /
+1603: 80
+1604: 74/80
+1605: bottles versus
+1606: 59
+1607: /
+1608: 80
+1609: 59/80
+1610: for vanilla BC, reducing mean per-bottle placement time
+1611: from
+1612: 15.9
+1613: 15.9
+1614: to
+1615: 11.3
+1616: 11.3
+1617: s and improving throughput by
+1618: 1.6
+1619: ×
+1620: 1.6\times
+1621: (
+1622: 237.8
+1623: 237.8
+1624: vs.
+1625: 147.8
+1626: 147.8
+1627: bottles/hr). Mean per-bottle placement time measures execution speed over successfully placed bottles only and is not penalized by missed bottles, whereas throughput charges each timed-out trial its full 90 s timeout and thus additionally reflects task completion. See App.
+1628: F
+1629: for extended evaluation-protocol details.
+1630: 4.7
+1631: Bottle-in-Bin Placement Task in Simulation
+1632: Method
+1633: Data kept
+1634: Bottles/scene
+1635: ↑
+1636: \uparrow
+1637: Thrpt (/hr)
+1638: ↑
+1639: \uparrow
+1640: All 6
+1641: ↑
+1642: \uparrow
+1643: Vanilla BC
+1644: 100%
+1645: 3.885
+1646: 237
+1647: 9.4%
+1648: Random
+1649: 31.5%
+1650: 3.770
+1651: 230
+1652: 10.9%
+1653: ReWiND
+1654: 31.5%
+1655: 3.781
+1656: 231
+1657: 9.4%
+1658: SARM (oracle)
+1659: 31.5%
+1660: 4.191
+1661: 265
+1662: 20.5%
+1663: WARP-BC (IID)
+1664: 31.5%
+1665: 4.285
+1666: 269
+1667: 18.9%
+1668: SCIZOR
+1669: 31.5%
+1670: 4.299
+1671: 270
+1672: 19.1%
+1673: DemInf
+1674: 31.5%
+1675: 4.332
+1676: 271
+1677: 18.8%
+1678: WARP-BC
+1679: 31.5%
+1680: 4.533
+1681: 290
+1682: 25.0%
+1683: Table 5:
+1684: Simulated bottle-in-bin results.
+1685: All methods use 512 paired six-bottle scenes (nominal 60 s horizon). Curation methods retain 31.5% of the data. Both WARP-BC variants use binary filtering; SARM uses oracle stage boundaries. “All 6” is the fraction of scenes with every bottle placed.
+1686: Figure 6:
+1687: Simulation throughput across 512 paired scenes.
+1688: WARP-BC achieves 290 bottles/hr, compared with 271 for DemInf and 237 for vanilla BC. All curation methods retain 31.5% of the data; vanilla BC uses 100%. Paired confidence intervals are reported in the text.
+1689: To extend the hardware comparison to a larger evaluation, we use the public ABC MuJoCo-Warp environment
+1690: [
+1691: 2
+1692: ]
+1693: and 2,438 demonstrations on the bimanual YAM platform. Each method is evaluated on the same 512 six-bottle scenes with a nominal 60 s horizon. Policies share the demonstrations,
+1694: π
+1695: 0
+1696: \pi_{0}
+1697: architecture, and training-step budget. All curation methods retain 31.5% of the data; vanilla BC uses the full dataset. WARP-BC uses binary filtering (
+1698: τ
+1699: =
+1700: 1
+1701: \tau=1
+1702: ), giving retained chunks equal loss weight. SARM receives oracle stage boundaries from simulator state, since human stage annotations are unavailable. Further details are in App.
+1703: D
+1704: .
+1705: WARP-BC achieves the highest throughput among the eight methods (Table
+1706: 5
+1707: ), placing 4.533 bottles/scene at 290 bottles/hr, compared with 3.885 and 237 for vanilla BC. The improvement also translates into more completed scenes: WARP-BC clears all six bottles in 25.0% of scenes, versus 9.4% for vanilla BC. Its paired throughput gain is +53 bottles/hr over vanilla (95% CI [42, 64]), with gains of +19 over DemInf ([9, 29]) and +20 over SCIZOR ([8, 32]). It also places 0.342 more bottles/scene than oracle-SARM ([0.18, 0.51]). Figure
+1708: 6
+1709: shows the throughput comparison.
+1710: Selection and temporal correlation.
+1711: Simply retaining less data does not explain the gain. Random retention yields 3.770 bottles/scene, slightly below vanilla BC; WARP-BC places 0.764 more bottles/scene at the same budget (95% CI [0.60, 0.93]). The time-warp structure also matters: replacing correlated AR(1) log-speeds with IID draws lowers throughput from 290 to 269 bottles/hr (7%) without changing retention. These comparisons support both selecting productive chunks and learning the selection signal with temporally correlated warps. An additional training seed preserves the ordering of WARP-BC and DemInf (287 vs. 261 bottles/hr; 4.492 vs. 4.172 bottles/scene). ReWiND reaches 3.781 bottles/scene, close to random retention. These comparisons support the structured relative-progress signal without establishing a universal advantage across tasks.
+1712: Open reproduction.
+1713: The project page provides data, checkpoints, n=512 traces, and pinned code for end-to-end WARP reproduction, and documents baseline-specific reproduction limits.
+1714: 4.8
+1715: Direct Validation of the Progress Signal
+1716: To test what the score recognizes, we compare its predictions with annotations collected before this work by independent annotators across 452 expert T-shirt episodes. Predicted velocity is lower during mistakes than in duration-matched productive windows from the same episode in 23/24 cases, including 12/13 outside
+1717: 𝒟
+1718: R
+1719: ​
+1720: M
+1721: \mathcal{D}_{RM}
+1722: . Frame-level mistake-discrimination AUROC is 0.83, versus 0.61 for proprioceptive speed and 0.68 for garment-area change. The small annotated sample supports discrimination between productive and mistaken behavior; it does not establish that curation preserves useful recovery segments.
+1723: 5
+1724: Limitations and Future Work
+1725: While WARP-BC attenuates the impact of suboptimal data, the resulting policy remains restricted to the behaviors present in the training set. Future work will investigate how DAgger and post-training, e.g. offline and online RL, and iterative self-improvement via reward-aligned learning, can generalize performance beyond these initial offline demonstrations. Furthermore, our experiments span two real manipulation tasks and one simulated task on a single bimanual embodiment, and several directions remain open. First, our negative-progress supervision comes entirely from reversed playback, an approximation we adopt from ReWiND
+1726: [
+1727: 39
+1728: ]
+1729: , which notes that such reversals can be physically implausible. This introduces a distribution gap: a real-world regression unfolds forward in time under normal causal dynamics, whereas temporal-warping and reversals present a different spatiotemporal distribution. We demonstrate that this gap frequently exhibits sufficient overlap in practice to extract viable signal for reward learning. Still, this alignment is task-dependent, and we encourage practitioners to validate whether this synthetic signal yields useful representations on their own tasks.
+1730: Acknowledgments
+1731: This research was performed at the AUTOLAB at UC Berkeley in affiliation with the Berkeley AI Research (BAIR) Lab. XDOF provided the teleoperated demonstration data, training compute, and evaluation hardware infrastructure used for this project. In their academic roles at UC Berkeley, Justin Yu, Andrew Goldberg, Kavish Kondap, Karim El-Refai, Ethan Ransing, and Ken Goldberg are supported in part by donations from Toyota Research Institute, Autodesk, Meta, Google, Siemens, and Bosch, and by equipment grants from NVIDIA, PhotoNeo, the NSF AI4OPT Center, and Intuitive Surgical. Justin Yu is supported by the National Science Foundation Graduate Research Fellowship Program under Grant No. DGE 2146752. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the National Science Foundation.
+1732: References
+1733: [1]
+1734: C. Agia, R. Sinha, J. Yang, R. Antonova, M. Pavone, H. Nishimura, M. Itkina, and J. Bohg
+1735: (2025)
+1736: CUPID: curating data your robot loves with influence functions
+1737: .
+1738: In
+1739: Conference on Robot Learning (CoRL)
+1740: ,
+1741: Proceedings of Machine Learning Research
+1742: , Vol.
+1743: 305
+1744: ,
+1745: pp. 2907–2932
+1746: .
+1747: Cited by:
+1748: §1
+1749: ,
+1750: §2
+1751: .
+1752: [2]
+1753: A. Allshire, H. G. Singh, R. Singh, A. Rashid, H. Choi, D. McAllister, J. Yu, Y. Chen, H. Huang, P. Abbeel, X. Chen, R. Duan, P. Isola, J. Malik, F. Shentu, G. Shi, P. Wu, and A. Kanazawa
+1754: (2026)
+1755: Scalable behavior cloning with open data, training, and evaluation
+1756: .
+1757: arXiv preprint
+1758: .
+1759: External Links:
+1760: Link
+1761: Cited by:
+1762: item 4
+1763: ,
+1764: §4.7
+1765: .
+1766: [3]
+1767: M. Beliaev, A. Shih, S. Ermon, D. Sadigh, and R. Pedarsani
+1768: (2022)
+1769: Imitation learning by estimating expertise of demonstrators
+1770: .
+1771: In
+1772: International Conference on Machine Learning
+1773: ,
+1774: pp. 1732–1748
+1775: .
+1776: Cited by:
+1777: §1
+1778: .
+1779: [4]
+1780: K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, L. X. Shi, J. Tanner, Q. Vuong, A. Walling, H. Wang, and U. Zhilinsky
+1781: (2025)
+1782: π
+1783: 0
+1784: \pi_{0}
+1785: : A vision-language-action flow model for general robot control
+1786: .
+1787: In
+1788: Proceedings of Robotics: Science and Systems (RSS)
+1789: ,
+1790: Cited by:
+1791: §E.3
+1792: ,
+1793: §1
+1794: .
+1795: [5]
+1796: D. S. Brown, W. Goo, and S. Niekum
+1797: (2020)
+1798: Better-than-demonstrator imitation learning via automatically-ranked demonstrations
+1799: .
+1800: In
+1801: Conference on robot learning
+1802: ,
+1803: pp. 330–359
+1804: .
+1805: Cited by:
+1806: §1
+1807: .
+1808: [6]
+1809: P. Chen, D. Huang, D. He, X. Long, R. Zeng, S. Wen, M. Tan, and C. Gan
+1810: (2021)
+1811: RSPNet: relative speed perception for unsupervised video representation learning
+1812: .
+1813: In
+1814: The AAAI Conference on Artificial Intelligence (AAAI)
+1815: ,
+1816: Cited by:
+1817: §2
+1818: .
+1819: [7]
+1820: Q. Chen, J. Yu, M. Schwager, P. Abbeel, Y. Shentu, and P. Wu
+1821: (2026)
+1822: SARM: stage-aware reward modeling for long horizon robot manipulation
+1823: .
+1824: In
+1825: International Conference on Learning Representations (ICLR)
+1826: ,
+1827: Cited by:
+1828: §1
+1829: ,
+1830: §2
+1831: ,
+1832: §3.4
+1833: ,
+1834: Table 2
+1835: .
+1836: [8]
+1837: S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna
+1838: (2026)
+1839: Topreward: token probabilities as hidden zero-shot rewards for robotics
+1840: .
+1841: arXiv preprint arXiv:2602.19313
+1842: .
+1843: Cited by:
+1844: §2
+1845: .
+1846: [9]
+1847: C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and S. Song
+1848: (2025)
+1849: Diffusion policy: visuomotor policy learning via action diffusion
+1850: .
+1851: The International Journal of Robotics Research
+1852: 44
+1853: (
+1854: 10-11
+1855: ),
+1856: pp. 1684–1704
+1857: .
+1858: Cited by:
+1859: §1
+1860: .
+1861: [10]
+1862: I. R. Dave, S. Jenni, and M. Shah
+1863: (2024)
+1864: No more shortcuts: realizing the potential of temporal self-supervision
+1865: .
+1866: Proceedings of the AAAI Conference on Artificial Intelligence
+1867: 38
+1868: (
+1869: 2
+1870: ),
+1871: pp. 1481–1491
+1872: .
+1873: External Links:
+1874: Link
+1875: ,
+1876: Document
+1877: Cited by:
+1878: §2
+1879: .
+1880: [11]
+1881: D. Dwibedi, Y. Aytar, J. Tompson, P. Sermanet, and A. Zisserman
+1882: (2019)
+1883: Temporal cycle-consistency learning
+1884: .
+1885: In
+1886: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition
+1887: ,
+1888: pp. 1801–1810
+1889: .
+1890: Cited by:
+1891: §1
+1892: .
+1893: [12]
+1894: J. Farebrother, J. Orbay, Q. Vuong, A. A. Taïga, Y. Chebotar, T. Xiao, A. Irpan, S. Levine, P. S. Castro, A. Faust, A. Kumar, and R. Agarwal
+1895: (2024)
+1896: Stop regressing: training value functions via classification for scalable deep rl
+1897: .
+1898: In
+1899: Proceedings of the 41st International Conference on Machine Learning
+1900: ,
+1901: Proceedings of Machine Learning Research
+1902: , Vol.
+1903: 235
+1904: ,
+1905: pp. 12659–12686
+1906: .
+1907: External Links:
+1908: Document
+1909: Cited by:
+1910: §3.3
+1911: .
+1912: [13]
+1913: L. Fu, H. Huang, G. Datta, L. Y. Chen, W. C. Panitch, F. Liu, H. Li, and K. Goldberg
+1914: (2024)
+1915: In-context imitation learning via next-token prediction
+1916: .
+1917: arXiv preprint arXiv:2408.15980
+1918: .
+1919: Cited by:
+1920: §1
+1921: .
+1922: [14]
+1923: J. Grigsby and Y. Qi
+1924: (2023)
+1925: A closer look at advantage-filtered behavioral cloning in high-noise datasets
+1926: .
+1927: External Links:
+1928: 2110.04698
+1929: ,
+1930: Link
+1931: Cited by:
+1932: §3.5
+1933: .
+1934: [15]
+1935: J. Hejna, C. Bhateja, Y. Jiang, K. Pertsch, and D. Sadigh
+1936: (2024)
+1937: Re-mix: optimizing data mixtures for large scale imitation learning
+1938: .
+1939: In
+1940: Conference on Robot Learning (CoRL)
+1941: ,
+1942: Proceedings of Machine Learning Research
+1943: , Vol.
+1944: 270
+1945: ,
+1946: pp. 145–164
+1947: .
+1948: Cited by:
+1949: §2
+1950: .
+1951: [16]
+1952: J. Hejna, S. Mirchandani, A. Balakrishna, A. Xie, A. Wahid, J. Tompson, P. Sanketi, D. Shah, C. Devin, and D. Sadigh
+1953: (2025)
+1954: Robot data curation with mutual information estimators
+1955: .
+1956: In
+1957: Proceedings of Robotics: Science and Systems (RSS)
+1958: ,
+1959: Cited by:
+1960: §1
+1961: ,
+1962: §2
+1963: ,
+1964: Table 2
+1965: .
+1966: [17]
+1967: D. Huang, W. Hu, X. Liu, D. He, Z. Wu, X. Wu, M. Tan, and E. Ding
+1968: (2021)
+1969: ASCNet: self-supervised video representation learning with appearance-speed consistency
+1970: .
+1971: In
+1972: The IEEE/CVF International Conference on Computer Vision (ICCV)
+1973: ,
+1974: pp. 8076–8085
+1975: .
+1976: External Links:
+1977: Document
+1978: Cited by:
+1979: §2
+1980: .
+1981: [18]
+1982: H. Huang, F. Liu, L. Fu, T. Wu, M. Mukadam, J. Malik, K. Goldberg, and P. Abbeel
+1983: (2025)
+1984: Otter: a vision-language-action model with text-aware feature extraciton
+1985: .
+1986: arXiv preprint arXiv:2503.03734
+1987: .
+1988: Cited by:
+1989: §1
+1990: .
+1991: [19]
+1992: S. Jenni, M. Woodson, and F. C. Heilbron
+1993: (2022)
+1994: Video-retime: learning temporally varying speediness for time remapping
+1995: .
+1996: External Links:
+1997: 2205.05609
+1998: ,
+1999: Link
+2000: Cited by:
+2001: §2
+2002: .
+2003: [20]
+2004: M. Kelly, C. Sidrane, K. Driggs-Campbell, and M. J. Kochenderfer
+2005: (2019)
+2006: Hg-dagger: interactive imitation learning with human experts
+2007: .
+2008: In
+2009: 2019 International Conference on Robotics and Automation (ICRA)
+2010: ,
+2011: pp. 8077–8083
+2012: .
+2013: Cited by:
+2014: §1
+2015: .
+2016: [21]
+2017: H. Lee, T. Min, J. Kim, S. Kang, F. Liu, L. Pinto, and K. Lee
+2018: (2026)
+2019: Quality over quantity: demonstration curation via influence functions for data-centric robot learning
+2020: .
+2021: arXiv preprint arXiv:2603.09056
+2022: .
+2023: Cited by:
+2024: §1
+2025: ,
+2026: §2
+2027: .
+2028: [22]
+2029: Q. Li, Z. Peng, and B. Zhou
+2030: (2022)
+2031: Efficient learning of safe driving policy via human-ai copilot optimization
+2032: .
+2033: arXiv preprint arXiv:2202.10341
+2034: .
+2035: Cited by:
+2036: §1
+2037: .
+2038: [23]
+2039: A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox,
+2040: et al.
+2041: (2026)
+2042: Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+2043: .
+2044: In
+2045: Proceedings of Robotics: Science and Systems (RSS)
+2046: ,
+2047: Cited by:
+2048: §2
+2049: .
+2050: [24]
+2051: P. Liang, R. Bommasani, T. Lee, D. Tsipras, D. Soylu, M. Yasunaga, Y. Zhang, D. Narayanan, Y. Wu, A. Kumar, B. Newman, B. Yuan, B. Yan, C. Zhang, C. A. Cosgrove, C. D. Manning, C. Re, D. Acosta-Navas, D. A. Hudson, E. Zelikman, E. Durmus, F. Ladhak, F. Rong, H. Ren, H. Yao, J. WANG, K. Santhanam, L. Orr, L. Zheng, M. Yuksekgonul, M. Suzgun, N. Kim, N. Guha, N. S. Chatterji, O. Khattab, P. Henderson, Q. Huang, R. A. Chi, S. M. Xie, S. Santurkar, S. Ganguli, T. Hashimoto, T. Icard, T. Zhang, V. Chaudhary, W. Wang, X. Li, Y. Mai, Y. Zhang, and Y. Koreeda
+2052: (2023)
+2053: Holistic evaluation of language models
+2054: .
+2055: Transactions on Machine Learning Research
+2056: .
+2057: Note:
+2058: Featured Certification, Expert Certification
+2059: External Links:
+2060: ISSN 2835-8856
+2061: ,
+2062: Link
+2063: Cited by:
+2064: §2
+2065: .
+2066: [25]
+2067: H. Liu, S. Nasiriany, L. Zhang, Z. Bao, and Y. Zhu
+2068: (2023)
+2069: Robot learning on the job: human-in-the-loop autonomy and learning during deployment
+2070: .
+2071: In
+2072: Robotics: Science and Systems (RSS)
+2073: ,
+2074: Cited by:
+2075: §1
+2076: .
+2077: [26]
+2078: Y. J. Ma, W. Liang, V. Somani, B. Stadie, O. Bastani, D. Jayaraman, A. Zhang, S. Sodhani, and V. Kumar
+2079: (2023)
+2080: LIV: language-image representations and rewards for robotic control
+2081: .
+2082: In
+2083: International Conference on Machine Learning
+2084: ,
+2085: Cited by:
+2086: §1
+2087: ,
+2088: §2
+2089: .
+2090: [27]
+2091: Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+2092: (2023)
+2093: VIP: towards universal visual reward and representation via value-implicit pre-training
+2094: .
+2095: In
+2096: International Conference on Learning Representations
+2097: ,
+2098: Cited by:
+2099: §1
+2100: ,
+2101: §2
+2102: .
+2103: [28]
+2104: A. Mandlekar, D. Xu, J. Wong, S. Nasiriany, C. Wang, R. Kulkarni, L. Fei-Fei, S. Savarese, Y. Zhu, and R. Martín-Martín
+2105: (2021)
+2106: What matters in learning from offline human demonstrations for robot manipulation
+2107: .
+2108: In
+2109: Conference on Robot Learning (CoRL)
+2110: ,
+2111: Proceedings of Machine Learning Research
+2112: , Vol.
+2113: 164
+2114: .
+2115: Cited by:
+2116: §1
+2117: ,
+2118: §2
+2119: .
+2120: [29]
+2121: Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+2122: (2026)
+2123: ARM: advantage reward modeling for long-horizon manipulation
+2124: .
+2125: arXiv preprint arXiv:2604.03037
+2126: .
+2127: Cited by:
+2128: §1
+2129: ,
+2130: §2
+2131: .
+2132: [30]
+2133: A. O’Neill, A. Rehman, A. Maddukuri, A. Gupta, A. Padalkar, A. Lee, A. Pooley, A. Gupta, A. Mandlekar, A. Jain,
+2134: et al.
+2135: (2024)
+2136: Open x-embodiment: robotic learning datasets and rt-x models: open x-embodiment collaboration 0
+2137: .
+2138: In
+2139: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+2140: ,
+2141: pp. 6892–6903
+2142: .
+2143: Cited by:
+2144: §1
+2145: .
+2146: [31]
+2147: S. Ross, G. Gordon, and D. Bagnell
+2148: (2011)
+2149: A reduction of imitation learning and structured prediction to no-regret online learning
+2150: .
+2151: In
+2152: Proceedings of the fourteenth international conference on artificial intelligence and statistics
+2153: ,
+2154: pp. 627–635
+2155: .
+2156: Cited by:
+2157: §1
+2158: .
+2159: [32]
+2160: O. Siméoni, H. V. Vo, M. Seitzer, F. Baldassarre, M. Oquab, C. Jose, V. Khalidov, M. Szafraniec, S. Yi, M. Ramamonjisoa, F. Massa, D. Haziza, L. Wehrstedt, J. Wang, T. Darcet, T. Moutakanni, L. Sentana, C. Roberts, A. Vedaldi, J. Tolan, J. Brandt, C. Couprie, J. Mairal, H. Jégou, P. Labatut, and P. Bojanowski
+2161: (2025)
+2162: DINOv3
+2163: .
+2164: External Links:
+2165: 2508.10104
+2166: ,
+2167: Link
+2168: Cited by:
+2169: §3.4
+2170: .
+2171: [33]
+2172: H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co,
+2173: et al.
+2174: (2026)
+2175: Robo-dopamine: general process reward modeling for high-precision robotic manipulation
+2176: .
+2177: In
+2178: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2179: ,
+2180: Cited by:
+2181: §2
+2182: .
+2183: [34]
+2184: O. M. Team, D. Ghosh, H. Walke, K. Pertsch, K. Black, O. Mees, S. Dasari, J. Hejna, T. Kreiman, C. Xu,
+2185: et al.
+2186: (2024)
+2187: Octo: an open-source generalist robot policy
+2188: .
+2189: arXiv preprint arXiv:2405.12213
+2190: .
+2191: Cited by:
+2192: §1
+2193: .
+2194: [35]
+2195: H. R. Walke, K. Black, T. Z. Zhao, Q. Vuong, C. Zheng, P. Hansen-Estruch, A. W. He, V. Myers, M. J. Kim, M. Du,
+2196: et al.
+2197: (2023)
+2198: Bridgedata v2: a dataset for robot learning at scale
+2199: .
+2200: In
+2201: Conference on Robot Learning
+2202: ,
+2203: pp. 1723–1736
+2204: .
+2205: Cited by:
+2206: §1
+2207: .
+2208: [36]
+2209: J. Wang, J. Jiao, and Y. Liu
+2210: (2020)
+2211: Self-supervised video representation learning by pace prediction
+2212: .
+2213: In
+2214: European Conference on Computer Vision
+2215: ,
+2216: Cited by:
+2217: §2
+2218: .
+2219: [37]
+2220: P. Wu, Y. Shentu, Q. Liao, D. Jin, M. Guo, K. Sreenath, X. Lin, and P. Abbeel
+2221: (2025)
+2222: RoboCopilot: human-in-the-loop interactive imitation learning for robot manipulation
+2223: .
+2224: Cited by:
+2225: §1
+2226: .
+2227: [38]
+2228: Y. Yao, C. Liu, D. Luo, Y. Zhou, and Q. Ye
+2229: (2020)
+2230: Video playback rate perception for self-supervised spatio-temporal representation learning
+2231: .
+2232: In
+2233: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2234: ,
+2235: Cited by:
+2236: §2
+2237: .
+2238: [39]
+2239: J. Zhang, Y. Luo, A. Anwar, S. A. Sontakke, J. J. Lim, J. Thomason, E. Bıyık, and J. Zhang
+2240: (2025)
+2241: ReWiND: language-guided rewards teach robot policies without new demonstrations
+2242: .
+2243: In
+2244: Conference on Robot Learning
+2245: ,
+2246: Cited by:
+2247: §1
+2248: ,
+2249: §2
+2250: ,
+2251: §3.2
+2252: ,
+2253: §5
+2254: .
+2255: [40]
+2256: Y. Zhang, Y. Xie, H. Liu, R. Shah, M. Wan, L. Fan, and Y. Zhu
+2257: (2026)
+2258: Scizor: a self-supervised approach to data curation for large-scale imitation learning
+2259: .
+2260: In
+2261: IEEE International Conference on Robotics and Automation (ICRA)
+2262: ,
+2263: Cited by:
+2264: Figure 10
+2265: ,
+2266: §2
+2267: ,
+2268: Table 2
+2269: .
+2270: [41]
+2271: T. Z. Zhao, V. Kumar, S. Levine, and C. Finn
+2272: (2023)
+2273: Learning fine-grained bimanual manipulation with low-cost hardware
+2274: .
+2275: arXiv preprint arXiv:2304.13705
+2276: .
+2277: Cited by:
+2278: §1
+2279: .
+2280: [42]
+2281: B. Zitkovich, T. Yu, S. Xu, P. Xu, T. Xiao, F. Xia, J. Wu, P. Wohlhart, S. Welker, A. Wahid,
+2282: et al.
+2283: (2023)
+2284: Rt-2: vision-language-action models transfer web knowledge to robotic control
+2285: .
+2286: In
+2287: Conference on Robot Learning
+2288: ,
+2289: pp. 2165–2183
+2290: .
+2291: Cited by:
+2292: §1
+2293: .
+2294: Appendix A
+2295: Dataset Statistics
+2296: Table
+2297: 6
+2298: reports per-tier statistics for the three policy training datasets used in Section
+2299: 4
+2300: , as well as the fixed reference subset on
+2301: which WARP is trained. All tiers are length-filtered subsets of a single underlying dataset of human-teleoperated bimanual T-shirt-folding demonstrations.
+2302: Figure
+2303: 7
+2304: plots the corresponding episode-length distribution.
+2305: Dataset / Tier
+2306: Description
+2307: Episodes
+2308: Total hours
+2309: 𝒟
+2310: 1
+2311: \mathcal{D}_{1}
+2312: Policy training, length-filter
+2313: ≤
+2314: 60
+2315: \leq 60
+2316: s
+2317: 2,427
+2318: 2{,}427
+2319: 36.1
+2320: 36.1
+2321: 𝒟
+2322: 2
+2323: \mathcal{D}_{2}
+2324: Policy training, length-filter
+2325: ≤
+2326: 90
+2327: \leq 90
+2328: s
+2329: 4,124
+2330: 4{,}124
+2331: 71.3
+2332: 71.3
+2333: 𝒟
+2334: 3
+2335: \mathcal{D}_{3}
+2336: Policy training, length-filter
+2337: ≤
+2338: 120
+2339: \leq 120
+2340: s
+2341: 6,473
+2342: 6{,}473
+2343: 139.7
+2344: 139.7
+2345: 𝒟
+2346: A
+2347: \mathcal{D}_{A}
+2348: Annotated dataset, SARM train data
+2349: 867
+2350: 867
+2351: 13.9
+2352: 𝒟
+2353: R
+2354: ​
+2355: M
+2356: \mathcal{D}_{RM}
+2357: WARP-RM train data,
+2358: ≤
+2359: 59.8
+2360: \leq 59.8
+2361: s
+2362: 1,950
+2363: 1{,}950
+2364: 28.7
+2365: 28.7
+2366: Table 6:
+2367: Per-tier dataset statistics.
+2368: Tiers
+2369: 𝒟
+2370: 1
+2371: \mathcal{D}_{1}
+2372: –
+2373: 𝒟
+2374: 3
+2375: \mathcal{D}_{3}
+2376: admit progressively more suboptimal demonstrations under a length-based proxy.
+2377: Tiers
+2378: 𝒟
+2379: 4
+2380: \mathcal{D}_{4}
+2381: –
+2382: 𝒟
+2383: 5
+2384: \mathcal{D}_{5}
+2385: are augmented with
+2386: 𝒟
+2387: A
+2388: \mathcal{D}_{A}
+2389: used for the SARM RA-BC comparison (Table
+2390: 2
+2391: ). The WARP
+2392: reference subset is held fixed across all
+2393: 𝒟
+2394: i
+2395: \mathcal{D}_{i}
+2396: policy-tier experiments and consists of the shortest, fastest demonstrations in the dataset, providing a clean training signal for the canonical
+2397: v
+2398: ^
+2399: =
+2400: 1
+2401: \hat{v}=1
+2402: progress unit (Sec.
+2403: 3.3
+2404: ). All footage at
+2405: 30
+2406: 30
+2407: Hz.
+2408: Figure 7:
+2409: Episode-length distribution of
+2410: 𝒟
+2411: 1
+2412: \mathcal{D}_{1}
+2413: –
+2414: 𝒟
+2415: 3
+2416: \mathcal{D}_{3}
+2417: (blue) with
+2418: the SARM-annotated supplement
+2419: 𝒟
+2420: A
+2421: \mathcal{D}_{A}
+2422: overlaid (orange).
+2423: The base distribution exhibits a dominant mode near
+2424: 50
+2425: 50
+2426: –
+2427: 60
+2428: 60
+2429: s with a broader tail beyond
+2430: ∼
+2431: 85
+2432: \sim\!85
+2433: s containing episodes with more hesitations, fumbles,
+2434: and recoveries. Dashed vertical lines mark the three length filters used in
+2435: Section
+2436: 4
+2437: ; unioning
+2438: 𝒟
+2439: A
+2440: \mathcal{D}_{A}
+2441: with
+2442: 𝒟
+2443: 1
+2444: \mathcal{D}_{1}
+2445: and
+2446: 𝒟
+2447: 2
+2448: \mathcal{D}_{2}
+2449: yields the matched datasets
+2450: 𝒟
+2451: 4
+2452: =
+2453: 𝒟
+2454: 1
+2455: ∪
+2456: 𝒟
+2457: A
+2458: \mathcal{D}_{4}=\mathcal{D}_{1}\cup\mathcal{D}_{A}
+2459: and
+2460: 𝒟
+2461: 5
+2462: =
+2463: 𝒟
+2464: 2
+2465: ∪
+2466: 𝒟
+2467: A
+2468: \mathcal{D}_{5}=\mathcal{D}_{2}\cup\mathcal{D}_{A}
+2469: used in the SARM comparison. The WARP reference subset
+2470: (Table
+2471: 6
+2472: ) lies entirely to the left of the green
+2473: ≤
+2474: 60
+2475: \leq 60
+2476: s line.
+2477: Appendix B
+2478: Bottle-in-Bin Dataset Statistics
+2479: Table
+2480: 7
+2481: and Figure
+2482: 8
+2483: report dataset statistics for the
+2484: bottle-in-bin placement task (Section
+2485: 4
+2486: , Table
+2487: 4
+2488: ). Both the vanilla BC and
+2489: WARP-BC policies are trained on the dataset of human-teleoperated “put the plastic bottles in the bin” demonstrations.
+2490: As with the T-shirt dataset, WARP-RM is trained once on a fixed reference subset of the shortest demonstrations
+2491: (
+2492: ≤
+2493: 74.6
+2494: \leq 74.6
+2495: s), providing a clean signal for the canonical execution pace (
+2496: v
+2497: ^
+2498: =
+2499: 1
+2500: \hat{v}=1
+2501: ).
+2502: All WARP and WARP-RM hyperparameters are kept identical to the T-shirt setup
+2503: (Tables
+2504: 9
+2505: –
+2506: 10
+2507: ); only the training dataset differs.
+2508: Dataset
+2509: Description
+2510: Episodes
+2511: Total hours
+2512: Full dataset
+2513: Human-teleoperated demonstrations
+2514: 1,374
+2515: 1{,}374
+2516: 26.4
+2517: 26.4
+2518: WARP-RM subset
+2519: WARP-RM train data, shortest demos
+2520: ≤
+2521: 74.6
+2522: \leq 74.6
+2523: s
+2524: 687
+2525: 687
+2526: 10.2
+2527: 10.2
+2528: Table 7:
+2529: Bottle-in-bin dataset statistics.
+2530: The WARP reference subset consists of the shortest
+2531: demonstrations (
+2532: ≤
+2533: 74.6
+2534: \leq 74.6
+2535: s), mirroring the T-shirt protocol (Table
+2536: 6
+2537: ) and providing a clean
+2538: training signal for the canonical
+2539: v
+2540: ^
+2541: =
+2542: 1
+2543: \hat{v}=1
+2544: progress unit (Sec.
+2545: 3.3
+2546: ). All footage at
+2547: 30
+2548: 30
+2549: Hz.
+2550: Figure 8:
+2551: Episode-length distribution of the bottle-in-bin dataset.
+2552: WARP-RM is trained on the shortest
+2553: demonstrations (orange,
+2554: ≤
+2555: 74.6
+2556: \leq 74.6
+2557: s); the dashed line marks the cutoff. As in the T-shirt setting
+2558: (Fig.
+2559: 7
+2560: ), WARP-RM is trained only on the shortest, fastest demonstrations.
+2561: Appendix C
+2562: Simulation Bottle-in-Bin Dataset Statistics
+2563: Table
+2564: 8
+2565: and Figure
+2566: 9
+2567: report dataset
+2568: statistics for the simulated bottle-in-bin placement task (Section
+2569: 4.7
+2570: ,
+2571: Table
+2572: 5
+2573: ). All policies in the comparison are trained on
+2574: the same corpus of simulated “put the plastic bottles in the bin” demonstrations, collected in
+2575: the MuJoCo YAM environment and rendered at
+2576: 30
+2577: 30
+2578: Hz. Dataset scenes contain between two and six
+2579: bottles (near-uniformly distributed), but evaluation scenes use six bottles consistently. As in the real-world setting, WARP-RM is
+2580: trained once on a fixed reference subset of the shortest demonstrations — here the shortest
+2581: 25
+2582: %
+2583: 25\%
+2584: , stratified per bottle count so that faster small-count episodes do not crowd out
+2585: six-bottle episodes (
+2586: 610
+2587: 610
+2588: episodes, all
+2589: ≤
+2590: 40
+2591: \leq 40
+2592: s) — providing a clean signal for the
+2593: canonical execution pace (
+2594: v
+2595: ^
+2596: =
+2597: 1
+2598: \hat{v}=1
+2599: ). The simulation uses
+2600: S
+2601: =
+2602: 0.5
+2603: S=0.5
+2604: s (15 source frames at 30 Hz), so a 32-token inference window spans 15.5 s. The absolute sampler path budget remains fixed rather than being rescaled with
+2605: S
+2606: S
+2607: ; App.
+2608: D
+2609: specifies the differences from the real-world recipe.
+2610: Dataset
+2611: Description
+2612: Episodes
+2613: Total hours
+2614: Full dataset
+2615: Simulated bottle-in-bin demonstrations
+2616: 2,438
+2617: 2{,}438
+2618: 17.5
+2619: 17.5
+2620: WARP-RM subset
+2621: WARP-RM train data
+2622: 610
+2623: 610
+2624: 3.4
+2625: 3.4
+2626: Table 8:
+2627: Simulation bottle-in-bin dataset statistics.
+2628: The WARP reference
+2629: subset consists of the shortest demonstrations, mirroring the
+2630: real-world protocol (Table
+2631: 7
+2632: ) and providing a clean training signal for
+2633: the canonical
+2634: v
+2635: ^
+2636: =
+2637: 1
+2638: \hat{v}=1
+2639: progress unit (Sec.
+2640: 3.3
+2641: ). All footage at
+2642: 30
+2643: 30
+2644: Hz.
+2645: Figure 9:
+2646: Episode-length distribution of the simulation bottle-in-bin dataset.
+2647: WARP-RM is trained on the shortest demonstrations (stratified per bottle count).
+2648: Appendix D
+2649: Simulation Training and Evaluation Protocol
+2650: Reward model.
+2651: The WARP reward model uses the shortest 25% of demonstrations stratified by bottle count, the top camera, feature stride one,
+2652: N
+2653: =
+2654: 32
+2655: N=32
+2656: , and
+2657: S
+2658: =
+2659: 0.5
+2660: S=0.5
+2661: s. Training runs for 20,000 steps; the released head is the best-composite checkpoint at step 14,400. The AR(1) path-budget center and half-range remain 1.5 s and 1.0 s per gap, respectively:
+2662: ℓ
+2663: ∈
+2664: [
+2665: 465
+2666: ,
+2667: 2325
+2668: ]
+2669: \ell\in[465,2325]
+2670: source frames before episode-length clipping. The categorical support is fixed at
+2671: [
+2672: −
+2673: 3
+2674: ,
+2675: 3
+2676: ]
+2677: [-3,3]
+2678: . The IID ablation changes log-speed correlation while retaining the same path budget and reversal process.
+2679: Policy training.
+2680: All simulation policies use
+2681: π
+2682: 0
+2683: \pi_{0}
+2684: initialized from the public base checkpoint, batch size 32, 30,000 training steps, cosine learning-rate decay, and action horizon
+2685: H
+2686: =
+2687: 30
+2688: H=30
+2689: . Retention thresholds are calibrated per method to 31.5%; vanilla uses 100%. WARP-BC and its IID variant use binary filtering, with unit loss weight for every retained chunk. Thus the simulation comparison evaluates WARP-based selection, without continuous reweighting within the retained subset. The candidate-anchor denominator includes every source frame, with episode-tail windows padded using the final frame. Holding retention and training steps fixed controls effective data reuse across curation methods. In contrast, vanilla revisits a larger retained dataset.
+2690: Rollouts.
+2691: Each arm uses the same 512 scene seeds. Every predicted 30-action chunk is executed in full, with replanning on chunk exhaustion. The physics timestep is 0.002 s with control decimation 17, giving 0.034 s per action and 61.2 s for 1,800 actions. The scorer uses recorded physics states to identify qualifying bottle placements. Reported confidence intervals compare methods at the paired-scene level. The additional-seed comparison in Sec.
+2692: 4.7
+2693: is reported separately from the primary table.
+2694: Public artifacts.
+2695: The reproduction guide at
+2696: https://github.com/uynitsuj/WARP-RM
+2697: links the dataset, checkpoints, and trace releases. The policy-training and batched-evaluation code is pinned to
+2698: uynitsuj/openpi@9c8e7b75
+2699: and
+2700: uynitsuj/abc-rabc@59db543d
+2701: . The historical n=128 trace self-test is a deterministic scorer check; it must not be substituted for the n=512 comparison. The guide documents which baseline curation pipelines can be regenerated and which have verification-only support.
+2702: Appendix E
+2703: Implementation Details
+2704: E.1
+2705: WARP Hyperparameters (Real Experiments)
+2706: Group
+2707: Symbol / name
+2708: Value
+2709: Sampler (Eq.
+2710: 1
+2711: –
+2712: 2
+2713: )
+2714: Window length
+2715: N
+2716: N
+2717: 32
+2718: 32
+2719: frames
+2720: Canonical inter-token stride
+2721: S
+2722: S
+2723: 1.5
+2724: 1.5
+2725: s (45 frames @
+2726: 30
+2727: 30
+2728: Hz)
+2729: AR(1) autocorrelation
+2730: α
+2731: \alpha
+2732: 0.5
+2733: 0.5
+2734: Marginal log-velocity std
+2735: σ
+2736: ∞
+2737: \sigma_{\infty}
+2738: ln
+2739: ⁡
+2740: 2
+2741: \ln 2
+2742: Path-length mean
+2743: s
+2744: ¯
+2745: \bar{s}
+2746: Uniform
+2747: ⁡
+2748: (
+2749: [
+2750: 0.5
+2751: ,
+2752: 2.5
+2753: ]
+2754: )
+2755: \mathrm{Uniform}([0.5,\;2.5])
+2756: seconds per gap
+2757: Reversal rate
+2758: λ
+2759: rev
+2760: \lambda_{\text{rev}}
+2761: 1
+2762: 1
+2763: (Poisson)
+2764: Global time-reverse prob.
+2765: p
+2766: flip
+2767: p_{\text{flip}}
+2768: 0.5
+2769: 0.5
+2770: Table 9:
+2771: WARP Sampler Configuration.
+2772: E.2
+2773: WARP-RM Hyperparameters
+2774: Group
+2775: Symbol / name
+2776: Value
+2777: Targets (Eq.
+2778: 3
+2779: )
+2780: Framerate
+2781: f
+2782: f
+2783: 30 Hz
+2784: Normalization
+2785: C
+2786: norm
+2787: C_{\text{norm}}
+2788: (
+2789: N
+2790: −
+2791: 1
+2792: )
+2793: ⋅
+2794: S
+2795: ⋅
+2796: f
+2797: =
+2798: 1395
+2799: (N{-}1)\cdot S\cdot f=1395
+2800: source-frames
+2801: Output bins
+2802: 30
+2803: 30
+2804: , centers linearly spaced in
+2805: [
+2806: −
+2807: 3
+2808: ,
+2809: 3
+2810: ]
+2811: [-3,3]
+2812: Target encoding
+2813: two-hot
+2814: Architecture
+2815: Visual backbone
+2816: ϕ
+2817: \phi
+2818: frozen DINOv3 ViT-B/16,
+2819: 768
+2820: 768
+2821: -dim
+2822: Input resolution
+2823: 224
+2824: ×
+2825: 224
+2826: 224\times 224
+2827: Temporal-diff projection
+2828: ℝ
+2829: 1536
+2830: →
+2831: ℝ
+2832: 768
+2833: \mathbb{R}^{1536}\to\mathbb{R}^{768}
+2834: (no bias)
+2835: Encoder layers / heads / model dim
+2836: 12
+2837: 12
+2838: /
+2839: 8
+2840: 8
+2841: /
+2842: 768
+2843: 768
+2844: Attention
+2845: bidirectional self-attention
+2846: Dropout
+2847: 0.15
+2848: 0.15
+2849: Positional embedding
+2850: fixed sinusoidal
+2851: Optimization
+2852: Optimizer
+2853: AdamW (
+2854: β
+2855: 1
+2856: =
+2857: 0.9
+2858: \beta_{1}{=}0.9
+2859: ,
+2860: β
+2861: 2
+2862: =
+2863: 0.999
+2864: \beta_{2}{=}0.999
+2865: )
+2866: Peak learning rate
+2867: 4
+2868: ×
+2869: 10
+2870: −
+2871: 4
+2872: 4\times 10^{-4}
+2873: (linear-scaled from
+2874: 10
+2875: −
+2876: 4
+2877: 10^{-4}
+2878: at bs
+2879: =
+2880: 256
+2881: =256
+2882: )
+2883: Weight decay
+2884: 10
+2885: −
+2886: 3
+2887: 10^{-3}
+2888: Batch size
+2889: 1024
+2890: 1024
+2891: windows
+2892: Total steps
+2893: 15 000
+2894: 15\,000
+2895: Warmup / schedule
+2896: 1000
+2897: 1000
+2898: linear warmup, cosine anneal to
+2899: 0
+2900: 0
+2901: Gradient clip
+2902: 1.0
+2903: 1.0
+2904: Table 10:
+2905: WARP-RM Training Configuration.
+2906: All values are held fixed across the three policy tiers
+2907: 𝒟
+2908: 1
+2909: ,
+2910: 𝒟
+2911: 2
+2912: ,
+2913: 𝒟
+2914: 3
+2915: \mathcal{D}_{1},\mathcal{D}_{2},\mathcal{D}_{3}
+2916: ;
+2917: WARP-RM is trained once on
+2918: 𝒟
+2919: R
+2920: ​
+2921: M
+2922: \mathcal{D}_{RM}
+2923: and reused as a frozen scorer.
+2924: E.3
+2925: WARP-BC Policy Training
+2926: We instantiate the behavior cloning policy with the
+2927: π
+2928: 0
+2929: \pi_{0}
+2930: flow-matching backbone
+2931: [
+2932: 4
+2933: ]
+2934: . Action chunks span
+2935: H
+2936: =
+2937: 30
+2938: H=30
+2939: source-frames (
+2940: 1.0
+2941: 1.0
+2942: s); per-chunk weights
+2943: w
+2944: w
+2945: are precomputed once per episode using Eq.
+2946: 4
+2947: with threshold
+2948: τ
+2949: =
+2950: 1.0
+2951: \tau=1.0
+2952: , and chunks with
+2953: w
+2954: =
+2955: 0
+2956: w=0
+2957: are
+2958: removed from the dataset at construction time so they consume no compute. All other policy-side hyperparameters (optimizer, schedule, batch size, image augmentation)
+2959: follow the public
+2960: π
+2961: 0
+2962: \pi_{0}
+2963: recipe unchanged.
+2964: E.4
+2965: Dense Inference for Reweighting
+2966: To produce a per-frame velocity
+2967: v
+2968: ^
+2969: t
+2970: \hat{v}_{t}
+2971: over a target policy training dataset, we run sliding-window inference at stride-
+2972: 1
+2973: 1
+2974: source-frame offsets, each window using the
+2975: canonical
+2976: S
+2977: =
+2978: 1.5
+2979: S=1.5
+2980: s inter-token spacing. The
+2981: (
+2982: N
+2983: −
+2984: 1
+2985: )
+2986: ⋅
+2987: S
+2988: ⋅
+2989: f
+2990: (N{-}1)\cdot S\cdot f
+2991: overlapping per-window velocities covering source-frame
+2992: t
+2993: t
+2994: are averaged to give
+2995: v
+2996: ^
+2997: t
+2998: \hat{v}_{t}
+2999: .
+3000: This is done once per episode before policy training begins; the resulting
+3001: v
+3002: ^
+3003: t
+3004: \hat{v}_{t}
+3005: trace is cached alongside the dataset.
+3006: Appendix F
+3007: Evaluation Protocol Details
+3008: Trials in which the bin is knocked over (bottle task) or grasped instead of a garment within the first 10 seconds (folding task) are reset and repeated rather than scored, as the demonstrations contain no bin-recovery behavior. The same rule applies to all methods.
+3009: Appendix G
+3010: Additional Experimental Result Statistics
+3011: Figure 10:
+3012: Time-to-completion distribution for success across baseline comparisons.
+3013: Evaluated on
+3014: 𝒟
+3015: 4
+3016: =
+3017: 𝒟
+3018: 1
+3019: ∪
+3020: 𝒟
+3021: A
+3022: \mathcal{D}_{4}=\mathcal{D}_{1}\cup\mathcal{D}_{A}
+3023: and
+3024: 𝒟
+3025: 5
+3026: =
+3027: 𝒟
+3028: 2
+3029: ∪
+3030: 𝒟
+3031: A
+3032: \mathcal{D}_{5}=\mathcal{D}_{2}\cup\mathcal{D}_{A}
+3033: . Policy rollouts which exceed 240 seconds are considered failures and are not shown. SCIZOR
+3034: [
+3035: 40
+3036: ]
+3037: successfully folds a T-shirt right before the 240 second timeout boundary on
+3038: 𝒟
+3039: 5
+3040: \mathcal{D}_{5}
+3041: .
+3042: Appendix H
+3043: WARP-RM Qualitative Results
+3044: Figure 11:
+3045: WARP-RM output on a near-unit average progress-velocity T-shirt-folding demonstration.
+3046: Predicted magnitude varies around 1.0 for most of the demonstration. (34 second demonstration).
+3047: Figure 12:
+3048: WARP-RM output on a T-shirt-folding demonstration with fluctuating progress-velocity.
+3049: (97 second demonstration).
+3050: Figure 13:
+3051: WARP-RM output on a T-shirt-folding demonstration with fluctuating progress-velocity.
+3052: (98 second demonstration).
+3053: Figure 14:
+3054: WARP-RM output on a T-shirt-folding demonstration with fluctuating progress-velocity.
+3055: (105 second demonstration).
+3056: Appendix I
+3057: Training Dataset Visual Diversity
+3058: Figure 15:
+3059: Randomly sampled frames from the T-shirt-folding dataset (
+3060: 𝒟
+3061: 3
+3062: \mathcal{D}_{3}
+3063: )
+3064: , demonstrating a representative sample of the visual diversity present in the training data, including varied garment colors, workspace surfaces, and arm configurations.
+3065: Figure 16:
+3066: Randomly sampled frames from the bottle-in-bin dataset
+3067: , drawn from demonstrations across distinct collection sessions. The data spans varied bin types and placements, bottle colors and counts, and workspace surfaces.

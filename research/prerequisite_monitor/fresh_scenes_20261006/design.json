@@ -1,0 +1,73 @@
+{
+  "schema": "fresh_prerequisite_design_v2",
+  "date_shanghai": "2026-10-06",
+  "research_contract": "Offline progress monitoring for a single desktop robot arm. Native model input is only the final goal sentence and main-camera RGB preparation video through the decision time.",
+  "scope": "Local development scenes only; no server access or model inference has occurred.",
+  "mechanisms": {
+    "access_gate": {
+      "version": "dev_v2",
+      "goal": "Put the blue cube completely inside the transparent box so it rests on the box floor. Release it and leave it still.",
+      "necessity": "A rigid floor and four side walls close every route except the solid-bordered top aperture. A fully closed lid has zero clearance; the 30 mm partial opening is narrower than the cube's 46 mm minimum projected width. The 110 mm open aperture permits top-down insertion.",
+      "predicate": "For at least 0.5 s: all eight cube corners inside the box's inner footprint; bottom face within 3 mm of the box floor; direct upward box-floor contact and no competing support; gripper open and not touching; linear speed <=0.01 m/s, angular speed <=0.1 rad/s, and center displacement <=3 mm. Gate position is not itself a terminal-success field.",
+      "preparation_actuation": "Prescribed kinematic lid and handle movement synchronized to the robot route; the blue cube itself is dynamic and direct completion is a physical grasp/place. The synchronized lid movement is a stated limitation."
+    },
+    "support_surface": {
+      "version": "dev_v2",
+      "goal": "Place the blue cube on the marked elevated landing, release it, and leave it stable.",
+      "necessity": "At target height z=0.120 m the parked state has no surface beneath a fully contained cube. The deployed yellow panel supplies the only central elevated support. Rails and green boundary marks lie outside the target footprint.",
+      "predicate": "For at least 0.5 s: all eight cube corners inside the marked elevated footprint; bottom face within 3 mm of target height; direct upward landing-panel contact and no competing support; gripper open and not touching; linear speed <=0.01 m/s, angular speed <=0.1 rad/s, and center displacement <=3 mm.",
+      "preparation_actuation": "Prescribed kinematic panel and handle movement synchronized to the robot route; the blue cube is dynamic and direct completion is a physical grasp/place. The synchronized panel movement is a stated limitation."
+    }
+  },
+  "condition_definitions": {
+    "E": "blocked start; fully remove the prerequisite constraint; target cube remains incomplete",
+    "S": "blocked start; move the same prerequisite structure 30 mm but leave the constraint effective",
+    "I_b": "blocked start; move a nearby pink irrelevant structure while the prerequisite remains blocked",
+    "N_b": "blocked start; equal-duration no-action anchor",
+    "R": "blocked start; become fully open at sampled seconds 7 and 8, then restore blocked before the final stable window",
+    "H": "open start; restore the prerequisite blockage while target cube remains incomplete",
+    "I_o": "open start; move the nearby pink irrelevant structure while the prerequisite remains open",
+    "N_o": "open start; equal-duration no-action anchor",
+    "G": "open start; dynamically grasp, place, release, and stabilize the target cube in a legal terminal state"
+  },
+  "primary_pairs": ["E>S", "E>I_b", "E>N_b", "H<I_o", "H<N_o", "G>N_o"],
+  "reversal_check": "R should rise during the two fully open sampled seconds and return toward blocked by the final three sampled seconds; analyze the trajectory separately from the primary pairs.",
+  "video_protocol": {
+    "raw_fps": 30,
+    "duration_s": 15,
+    "main_camera_resolution": [640, 480],
+    "model_fps": 1,
+    "source_frame_indices": [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420],
+    "model_frame_count": 15,
+    "first_stable_window_s": [0, 1, 2],
+    "last_stable_window_s": [12, 13, 14],
+    "camera_and_protocol_shared_across_all_conditions": true
+  },
+  "model_input_boundary": "Only one anonymous numeric MP4 and the same final-goal sentence per mechanism. No condition alias, geometry, hidden state, source code, success label, continuation, model score, or future frame enters native inference.",
+  "native_readouts": {
+    "TOPReward": "raw native prefix_rewards with 15 prefixes; no per-video min-max normalization in the primary analysis",
+    "Robometer": "raw native progress head for primary pairs; independent success head used only for G terminal recognition",
+    "cross_model_absolute_score_comparison": false
+  },
+  "decision_rules": {
+    "pair_difference": "For each native method, compute the median raw score over seconds 12,13,14 minus the median over seconds 0,1,2, then subtract the comparator's corresponding change. Report the raw difference and its sign for each predefined pair.",
+    "tie": "An exactly zero raw pair difference is a tie; report near-zero magnitudes without inventing a post hoc tolerance. A formal noise tolerance may only be fixed from development no-action controls before unseen test outputs.",
+    "abstention": "If a method exposes an abstention or nonfinite score, report abstained/missing and omit that pair from directional counts; never replace it with zero.",
+    "fault": "Video decode, input-hash, missing-prefix, model-call, or output-shape failure is a recorded fault. Preserve raw logs and exclude the affected pair from directional scoring without choosing a replacement clip after seeing scores."
+  },
+  "exclusion_rules": [
+    "A whole nine-condition scene is admitted or excluded together before model inference.",
+    "Any legal blocked terminal, missing open continuation, nonvisible critical state, media/hash mismatch, or inability of a truly independent reader to judge necessity from legal RGB blocks G1 admission.",
+    "Both dev_v1 prototypes are excluded because R had only one fully open model-sampled second; all their evidence remains sealed.",
+    "Author visibility notes and finite searches do not substitute for independent blind reading or proof of all possible paths."
+  ],
+  "planned_diagnostics_after_g1": [
+    "input frame sampling and R event capture",
+    "visible object and prerequisite state questions using the same legal frames",
+    "goal-association swap only in a separately designed dual-goal scene",
+    "causal necessity question after visual facts are correct, with unknown allowed",
+    "native readout check only after facts, necessity, and direction are all correct",
+    "privileged fact/relation replacement with mention-only control, reported outside native results"
+  ],
+  "gate_state": "G1 remains pending until an independent human's first blind answers and contact declaration are sealed and compared. G2 is out of scope for this local package."
+}

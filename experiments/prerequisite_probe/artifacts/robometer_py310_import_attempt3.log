@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "D:\monitor2\research\sources\robometer\scripts\example_inference_local.py", line 26, in <module>
+    from robometer.evals.eval_server import compute_batch_outputs
+  File "D:\monitor2\research\sources\robometer\robometer\evals\eval_server.py", line 46, in <module>
+    from robometer.evals.eval_utils import (
+  File "D:\monitor2\research\sources\robometer\robometer\evals\eval_utils.py", line 19, in <module>
+    from robometer.data.datasets.helpers import linspace_subsample_frames, pad_trajectory_to_max_frames_np
+  File "D:\monitor2\research\sources\robometer\robometer\data\datasets\__init__.py", line 1, in <module>
+    from robometer.data.datasets.rbm_data import RBMDataset
+  File "D:\monitor2\research\sources\robometer\robometer\data\datasets\rbm_data.py", line 3, in <module>
+    from robometer.data.datasets.base import BaseDataset
+  File "D:\monitor2\research\sources\robometer\robometer\data\datasets\base.py", line 13, in <module>
+    from robometer.utils.logger import get_logger
+  File "D:\monitor2\research\sources\robometer\robometer\utils\logger.py", line 8, in <module>
+    from torch.utils.tensorboard import SummaryWriter
+  File "D:\monitor2\.venv-robometer\lib\site-packages\torch\utils\tensorboard\__init__.py", line 1, in <module>
+    import tensorboard
+ModuleNotFoundError: No module named 'tensorboard'

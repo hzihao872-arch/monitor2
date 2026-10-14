@@ -1,0 +1,17 @@
+{
+  "status": "interface_prototype_only_no_model_inference",
+  "method": "relation_endpoint_v1",
+  "candidate_source": "experiments/prerequisite_probe/monitor_relation_endpoint_v1.py",
+  "candidate_source_sha256": "57c29c28861d07b2523804ccb110a7c3067586d9dd8bc8a59976472a2004bf0f",
+  "interface_test": "experiments/prerequisite_probe/tests/test_monitor_relation_endpoint_v1.py",
+  "interface_test_sha256": "9a5ccd5995de3fa32ad7a2a35bfb2ca9ec3430da403d2b9dcb364c8eb48372b3",
+  "sealed_case_index_sha256": "e2eb99bf43a4c5ee8e17cda4c88596aac03bad475b99f58672036a807aa3fbd4",
+  "calls_per_arm_per_video": 2,
+  "frame_seconds_per_call": [0, 2, 4, 6, 8, 10, 12, 14],
+  "image_size_per_call": [512, 384],
+  "max_new_tokens_per_call": 512,
+  "crop_in_primary_comparison": false,
+  "parser": "experiments/prerequisite_probe/monitor_contract.py v1 unchanged",
+  "scene_ready_present_at_checkpoint": false,
+  "method_freeze": false
+}

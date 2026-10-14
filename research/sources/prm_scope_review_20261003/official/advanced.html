@@ -1,0 +1,1980 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRM-as-a-Judge Advanced Guide</title>
+  <meta name="description" content="Advanced PRM-as-a-Judge guide covering manifests, evaluation modes, views, multi-GPU execution, curve processing, metrics, and custom PRM integration.">
+  <link rel="stylesheet" href="assets/doc.css">
+  <link rel="stylesheet" href="assets/doc-extra.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <style>
+    .sidebar-group-title {
+      margin: .8rem .45rem .15rem;
+      color: #596579;
+      font-size: .86rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .sidebar-title {
+      color: #596579;
+      font-size: .86rem;
+    }
+
+    .sidebar-title + .sidebar-group-title {
+      margin-top: .15rem;
+    }
+
+    .sidebar-panel > a {
+      margin-left: 1rem;
+      padding-left: .7rem;
+      border-left: 1px solid var(--line);
+      border-radius: 0 6px 6px 0;
+      color: #98a2b3;
+      font-size: .82rem;
+      font-weight: 500;
+    }
+
+    .sidebar-panel > a.active,
+    .sidebar-panel > a:hover {
+      border-left-color: var(--accent);
+    }
+
+    pre.jsonl-example {
+      white-space: normal;
+      overflow-x: hidden;
+    }
+
+    pre.jsonl-example code {
+      white-space: normal;
+    }
+
+    pre.jsonl-example .jsonl-field {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    pre.jsonl-example wbr + .jsonl-field {
+      margin-left: 1ch;
+    }
+
+    .doc-hero.lang-en h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2.35rem;
+      font-weight: 700;
+      line-height: 1.04;
+      white-space: nowrap;
+    }
+
+    .doc-hero.lang-zh h1 {
+      font-size: clamp(1.85rem, 3.25vw, 2.65rem);
+    }
+
+    .metric-table {
+      min-width: 0;
+      max-width: 100%;
+      table-layout: fixed;
+    }
+
+    #metrics .table-wrap,
+    #zh-metrics .table-wrap {
+      overflow-x: visible;
+    }
+
+    .metric-table .metric-scope {
+      white-space: nowrap;
+    }
+
+    .metric-formula-cell {
+      padding-right: .5rem;
+      padding-left: .5rem;
+    }
+
+    .metric-formula-scroll {
+      max-width: 100%;
+      overflow: visible;
+      padding: .2rem 0 .42rem;
+    }
+
+    .metric-formula-line {
+      display: block;
+      width: max-content;
+      min-width: max-content;
+      padding: .12rem .08rem;
+      white-space: nowrap;
+    }
+
+    .metric-formula-line .katex {
+      font-size: .88em;
+    }
+
+    .metric-formula-note {
+      margin-left: .4rem;
+      color: var(--muted);
+      font-size: .78rem;
+      white-space: nowrap;
+    }
+
+    .metric-table th:nth-child(4),
+    .metric-table td:nth-child(4) {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+
+    @media (min-width: 881px) and (max-width: 1120px) {
+      .doc-hero.lang-en h1 {
+        font-size: clamp(1.65rem, 3vw, 2.1rem);
+      }
+    }
+
+    @media (max-width: 880px) {
+      .sidebar-group-title {
+        grid-column: 1 / -1;
+      }
+
+      .doc-hero.lang-en h1 {
+        font-size: clamp(.85rem, 4.5vw, 2.3rem);
+      }
+    }
+  </style>
+
+  <style>
+  .site-nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    max-width: 1120px;
+    margin: 0 auto;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(250, 250, 250, 0.94);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .site-nav a {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+
+  .site-nav a:hover {
+    color: #1a1a1a;
+  }
+
+  .site-nav a.active {
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+
+  .lang-toggle {
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+    color: #1a1a1a;
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .lang-toggle:hover {
+    border-color: #aaa;
+  }
+
+  body[data-lang="en"] .lang-zh,
+  body[data-lang="zh"] .lang-en {
+    display: none !important;
+  }
+</style>
+</head>
+
+<body data-lang="en" data-page="advanced" data-title-en="PRM-as-a-Judge Advanced Guide" data-title-zh="PRM-as-a-Judge 进阶配置">
+  <nav class="site-nav">
+  <a href="index.html"><span class="lang-en">Home</span><span class="lang-zh">首页</span></a>
+  <a href="blog.html"><span class="lang-en">Blog</span><span class="lang-zh">博客</span></a>
+  <a href="leaderboard.html"><span class="lang-en">Leaderboard</span><span class="lang-zh">排行榜</span></a>
+  <a href="doc.html" class="active"><span class="lang-en">Usage</span><span class="lang-zh">使用指南</span></a>
+  <button type="button" class="lang-toggle" id="langToggle" aria-label="Switch language">
+    <span class="lang-en">中文</span>
+    <span class="lang-zh">English</span>
+  </button>
+</nav>
+  <div class="doc-shell">
+    <aside class="sidebar" aria-label="Documentation navigation">
+      <div class="guide-switcher">
+        <a href="doc.html"><span class="lang-en">Quick Start</span><span class="lang-zh">快速开始</span></a>
+        <a href="advanced.html" class="active"><span class="lang-en">Advanced Guide</span><span class="lang-zh">高级指南</span></a>
+      </div>
+      <nav class="sidebar-panel lang-en">
+        <p class="sidebar-title">Advanced Guide</p>
+        <p class="sidebar-group-title">Inputs &amp; Outputs</p>
+        <a href="#manifest">Input: Manifest Format</a>
+        <a href="#outputs">Output: Evaluation Results</a>
+        <p class="sidebar-group-title">Evaluation Configuration</p>
+        <a href="#defaults">Default Settings</a>
+        <a href="#choose-backend">PRM Evaluation Methods</a>
+        <a href="#modes">Dopamine Modes</a>
+        <a href="#multi-view">Video Views and Goal Images</a>
+        <a href="#multi-gpu">Multi-GPU</a>
+        <p class="sidebar-group-title">Progress &amp; Metrics</p>
+        <a href="#progress-standard">Progress Curve Standard</a>
+        <a href="#postprocess">Progress Curve Processing</a>
+        <a href="#metrics">Evaluation Metrics</a>
+        <p class="sidebar-group-title">Extensions &amp; Reference</p>
+        <a href="#custom-prm">Custom PRM</a>
+        <a href="#recipes">Command Reference</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <nav class="sidebar-panel lang-zh">
+        <p class="sidebar-title">高级指南</p>
+        <p class="sidebar-group-title">输入与输出</p>
+        <a href="#zh-manifest">输入：Manifest 格式</a>
+        <a href="#zh-outputs">输出：评测结果</a>
+        <p class="sidebar-group-title">评测配置</p>
+        <a href="#zh-defaults">默认设置</a>
+        <a href="#zh-choose-backend">PRM 评测方式</a>
+        <a href="#zh-modes">Dopamine 模式</a>
+        <a href="#zh-multi-view">视频视角与目标图像</a>
+        <a href="#zh-multi-gpu">Multi-GPU</a>
+        <p class="sidebar-group-title">进度与指标</p>
+        <a href="#zh-progress-standard">进度曲线规范</a>
+        <a href="#zh-postprocess">进度曲线处理</a>
+        <a href="#zh-metrics">评测指标</a>
+        <p class="sidebar-group-title">扩展与参考</p>
+        <a href="#zh-custom-prm">自定义 PRM</a>
+        <a href="#zh-recipes">常用命令</a>
+        <a href="#zh-faq">常见问题（FAQ）</a>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <header class="doc-hero lang-en">
+        <p class="eyebrow">Advanced Guide</p>
+        <h1>Configure and Extend PRM-as-a-Judge</h1>
+        <p>
+          Detailed reference for adapting PRM-as-a-Judge to your data, compute resources,
+          evaluation goals, and choice of Process Reward Model (PRM).
+        </p>
+        <p>
+          If this is your first run, complete the <a href="doc.html">Quick Start</a> before
+          changing the defaults described here.
+        </p>
+      </header>
+
+      <header class="doc-hero lang-zh">
+        <p class="eyebrow">高级指南</p>
+        <h1>PRM-as-a-Judge 进阶配置</h1>
+        <p>
+          详细介绍如何根据数据形式、计算资源、评测目标和过程奖励模型（Process Reward Model，PRM）的选择调整 PRM-as-a-Judge。
+        </p>
+        <p>
+          如果尚未完成首次评测，请先按照<a href="doc.html">快速开始</a>运行默认流程，再调整本页介绍的配置。
+        </p>
+      </header>
+
+      <article class="doc-content lang-en">
+        <section id="manifest">
+          <h2>Input: Manifest Format</h2>
+          <p>
+            The default input is a JSONL manifest. <strong>Each line describes one rollout case.</strong>
+            Paths may be absolute or relative to the manifest file.
+          </p>
+
+          <h3>Single View</h3>
+          <pre><code>{"case_id":"case_001","task_name":"put_can","task":"put the can into the basket","video":"videos/case_001.mp4"}</code></pre>
+
+          <h3>Main View with a Single-Arm Robot Wrist View</h3>
+          <pre><code>{"case_id":"case_002","task_name":"put_can","task":"put the can into the basket","video":"high.mp4","wrist_video":"wrist.mp4"}</code></pre>
+
+          <h3>Main View with Bimanual Robot Wrist Views</h3>
+          <pre><code>{"case_id":"case_003","task_name":"put_can","task":"put the can into the basket","video":"high.mp4","left_wrist_video":"left.mp4","right_wrist_video":"right.mp4"}</code></pre>
+
+          <h3>With a Goal Image, Outcome Label, and Benchmark Name</h3>
+          <p>
+            <code>goal_image</code> shows the desired final state; <code>label</code> records a known
+            success or failure outcome; <code>benchmark</code> identifies the source benchmark or dataset;
+            and <code>model</code> identifies the policy or model that generated the rollout.
+          </p>
+          <pre><code>{"case_id":"case_004","task_name":"arrange_flowers","task":"arrange the flowers in the vase","video":"h.mp4","wrist_video":"w.mp4","goal_image":"goal.png","label":"success","benchmark":"RoboTwin","model":"pi0"}</code></pre>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Requirement</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>case_id</code></td>
+                  <td><strong>&#9679; Required</strong></td>
+                  <td>Stable case identifier. The loader raises an error if it is missing.</td>
+                </tr>
+                <tr>
+                  <td><code>task</code></td>
+                  <td><strong>&#9679; Required</strong></td>
+                  <td>Natural-language task description used for evaluation and passed to the selected PRM model when applicable. <code>instruction</code> and <code>task_prompt</code> are accepted aliases.</td>
+                </tr>
+                <tr>
+                  <td><code>video</code></td>
+                  <td><strong>&#9679; Required</strong></td>
+                  <td>Main-view rollout video path. It may be a third-person, overhead, or other view that clearly shows the operation process.</td>
+                </tr>
+                <tr>
+                  <td><code>wrist_video</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Wrist-camera path for a single-arm robot. If the selected Judge Model supports multi-view input, it automatically uses the main-view and wrist-view videos together. <strong>Do not combine it with the bimanual wrist fields.</strong></td>
+                </tr>
+                <tr>
+                  <td><code>left_wrist_video</code> / <code>right_wrist_video</code></td>
+                  <td>&#9675; Optional pair</td>
+                  <td>Left- and right-wrist camera paths for a bimanual robot. If the selected Judge Model supports multi-view input, it automatically uses the main-view, left-wrist, and right-wrist videos together. <strong>The two fields must be provided together and cannot be combined with <code>wrist_video</code>.</strong></td>
+                </tr>
+                <tr>
+                  <td><code>task_name</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Short task name used for grouping, filtering, and output directories. If omitted, the program automatically uses the <code>task</code> text as the task name.</td>
+                </tr>
+                <tr>
+                  <td><code>goal_image</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Image of the desired final state. You can use the final frame of a successful demonstration or another image that clearly shows the goal state.</td>
+                </tr>
+                <tr>
+                  <td><code>label</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Known outcome of the rollout: <code>success</code> or <code>failure</code>. By default, a single progress threshold separates successful and failed cases, but the same threshold may not be suitable for every rollout. When reliable Benchmark labels are available, set <code>--success-source label</code> to use the labels for SR and to assign successful and failed rollouts to SQS and FNS, respectively.</td>
+                </tr>
+                <tr>
+                  <td><code>benchmark</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Dataset or benchmark name copied into reports.</td>
+                </tr>
+                <tr>
+                  <td><code>model</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Name of the policy model that generated the rollout.</td>
+                </tr>
+                <tr>
+                  <td><code>progress</code> / <code>progress_path</code></td>
+                  <td>&#9675; Optional</td>
+                  <td>Imports a progress curve generated by an external PRM. Put the progress values directly in <code>progress</code>, or use <code>progress_path</code> to point to a JSON file containing them. Use with <code>--prm recorded</code>; the toolkit then performs curve postprocessing, metric calculation, and report generation without running a PRM model.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="outputs">
+          <h2>Output: Evaluation Results</h2>
+          <p><strong>Outputs are written to <code>eval/results/run_YYMMDD_HHMMSS/</code> by default.</strong></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Use it for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>run_params.json</code></td>
+                  <td>Resolved CLI options and runtime settings for reproducibility.</td>
+                </tr>
+                <tr>
+                  <td><code>run_summary.json</code></td>
+                  <td>Total, successful, failed, and aggregated metric counts for the run.</td>
+                </tr>
+                <tr>
+                  <td><code>per_case.jsonl</code></td>
+                  <td>Raw and processed progress curves plus metrics for each rollout.</td>
+                </tr>
+                <tr>
+                  <td><code>benchmark/model/task/case/result_summary.json</code></td>
+                  <td>Per-case result file under the case output directory.</td>
+                </tr>
+                <tr>
+                  <td><code>summary.csv</code></td>
+                  <td>Metrics aggregated by benchmark, policy model, and task, including case counts and metrics such as MP, SR, and PPL, for comparing task and model performance.</td>
+                </tr>
+                <tr>
+                  <td><code>leaderboard.csv</code></td>
+                  <td>Model-level summary for comparing policies.</td>
+                </tr>
+                <tr>
+                  <td><code>report.md</code></td>
+                  <td>Markdown run overview listing total cases, cases evaluated without runtime errors, and errors, with references to detailed CSV and JSONL outputs.</td>
+                </tr>
+                <tr>
+                  <td><code>discovery_manifest.json</code></td>
+                  <td>Resolved input paths, runtime choices, and reproducibility metadata.</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/curve_metrics.csv</code></td>
+                  <td>Per-case curve metric details. Each row includes case and task information, PRM evaluation method, policy model, curve length, and progress metrics such as MP, SR, and PPL for filtering and downstream analysis.</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/report.html</code></td>
+                  <td>
+                    Local interactive HTML report generated when <code>--visualize</code> or
+                    <code>VISUALIZE=1</code> is enabled. Open it in a browser to review rollout
+                    videos, progress curves, live frame metrics, milestones, and sortable
+                    model-level, model-by-task, and per-case metric tables.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/visualization_report.md</code></td>
+                  <td>Visualization artifact index and plot-generation status.</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/case_plots.csv</code></td>
+                  <td>Per-case curve plot index. Each row maps a case, task, PRM evaluation method, and policy model to its PNG file path.</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/cases/*.png</code></td>
+                  <td>Static progress-curve plot for each case, comparing raw and postprocessed curves and showing the success threshold and key curve positions; generated when <code>matplotlib</code> is installed.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Generate visualizations after a run has finished:</p>
+          <pre><code>prm-judge visualize --run-root eval/results/run_YYMMDD_HHMMSS</code></pre>
+
+          <p>For reliable MP4 playback and seeking, use the built-in Range-aware server:</p>
+          <pre><code>prm-judge serve \
+  --run-root eval/results/run_YYMMDD_HHMMSS \
+  --host 127.0.0.1 \
+  --port 8000</code></pre>
+          <p>Open <code>http://127.0.0.1:8000/report.html</code>. For a remote server, keep the report service on loopback and create a tunnel from your workstation:</p>
+          <pre><code>ssh -L 8000:127.0.0.1:8000 user@server</code></pre>
+          <p>
+            After the run completes, the final performance report presents a Model Leaderboard that
+            summarizes the core metrics for every evaluated model. You can also use the interactive
+            trajectory explorer to filter and inspect individual cases, including their rollout videos,
+            progress curves, live-frame values, and per-case metrics.
+          </p>
+
+          <div class="report-gallery" aria-label="Visualization report examples">
+            <figure class="report-shot">
+              <a href="assets/images/report-metrics-overview.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-metrics-overview.webp"
+                  alt="Final Model Leaderboard summarizing performance metrics across evaluated policy models"
+                  loading="lazy"
+                  width="2300"
+                  height="1032">
+              </a>
+              <figcaption>
+                <strong>Final performance report.</strong> The Model Leaderboard summarizes the core
+                metrics for every evaluated policy model.
+              </figcaption>
+            </figure>
+
+            <figure class="report-shot">
+              <a href="assets/images/report-conditional-profile.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-conditional-profile.webp"
+                  alt="Success and failure conditional profiles comparing applicable metrics across models"
+                  loading="lazy"
+                  width="2290"
+                  height="990">
+              </a>
+              <figcaption>
+                <strong>Success/failure conditional profiles.</strong> Compare failure-only diagnostics
+                on failed trajectories and execution-quality metrics on successful trajectories, with
+                the applicable sample count shown for each model.
+              </figcaption>
+            </figure>
+
+            <figure class="report-shot">
+              <a href="assets/images/report-failure-localization.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-failure-localization.webp"
+                  alt="Failure Progress and Recovery chart showing failed-trajectory MP distribution and regression-conditioned DRR"
+                  loading="lazy"
+                  width="2272"
+                  height="808">
+              </a>
+              <figcaption>
+                <strong>Failure progress and recovery.</strong> Filter by model and task to inspect the
+                MP distribution and mean MP of failed trajectories, together with DRR computed over
+                failed trajectories that contain a real regression.
+              </figcaption>
+            </figure>
+
+            <figure class="report-shot">
+              <a href="assets/images/report-trajectory-explorer.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-trajectory-explorer.webp"
+                  alt="Interactive trajectory explorer showing a rollout video, progress curve, and case metrics"
+                  loading="lazy"
+                  width="2042"
+                  height="1464">
+              </a>
+              <figcaption>
+                <strong>Interactive trajectory explorer.</strong> Inspect the rollout video together with
+                its progress curve, live-frame values, episode metrics, and milestones.
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="defaults">
+          <h2>Default Settings</h2>
+          <p>
+            The table below lists the main defaults in <code>eval/run_eval.sh</code>.
+            <strong>Keep these settings for the first run.</strong> After confirming that the evaluation
+            pipeline works, adjust them for video length, GPU memory, and evaluation goals.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Setting</th>
+                  <th>Default</th>
+                  <th>When to adjust</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>PRM evaluation method</td>
+                  <td><strong><code>PRM=dopamine</code></strong></td>
+                  <td>You need RoboMeter, want to import a progress curve from an external PRM, or want to integrate a custom PRM.</td>
+                </tr>
+                <tr>
+                  <td>Dopamine mode</td>
+                  <td><strong><code>EVAL_MODE=incremental</code></strong></td>
+                  <td>The default <code>incremental</code> mode compares adjacent sampled frames. Use <code>forward</code> to anchor progress estimates to the initial state; use <code>backward</code> when a reliable goal image is available and progress should be evaluated relative to the goal.</td>
+                </tr>
+                <tr>
+                  <td>Success threshold</td>
+                  <td><code>--success-threshold 0.99</code></td>
+                  <td>Without a reliable <code>label</code>, success is determined by whether <code>MP</code> reaches the default threshold of <code>0.99</code>. Because the <code>MP</code> distribution may vary across tasks, adjust the threshold when necessary.</td>
+                </tr>
+                <tr>
+                  <td>Frame sampling interval</td>
+                  <td><code>FRAME_INTERVAL=72</code></td>
+                  <td>Decrease it for denser progress curves on short videos or fast actions; increase it to speed up inference on long videos.</td>
+                </tr>
+                <tr>
+                  <td>Inference batch size</td>
+                  <td><code>BATCH_SIZE=10</code></td>
+                  <td>Decrease it when GPU memory is insufficient; increase it when memory is available and higher throughput is needed.</td>
+                </tr>
+                <tr>
+                  <td>GPU selection</td>
+                  <td><code>GPUS=0</code></td>
+                  <td>Change the index to use another GPU, or provide multiple indices such as <code>GPUS=0,1</code> to shard cases across GPUs.</td>
+                </tr>
+                <tr>
+                  <td>Outlier handling</td>
+                  <td><code>OUTLIER_METHOD=local_median</code></td>
+                  <td>Set it to <code>none</code> when you need to preserve the raw PRM output.</td>
+                </tr>
+                <tr>
+                  <td>Curve smoothing</td>
+                  <td><code>SMOOTHING=weighted_window</code><br>Weights: <code>[0.1, 0.2, 0.4, 0.2, 0.1]</code></td>
+                  <td>Set it to <code>none</code> to preserve an unsmoothed curve, or change the window weights to adjust smoothing strength.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="choose-backend">
+          <h2>PRM Evaluation Methods</h2>
+          <p>
+            The toolkit supports several progress-evaluation methods. <code>dopamine</code> uses the
+            Robo-Dopamine model and is the default; <code>robometer</code> uses the RoboMeter model;
+            <code>recorded</code> reads precomputed curves without loading a model; and a custom adapter
+            can integrate your own PRM. Once a progress curve is available, all methods share the same
+            postprocessing and metric pipeline.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Use case</th>
+                  <th>Recommended method</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fine-grained process changes or routine batch evaluation</td>
+                  <td><strong><code>dopamine</code> (Robo-Dopamine) with <code>EVAL_MODE=incremental</code></strong></td>
+                  <td>Compares adjacent sampled states, making it suitable for capturing local, fine-grained progress and regression.</td>
+                </tr>
+                <tr>
+                  <td>Long-horizon, repetitive, or context-dependent actions</td>
+                  <td><code>robometer</code> (RoboMeter)</td>
+                  <td>Uses temporal context from video sequences, making it suitable when adjacent states alone cannot distinguish sustained progress, repeated actions, or back-and-forth motion.</td>
+                </tr>
+                <tr>
+                  <td>Debugging metrics without loading a model</td>
+                  <td><code>recorded</code> (precomputed curves)</td>
+                  <td>Uses <code>progress</code> or <code>progress_path</code> from the manifest.</td>
+                </tr>
+                <tr>
+                  <td>Integrating another PRM</td>
+                  <td>Custom adapter</td>
+                  <td>Return absolute progress in <code>[0, 1]</code>, or configure normalization before metrics. See <a href="#custom-prm">Custom PRM</a> for the adapter steps.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Run with RoboMeter</h3>
+          <p>
+            RoboMeter is a sequence-style PRM model. The runner can start a local
+            RoboMeter HTTP server, wait for <code>/health</code>, evaluate cases, and
+            shut the server down after the run.
+          </p>
+          <pre><code>PRM=robometer \
+MANIFEST=/path/to/cases.jsonl \
+bash eval/run_eval.sh</code></pre>
+
+          <p>Reuse an already running server when you want to manage the model process yourself:</p>
+          <pre><code>PRM=robometer \
+MANIFEST=/path/to/cases.jsonl \
+ROBOMETER_SERVER_URL=http://localhost:8000 \
+ROBOMETER_AUTO_START=0 \
+bash eval/run_eval.sh</code></pre>
+
+          <div class="callout">
+            When <code>PRM=robometer</code>, <code>eval/run_eval.sh</code> uses
+            <code>ROBOMETER_PYTHON</code> for both the runner and the auto-started
+            server so video dependencies such as <code>decord</code> or
+            <code>opencv-python</code> are available. If you call
+            <code>prm-judge</code> directly, run it from an environment that can
+            decode your videos.
+          </div>
+        </section>
+
+        <section id="modes">
+          <h2>Dopamine Modes</h2>
+          <p>
+            Robo-Dopamine is a pair-style PRM. It constructs a progress curve by
+            scoring sampled states with one of three comparison modes.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th>What is compared</th>
+                  <th>How progress is interpreted</th>
+                  <th>When to use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong><code>incremental</code> (default)</strong></td>
+                  <td>Previous sampled state as <code>before</code>, current sampled state as <code>after</code>.</td>
+                  <td>The model score is treated as a local progress change and accumulated over time.</td>
+                  <td>Default mode for local step-wise change analysis. Consider a larger <code>FRAME_INTERVAL</code> if adjacent samples are too similar.</td>
+                </tr>
+                <tr>
+                  <td><code>forward</code></td>
+                  <td>Start frame as <code>before</code>, current sampled state as <code>after</code>.</td>
+                  <td>The model score is treated as the current absolute progress estimate.</td>
+                  <td>Use it when start-to-current change is easier to judge than distance to the goal image.</td>
+                </tr>
+                <tr>
+                  <td><code>backward</code></td>
+                  <td>Goal image as <code>before</code>, current sampled state as <code>after</code>.</td>
+                  <td>The model score is converted to progress with <code>progress = 1 + score</code>.</td>
+                  <td>Use it when a goal image or goal placeholder is available and goal-relative scoring is preferred.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Examples:</p>
+          <pre><code>EVAL_MODE=incremental MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh
+EVAL_MODE=forward MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh
+EVAL_MODE=backward MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+        </section>
+
+        <section id="multi-view">
+          <h2>Video Views and Goal Images</h2>
+          <p>
+            Every case must provide <code>video</code> as its main view. Wrist views and
+            <code>goal_image</code> are optional: wrist videos add details about grasps,
+            contacts, and occluded areas, while a goal image describes the desired final state.
+          </p>
+
+          <h3>Video fields</h3>
+          <ul>
+            <li><code>video</code>: required main-view video path, such as a third-person, fixed-camera, or overhead view.</li>
+            <li><code>wrist_video</code>: wrist-view video for a single-arm robot. Do not combine it with the bimanual wrist fields.</li>
+            <li><code>left_wrist_video</code> and <code>right_wrist_video</code>: left- and right-wrist videos for a bimanual robot. Provide both fields together.</li>
+          </ul>
+
+          <h3>How Robo-Dopamine uses views</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Views provided in the manifest</th>
+                  <th>Robo-Dopamine behavior</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>video</code> only</td>
+                  <td>Reuses the main view for all camera inputs required by the model, which is suitable for quick tests.</td>
+                </tr>
+                <tr>
+                  <td><code>video</code> + <code>wrist_video</code></td>
+                  <td>Uses <code>video</code> as the main view and reuses the single-arm wrist video for both wrist inputs.</td>
+                </tr>
+                <tr>
+                  <td><code>video</code> + <code>left_wrist_video</code> + <code>right_wrist_video</code></td>
+                  <td>Maps the main, left-wrist, and right-wrist videos to their corresponding model inputs.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Selecting a RoboMeter view</h3>
+          <p>
+            RoboMeter evaluates one video view at a time and uses <code>video</code> by default.
+            To evaluate a wrist view, set <code>ROBOMETER_VIEW</code> to <code>wrist_video</code>,
+            <code>left_wrist_video</code>, or <code>right_wrist_video</code>. The selected field must
+            exist in the case; otherwise, that case reports an error.
+          </p>
+          <pre><code>PRM=robometer \
+ROBOMETER_VIEW=left_wrist_video \
+MANIFEST=cases.jsonl \
+bash eval/run_eval.sh</code></pre>
+
+          <h3>How goal images are used</h3>
+          <p>
+            <code>goal_image</code> is a visual reference for the completed task state.
+            Robo-Dopamine uses it as <code>REFERENCE END</code> to help locate the current state
+            along the path from task start to completion; in <code>backward</code> mode, the goal
+            image is also compared directly with the current sampled state.
+          </p>
+          <ul>
+            <li>When a reliable success-state image is available, set <code>goal_image</code> in the manifest; for example, use the final frame of a successful demonstration.</li>
+            <li>If no goal image is available, omit the field. PRM-as-a-Judge automatically uses <code>eval/examples/blank.png</code> as a placeholder.</li>
+            <li>Do not use the final frame of the rollout being evaluated unless that rollout is known to have succeeded; otherwise, a failure state may be treated as the task goal.</li>
+          </ul>
+        </section>
+
+        <section id="multi-gpu">
+          <h2>Multi-GPU</h2>
+          <p>
+            The default uses one GPU to keep the command predictable. On larger
+            batches, set <code>GPUS</code> or pass <code>--gpus</code> to shard cases
+            across local devices.
+          </p>
+
+          <pre><code>GPUS=0,1,2,3 MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <p>
+            Each worker loads one PRM instance on its assigned GPU, processes its
+            shard, and the runner merges shard outputs at the end. This is simple
+            local data parallelism and is usually enough for evaluation batches.
+          </p>
+
+          <p>
+            You can also ask the runner to choose GPUs automatically. In the current
+            implementation, <code>GPUS=auto</code> queries <code>nvidia-smi</code>,
+            selects devices whose used memory is below 1024 MiB, and falls back to
+            GPU 0 if no such device is found.
+          </p>
+          <pre><code>GPUS=auto MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <p>
+            For RoboMeter multi-GPU runs, each shard uses
+            <code>ROBOMETER_SERVER_PORT + shard_index</code> for an auto-started
+            server, so choose a free base port when running several evaluations on
+            the same machine.
+          </p>
+        </section>
+
+        <section id="progress-standard">
+          <h2>Progress Curve Standard</h2>
+          <p>
+            The metric stack consumes <strong>normalized absolute progress curves</strong>. Every PRM
+            adapter should eventually produce:
+          </p>
+          <pre><code>progress[t] in [0, 1]</code></pre>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>PRM output</th>
+                  <th>Convert before metrics</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Absolute progress in <code>[0, 1]</code></td>
+                  <td>Use directly, then clip small numerical overflow.</td>
+                </tr>
+                <tr>
+                  <td>Absolute progress in <code>[0, 100]</code></td>
+                  <td>Divide by 100 with <code>--normalize 0_100</code>.</td>
+                </tr>
+                <tr>
+                  <td>Step-wise delta progress</td>
+                  <td>Use <code>--source-type delta</code>, accumulate over time, then clip to <code>[0, 1]</code>.</td>
+                </tr>
+                <tr>
+                  <td>Uncalibrated reward or similarity</td>
+                  <td>Add adapter-specific calibration before metric computation.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <strong>Do not force the curve to be monotonic.</strong> Regressions and oscillations are
+            meaningful signals used by drawdown, recovery, stagnation, and regret
+            metrics. Results should store both <code>progress_raw</code> and
+            <code>progress_processed</code>.
+          </p>
+        </section>
+
+        <section id="postprocess">
+          <h2>Progress Curve Processing</h2>
+          <p>After the PRM produces a raw progress curve, the toolkit applies the following steps:</p>
+          <ol>
+            <li>Normalize the PRM output to absolute progress in <code>[0, 1]</code>.</li>
+            <li>Clip values to <code>[0, 1]</code>.</li>
+            <li>Replace isolated local outliers with the local median. The default threshold is <strong><code>0.35</code></strong>.</li>
+            <li>Smooth with a weighted temporal window.</li>
+          </ol>
+
+          <pre><code>p'_t = 0.1*p_{t-2} + 0.2*p_{t-1} + 0.4*p_t + 0.2*p_{t+1} + 0.1*p_{t+2}</code></pre>
+
+          <p>
+            The default outlier handling and smoothing reduce isolated erroneous spikes and
+            short-term fluctuations. They do not force progress to increase continuously, so
+            genuine regressions remain visible. For example, when a rollout is clearly advancing
+            overall but adjacent-frame scores fluctuate, these steps produce a more stable
+            representation of the trend.
+          </p>
+
+          <p>Disable postprocessing when you are debugging raw PRM behavior:</p>
+          <pre><code>prm-judge eval --manifest cases.jsonl --outlier-method none --smoothing none</code></pre>
+
+          <p>Change the smoothing weights from the CLI:</p>
+          <pre><code>prm-judge eval --manifest cases.jsonl --smoothing-weights 0.05,0.15,0.6,0.15,0.05</code></pre>
+
+          <p>
+            The weight list should have odd length, non-negative values, and a
+            positive sum. It is normalized automatically. For deeper customization,
+            edit <code>eval/prm_judge/curves.py</code>, especially
+            <code>parse_smoothing_weights</code>, <code>weighted_smooth</code>, and
+            <code>PostprocessConfig.smoothing_weights</code>.
+          </p>
+        </section>
+
+        <section id="metrics">
+          <h2>Evaluation Metrics</h2>
+          <p>
+            By default, metrics and evaluation reports use the progress curve after outlier
+            handling and smoothing. The raw curve is retained in the outputs mainly for inspecting
+            the PRM's direct predictions and troubleshooting.
+          </p>
+          <p><code>↑</code> means higher is better; <code>↓</code> means lower is better.</p>
+          <p>
+            In the formulas below, <code>p_0 = 0, p_1, ..., p_T</code> is the processed normalized
+            progress curve, <code>θ</code> is the success threshold, <code>ε = 0.005</code> is the
+            default stagnation threshold, and <code>1[·]</code> is the indicator function. The OPD
+            names and equations follow the <a href="https://arxiv.org/abs/2608.14284" target="_blank" rel="noopener noreferrer">technical report</a>;
+            Binary Success Rate (SR) is reported alongside the formal OPD metrics.
+          </p>
+
+          <div class="table-wrap">
+            <table class="metric-table">
+              <colgroup>
+                <col style="width: 7.5rem">
+                <col style="width: 7rem">
+                <col style="width: 19.625rem">
+                <col>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th class="metric-scope">Scope</th>
+                  <th>Formula</th>
+                  <th>Interpretation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>MP ↑</code></td>
+                  <td class="metric-scope">All rollouts</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{MP}=\max_{0\le t\le T}p_t"></span></div></td>
+                  <td>Highest progress reached. A higher value means the rollout came closer to completing the task.</td>
+                </tr>
+                <tr>
+                  <td><code>MC@q ↑</code></td>
+                  <td class="metric-scope">All rollouts</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{MC@}q=\mathbf{1}[\mathrm{MP}\ge q/100],\quad q\in\{25,50,75,100\}"></span></div></td>
+                  <td>Milestone Coverage at 25%, 50%, 75%, or 100%; aggregates report the proportion of rollouts reaching each milestone.</td>
+                </tr>
+                <tr>
+                  <td><code>SR ↑</code></td>
+                  <td class="metric-scope">All rollouts</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line"><span class="math-latex" data-latex="s_i=\mathbf{1}[\mathrm{MP}_i\ge\theta]"></span><span class="metric-formula-note">toolkit default</span></span>
+                      <span class="metric-formula-line"><span class="math-latex" data-latex="s_i=\mathbf{1}[\mathrm{label}_i=\mathrm{success}]"></span><span class="metric-formula-note">label source</span></span>
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{SR}=\frac{1}{N}\sum_{i=1}^{N}s_i"></span>
+                    </div>
+                  </td>
+                  <td>Binary Success Rate. The report defines PRM-derived success at <code>MP = 1</code>; the toolkit allows a configurable threshold, which defaults to <code>0.99</code>, or benchmark labels.</td>
+                </tr>
+                <tr>
+                  <td><code>PPL ↑</code></td>
+                  <td class="metric-scope">All rollouts</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="L=\sum_{t=1}^{T}|p_t-p_{t-1}|"></span>
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{PPL}=\begin{cases}\mathrm{MP}^{2}/L,&amp;L&gt;0\\0,&amp;L=0\end{cases}"></span>
+                    </div>
+                  </td>
+                  <td>Measures path efficiency while making progress. Higher values indicate that useful progress is more concentrated.</td>
+                </tr>
+                <tr>
+                  <td><code>CRA ↓</code></td>
+                  <td class="metric-scope">All rollouts</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{CRA}=\frac{1}{(T+1)\,\mathrm{MP}}\sum_{t=0}^{T}\left(\max_{0\le i\le t}p_i-p_t\right)"></span></div></td>
+                  <td>Measures regression magnitude and duration, normalized by the rollout's maximum progress. Lower values indicate less cumulative regression.</td>
+                </tr>
+                <tr>
+                  <td><code>STR ↓</code></td>
+                  <td class="metric-scope">All rollouts</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{STR}=\frac{1}{T}\sum_{t=1}^{T}\mathbf{1}[|p_t-p_{t-1}|\lt\epsilon]"></span></div></td>
+                  <td>Fraction of steps with almost no progress change. Lower values indicate less stagnation.</td>
+                </tr>
+                <tr>
+                  <td><code>DRR ↑</code></td>
+                  <td class="metric-scope">Rollouts with drawdown</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="d_t=\max_{0\le i\le t}p_i-p_t"></span>
+                      <span class="metric-formula-line math-latex" data-latex="t^*\in\arg\max_t d_t"></span>
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{DRR}=\min\!\left(1,\frac{\max_{t^*\le t\le T}p_t-p_{t^*}}{d_{t^*}}\right),\quad d_{t^*}&gt;0"></span>
+                    </div>
+                  </td>
+                  <td>Measures how much of the largest drawdown is subsequently recovered. Higher values indicate more complete recovery; rollouts without drawdown are excluded.</td>
+                </tr>
+                <tr>
+                  <td><code>FNS ↑</code></td>
+                  <td class="metric-scope">Failed rollouts</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{FNS}=0.5\,\mathrm{MP}+0.3\,\mathrm{MC@75}+0.2\,\mathrm{MC@50}"></span>
+                    </div>
+                  </td>
+                  <td>Measures how close a failed rollout came to success by combining its highest progress and milestone completion.</td>
+                </tr>
+                <tr>
+                  <td><code>SQS ↑</code></td>
+                  <td class="metric-scope">Successful rollouts</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{SQS}=0.5\,\mathrm{PPL}+0.3(1-\mathrm{CRA})+0.2(1-\mathrm{STR})"></span>
+                    </div>
+                  </td>
+                  <td>Measures execution quality among successful rollouts, rewarding efficient, low-regret, and low-stagnation behavior.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+
+          <div class="callout">
+            Some diagnostics are conditional: <code>FNS</code> is aggregated over failed
+            rollouts, <code>DRR</code> over rollouts with a real drawdown, and <code>SQS</code>
+            over successful rollouts.
+            <strong>By default, success grouping uses <code>MP >= --success-threshold</code>.</strong>
+            Use <code>--success-source label</code> only when benchmark labels should
+            define success and failure.
+          </div>
+
+        </section>
+
+       <section id="custom-prm">
+          <h2>Custom PRM</h2>
+          <p>
+            The toolkit separates two responsibilities: a PRM adapter produces a
+            progress curve, and the metric stack computes diagnostics from the
+            standardized curve. This common interface supports both built-in and custom Judge Models.
+          </p>
+
+          <div class="callout">
+            In this developer section, <strong>backend</strong> means the implementation
+            registered under <code>--prm</code>. It may call a PRM model or, like
+            <code>recorded</code>, read a precomputed progress curve.
+          </div>
+
+          <h3>Minimal integration steps</h3>
+          <ol>
+            <li>Create a new adapter file under <code>eval/prm_judge/prm/</code> and subclass <code>BasePRMAdapter</code>.</li>
+            <li>Implement <code>predict(case, output_dir)</code> so it reads the manifest case, runs your PRM, and returns a <code>ProgressTrace</code>.</li>
+            <li>Register the backend name in <code>eval/prm_judge/cli.py</code>: add it to the <code>--prm</code> choices and create the adapter in <code>build_adapter</code>.</li>
+            <li>Make sure the returned progress is absolute <code>[0, 1]</code>, or run with the matching <code>--normalize</code> and <code>--source-type</code> options.</li>
+            <li>Evaluate with <code>prm-judge eval --prm your_backend --manifest cases.jsonl</code>.</li>
+          </ol>
+
+          <h3>Adapter checklist</h3>
+          <ul>
+            <li>Read <code>EvalCase</code> fields such as videos, task text, goal image, and metadata.</li>
+            <li>Run your PRM and return a progress sequence aligned to sampled frames or video time.</li>
+            <li>Decide whether the output is absolute progress, step-wise deltas, or another score.</li>
+            <li>Decide whether the scale is <code>[0, 1]</code>, <code>[0, 100]</code>, or uncalibrated.</li>
+            <li>Prefer returning absolute progress in <code>[0, 1]</code>. If not, pass the matching <code>--normalize</code> and <code>--source-type</code> options for the whole run.</li>
+          </ul>
+
+          <pre><code>from prm_judge.prm.base import BasePRMAdapter
+from prm_judge.schema import EvalCase, ProgressTrace
+
+class MyAdapter(BasePRMAdapter):
+    def predict(self, case: EvalCase, output_dir):
+        scores = run_my_model(case.videos, case.task, case.goal_image)
+        return ProgressTrace(
+            case_id=case.case_id,
+            progress=scores,
+            source_scale="0_1",
+            source_type="absolute",
+        )</code></pre>
+
+          <p>
+            Existing adapters under <code>eval/prm_judge/prm/</code> can be used as
+            templates. <code>recorded.py</code> is the smallest example, while
+            <code>robometer.py</code> shows how to wrap an external model service.
+            Document the model's output scale, semantics, required views,
+            goal-image behavior, and runtime requirements next to your adapter.
+          </p>
+
+          <h3>RoboMeter as an example</h3>
+          <p>
+            RoboMeter is integrated as a sequence-style backend through an HTTP
+            adapter. It reads <code>outputs_progress.progress_pred</code> as an
+            absolute progress curve in <code>[0, 1]</code>. Because it reasons over
+            a longer sequence, it is a useful comparison point for repeated-motion
+            cases where local pairwise judging is not enough.
+          </p>
+          <p>
+            When you reuse an existing RoboMeter server, PRM-as-a-Judge checks
+            <code>/model_info</code> and requires the server model path to match
+            <code>PRM_PATH</code>. This helps avoid accidentally evaluating with an
+            old checkpoint. The adapter uploads frame arrays as <code>.npy</code>
+            multipart files, which keeps long-video requests manageable.
+          </p>
+        </section>
+
+        <section id="recipes">
+          <h2>Command Reference</h2>
+
+          <h3>Batch evaluate many videos without moving files</h3>
+          <pre><code>MANIFEST=/data/my_rollouts/cases.jsonl \
+PRM_PATH=/models/Robo-Dopamine-GRM-8B-Pro \
+OUTPUT_ROOT=eval/results/my_rollouts \
+bash eval/run_eval.sh</code></pre>
+
+          <h3>Use all four local GPUs</h3>
+          <pre><code>GPUS=0,1,2,3 MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <h3>Run a denser curve for short manipulation tasks</h3>
+          <pre><code>FRAME_INTERVAL=36 MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <h3>Use benchmark labels for success grouping</h3>
+          <pre><code>prm-judge eval --manifest cases.jsonl --success-source label --visualize</code></pre>
+
+          <h3>Check a manifest before spending GPU time</h3>
+          <pre><code>prm-judge eval --manifest cases.jsonl --prm recorded --dry-run --limit 10</code></pre>
+
+          <h3>Compare raw and processed progress</h3>
+          <pre><code>prm-judge eval --manifest cases.jsonl --outlier-method none --smoothing none --visualize
+prm-judge eval --manifest cases.jsonl --visualize</code></pre>
+        </section>
+
+        <section id="faq">
+          <h2>FAQ</h2>
+
+          <h3>1. What is <code>goal_image</code> used for?</h3>
+          <p>
+            <code>goal_image</code> is an <strong><em>optional parameter</em></strong> specific to <strong>Robo-Dopamine</strong>. It provides an
+            <strong>explicit visual reference for the completed task state</strong>, helping the model understand what
+            success should look like, reduce goal ambiguity, and improve progress-judgment accuracy.
+            <strong>Robo-Dopamine</strong> uses it as <code>REFERENCE END</code>; in <code>backward</code> mode, the goal
+            image is also compared directly with the current sampled state. <em>Other Judge Model adapters
+            do not necessarily use this field.</em>
+          </p>
+          <p>
+            In practice, set <code>goal_image</code> in the manifest when a <strong>reliable success-state
+            reference</strong> is available, preferably <em>the final frame of a manually verified successful
+            demonstration</em> or <em>a separately captured target state</em>. If no reliable goal image is
+            available, omit the field; the <strong>Robo-Dopamine</strong> adapter will use
+            <code>eval/examples/blank.png</code> as a placeholder, although the evaluation will not
+            benefit from an explicit goal reference. <strong>Do not use the final frame of the rollout being
+            evaluated unless that rollout is known to have succeeded</strong>, because a failure state could
+            otherwise be treated as the task goal and reduce judgment accuracy.
+          </p>
+
+          <h3>2. How does Robo-Dopamine estimate progress, and when should I use another PRM as the judge?</h3>
+          <p>
+            <strong>Robo-Dopamine</strong> is a <strong><em>pair-wise Judge Model</em></strong>. Depending on <code>EVAL_MODE</code>,
+            it compares two sampled images or states—for example, adjacent samples, the initial
+            state and the current state, or the current state and a goal reference—to estimate
+            relative progress. These pair-wise judgments are then linked into a progress curve.
+          </p>
+          <p>
+            This local comparison works well for many robot manipulation tasks.
+            <strong>However, it can be ambiguous for repeated or oscillatory motions and tasks that
+            depend strongly on temporal context.</strong> Two images alone may not reveal whether the
+            robot is making sustained progress, repeating an action cycle, or simply moving back and
+            forth. For these tasks, consider a <strong><em>sequence-style PRM</em></strong> that evaluates
+            a longer video sequence, such as <strong>RoboMeter</strong>, or use it as a comparison.
+          </p>
+        </section>
+
+      </article>
+
+      <article class="doc-content lang-zh">
+        <section id="zh-manifest">
+          <h2>输入：Manifest 格式</h2>
+          <p>
+            默认输入为 JSONL manifest 文件，<strong>每一行描述一个执行案例</strong>。路径可以是绝对路径，也可以是相对于 manifest 文件的相对路径。
+          </p>
+
+          <h3>单视角</h3>
+          <pre><code>{"case_id":"case_001","task_name":"put_can","task":"put the can into the basket","video":"videos/case_001.mp4"}</code></pre>
+
+          <h3>主视角加单臂机器人腕部视角</h3>
+          <pre><code>{"case_id":"case_002","task_name":"put_can","task":"put the can into the basket","video":"high.mp4","wrist_video":"wrist.mp4"}</code></pre>
+
+          <h3>主视角加双臂机器人左右腕视角</h3>
+          <pre><code>{"case_id":"case_003","task_name":"put_can","task":"put the can into the basket","video":"high.mp4","left_wrist_video":"left.mp4","right_wrist_video":"right.mp4"}</code></pre>
+
+          <h3>带目标图像、结果标签和 Benchmark 名称</h3>
+          <p>
+            <code>goal_image</code> 表示任务期望的最终状态；<code>label</code> 记录已知的成功或失败结果；
+            <code>benchmark</code> 表示案例所属的 Benchmark 或数据集；<code>model</code> 表示生成该轨迹的策略或模型。
+          </p>
+          <pre><code>{"case_id":"case_004","task_name":"arrange_flowers","task":"arrange the flowers in the vase","video":"h.mp4","wrist_video":"w.mp4","goal_image":"goal.png","label":"success","benchmark":"RoboTwin","model":"pi0"}</code></pre>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>字段</th>
+                  <th>要求</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>case_id</code></td>
+                  <td><strong>&#9679; 必需</strong></td>
+                  <td>稳定的案例标识符。缺失时加载器会报错。</td>
+                </tr>
+                <tr>
+                  <td><code>task</code></td>
+                  <td><strong>&#9679; 必需</strong></td>
+                  <td>用于评测的自然语言任务描述；采用模型评测时，它会传递给所选 PRM 模型。<code>instruction</code> 和 <code>task_prompt</code> 也可作为别名使用。</td>
+                </tr>
+                <tr>
+                  <td><code>video</code></td>
+                  <td><strong>&#9679; 必需</strong></td>
+                  <td>主视角执行视频路径，可以为第三人称、俯视视角或其他能清晰展示操作过程的视角。</td>
+                </tr>
+                <tr>
+                  <td><code>wrist_video</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>单臂机器人的腕部相机路径。如果所选 Judge Model 支持多视角输入，会自动同时使用主视角和腕部视角视频。<strong>不能与双臂机器人的左右腕字段同时使用。</strong></td>
+                </tr>
+                <tr>
+                  <td><code>left_wrist_video</code> / <code>right_wrist_video</code></td>
+                  <td>&#9675; 可选但必须成对</td>
+                  <td>双臂机器人的左腕和右腕相机路径。如果所选 Judge Model 支持多视角输入，会自动同时使用主视角、左腕和右腕视频。<strong>两个字段必须同时提供，并且不能与 <code>wrist_video</code> 同时使用。</strong></td>
+                </tr>
+                <tr>
+                  <td><code>task_name</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>用于分组、筛选和输出目录的简短任务名称。省略时，程序会自动使用 <code>task</code> 的文本作为任务名称。</td>
+                </tr>
+                <tr>
+                  <td><code>goal_image</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>任务期望最终状态的图像。可以使用成功演示轨迹的最后一帧，或其他能够清楚展示目标状态的图片。</td>
+                </tr>
+                <tr>
+                  <td><code>label</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>轨迹的已知结果：<code>success</code>（成功）或 <code>failure</code>（失败）。默认使用统一的进度阈值区分成功和失败案例，但该阈值不一定适用于所有轨迹。若 Benchmark 提供可靠标签，可设置 <code>--success-source label</code>，使用标签计算 SR，并分别划分用于计算 SQS 和 FNS 的成功与失败轨迹。</td>
+                </tr>
+                <tr>
+                  <td><code>benchmark</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>复制到报告中的数据集或 benchmark 名称。</td>
+                </tr>
+                <tr>
+                  <td><code>model</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>生成该执行轨迹的策略模型名称。</td>
+                </tr>
+                <tr>
+                  <td><code>progress</code> / <code>progress_path</code></td>
+                  <td>&#9675; 可选</td>
+                  <td>用于导入外部 PRM 已生成的进度曲线。<code>progress</code> 直接填写进度值数组，<code>progress_path</code> 指向保存该数组的 JSON 文件。配合 <code>--prm recorded</code> 使用；导入后，本工具只执行曲线后处理、指标计算和报告生成，不再运行 PRM 模型。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="zh-outputs">
+          <h2>输出：评测结果</h2>
+          <p><strong>默认情况下，输出会写入 <code>eval/results/run_YYMMDD_HHMMSS/</code>。</strong></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>文件</th>
+                  <th>用途</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>run_params.json</code></td>
+                  <td>记录已解析的 CLI 选项和运行时设置，用于可复现性。</td>
+                </tr>
+                <tr>
+                  <td><code>run_summary.json</code></td>
+                  <td>记录本次运行的总数、成功数、失败数和聚合指标计数。</td>
+                </tr>
+                <tr>
+                  <td><code>per_case.jsonl</code></td>
+                  <td>每个执行案例的原始和处理后进度曲线以及指标。</td>
+                </tr>
+                <tr>
+                  <td><code>benchmark/model/task/case/result_summary.json</code></td>
+                  <td>案例输出目录下的单案例结果文件。</td>
+                </tr>
+                <tr>
+                  <td><code>summary.csv</code></td>
+                  <td>按 Benchmark、策略模型和任务分组的指标汇总表，包含案例数以及 MP、SR、PPL 等聚合指标，用于比较不同任务和模型的表现。</td>
+                </tr>
+                <tr>
+                  <td><code>leaderboard.csv</code></td>
+                  <td>用于比较策略的模型级汇总。</td>
+                </tr>
+                <tr>
+                  <td><code>report.md</code></td>
+                  <td>Markdown 格式的运行概览，列出案例总数、正常完成评测的案例数和错误数，并指向详细的 CSV 和 JSONL 结果文件。</td>
+                </tr>
+                <tr>
+                  <td><code>discovery_manifest.json</code></td>
+                  <td>已解析的输入路径、运行时选择和可复现性元数据。</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/curve_metrics.csv</code></td>
+                  <td>单案例曲线指标明细表。每行包含案例与任务信息、PRM 评测方式、策略模型、曲线点数，以及 MP、SR、PPL 等进度曲线指标，便于筛选和二次分析。</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/report.html</code></td>
+                  <td>
+                    启用 <code>--visualize</code> 或 <code>VISUALIZE=1</code> 时生成的本地交互式 HTML 报告。在浏览器中打开后，可以查看执行视频、进度曲线、实时帧指标、里程碑，以及可排序的模型级、模型-任务级和单案例指标表。
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/visualization_report.md</code></td>
+                  <td>记录可视化产物索引和单案例图生成状态。</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/case_plots.csv</code></td>
+                  <td>单案例曲线图索引。每行记录案例、任务、PRM 评测方式、策略模型及其对应 PNG 文件路径，便于程序批量查找或引用曲线图。</td>
+                </tr>
+                <tr>
+                  <td><code>visualizations/cases/*.png</code></td>
+                  <td>每个案例的静态进度曲线图，对比原始曲线与后处理曲线，并显示成功阈值和关键曲线位置；安装 <code>matplotlib</code> 后生成。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>在一次运行完成后生成可视化结果：</p>
+          <pre><code>prm-judge visualize --run-root eval/results/run_YYMMDD_HHMMSS</code></pre>
+
+          <p>为了可靠播放和拖动 MP4，请使用内置的 Range-aware 报告服务：</p>
+          <pre><code>prm-judge serve \
+  --run-root eval/results/run_YYMMDD_HHMMSS \
+  --host 127.0.0.1 \
+  --port 8000</code></pre>
+          <p>打开 <code>http://127.0.0.1:8000/report.html</code>。如果评估在远端服务器上运行，请保持服务只绑定 loopback，并从本机建立 SSH tunnel：</p>
+          <pre><code>ssh -L 8000:127.0.0.1:8000 user@server</code></pre>
+          <p>
+            评测完成后，最终性能报告会生成 Model Leaderboard，汇总展示每个被评测模型的核心指标；还可以通过交互式轨迹查看器筛选并逐条查看每个案例（case）的执行视频、进度曲线、实时帧数值和单案例指标。
+          </p>
+
+          <div class="report-gallery" aria-label="可视化报告示例">
+            <figure class="report-shot">
+              <a href="assets/images/report-metrics-overview.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-metrics-overview.webp"
+                  alt="汇总展示各策略模型性能指标的最终 Model Leaderboard"
+                  loading="lazy"
+                  width="2300"
+                  height="1032">
+              </a>
+              <figcaption>
+                <strong>最终性能报告。</strong>Model Leaderboard 汇总展示每个被评测策略模型的核心指标。
+              </figcaption>
+            </figure>
+
+            <figure class="report-shot">
+              <a href="assets/images/report-conditional-profile.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-conditional-profile.webp"
+                  alt="按模型比较成功轨迹和失败轨迹条件指标的报告"
+                  loading="lazy"
+                  width="2290"
+                  height="990">
+              </a>
+              <figcaption>
+                <strong>成功/失败条件画像。</strong>分别比较失败轨迹适用的诊断指标和成功轨迹的执行质量指标，并显示每个模型对应的适用样本数。
+              </figcaption>
+            </figure>
+
+            <figure class="report-shot">
+              <a href="assets/images/report-failure-localization.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-failure-localization.webp"
+                  alt="展示失败轨迹 MP 分布、平均 MP 和回退后恢复程度的 Failure Progress and Recovery 报告"
+                  loading="lazy"
+                  width="2272"
+                  height="808">
+              </a>
+              <figcaption>
+                <strong>失败轨迹的进度与恢复。</strong>按模型和任务筛选，查看失败轨迹的 MP 分布与平均 MP，以及仅在发生真实回退的失败轨迹上计算的 DRR。
+              </figcaption>
+            </figure>
+
+            <figure class="report-shot">
+              <a href="assets/images/report-trajectory-explorer.webp" target="_blank" rel="noopener">
+                <img
+                  src="assets/images/report-trajectory-explorer.webp"
+                  alt="同时展示执行视频、进度曲线和单案例指标的交互式轨迹查看器"
+                  loading="lazy"
+                  width="2042"
+                  height="1464">
+              </a>
+              <figcaption>
+                <strong>交互式轨迹查看器。</strong>同步查看执行视频、进度曲线、实时帧数值、单案例指标和里程碑。
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="zh-defaults">
+          <h2>默认设置</h2>
+          <p>
+            下表列出 <code>eval/run_eval.sh</code> 的主要默认配置。<strong>首次运行建议先保持默认值</strong>；确认评测流程正常后，再根据视频长度、GPU 显存和评测目标进行调整。
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>设置</th>
+                  <th>默认值</th>
+                  <th>何时调整</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>PRM 评测方式</td>
+                  <td><strong><code>PRM=dopamine</code></strong></td>
+                  <td>需要使用 RoboMeter、导入外部 PRM 进度曲线或接入自定义 PRM 时。</td>
+                </tr>
+                <tr>
+                  <td>Dopamine 模式</td>
+                  <td><strong><code>EVAL_MODE=incremental</code></strong></td>
+                  <td>默认使用 <code>incremental</code> 比较相邻采样帧。需要以起始状态为锚点观察累计进展时改为 <code>forward</code>；有可靠的目标图像、希望根据当前状态与目标的差距评估进度时改为 <code>backward</code>。</td>
+                </tr>
+                <tr>
+                  <td>成功阈值</td>
+                  <td><code>--success-threshold 0.99</code></td>
+                  <td>没有可靠的 <code>label</code> 时，程序根据 <code>MP</code> 是否达到默认阈值 <code>0.99</code> 判断成功。不同任务的 <code>MP</code> 分布可能不同，可根据实际情况调整该阈值。</td>
+                </tr>
+                <tr>
+                  <td>帧采样间隔</td>
+                  <td><code>FRAME_INTERVAL=72</code></td>
+                  <td>短视频或快速动作需要更密集的进度曲线时调小；长视频需要加快推理时调大。</td>
+                </tr>
+                <tr>
+                  <td>推理批大小</td>
+                  <td><code>BATCH_SIZE=10</code></td>
+                  <td>GPU 显存不足时调小；显存充足并希望提高吞吐时调大。</td>
+                </tr>
+                <tr>
+                  <td>GPU 选择</td>
+                  <td><code>GPUS=0</code></td>
+                  <td>使用其他 GPU 时修改编号；填写多个编号（如 <code>GPUS=0,1</code>）可将案例分片到多张 GPU。</td>
+                </tr>
+                <tr>
+                  <td>异常值处理</td>
+                  <td><code>OUTLIER_METHOD=local_median</code></td>
+                  <td>需要保留原始 PRM 输出时设为 <code>none</code>。</td>
+                </tr>
+                <tr>
+                  <td>曲线平滑</td>
+                  <td><code>SMOOTHING=weighted_window</code><br>权重：<code>[0.1, 0.2, 0.4, 0.2, 0.1]</code></td>
+                  <td>需要保留未平滑曲线时设为 <code>none</code>；需要改变平滑强度时调整窗口权重。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="zh-choose-backend">
+          <h2>PRM 评测方式</h2>
+          <p>
+            该工具包支持多种进度评测方式：<code>dopamine</code> 使用 Robo-Dopamine 模型并作为默认选择；
+            <code>robometer</code> 使用 RoboMeter 模型；<code>recorded</code> 不加载模型，直接读取预计算曲线；自定义适配器则可以接入你自己的 PRM。获得进度曲线后，所有方式共享相同的后处理和指标流水线。
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>使用场景</th>
+                  <th>推荐评测方式</th>
+                  <th>原因</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>细粒度过程变化或常规批量评测</td>
+                  <td><strong><code>dopamine</code>（Robo-Dopamine）配合 <code>EVAL_MODE=incremental</code></strong></td>
+                  <td>比较相邻采样状态，适合捕捉局部、细粒度的进展与回退。</td>
+                </tr>
+                <tr>
+                  <td>长时、重复或依赖上下文的动作</td>
+                  <td><code>robometer</code>（RoboMeter）</td>
+                  <td>利用视频序列中的时间上下文，适合仅凭相邻状态难以区分持续进展、重复动作或往返运动的轨迹。</td>
+                </tr>
+                <tr>
+                  <td>不加载模型调试指标</td>
+                  <td><code>recorded</code>（预计算曲线）</td>
+                  <td>使用 manifest 中的 <code>progress</code> 或 <code>progress_path</code>。</td>
+                </tr>
+                <tr>
+                  <td>接入其他 PRM</td>
+                  <td>自定义适配器</td>
+                  <td>返回 <code>[0, 1]</code> 中的绝对进度，或在计算指标前配置归一化。适配器步骤见 <a href="#zh-custom-prm">自定义 PRM</a>。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>使用 RoboMeter 运行</h3>
+          <p>
+            RoboMeter 是序列式 PRM 模型。运行器可以启动本地 RoboMeter HTTP 服务器，等待 <code>/health</code>，评估案例，并在运行结束后关闭服务器。
+          </p>
+          <pre><code>PRM=robometer \
+MANIFEST=/path/to/cases.jsonl \
+bash eval/run_eval.sh</code></pre>
+
+          <p>当你希望自行管理模型进程时，可以复用已经运行的服务器：</p>
+          <pre><code>PRM=robometer \
+MANIFEST=/path/to/cases.jsonl \
+ROBOMETER_SERVER_URL=http://localhost:8000 \
+ROBOMETER_AUTO_START=0 \
+bash eval/run_eval.sh</code></pre>
+
+          <div class="callout">
+            当 <code>PRM=robometer</code> 时，<code>eval/run_eval.sh</code> 会同时为运行器和自动启动的服务器使用 <code>ROBOMETER_PYTHON</code>，确保可用
+            <code>decord</code> 或 <code>opencv-python</code> 等视频依赖。如果直接调用
+            <code>prm-judge</code>，请在能够解码你的视频的环境中运行。
+          </div>
+        </section>
+
+        <section id="zh-modes">
+          <h2>Dopamine 模式</h2>
+          <p>
+            Robo-Dopamine 是成对比较式 PRM。它通过三种比较模式之一对采样状态打分，构建进度曲线。
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>模式</th>
+                  <th>比较对象</th>
+                  <th>进度解释方式</th>
+                  <th>适用场景</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong><code>incremental</code>（默认）</strong></td>
+                  <td>将上一采样状态作为 <code>before</code>，当前采样状态作为 <code>after</code>。</td>
+                  <td>模型分数被视为局部进度变化，并随时间累积。</td>
+                  <td>默认模式，用于局部逐步变化分析。如果相邻采样点过于相似，可考虑更大的 <code>FRAME_INTERVAL</code>。</td>
+                </tr>
+                <tr>
+                  <td><code>forward</code></td>
+                  <td>将起始帧作为 <code>before</code>，当前采样状态作为 <code>after</code>。</td>
+                  <td>模型分数被视为当前绝对进度估计。</td>
+                  <td>当从起点到当前状态的变化比到目标图像的距离更容易判断时使用。</td>
+                </tr>
+                <tr>
+                  <td><code>backward</code></td>
+                  <td>将目标图像作为 <code>before</code>，当前采样状态作为 <code>after</code>。</td>
+                  <td>模型分数会用 <code>progress = 1 + score</code> 转换为进度。</td>
+                  <td>适用于可提供目标图像或目标占位图，并且希望使用目标相对评分的情况。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>示例：</p>
+          <pre><code>EVAL_MODE=incremental MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh
+EVAL_MODE=forward MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh
+EVAL_MODE=backward MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+        </section>
+
+        <section id="zh-multi-view">
+          <h2>视频视角与目标图像</h2>
+          <p>
+            每个案例必须提供 <code>video</code> 作为主视角。腕部视角和 <code>goal_image</code>
+            均为可选：腕部视频可以补充抓取、接触和遮挡区域的细节；目标图像用于说明任务期望达到的最终状态。
+          </p>
+
+          <h3>视频字段</h3>
+          <ul>
+            <li><code>video</code>：必需的主视角视频路径，可以使用第三人称、固定相机或俯视视角。</li>
+            <li><code>wrist_video</code>：单臂机器人的腕部视角视频，不能与双臂机器人的左右腕字段同时使用。</li>
+            <li><code>left_wrist_video</code> 和 <code>right_wrist_video</code>：双臂机器人的左腕和右腕视角视频，必须成对提供。</li>
+          </ul>
+
+          <h3>Robo-Dopamine 如何使用视角</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manifest 中提供的视角</th>
+                  <th>Robo-Dopamine 的处理方式</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>仅 <code>video</code></td>
+                  <td>将主视角复用于模型需要的全部相机输入，适合快速测试。</td>
+                </tr>
+                <tr>
+                  <td><code>video</code> + <code>wrist_video</code></td>
+                  <td>使用 <code>video</code> 作为主视角，将单臂腕部视频复用于两个腕部输入。</td>
+                </tr>
+                <tr>
+                  <td><code>video</code> + <code>left_wrist_video</code> + <code>right_wrist_video</code></td>
+                  <td>将主视角、左腕和右腕视频分别映射到对应的模型输入。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>选择 RoboMeter 视角</h3>
+          <p>
+            RoboMeter 每次评估一个视频视角，默认使用 <code>video</code>。如需评估腕部视角，可以通过 <code>ROBOMETER_VIEW</code> 指定 <code>wrist_video</code>、
+            <code>left_wrist_video</code> 或 <code>right_wrist_video</code>。所选字段必须存在，否则该案例会报错。
+          </p>
+          <pre><code>PRM=robometer \
+ROBOMETER_VIEW=left_wrist_video \
+MANIFEST=cases.jsonl \
+bash eval/run_eval.sh</code></pre>
+
+          <h3>目标图像的作用</h3>
+          <p>
+            <code>goal_image</code> 是任务完成状态的视觉参考。Robo-Dopamine 将其作为
+            <code>REFERENCE END</code>，用于帮助模型判断当前状态在任务开始到完成过程中的位置；在 <code>backward</code> 模式中，目标图像还会直接与当前采样状态比较。
+          </p>
+          <ul>
+            <li>有可靠的成功状态图像时，可以在 manifest 中填写 <code>goal_image</code>，例如使用成功演示轨迹的最后一帧。</li>
+            <li>如果没有目标图像，可以省略该字段；PRM-as-a-Judge 会自动使用 <code>eval/examples/blank.png</code> 作为占位图。</li>
+            <li>不建议直接使用待评测轨迹的最后一帧，除非已经确认该轨迹成功，否则可能把失败状态误当成任务目标。</li>
+          </ul>
+        </section>
+
+        <section id="zh-multi-gpu">
+          <h2>Multi-GPU</h2>
+          <p>
+            默认使用一个 GPU，以保持命令可预测。在更大的批次上，可以设置
+            <code>GPUS</code> 或传入 <code>--gpus</code>，将案例分片到本地设备。
+          </p>
+
+          <pre><code>GPUS=0,1,2,3 MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <p>
+            每个 worker 会在分配到的 GPU 上加载一个 PRM 实例，处理自己的分片，运行器最后合并分片输出。这是简单的本地数据并行，通常足以处理评估批次。
+          </p>
+
+          <p>
+            也可以让运行器自动选择 GPUs。在当前实现中，<code>GPUS=auto</code> 会查询
+            <code>nvidia-smi</code>，选择已用显存低于 1024 MiB 的设备；如果没有找到这样的设备，则回退到 GPU 0。
+          </p>
+          <pre><code>GPUS=auto MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <p>
+            对于 RoboMeter multi-GPU runs，每个分片会使用
+            <code>ROBOMETER_SERVER_PORT + shard_index</code> 作为自动启动服务器的端口。因此，当同一台机器上运行多个评估时，请选择空闲的基础端口。
+          </p>
+        </section>
+
+        <section id="zh-progress-standard">
+          <h2>进度曲线规范</h2>
+          <p>
+            指标栈消费<strong>归一化绝对进度曲线</strong>。每个 PRM 适配器最终都应产生：
+          </p>
+          <pre><code>progress[t] in [0, 1]</code></pre>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>PRM 输出</th>
+                  <th>计算指标前的转换方式</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>[0, 1]</code> 中的绝对进度</td>
+                  <td>直接使用，然后裁剪小的数值溢出。</td>
+                </tr>
+                <tr>
+                  <td><code>[0, 100]</code> 中的绝对进度</td>
+                  <td>使用 <code>--normalize 0_100</code> 除以 100。</td>
+                </tr>
+                <tr>
+                  <td>逐步增量进度</td>
+                  <td>使用 <code>--source-type delta</code>，随时间累积，然后裁剪到 <code>[0, 1]</code>。</td>
+                </tr>
+                <tr>
+                  <td>未校准的奖励或相似度</td>
+                  <td>在指标计算前添加适配器专用校准。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <strong>不要强制曲线单调。</strong>回退和振荡是有意义的信号，会被回撤、恢复、停滞和 regret 指标使用。结果应同时存储 <code>progress_raw</code> 和 <code>progress_processed</code>。
+          </p>
+        </section>
+
+        <section id="zh-postprocess">
+          <h2>进度曲线处理</h2>
+          <p>PRM 生成原始进度曲线后，工具会依次执行以下处理：</p>
+          <ol>
+            <li>将 PRM 输出归一化为 <code>[0, 1]</code> 中的绝对进度。</li>
+            <li>将数值裁剪到 <code>[0, 1]</code>。</li>
+            <li>用局部中位数替换孤立的局部异常值。默认阈值为 <strong><code>0.35</code></strong>。</li>
+            <li>使用加权时间窗口进行平滑。</li>
+          </ol>
+
+          <pre><code>p'_t = 0.1*p_{t-2} + 0.2*p_{t-1} + 0.4*p_t + 0.2*p_{t+1} + 0.1*p_{t+2}</code></pre>
+
+          <p>
+            默认的异常值处理和平滑用于减少单个异常点和短时间内的频繁波动，但不会强制进度曲线持续上升，因此真实的任务退步仍会保留。例如，当视频中的任务整体在持续推进，但模型对相邻采样帧的评分时高时低时，这些处理可以让曲线更稳定地反映整体趋势。
+          </p>
+
+          <p>当你在调试原始 PRM 行为时，可以禁用后处理：</p>
+          <pre><code>prm-judge eval --manifest cases.jsonl --outlier-method none --smoothing none</code></pre>
+
+          <p>从 CLI 修改平滑权重：</p>
+          <pre><code>prm-judge eval --manifest cases.jsonl --smoothing-weights 0.05,0.15,0.6,0.15,0.05</code></pre>
+
+          <p>
+            权重列表应为奇数长度、非负，并且总和为正。它会被自动归一化。如果需要更深度的自定义，请编辑 <code>eval/prm_judge/curves.py</code>，尤其是 <code>parse_smoothing_weights</code>、<code>weighted_smooth</code>
+            和 <code>PostprocessConfig.smoothing_weights</code>。
+          </p>
+        </section>
+
+        <section id="zh-metrics">
+          <h2>评测指标</h2>
+          <p>
+            默认情况下，指标计算和评测报告都使用经过异常值处理与平滑的进度曲线。原始曲线会保留在结果中，主要用于检查 PRM 的直接输出和排查问题。
+          </p>
+          <p><code>↑</code> 表示数值越高越好，<code>↓</code> 表示数值越低越好。</p>
+          <p>
+            以下公式中，<code>p_0 = 0, p_1, ..., p_T</code> 表示处理后的归一化进度曲线，
+            <code>θ</code> 表示成功阈值，<code>ε = 0.005</code> 表示默认停滞阈值，
+            <code>1[·]</code> 表示指示函数。OPD 的名称和公式以
+            <a href="https://arxiv.org/abs/2608.14284" target="_blank" rel="noopener noreferrer">技术报告</a>为准；
+            二元成功率（SR）作为补充结果指标与正式 OPD 指标一同报告。
+          </p>
+
+          <div class="table-wrap">
+            <table class="metric-table">
+              <colgroup>
+                <col style="width: 7.5rem">
+                <col style="width: 7rem">
+                <col style="width: 19.625rem">
+                <col>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>指标</th>
+                  <th class="metric-scope">适用范围</th>
+                  <th>公式</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>MP ↑</code></td>
+                  <td class="metric-scope">全部轨迹</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{MP}=\max_{0\le t\le T}p_t"></span></div></td>
+                  <td>轨迹达到的最高进度。数值越高，表示执行过程越接近完成任务。</td>
+                </tr>
+                <tr>
+                  <td><code>MC@q ↑</code></td>
+                  <td class="metric-scope">全部轨迹</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{MC@}q=\mathbf{1}[\mathrm{MP}\ge q/100],\quad q\in\{25,50,75,100\}"></span></div></td>
+                  <td>25%、50%、75% 或 100% 里程碑覆盖率；汇总时表示达到相应里程碑的轨迹比例。</td>
+                </tr>
+                <tr>
+                  <td><code>SR ↑</code></td>
+                  <td class="metric-scope">全部轨迹</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line"><span class="math-latex" data-latex="s_i=\mathbf{1}[\mathrm{MP}_i\ge\theta]"></span><span class="metric-formula-note">工具包默认</span></span>
+                      <span class="metric-formula-line"><span class="math-latex" data-latex="s_i=\mathbf{1}[\mathrm{label}_i=\mathrm{success}]"></span><span class="metric-formula-note">使用标签</span></span>
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{SR}=\frac{1}{N}\sum_{i=1}^{N}s_i"></span>
+                    </div>
+                  </td>
+                  <td>二元成功率。技术报告以 <code>MP = 1</code> 定义 PRM 推导的成功；工具包允许配置成功阈值（默认为 <code>0.99</code>）或使用 Benchmark 标签。</td>
+                </tr>
+                <tr>
+                  <td><code>PPL ↑</code></td>
+                  <td class="metric-scope">全部轨迹</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="L=\sum_{t=1}^{T}|p_t-p_{t-1}|"></span>
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{PPL}=\begin{cases}\mathrm{MP}^{2}/L,&amp;L&gt;0\\0,&amp;L=0\end{cases}"></span>
+                    </div>
+                  </td>
+                  <td>衡量轨迹在取得进展时的路径效率，数值越高表示有效进展越集中。</td>
+                </tr>
+                <tr>
+                  <td><code>CRA ↓</code></td>
+                  <td class="metric-scope">全部轨迹</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{CRA}=\frac{1}{(T+1)\,\mathrm{MP}}\sum_{t=0}^{T}\left(\max_{0\le i\le t}p_i-p_t\right)"></span></div></td>
+                  <td>衡量经最大进度归一化后的回退幅度和持续时间。数值越低，表示累计回退越少。</td>
+                </tr>
+                <tr>
+                  <td><code>STR ↓</code></td>
+                  <td class="metric-scope">全部轨迹</td>
+                  <td class="metric-formula-cell"><div class="metric-formula-scroll"><span class="metric-formula-line math-latex" data-latex="\mathrm{STR}=\frac{1}{T}\sum_{t=1}^{T}\mathbf{1}[|p_t-p_{t-1}|\lt\epsilon]"></span></div></td>
+                  <td>近乎没有进度变化的步骤比例，数值越低表示停滞越少。</td>
+                </tr>
+                <tr>
+                  <td><code>DRR ↑</code></td>
+                  <td class="metric-scope">发生回撤的轨迹</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="d_t=\max_{0\le i\le t}p_i-p_t"></span>
+                      <span class="metric-formula-line math-latex" data-latex="t^*\in\arg\max_t d_t"></span>
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{DRR}=\min\!\left(1,\frac{\max_{t^*\le t\le T}p_t-p_{t^*}}{d_{t^*}}\right),\quad d_{t^*}&gt;0"></span>
+                    </div>
+                  </td>
+                  <td>衡量轨迹在最大回撤之后恢复了多少。数值越高表示恢复越充分；没有发生回撤的轨迹不计入该指标。</td>
+                </tr>
+                <tr>
+                  <td><code>FNS ↑</code></td>
+                  <td class="metric-scope">失败轨迹</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{FNS}=0.5\,\mathrm{MP}+0.3\,\mathrm{MC@75}+0.2\,\mathrm{MC@50}"></span>
+                    </div>
+                  </td>
+                  <td>衡量失败轨迹距离成功有多近，综合最高进度和里程碑完成情况。</td>
+                </tr>
+                <tr>
+                  <td><code>SQS ↑</code></td>
+                  <td class="metric-scope">成功轨迹</td>
+                  <td class="metric-formula-cell">
+                    <div class="metric-formula-scroll">
+                      <span class="metric-formula-line math-latex" data-latex="\mathrm{SQS}=0.5\,\mathrm{PPL}+0.3(1-\mathrm{CRA})+0.2(1-\mathrm{STR})"></span>
+                    </div>
+                  </td>
+                  <td>衡量成功轨迹的执行质量，奖励高效、低回退和低停滞的过程。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            有些诊断只在特定轨迹子集上汇总：<code>FNS</code> 用于失败轨迹，
+            <code>DRR</code> 用于确实发生回撤的轨迹，<code>SQS</code> 用于成功轨迹。
+            <strong>默认情况下，成功分组使用 <code>MP >= --success-threshold</code>。</strong>
+            只有当基准标签应定义 success 和 failure 时，才使用
+            <code>--success-source label</code>。
+          </div>
+
+        </section>
+
+       <section id="zh-custom-prm">
+          <h2>自定义 PRM</h2>
+          <p>
+            工具包将两个职责分离：PRM 适配器生成进度曲线，指标栈基于标准化曲线计算诊断结果。通过这一统一接口，可以使用内置或自定义的 Judge Model。
+          </p>
+
+          <div class="callout">
+            在本开发章节中，<strong>后端</strong>是指注册到 <code>--prm</code> 下的实现。它既可以调用 PRM 模型，也可以像 <code>recorded</code> 一样直接读取预计算进度曲线。
+          </div>
+
+          <h3>最小集成步骤</h3>
+          <ol>
+            <li>在 <code>eval/prm_judge/prm/</code> 下创建新的适配器文件，并继承 <code>BasePRMAdapter</code>。</li>
+            <li>实现 <code>predict(case, output_dir)</code>，让它读取 manifest 案例、运行你的 PRM，并返回 <code>ProgressTrace</code>。</li>
+            <li>在 <code>eval/prm_judge/cli.py</code> 中注册后端名称：将其加入 <code>--prm</code> 选项列表，并在 <code>build_adapter</code> 中创建适配器。</li>
+            <li>确保返回的进度是绝对 <code>[0, 1]</code>，或者使用匹配的 <code>--normalize</code> 和 <code>--source-type</code> 选项运行。</li>
+            <li>使用 <code>prm-judge eval --prm your_backend --manifest cases.jsonl</code> 进行评估。</li>
+          </ol>
+
+          <h3>适配器检查清单</h3>
+          <ul>
+            <li>读取 <code>EvalCase</code> 字段，例如视频、任务文本、目标图像和元数据。</li>
+            <li>运行你的 PRM，并返回与采样帧或视频时间对齐的进度序列。</li>
+            <li>判断输出是绝对进度、逐步增量，还是其他分数。</li>
+            <li>判断尺度是 <code>[0, 1]</code>、<code>[0, 100]</code>，还是未校准。</li>
+            <li>优先返回 <code>[0, 1]</code> 中的绝对进度。如果不是，请为整次运行传入匹配的 <code>--normalize</code> 和 <code>--source-type</code> 选项。</li>
+          </ul>
+
+          <pre><code>from prm_judge.prm.base import BasePRMAdapter
+from prm_judge.schema import EvalCase, ProgressTrace
+
+class MyAdapter(BasePRMAdapter):
+    def predict(self, case: EvalCase, output_dir):
+        scores = run_my_model(case.videos, case.task, case.goal_image)
+        return ProgressTrace(
+            case_id=case.case_id,
+            progress=scores,
+            source_scale="0_1",
+            source_type="absolute",
+        )</code></pre>
+
+          <p>
+            <code>eval/prm_judge/prm/</code> 下的现有适配器可以作为模板。
+            <code>recorded.py</code> 是最小示例，<code>robometer.py</code>
+            展示了如何包装外部模型服务。请在你的适配器旁边记录模型的输出尺度、语义、必需视角、目标图像行为和运行时要求。
+          </p>
+
+          <h3>以 RoboMeter 为例</h3>
+          <p>
+            RoboMeter 通过 HTTP 适配器集成为序列式后端。它将
+            <code>outputs_progress.progress_pred</code> 读取为 <code>[0, 1]</code>
+            中的绝对进度曲线。由于它会基于更长的序列进行推理，因此对于局部成对评判不够充分的重复动作案例，它是一个有用的比较对象。
+          </p>
+          <p>
+            当复用已有 RoboMeter 服务器时，PRM-as-a-Judge 会检查 <code>/model_info</code>，并要求服务器模型路径与 <code>PRM_PATH</code> 匹配。这有助于避免误用旧 checkpoint
+            进行评估。适配器会以 <code>.npy</code> multipart files 上传帧数组，从而让长视频请求更易处理。
+          </p>
+        </section>
+
+        <section id="zh-recipes">
+          <h2>常用命令</h2>
+
+          <h3>不移动文件，批量评估大量视频</h3>
+          <pre><code>MANIFEST=/data/my_rollouts/cases.jsonl \
+PRM_PATH=/models/Robo-Dopamine-GRM-8B-Pro \
+OUTPUT_ROOT=eval/results/my_rollouts \
+bash eval/run_eval.sh</code></pre>
+
+          <h3>使用全部四个本地 GPUs</h3>
+          <pre><code>GPUS=0,1,2,3 MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <h3>为短操作任务运行更密集的曲线</h3>
+          <pre><code>FRAME_INTERVAL=36 MANIFEST=cases.jsonl PRM_PATH=/path/to/prm bash eval/run_eval.sh</code></pre>
+
+          <h3>使用 benchmark labels 进行成功分组</h3>
+          <pre><code>prm-judge eval --manifest cases.jsonl --success-source label --visualize</code></pre>
+
+          <h3>花费 GPU 时间前检查 manifest</h3>
+          <pre><code>prm-judge eval --manifest cases.jsonl --prm recorded --dry-run --limit 10</code></pre>
+
+          <h3>比较原始进度和处理后进度</h3>
+          <pre><code>prm-judge eval --manifest cases.jsonl --outlier-method none --smoothing none --visualize
+prm-judge eval --manifest cases.jsonl --visualize</code></pre>
+        </section>
+
+        <section id="zh-faq">
+          <h2>常见问题（FAQ）</h2>
+
+          <h3>1. 目标图像（<code>goal_image</code>）的作用是什么？</h3>
+          <p>
+            <code>goal_image</code> 是 <strong>Robo-Dopamine</strong> 专用的<strong><em>可选参数</em></strong>。它为模型提供<strong>明确的任务完成状态视觉参考</strong>，帮助模型理解“成功状态应该是什么样”，减少目标歧义，并提升进度判断的准确性。
+            <strong>Robo-Dopamine</strong> 会将其作为 <code>REFERENCE END</code>；在 <code>backward</code> 模式中，目标图像还会直接与当前采样状态进行比较。<em>其他 Judge Model 适配器不一定使用该字段。</em>
+          </p>
+          <p>
+            在实际使用中，如果有<strong>可靠的成功状态参考</strong>，建议在 manifest 中填写
+            <code>goal_image</code>，优先选择<em>经过人工确认的成功演示轨迹最后一帧</em>，或<em>单独拍摄的标准目标状态</em>。如果没有可靠的目标图像，可以省略该字段；<strong>Robo-Dopamine</strong> 适配器会使用
+            <code>eval/examples/blank.png</code> 作为占位图，但此时无法获得明确目标参考带来的判断增益。<strong>不要直接使用待评测轨迹的最后一帧，除非已经确认该轨迹成功</strong>，否则模型可能把失败状态误当成任务目标，反而降低判断准确性。
+          </p>
+
+          <h3>2. Robo-Dopamine 如何判断进度，何时应使用其他 PRM 作为 Judge？</h3>
+          <p>
+            <strong>Robo-Dopamine</strong> 是一种<strong><em>成对比较式（pair-wise）Judge Model</em></strong>。它会根据 <code>EVAL_MODE</code>
+            比较两张采样图像或状态，例如相邻采样点、初始状态与当前状态，或当前状态与目标参考，得到相对进度判断，再将连续的成对判断连接成进度曲线。
+          </p>
+          <p>
+            这种局部比较适合许多机器人操作任务。<strong>但是，对于往复运动、周期性动作或强依赖时间上下文的任务，成对比较可能产生歧义。</strong>两张图像可能无法区分机器人是在持续取得进展、重复一个动作周期，还是仅仅来回移动。对于这类任务，可以使用能够分析更长视频序列的<strong><em>序列式（sequence-style）PRM</em></strong>，例如 <strong>RoboMeter</strong>，或将其评测结果作为对照。
+          </p>
+        </section>
+
+      </article>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script>
+    (function () {
+      document.querySelectorAll('.math-latex').forEach(function (element) {
+        var latex = element.getAttribute('data-latex');
+        if (!latex) return;
+
+        if (typeof katex === 'undefined') {
+          element.textContent = latex;
+          return;
+        }
+
+        katex.render(latex, element, {
+          throwOnError: false,
+          displayMode: false
+        });
+      });
+    }());
+  </script>
+  <script src="assets/doc.js"></script>
+</body>
+</html>

@@ -1,0 +1,636 @@
+[
+  {
+    "arxiv_id": "2609.36054",
+    "citation_title": [
+      "What if automating AI R&D triggers an intelligence explosion?"
+    ],
+    "citation_author": [
+      "Chan, Alan",
+      "Winter, Christoph",
+      "Barto, Andrew",
+      "Pachocki, Jakub",
+      "Hinton, Geoffrey",
+      "Horvitz, Eric",
+      "Bengio, Yoshua",
+      "Song, Dawn",
+      "Clark, Jack",
+      "Greaves, Hilary",
+      "Korinek, Anton",
+      "Hammond, Samuel",
+      "Graepel, Thore",
+      "Bariach, Ben",
+      "Torr, Philip H. S.",
+      "McIlraith, Sheila A.",
+      "Clune, Jeff",
+      "Manning, Sam",
+      "Sastry, Girish",
+      "Davidson, Tom",
+      "Eth, Daniel",
+      "Mindermann, Sören"
+    ],
+    "citation_date": [
+      "2026/09/28"
+    ],
+    "citation_online_date": [
+      "2026/09/28"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.36054"
+    ],
+    "citation_arxiv_id": [
+      "2609.36054"
+    ],
+    "citation_abstract": [
+      "In contrast to even a year ago, AI systems now write most of the code inside the companies that build them. As more of the AI research and development (R&D) pipeline is automated, could AI progress radically accelerate in an \"intelligence explosion,\" where years of advances are compressed into months or less? Preliminary evidence suggests that it could. In this work, we assess this evidence, analyze an intelligence explosion's potential impacts, and propose policy responses. AI systems are on track to automate most AI R\\&D work within a few years, and possibly all of it. If this triggers an intelligence explosion, it could dramatically bring forward AI's benefits, but also pose extreme risks: capabilities growth could accelerate far beyond what society can keep up with, humanity could lose control over superhuman AI systems, and checks on power within and between states, companies, and branches of government could be severely eroded. Although there remains much uncertainty about these possibilities, the high stakes warrant serious further attention. Policymakers should urgently obtain more visibility into the automation of AI R&D, develop ways to steer and constrain an intelligence explosion, and prepare society to adapt to an intelligence explosion's impacts."
+    ]
+  },
+  {
+    "arxiv_id": "2609.11873",
+    "citation_title": [
+      "The Last AI Built by Humans: Toward Genuine Recursive Self-Improvement"
+    ],
+    "citation_author": [
+      "Duan, Yi",
+      "Liu, Ying",
+      "Tang, Zirui",
+      "Chen, Haodong",
+      "Zhou, Jun",
+      "Liu, Yumou",
+      "Xu, Bangrui",
+      "Wu, Yukai",
+      "Chen, Sidi",
+      "Zhou, Yuhan",
+      "Wang, Haoyu",
+      "Yu, Xiaoyou",
+      "Han, Shaokun",
+      "Zhu, Xuzhou",
+      "Zhou, Le",
+      "Lu, Bolin",
+      "Zhou, Wei",
+      "Liu, Jiachen",
+      "Fang, Nuozhou",
+      "Tian, Jiaxin",
+      "Chen, Ruoyu",
+      "Li, Yuxuan",
+      "Zuo, Kai",
+      "Zhang, Kaiyan",
+      "Yang, Qianyu",
+      "Wang, Zijie",
+      "Qiu, Jiantao",
+      "He, Conghui",
+      "Li, Guoliang",
+      "Zhou, Bowen",
+      "Liu, Zhiyuan",
+      "Wen, Zhoufutu",
+      "Kang, Jihua",
+      "Zhou, Xuanhe",
+      "Wu, Fan"
+    ],
+    "citation_date": [
+      "2026/09/10"
+    ],
+    "citation_online_date": [
+      "2026/09/22"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.11873"
+    ],
+    "citation_arxiv_id": [
+      "2609.11873"
+    ],
+    "citation_abstract": [
+      "Recursive self-improvement (RSI) enables AI systems to turn experience and feedback into persistent changes that improve both their capabilities and the process of future improvement. We first use the Headroom-Closed Index (HCI) to reveal the problems of existing LLMs, then introduce the RSI concept and its development roadmap: from improvement-execution autonomy, improvement-strategy autonomy, experience-acquisition autonomy, and environment-adaptation autonomy, to recursive meta-improvement. Next we examine RSI across scenarios (e.g., scientific discovery, embodied intelligence, software engineering), highlighting their distinct requirements and development speeds. Drawing on diverse industry practices and preliminary empirical evidence, we connect RSI research with practical systems and identify key challenges to achieving genuine RSI."
+    ]
+  },
+  {
+    "arxiv_id": "2607.07663",
+    "citation_title": [
+      "Recursive Self-Improvement in AI: From Bounded Self-Refinement to Autonomous Research Loops"
+    ],
+    "citation_author": [
+      "Chen, Mingguang",
+      "Wang, Licheng",
+      "Qu, Bo"
+    ],
+    "citation_date": [
+      "2026/07/08"
+    ],
+    "citation_online_date": [
+      "2026/09/06"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2607.07663"
+    ],
+    "citation_arxiv_id": [
+      "2607.07663"
+    ],
+    "citation_abstract": [
+      "AI systems increasingly participate in their own improvement: revising their outputs, adapting their harnesses during deployment, training on data they generate, and conducting AI research itself. This literature uses a vocabulary (\"self-refine,\" \"self-reward,\" \"self-play,\" \"self-evolve\") that conflates fundamentally different ambitions. We survey 1,250 arXiv papers (2024-2026) along two axes: what the system improves -- its behavior in deployment, its policy through training, its evaluator, or the research process itself -- and the degree of loop closure (human-in-the-loop to fully closed). The taxonomy separates bounded self-refinement -- convergent, evaluable, and industrial practice -- from open-ended recursive self-improvement (RSI), which remains bounded by grounding requirements, collapse dynamics, and compute constraints on every measured axis. Its distinctive feature is a dedicated category for self-evaluation: every improvement loop is a claim that some signal can substitute for human judgment. We survey the evaluator design space -- judges, process reward models, verifiers, rubrics, meta-evaluation -- order the signals into a verification hierarchy from formal verifiers (strongest) to intrinsic self-assessment (weakest), and observe that demonstrated self-improvement strength tracks this hierarchy, that its failure modes (self-confirming loops, model and diversity collapse) follow from its violations, and that the \"research direction-setting\" bottleneck keeping humans in the loop divides into a verification problem the hierarchy indexes and a prior one -- choosing what deserves evaluation at all -- that it does not. We connect the literature to the theory of RSI limits and to the safety and governance questions raised by frontier-lab accounts of closing the loop, and identify governance-grade measurement of self-improvement as the field's most underpopulated niche."
+    ]
+  },
+  {
+    "arxiv_id": "2609.06396",
+    "citation_title": [
+      "MetaRSI / RSI2: A Meta-Recursive Self-Improving System for Recursive Self-Improving Systems Themselves"
+    ],
+    "citation_author": [
+      "Tan, Zihan",
+      "Sun, Leixin",
+      "Shi, Zitong",
+      "Liu, Yitao",
+      "Wu, Jiajun",
+      "Brooks, Nathaniel",
+      "Qian, Jiaru",
+      "Shang, Xiaoran",
+      "Huang, Suyuan",
+      "Ding, Yi",
+      "Liao, Yangxu",
+      "Li, Mukai",
+      "Sun, Qiushi",
+      "Liu, Shudong",
+      "Rong, Xuankun",
+      "Yu, Xiaohang",
+      "Chen, Zhuo",
+      "Geng, Hejia",
+      "Li, Chenxin",
+      "Wang, Aozhou",
+      "Tu, Zengji",
+      "Tang, Robert",
+      "Zhan, Yuxin",
+      "Jiang, Eric",
+      "Wu, Yuxin",
+      "Zhang, Jianqing",
+      "Liang, Xiao",
+      "Wu, Fang",
+      "Zhang, Haochi",
+      "Marlow, Alexander",
+      "Wan, Guancheng"
+    ],
+    "citation_date": [
+      "2026/09/06"
+    ],
+    "citation_online_date": [
+      "2026/09/09"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.06396"
+    ],
+    "citation_arxiv_id": [
+      "2609.06396"
+    ],
+    "citation_abstract": [
+      "Recursive self-improvement (RSI) lets a system improve the model-building machinery from its own failures, so every later model inherits the gain. Yet RSI has been validated almost exclusively on coding and formal benchmarks such as science QA and mathematics. This format bound limits RSI to improvement within a machine-checkable slice, not general capability where questions are open and correctness is settled by argument, replication, or measurement. We argue RSI must next operate across real, diverse scientific, engineering, and meta-scientific domains, not where formal evaluation is merely tractable. To that end we present MetaRSI-v1, where improvement is the scheduled composition of three typed operators over one unified paradigm. Data-RSI amplifies existing competence and marks its boundary; Harness-RSI edits a five-slot scaffold without touching weights; Model-RSI internalizes capability into parameters through bounded training. Sharing one loop kernel and artifact vocabulary, they make data, scaffold, and model changes composable rather than exclusive. A two-axis optimizer jointly decides operator order and each operator's proposal policy, while a meta-level policy revises the schedule across terms. We validate MetaRSI-v1 under the field's standard evaluations, on code and closed-form science, with no external teacher: the target model plays every role in its own loop. MetaRSI-v1 reframes self-improvement from a single-surface edit to a composition across the full model-production pipeline, opening two paths: a model route internalizing capability through training, and a harness route leaving weights untouched and thus extending self-improvement to any model reachable through an interface, with Data-RSI redefined as the shared substrate feeding both. The framework further yields refutable laws on where loops exist, how operators compose, and what supervision buys."
+    ]
+  },
+  {
+    "arxiv_id": "2610.13912",
+    "citation_title": [
+      "RSI-Anything: Unlocking Recursive Self-Improvement with World Models"
+    ],
+    "citation_author": [
+      "Cui, Taoyong",
+      "Zeng, Pinxian",
+      "Xu, Wanghan",
+      "Xiao, Hao",
+      "Xue, Shuhan",
+      "Gao, Qiang",
+      "Ouyang, Wanli",
+      "Heng, Pheng Ann",
+      "Yin, Zhenfei",
+      "Wu, Yingcheng",
+      "Yang, Ling"
+    ],
+    "citation_date": [
+      "2026/10/09"
+    ],
+    "citation_online_date": [
+      "2026/10/09"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2610.13912"
+    ],
+    "citation_arxiv_id": [
+      "2610.13912"
+    ],
+    "citation_abstract": [
+      "Recursive self-improvement (RSI) aims to transform interaction experience into persistent improvements, yet external feedback is costly and world-model predictions may become unreliable as policies evolve. We introduce RSI-Anything, a domain-general framework built on JEPA-Anything that uses predictive world models to guide action and learning-data selection. Observed feedback drives policy or workflow improvement and conditional world-model adaptation, while component and compatibility checks govern the retention of updated policy-model pairs. Across diverse computational and scientific domains, RSI-Anything demonstrates substantial gains. In code repair, with the coder fixed, success increases from 26.3% with a static verifier to 29.2% through predictive selection and 31.2% after world-model adaptation, at comparable test usage. Graphical user interface (GUI) evaluations showed higher task completion, while average actions decrease by 39.4%. Across five successive policy versions, laboratory-planning scores more than double from 21.80% to 46.01%. In reaction optimization, RSI-Anything achieves 96.15% mean best observed yield versus 82.16% for Bayesian optimization under the same 40-experiment budget. An end-to-end immune-science application further connects workflow evolution and predictive modeling with therapeutic hypothesis generation. These results demonstrate how predictive world models and retained system updates enable recursive improvement across diverse environments."
+    ]
+  },
+  {
+    "arxiv_id": "2310.02304",
+    "citation_title": [
+      "Self-Taught Optimizer (STOP): Recursively Self-Improving Code Generation"
+    ],
+    "citation_author": [
+      "Zelikman, Eric",
+      "Lorch, Eliana",
+      "Mackey, Lester",
+      "Kalai, Adam Tauman"
+    ],
+    "citation_date": [
+      "2023/10/03"
+    ],
+    "citation_online_date": [
+      "2024/08/16"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2310.02304"
+    ],
+    "citation_arxiv_id": [
+      "2310.02304"
+    ],
+    "citation_abstract": [
+      "Several recent advances in AI systems solve problems by providing a \"scaffolding\" program that structures multiple calls to language models (LMs) to generate better outputs. A scaffolding program is written in a programming language such as Python. In this work, we use a language-model-infused scaffolding program to improve itself. We start with a seed \"improver\" that improves an input program according to a given utility function by querying an LM several times and returning the best solution. We then run this seed improver to improve itself. Across a small set of downstream tasks, the resulting improved improver generates programs with significantly better performance than its seed improver. A variety of self-improvement strategies are proposed by the language model, including beam search, genetic algorithms, and simulated annealing. Since the language models themselves are not altered, this is not full recursive self-improvement. Nonetheless, it demonstrates that a modern language model, GPT-4 in our experiments, is capable of writing code that can call itself to improve itself. We consider concerns around the development of self-improving technologies and evaluate the frequency with which the generated code bypasses a sandbox."
+    ]
+  },
+  {
+    "arxiv_id": "2505.22954",
+    "citation_title": [
+      "Darwin Godel Machine: Open-Ended Evolution of Self-Improving Agents"
+    ],
+    "citation_author": [
+      "Zhang, Jenny",
+      "Hu, Shengran",
+      "Lu, Cong",
+      "Lange, Robert",
+      "Clune, Jeff"
+    ],
+    "citation_date": [
+      "2025/05/29"
+    ],
+    "citation_online_date": [
+      "2026/03/12"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2505.22954"
+    ],
+    "citation_arxiv_id": [
+      "2505.22954"
+    ],
+    "citation_abstract": [
+      "Today's AI systems have human-designed, fixed architectures and cannot autonomously and continuously improve themselves. The advance of AI could itself be automated. If done safely, that would accelerate AI development and allow us to reap its benefits much sooner. Meta-learning can automate the discovery of novel algorithms, but is limited by first-order improvements and the human design of a suitable search space. The G\\\"odel machine proposed a theoretical alternative: a self-improving AI that repeatedly modifies itself in a provably beneficial manner. Unfortunately, proving that most changes are net beneficial is impossible in practice. We introduce the Darwin G\\\"odel Machine (DGM), a self-improving system that iteratively modifies its own code (thereby also improving its ability to modify its own codebase) and empirically validates each change using coding benchmarks. Inspired by Darwinian evolution and open-endedness research, the DGM maintains an archive of generated coding agents. It grows the archive by sampling an agent from it and using a foundation model to create a new, interesting, version of the sampled agent. This open-ended exploration forms a growing tree of diverse, high-quality agents and allows the parallel exploration of many different paths through the search space. Empirically, the DGM automatically improves its coding capabilities (e.g., better code editing tools, long-context window management, peer-review mechanisms), increasing performance on SWE-bench from 20.0% to 50.0%, and on Polyglot from 14.2% to 30.7%. Furthermore, the DGM significantly outperforms baselines without self-improvement or open-ended exploration. All experiments were done with safety precautions (e.g., sandboxing, human oversight). The DGM is a significant step toward self-improving AI, capable of gathering its own stepping stones along paths that unfold into endless innovation."
+    ]
+  },
+  {
+    "arxiv_id": "2603.19461",
+    "citation_title": [
+      "Hyperagents"
+    ],
+    "citation_author": [
+      "Zhang, Jenny",
+      "Zhao, Bingchen",
+      "Yang, Wannan",
+      "Foerster, Jakob",
+      "Clune, Jeff",
+      "Jiang, Minqi",
+      "Devlin, Sam",
+      "Shavrina, Tatiana"
+    ],
+    "citation_date": [
+      "2026/03/19"
+    ],
+    "citation_online_date": [
+      "2026/03/19"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2603.19461"
+    ],
+    "citation_arxiv_id": [
+      "2603.19461"
+    ],
+    "citation_abstract": [
+      "Self-improving AI systems aim to reduce reliance on human engineering by learning to improve their own learning and problem-solving processes. Existing approaches to self-improvement rely on fixed, handcrafted meta-level mechanisms, fundamentally limiting how fast such systems can improve. The Darwin G\\\"odel Machine (DGM) demonstrates open-ended self-improvement in coding by repeatedly generating and evaluating self-modified variants. Because both evaluation and self-modification are coding tasks, gains in coding ability can translate into gains in self-improvement ability. However, this alignment does not generally hold beyond coding domains. We introduce \\textbf{hyperagents}, self-referential agents that integrate a task agent (which solves the target task) and a meta agent (which modifies itself and the task agent) into a single editable program. Crucially, the meta-level modification procedure is itself editable, enabling metacognitive self-modification, improving not only the task-solving behavior, but also the mechanism that generates future improvements. We instantiate this framework by extending DGM to create DGM-Hyperagents (DGM-H), eliminating the assumption of domain-specific alignment between task performance and self-modification skill to potentially support self-accelerating progress on any computable task. Across diverse domains, the DGM-H improves performance over time and outperforms baselines without self-improvement or open-ended exploration, as well as prior self-improving systems. Furthermore, the DGM-H improves the process by which it generates new agents (e.g., persistent memory, performance tracking), and these meta-level improvements transfer across domains and accumulate across runs. DGM-Hyperagents offer a glimpse of open-ended AI systems that do not merely search for better solutions, but continually improve their search for how to improve."
+    ]
+  },
+  {
+    "arxiv_id": "2310.17552",
+    "citation_title": [
+      "Model-Based Runtime Monitoring with Interactive Imitation Learning"
+    ],
+    "citation_author": [
+      "Liu, Huihan",
+      "Dass, Shivin",
+      "Martín-Martín, Roberto",
+      "Zhu, Yuke"
+    ],
+    "citation_date": [
+      "2023/10/26"
+    ],
+    "citation_online_date": [
+      "2023/10/26"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2310.17552"
+    ],
+    "citation_arxiv_id": [
+      "2310.17552"
+    ],
+    "citation_abstract": [
+      "Robot learning methods have recently made great strides, but generalization and robustness challenges still hinder their widespread deployment. Failing to detect and address potential failures renders state-of-the-art learning systems not combat-ready for high-stakes tasks. Recent advances in interactive imitation learning have presented a promising framework for human-robot teaming, enabling the robots to operate safely and continually improve their performances over long-term deployments. Nonetheless, existing methods typically require constant human supervision and preemptive feedback, limiting their practicality in realistic domains. This work aims to endow a robot with the ability to monitor and detect errors during task execution. We introduce a model-based runtime monitoring algorithm that learns from deployment data to detect system anomalies and anticipate failures. Unlike prior work that cannot foresee future failures or requires failure experiences for training, our method learns a latent-space dynamics model and a failure classifier, enabling our method to simulate future action outcomes and detect out-of-distribution and high-risk states preemptively. We train our method within an interactive imitation learning framework, where it continually updates the model from the experiences of the human-robot team collected using trustworthy deployments. Consequently, our method reduces the human workload needed over time while ensuring reliable task execution. Our method outperforms the baselines across system-level and unit-test metrics, with 23% and 40% higher success rates in simulation and on physical hardware, respectively. More information at https://ut-austin-rpl.github.io/sirius-runtime-monitor/"
+    ]
+  },
+  {
+    "arxiv_id": "2410.22689",
+    "citation_title": [
+      "Multi-Task Interactive Robot Fleet Learning with Visual World Models"
+    ],
+    "citation_author": [
+      "Liu, Huihan",
+      "Zhang, Yu",
+      "Betala, Vaarij",
+      "Zhang, Evan",
+      "Liu, James",
+      "Ding, Crystal",
+      "Zhu, Yuke"
+    ],
+    "citation_date": [
+      "2024/10/30"
+    ],
+    "citation_online_date": [
+      "2024/10/30"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2410.22689"
+    ],
+    "citation_arxiv_id": [
+      "2410.22689"
+    ],
+    "citation_abstract": [
+      "Recent advancements in large-scale multi-task robot learning offer the potential for deploying robot fleets in household and industrial settings, enabling them to perform diverse tasks across various environments. However, AI-enabled robots often face challenges with generalization and robustness when exposed to real-world variability and uncertainty. We introduce Sirius-Fleet, a multi-task interactive robot fleet learning framework to address these challenges. Sirius-Fleet monitors robot performance during deployment and involves humans to correct the robot's actions when necessary. We employ a visual world model to predict the outcomes of future actions and build anomaly predictors to predict whether they will likely result in anomalies. As the robot autonomy improves, the anomaly predictors automatically adapt their prediction criteria, leading to fewer requests for human intervention and gradually reducing human workload over time. Evaluations on large-scale benchmarks demonstrate Sirius-Fleet's effectiveness in improving multi-task policy performance and monitoring accuracy. We demonstrate Sirius-Fleet's performance in both RoboCasa in simulation and Mutex in the real world, two diverse, large-scale multi-task benchmarks. More information is available on the project website: https://ut-austin-rpl.github.io/sirius-fleet"
+    ]
+  },
+  {
+    "arxiv_id": "2502.01167",
+    "citation_title": [
+      "ConditionNET: Learning Preconditions and Effects for Execution Monitoring"
+    ],
+    "citation_author": [
+      "Sliwowski, Daniel",
+      "Lee, Dongheui"
+    ],
+    "citation_doi": [
+      "10.1109/LRA.2024.3520916"
+    ],
+    "citation_date": [
+      "2025/02/03"
+    ],
+    "citation_online_date": [
+      "2025/02/03"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2502.01167"
+    ],
+    "citation_arxiv_id": [
+      "2502.01167"
+    ],
+    "citation_abstract": [
+      "The introduction of robots into everyday scenarios necessitates algorithms capable of monitoring the execution of tasks. In this paper, we propose ConditionNET, an approach for learning the preconditions and effects of actions in a fully data-driven manner. We develop an efficient vision-language model and introduce additional optimization objectives during training to optimize for consistent feature representations. ConditionNET explicitly models the dependencies between actions, preconditions, and effects, leading to improved performance. We evaluate our model on two robotic datasets, one of which we collected for this paper, containing 406 successful and 138 failed teleoperated demonstrations of a Franka Emika Panda robot performing tasks like pouring and cleaning the counter. We show in our experiments that ConditionNET outperforms all baselines on both anomaly detection and phase prediction tasks. Furthermore, we implement an action monitoring system on a real robot to demonstrate the practical applicability of the learned preconditions and effects. Our results highlight the potential of ConditionNET for enhancing the reliability and adaptability of robots in real-world environments. The data is available on the project website: https://dsliwowski1.github.io/ConditionNET_page."
+    ]
+  },
+  {
+    "arxiv_id": "2609.34484",
+    "citation_title": [
+      "ARS: Agentic Reward System for Robot Learning"
+    ],
+    "citation_author": [
+      "Hu, Sheng",
+      "Lu, Weiyi",
+      "Zeng, Lingbing",
+      "Weng, Gan",
+      "Zhang, Weiwei",
+      "Xie, Kai",
+      "Mou, Xiaofeng",
+      "Xu, Yi"
+    ],
+    "citation_date": [
+      "2026/09/28"
+    ],
+    "citation_online_date": [
+      "2026/09/28"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.34484"
+    ],
+    "citation_arxiv_id": [
+      "2609.34484"
+    ],
+    "citation_abstract": [
+      "Progress reward modeling is the problem of estimating how a robot's behavior changes task progress over time. Reliable estimation requires distinguishing meaningful state changes from failed attempts and task-irrelevant actions. We introduce the Agentic Reward System (ARS), an inference framework for progress reward modeling with general-purpose vision-language models (VLMs), without additional reward-model training. Given an offline trajectory and a task instruction, ARS uses adaptive visual inspection for both event proposal and verification. A subagent proposes a task-relevant event timeline, which a primary agent verifies and revises before estimating per-frame progress. ARS can incorporate optional terminal outcome labels and visual references to inform its judgments. It can also audit progress estimates from external reward models. We evaluate ARS with a 27B VLM on a controlled semantic-mismatch benchmark and downstream policy learning in simulation and on a real robot. The benchmark reveals that several evaluated reward baselines assign spurious progress to wrong-object manipulation even in simple pick-and-place scenes. ARS better suppresses these errors and outperforms these baselines in simulation policy learning. We further demonstrate that ARS supports long-horizon policy learning from mixed-quality offline experience on real-robot multi-screw fastening in a full-scale laboratory replica of an industrial washing-machine assembly line. These results suggest that structured inference and verification can improve the usefulness of general-purpose VLMs for robot reward modeling. Code is at https://github.com/midea-ai/ars"
+    ]
+  },
+  {
+    "arxiv_id": "2404.07110",
+    "citation_title": [
+      "Wild Visual Navigation: Fast Traversability Learning via Pre-Trained Models and Online Self-Supervision"
+    ],
+    "citation_author": [
+      "Mattamala, Matías",
+      "Frey, Jonas",
+      "Libera, Piotr",
+      "Chebrolu, Nived",
+      "Martius, Georg",
+      "Cadena, Cesar",
+      "Hutter, Marco",
+      "Fallon, Maurice"
+    ],
+    "citation_date": [
+      "2024/04/10"
+    ],
+    "citation_online_date": [
+      "2024/04/10"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2404.07110"
+    ],
+    "citation_arxiv_id": [
+      "2404.07110"
+    ],
+    "citation_abstract": [
+      "Natural environments such as forests and grasslands are challenging for robotic navigation because of the false perception of rigid obstacles from high grass, twigs, or bushes. In this work, we present Wild Visual Navigation (WVN), an online self-supervised learning system for visual traversability estimation. The system is able to continuously adapt from a short human demonstration in the field, only using onboard sensing and computing. One of the key ideas to achieve this is the use of high-dimensional features from pre-trained self-supervised models, which implicitly encode semantic information that massively simplifies the learning task. Further, the development of an online scheme for supervision generator enables concurrent training and inference of the learned model in the wild. We demonstrate our approach through diverse real-world deployments in forests, parks, and grasslands. Our system is able to bootstrap the traversable terrain segmentation in less than 5 min of in-field training time, enabling the robot to navigate in complex, previously unseen outdoor terrains. Code: https://bit.ly/498b0CV - Project page:https://bit.ly/3M6nMHH"
+    ]
+  },
+  {
+    "arxiv_id": "2609.30715",
+    "citation_title": [
+      "RoboMonitor: Label-Efficient Runtime Monitoring of Robot Task Execution via Predictive Representation Learning"
+    ],
+    "citation_author": [
+      "Ajith, Abhiroop",
+      "Narayanan, Gokul",
+      "Coelho, Kyle",
+      "Zhao, Tingji",
+      "Shahapurkar, Yash",
+      "Zhu, Brian",
+      "Erdogan, Melih",
+      "Krubasik, Ted",
+      "Chamzas, Constantinos",
+      "Solowjow, Eugen"
+    ],
+    "citation_date": [
+      "2026/09/25"
+    ],
+    "citation_online_date": [
+      "2026/09/25"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.30715"
+    ],
+    "citation_arxiv_id": [
+      "2609.30715"
+    ],
+    "citation_abstract": [
+      "Learned robot policies produce actions, but their outputs alone do not establish whether execution is progressing as intended. Robot execution monitoring requires identifying the current execution phase, detecting failures, and recognizing task completion from observations available during execution. Training such monitors requires annotations that are scarce in datasets collected for robot-policy learning. We present RoboMonitor, a label-efficient vision--language execution monitor that learns from these datasets before introducing monitoring supervision. We pre-train on 25 hours of multi-camera trajectories spanning 12 manipulation tasks and two robot embodiments, using action-conditioned future-feature prediction, inverse dynamics, and masked-present prediction. We then transfer the learned visual and context encoders to a causal monitor and apply temporal supervised fine-tuning (Temporal SFT), which combines supervision throughout each observation window with consistency objectives within and across overlapping windows. At deployment, RoboMonitor requires only the task instruction and camera observations. On a four-task monitoring benchmark, RoboMonitor trained with 52 labeled episodes achieves 93.1% mean phase accuracy and 85.9% macro recall over two fine-tuning seeds, exceeding Qwen3-VL and Robometer trained with the same monitoring supervision. Its phase accuracy also exceeds that of both Qwen3-VL and Robometer trained with 100 episodes. A Qwen3-VL ablation shows that Temporal SFT reduces mean spurious phase switching from 15.23% to 4.95%. In closed-loop deployment, the integrated system completes 39 of 40 simulated Toolbox Sorting trials and 35 of 40 real-world Reel Packing trials, with no false recovery triggers observed."
+    ]
+  },
+  {
+    "arxiv_id": "2608.15680",
+    "citation_title": [
+      "Robo-Dopamine 2.0: History-Conditioned and OOD-Aware Process Reward Modeling for Robotic Manipulation"
+    ],
+    "citation_author": [
+      "Xu, Yijie",
+      "Jin, Haopeng",
+      "Zhou, Run",
+      "Liu, Shengbang",
+      "Chen, Sixiang",
+      "Cheng, Hongyang",
+      "Hu, Sicheng",
+      "Co, Peterson",
+      "Luo, Jinwen",
+      "Tan, Huajie",
+      "Zhang, Shanghang"
+    ],
+    "citation_date": [
+      "2026/08/16"
+    ],
+    "citation_online_date": [
+      "2026/08/16"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2608.15680"
+    ],
+    "citation_arxiv_id": [
+      "2608.15680"
+    ],
+    "citation_abstract": [
+      "Vision-language-action (VLA) models improve robotic manipulation but remain vulnerable to compounding errors, scene changes, and off-trajectory states. Reinforcement learning can refine pretrained VLA policies, yet sparse success signals hinder exploration, while engineered dense rewards are costly and task-specific. Existing learned visual reward models often rely on static before-after observations, causing temporal ambiguity and weak discrimination between robustness-preserving variations and task-invalid failures under out-of-distribution (OOD) execution. We introduce Robo-Dopamine 2.0, a history- and OOD-aware process reward model with a pairwise prediction interface. It combines (1) history-conditioned pairwise rewards that use source-aligned reference panels for synthetic OOD queries and observed rollout history for online queries, while preserving the queried endpoints, and (2) an OOD-aware signed progress space that represents valid progress, robustness, failure, and recovery. A Signed-Hop Curriculum with transition-aware replay learns coarse execution ordering before fine-grained progress calibration. We also construct an OOD trajectory dataset and a five-family benchmark. Reference panels improve mean visual order consistency (VOC) from 0.967 to 0.986 and OOD-robust VOC from 0.906 to 0.958. With the same 400K pairwise-reward budget, Signed-Hop training with 25% replay reaches 0.9872 mean VOC, compared with 0.9858 for a matched-pool shuffled control. In downstream reinforcement learning, the full model achieves 86.8% mean RoboTwin success and 71/80 successful real-world insertions."
+    ]
+  },
+  {
+    "arxiv_id": "2609.39755",
+    "citation_title": [
+      "Experience-Driven Continual Learning of Terrain Traversability for Quadruped Robots"
+    ],
+    "citation_author": [
+      "Bricarello, Luca",
+      "Soares, João Carlos Virgolino",
+      "Sanchez-Delgado, Alberto",
+      "Mastrogiovanni, Fulvio",
+      "Semini, Claudio"
+    ],
+    "citation_date": [
+      "2026/09/30"
+    ],
+    "citation_online_date": [
+      "2026/09/30"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.39755"
+    ],
+    "citation_arxiv_id": [
+      "2609.39755"
+    ],
+    "citation_abstract": [
+      "Safe and efficient quadruped navigation over unfamiliar terrain requires predicting terrain-robot interaction before contact: geometry and visual appearance alone cannot reveal how the robot will slip, load its feet, or expend energy. This paper presents a continual learning pipeline that uses locomotion experience to learn these interaction outcomes from pre-contact images and continually updates the predictions as new contacts are observed. Pre-contact descriptors, produced by a DINOv3 backbone model frozen during training, are mapped to five proprioceptive indicators weighted according to measurement reliability: planar foot slip, mean normal ground-reaction force, traction index, cost of transport, and touchdown loading rate. A compact evidential regressor allows us to predict these indicators together with aleatoric and epistemic uncertainty from the visual descriptors. Continual adaptation combines bounded experience replay with a validation gate: candidate models replace the deployed predictor only when they improve performance on recent held-out data while keeping degradation on historical held-out data within a prescribed tolerance. Predictions and epistemic uncertainty are projected into a local multilayer map and combined into a conservative traversability score map whose property weights can be adjusted without retraining. The resulting map is used for downstream navigation tests. The ROS2 implementation supports evaluation on a Unitree Go2 in simulation and on hardware, with models trained separately in each domain. On a sequential hardware stream over three previously unseen terrains, gated replay reduces final anchor negative log-likelihood (NLL) degradation by 23.1% relative to replay without the gate while attaining similar new-terrain adaptation."
+    ]
+  },
+  {
+    "arxiv_id": "2109.08273",
+    "citation_title": [
+      "ThriftyDAgger: Budget-Aware Novelty and Risk Gating for Interactive Imitation Learning"
+    ],
+    "citation_author": [
+      "Hoque, Ryan",
+      "Balakrishna, Ashwin",
+      "Novoseller, Ellen",
+      "Wilcox, Albert",
+      "Brown, Daniel S.",
+      "Goldberg, Ken"
+    ],
+    "citation_date": [
+      "2021/09/17"
+    ],
+    "citation_online_date": [
+      "2021/09/17"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2109.08273"
+    ],
+    "citation_arxiv_id": [
+      "2109.08273"
+    ],
+    "citation_abstract": [
+      "Effective robot learning often requires online human feedback and interventions that can cost significant human time, giving rise to the central challenge in interactive imitation learning: is it possible to control the timing and length of interventions to both facilitate learning and limit burden on the human supervisor? This paper presents ThriftyDAgger, an algorithm for actively querying a human supervisor given a desired budget of human interventions. ThriftyDAgger uses a learned switching policy to solicit interventions only at states that are sufficiently (1) novel, where the robot policy has no reference behavior to imitate, or (2) risky, where the robot has low confidence in task completion. To detect the latter, we introduce a novel metric for estimating risk under the current robot policy. Experiments in simulation and on a physical cable routing experiment suggest that ThriftyDAgger's intervention criteria balances task performance and supervisor burden more effectively than prior algorithms. ThriftyDAgger can also be applied at execution time, where it achieves a 100% success rate on both the simulation and physical tasks. A user study (N=10) in which users control a three-robot fleet while also performing a concentration task suggests that ThriftyDAgger increases human and robot performance by 58% and 80% respectively compared to the next best algorithm while reducing supervisor burden."
+    ]
+  },
+  {
+    "arxiv_id": "2410.19989",
+    "citation_title": [
+      "On-Robot Reinforcement Learning with Goal-Contrastive Rewards"
+    ],
+    "citation_author": [
+      "Biza, Ondrej",
+      "Weng, Thomas",
+      "Sun, Lingfeng",
+      "Schmeckpeper, Karl",
+      "Kelestemur, Tarik",
+      "Ma, Yecheng Jason",
+      "Platt, Robert",
+      "van de Meent, Jan-Willem",
+      "Wong, Lawson L. S."
+    ],
+    "citation_date": [
+      "2024/10/25"
+    ],
+    "citation_online_date": [
+      "2025/05/14"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2410.19989"
+    ],
+    "citation_arxiv_id": [
+      "2410.19989"
+    ],
+    "citation_abstract": [
+      "Reinforcement Learning (RL) has the potential to enable robots to learn from their own actions in the real world. Unfortunately, RL can be prohibitively expensive, in terms of on-robot runtime, due to inefficient exploration when learning from a sparse reward signal. Designing dense reward functions is labour-intensive and requires domain expertise. In our work, we propose GCR (Goal-Contrastive Rewards), a dense reward function learning method that can be trained on passive video demonstrations. By using videos without actions, our method is easier to scale, as we can use arbitrary videos. GCR combines two loss functions, an implicit value loss function that models how the reward increases when traversing a successful trajectory, and a goal-contrastive loss that discriminates between successful and failed trajectories. We perform experiments in simulated manipulation environments across RoboMimic and MimicGen tasks, as well as in the real world using a Franka arm and a Spot quadruped. We find that GCR leads to a more-sample efficient RL, enabling model-free RL to solve about twice as many tasks as our baseline reward learning methods. We also demonstrate positive cross-embodiment transfer from videos of people and of other robots performing a task. Website: https://gcr-robot.github.io/."
+    ]
+  },
+  {
+    "arxiv_id": "2609.27068",
+    "citation_title": [
+      "HiRE: Hindsight Reward Editing for Policy Finetuning"
+    ],
+    "citation_author": [
+      "Niu, Haoyi",
+      "Han, Zhengtao",
+      "Ji, Yufeng",
+      "Li, Zhongyu",
+      "Sreenath, Koushil"
+    ],
+    "citation_date": [
+      "2026/09/22"
+    ],
+    "citation_online_date": [
+      "2026/09/22"
+    ],
+    "citation_pdf_url": [
+      "https://arxiv.org/pdf/2609.27068"
+    ],
+    "citation_arxiv_id": [
+      "2609.27068"
+    ],
+    "citation_abstract": [
+      "Pre-trained robot policies always require finetuning to adapt to specific environments. Reinforcement Learning (RL) offers high performance potential because it improves action optimality rather than simply mimicking data. However, such potential depends heavily on reward quality. Sparse rewards lack process feedback, human-designed rewards are costly and biased, and semantic rewards from foundation representations are often not control-centric. We propose Hindsight Reward Editing (HiRE), a training-free framework to break this reward bottleneck. HiRE bridges the broad knowledge of foundation representation models with physical control awareness, by contrasting successful and failed trajectories in hindsight. It calibrates foundation representation models by identifying \"trap states\" that are predicted as high-rewarding states yet eventually result in failure, and vice versa. HiRE explicitly penalizes these traps while boosting rewards for critical successful states. This approach can be flexibly compatible with any foundation representations and RL algorithms. Experiments show that HiRE consistently outperforms other reward recipes by delivering dense, control-aware feedback that prevents value function collapse and reward hacking, thereby achieving superior sample efficiency, stable policy updates, and higher performance ceilings, e.g., at least 3x performance of the base policies. Qualitative results are at https://hire-project.github.io ."
+    ]
+  }
+]

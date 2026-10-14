@@ -1,0 +1,13 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 96.17it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/autodl-tmp/monitor2/experiments/prerequisite_probe/run_monitor_qwen.py", line 264, in <module>
+    main()
+  File "/root/autodl-tmp/monitor2/experiments/prerequisite_probe/run_monitor_qwen.py", line 234, in main
+    prompt = prompt_for(method, row["instruction"], calls.get("D", {}).get("raw", ""))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/autodl-tmp/monitor2/experiments/prerequisite_probe/run_monitor_qwen.py", line 147, in prompt_for
+    return COMMON.format(instruction=instruction) + "\n" + task
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: '"goal_before_complete"'

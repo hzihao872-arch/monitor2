@@ -1,0 +1,656 @@
+Large Reward Models: Generalizable Online Robot Reward Generation with Vision-Language Models
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+I INTRODUCTION
+II RELATED WORK
+III METHODOLOGY
+III-A Extracting Reward Signals from Multi-domain Unlabeled Videos
+III-B Tri-faceted Reward Formulation
+III-C Training LRMs for Reward Generation
+III-D Online Policy Refinement via LRM-Generated Rewards
+IV EXPERIMENTAL RESULTS
+IV-A Evaluating Large Reward Models (LRMs)
+IV-B Policy Refinement on the ManiSkill3 Benchmark
+IV-C Query Interval and Inference Cost
+IV-D Real-World Policy Self-Improvement
+V CONCLUSIONS
+References
+License: arXiv.org perpetual non-exclusive license
+arXiv:2603.16065v3 [cs.RO] 30 Sep 2026
+Large Reward Models: Generalizable Online Robot
+Reward Generation with Vision-Language Models
+Yanru Wu
+Affiliation: USC Physical Superintelligence Lab
+Weiduo Yuan
+Affiliation: USC Physical Superintelligence Lab
+Esteban Martinez Licon
+Affiliation: USC Physical Superintelligence Lab
+Ang Qi
+Affiliation: USC Physical Superintelligence Lab
+Vitor Guizilini
+Affiliation: Toyota Research Institute†Equal advising
+Jiageng Mao
+Yue Wang
+Abstract
+Reinforcement Learning (RL) has shown strong potential for improving robotic manipulation policies, yet its practical use remains bottlenecked by the difficulty of specifying reward functions that are both semantically meaningful and reusable across tasks.
+In this paper, we propose Large Reward Models (LRMs), a framework that adapts foundation VLMs into frame-level reward generators for robot policy refinement.
+We specialize a state-of-the-art VLM on a multi-source dataset spanning real-world robot trajectories, human-object interactions, and simulated manipulation environments.
+Unlike prior approaches that mainly evaluate trajectories post-hoc, LRMs expose multiple reward interfaces from visual observations: progress estimation, task completion, and temporal contrastive comparison.
+Starting from an imitation-learned policy, we use these VLM-derived rewards to guide PPO refinement on held-out long-horizon manipulation tasks.
+Our experiments show that LRM progress rewards provide the strongest non-privileged online refinement signal, improving the IL baseline and narrowing the gap to privileged environment rewards.
+We further deploy progress rewards for progress-weighted behavioral cloning on four real-world manipulation tasks spanning two robot platforms, improving over SFT on all four tasks.
+These results suggest that modality-specific specialization of foundation VLMs can provide practical visual reward signals for both simulated policy refinement and physical robot self-improvement without hand-coded task rewards.
+Fig. 1: Overview of Large Reward Models. LRMs instantiate three modality-specific reward models from the same Qwen3-VL-8B-Instruct initialization: Temporal Contrastive Reward (rc​o​n​t) for relative temporal ranking, Absolute Progress Reward (rp​r​o​g) for dense progress estimation, and Task Completion Reward (rc​o​m​p) for terminal success verification. Completion and contrastive use separate LoRA adapters on a frozen backbone, while progress additionally updates the vision encoder and multimodal merger. The outputs represent separately trained reward interfaces rather
+than simultaneous predictions from a multi-task head. During single-interface deployment, one reward model is selected for the downstream setting, and its structured text response is parsed into scalar feedback.
+I INTRODUCTION
+The development of generalist robot policies has been accelerated by large-scale visuomotor and vision-language-action pre-training across diverse robotic datasets [1, 2, 3, 4]. These policies provide strong imitation-learning (IL) backbones, but IL pre-training alone can still plateau on tasks requiring high precision, semantic judgment, or long-horizon coordination. Reinforcement learning (RL) offers a principled mechanism for post-training policy refinement and has shown progress in both real-world manipulation and broader robot learning pipelines [5, 6, 7, 8, 9, 10]. Its effectiveness, however, remains tightly coupled to the availability of accurate, dense, and task-aware reward functions. In real-world and complex simulated environments, obtaining such rewards is still a major bottleneck, as traditional approaches often rely on labor-intensive human feedback or brittle task-specific reward engineering.
+Learning visual rewards has therefore become a central direction for scalable robot policy improvement. Prior work has learned reward representations or temporal structure from demonstrations and human videos [11, 12, 13, 14], used language or vision-language models to generate reward programs, preferences, progress estimates, or token-probability rewards [15, 16, 17, 18, 19, 20], and adapted process-level or critic-style supervision for robotic manipulation [21, 22, 23, 24]. These methods demonstrate that foundation models can provide semantically meaningful feedback, but online policy refinement imposes additional interface constraints: rewards must be state-dependent, temporally informative, easy to parse into scalar feedback, and computationally practical during closed-loop interaction. This motivates directly specializing foundation VLMs into compact, frame-level reward interfaces rather than relying on a single monolithic reward format.
+To bridge this gap, we introduce Large Reward Models (LRMs), a framework for adapting foundation VLMs into frame-level reward generators. We develop a suite of LRMs based on the Qwen3-VL [25] architecture and train them to formulate state-dependent rewards directly from visual observations. To support evaluation beyond the training domains, our models are trained on a balanced collection sampled from 24 data sources. This multi-domain dataset encompasses real-robot corpora (Open X-Embodiment [3]), human-object interaction data (HOI4D [26], EgoDex [27]), and simulated environments (LIBERO [28], RoboCasa [29]).
+LRMs provide Temporal Contrastive, Absolute Progress, and Task Completion rewards for relative temporal ordering, dense progress shaping, and semantic success verification, respectively. This modular formulation allows us to compare reward modalities without assuming that their outputs should be directly combined.
+We evaluate our LRM framework on held-out long-horizon manipulation benchmarks within ManiSkill3 [30]. This benchmark serves as a testbed for coupling policy learning with learned visual rewards, allowing us to measure whether VLM-derived feedback can improve policies without privileged simulator rewards. We further deploy the progress interface for real-world weighted behavioral cloning on four physical manipulation tasks spanning two robot platforms.
+In simulation, all three LRM reward interfaces achieve higher mean success rates than the IL baseline, with progress reward performing best; in the real world, LRM progress scoring improves over SFT on all four tasks.
+In summary, our main contributions are as follows:
+•
+We introduce Large Reward Models (LRMs), a framework that adapts foundation VLMs into frame-level visual reward generators for robot policy refinement.
+•
+The framework provides contrastive, progress, and completion interfaces that convert VLM outputs into parseable, state-dependent reward signals.
+•
+Experiments validate LRMs through online PPO refinement on held-out ManiSkill3 tasks and progress-weighted behavioral cloning across four real-world tasks on two robot platforms.
+•
+We analyze reward combination, query intervals, and inference latency for practical deployment.
+II RELATED WORK
+Policy refinement beyond imitation pre-training.
+Large-scale robot policies trained from diverse demonstrations and vision-language supervision have improved general-purpose manipulation [1, 2, 3, 4], yet precision-sensitive and long-horizon tasks still benefit from post-training refinement. Prior work explores simulation transfer, residual or interactive RL, real-world RL, and self-improving VLA pipelines [31, 32, 33, 34, 6, 7, 8, 9, 10]. Across these approaches, constructing reusable visual reward signals remains an important challenge. LRMs complement these approaches by specializing VLMs as visual reward models.
+Learned visual reward models for robotics.
+To reduce manual reward engineering, prior methods learn rewards, representations, or temporal structure from demonstrations, human videos, and language-conditioned robot data [11, 12, 13, 14]. Recent foundation-model approaches further use LLMs and VLMs to generate reward code, infer preferences, estimate progress, or evaluate trajectory quality [15, 16, 17, 18, 19, 20]. Concurrent work studies procedure-grounded progress, stage-aware value estimation, failure-aware dense rewards, transition-alignment rewards, and joint absolute-relative reward learning [35, 36, 37, 38, 39]. LRMs instead focus on modality-specific adaptation [40] of the same pretrained VLM into three separately deployable frame-level reward interfaces, evaluated through closed-loop PPO refinement and offline real-world adaptation.
+Process-level supervision and dense feedback.
+Sparse terminal rewards motivate intermediate progress signals. Process reward models provide step-level supervision [21], while robotics methods use critic-style VLM feedback, process rewards, or self-supervised progress estimation [22, 23, 24]. LRMs build on this direction by training separate contrastive, progress, and completion interfaces from temporally grounded video supervision.
+III METHODOLOGY
+While Reinforcement Learning (RL) can surpass imitation learning plateaus, its effectiveness depends on reward functions that provide both temporal resolution and semantic task understanding. To reduce the need for task-specific reward engineering, we propose Large Reward Models (LRMs), a framework that adapts foundation VLMs into frame-level visual reward generators.
+Our framework utilizes Reinforcement Learning (RL) to refine a robotic policy πϕ by maximizing the expected return under a selected reward interface m:
+|
+| J⁡(πϕ,m)=𝔼τ∼πϕ​[∑t=0Tγt​rm​(ℐtm,d)]
+|
+| (1)
+where ℐtm denotes the modality-specific visual input and d is the task description. To obtain reward mappings without manual reward engineering, we construct a structured dataset 𝒟={(It,d,pt)} from unlabeled videos and specialize a foundation VLM into three reward interfaces: Temporal Contrastive (rc​o​n​t), Absolute Progress (rp​r​o​g), and Task Completion (rc​o​m​p). Each interface maps visual observations and task language into parseable reward feedback, enabling LRMs to serve as frame-level reward providers for policy refinement.
+III-A Extracting Reward Signals from Multi-domain Unlabeled Videos
+To scale reward generation without manual reward labels, we extract supervision directly from a balanced subset of unlabeled video trajectories V sampled from 24 sources. We use the temporal order of successful or demonstrative episodes as weak supervision: later frames are treated as higher-progress states than earlier frames. By mapping each sampled video timeline to a discrete progress scale, we transform raw frames into a structured dataset 𝒟={(It,d,pt)} for training visual reward models.
+Multi-domain Dataset Composition: To improve transfer to held-out environments, we sample training episodes from 24 data sources covering diverse physical interactions, visual domains, and task semantics. We count sources at the dataset level rather than the collection-family level: each named Open X-Embodiment sub-dataset is counted independently because it corresponds to a distinct robot embodiment, workspace, collection protocol, or task distribution. The source pool contains 20 Open X-Embodiment real-robot sub-datasets [3], 2 egocentric human-object interaction datasets (HOI4D [26] and EgoDex [27]), and 2 simulated benchmarks (LIBERO [28] and RoboCasa [29]).
+Temporal Progression Sampling: To construct supervision for the three reward interfaces, we sample each episode at normalized times p∈{0.0,0.1,0.2,…,0.9,1.0}, yielding 11 keyframes spanning the recorded execution. Each frame is paired with its temporal label and the episode’s original task description d. Normalizing the timeline places episodes of different durations on a common scale and provides supervision without manual frame-level reward annotation.
+III-B Tri-faceted Reward Formulation
+To bridge high-level semantic instructions and the feedback requirements of policy optimization, we formulate three reward interfaces from the temporal progress of multi-domain videos. The interfaces are complementary but not assumed to be naturally commensurate: each is intended to support a different use case in robot policy refinement.
+The Temporal Contrastive Reward is designed to provide a relative directional gradient by comparing the current state against a previous observation. Given the current frame It, a previous frame It−Δ​t, and the task description d, this format evaluates which state is semantically closer to the task goal. The qualitative progression is mapped to a discrete numerical reward rc​o​n​t:
+|
+| rc​o​n​t={+1.0,if ​It​ is closer to the goal than ​It−Δ​t−1.0,if ​It−Δ​t​ is closer to the goal than ​It0.0,if no valid selection is produced
+|
+| (2)
+By gauging relative progress between frames, this formulation avoids the need for globally calibrated absolute scores and provides directional feedback about local task improvement.
+To provide spatial-temporal grounding, the Absolute Progress Reward is formulated as ordinal progress prediction over discretized normalized progress bins. Given the current observation It, optionally with the initial state I0 as a visual anchor, and the task description d, the reward signal rp​r​o​g represents a normalized completion score:
+|
+| rp​r​o​g∈{0.0,0.1,0.2,…,0.9,1.0}
+|
+| (3)
+The eleven bins represent normalized temporal progress under the training supervision, allowing the interface to assign graded scores to intermediate observations.
+The Task Completion Reward provides a definitive binary assessment of the current state It. Given the observation It, optionally with the initial state I0 as visual context, and task description d, the signal is defined as a binary classification to determine if the semantic requirements of the goal have been fully satisfied:
+|
+| rc​o​m​p={1,if semantic requirements are met0,otherwise
+|
+| (4)
+By outputting a binary success signal rc​o​m​p, this modality provides a semantic terminal judgment that is useful for success verification, sparse reward assignment, and offline trajectory filtering.
+III-C Training LRMs for Reward Generation
+We initialize each LRM from Qwen3-VL-8B-Instruct and train the three reward modalities separately on the structured dataset 𝒟. Completion and contrastive update distinct Low-Rank Adaptation (LoRA) adapters [40] while keeping the pretrained backbone frozen. Progress updates its LoRA adapter together with the vision encoder and multimodal merger, while the remaining backbone parameters stay frozen. We do not introduce new reward tokens or architectural reward heads. Each model generates text using the normal autoregressive vocabulary, and a deterministic parser converts the structured output into a scalar or binary reward. Prompting specifies the visual context, task instruction, and output schema rather than task-specific hand-coded reward rules. For all three modalities, training mixes anchored and unanchored visual inputs: unanchored inputs contain only the minimal observation set for that modality, while anchored inputs additionally include the episode’s initial frame I0 as visual context. Thus, progress and completion examples may use either It or (I0,It), while contrastive examples may use either (It−Δ​t,It) or (I0,It−Δ​t,It). Contrastive deployment additionally generates a short physical comparison before the final reward. The zero-shot Qwen3-VL baselines use the original pretrained weights with the same prompts and parsers.
+The contrastive discrimination model is trained as a preference judge to provide relative directional gradients by comparing the visual input ℐc​o​n​t, which contains the two temporal frames It−Δ​t and It in randomized order and may additionally include the initial frame I0. We utilize Direct Preference Optimization (DPO) [41] to align the model’s preferences with the temporal progression recorded in 𝒟 using the following objective:
+|
+| LDPO(θ;πref)=−𝔼[logσ(β​log⁡πθ​(yw∣ℐc​o​n​t,d)πref​(yw∣ℐc​o​n​t,d)−βlogπθ​(yl∣ℐc​o​n​t,d)πref​(yl∣ℐc​o​n​t,d))]
+|
+| (5)
+where (yw,yl) are the preferred and rejected text responses induced by temporal order. We ask the model to produce a short physical comparison before outputting rc​o​n​t∈{+1,−1,0}, so the reward is based on task-relevant object interactions rather than low-level visual changes.
+The progress estimation and completion judgment models are both trained via Supervised Fine-Tuning (SFT) to map their visual inputs to rp​r​o​g∈{0.0,…,1.0} and rc​o​m​p∈{0,1}, respectively. For the progress estimation model, we maximize the likelihood of a joint reasoning-and-label sequence:
+|
+| ℒprog=−𝔼[logP(CoT,rprog∣ℐp​r​o​g,d)]
+|
+| (6)
+This reasoning-first supervision encourages the model to articulate physical cues before concluding rp​r​o​g. Although CoT is used for supervision, progress inference returns only the final structured score. In contrast, the completion judgment model is optimized to directly predict the binary success signal:
+|
+| ℒcomp=−𝔼⁡[log⁡P⁡(rcomp∣ℐc​o​m​p,d)]
+|
+| (7)
+This provides a terminal signal for goal verification and policy refinement.
+III-D Online Policy Refinement via LRM-Generated Rewards
+To move beyond imitation learning plateaus, we use the frozen LRMs as visual reward providers for refining a base policy πϕ initialized from πS​F​T. This stage uses closed-loop interaction and PPO updates, while keeping the reward model fixed.
+Online Interaction and Reward Integration: During each episode, the policy interacts with the environment by sampling actions at∼πϕ​(at∣It,d) based on the current visual observation It and task description d. To bridge the computational gap between VLM inference and control, we use an Interval-Hold strategy. The selected LRM is queried every K environment steps to compute rm=LRMm​(ℐtm,d) for one reward modality m∈{c​o​n​t,p​r​o​g,c​o​m​p}.
+|
+| rt=wm​rm,
+|
+| (8)
+where wm is the scaling factor for the selected modality. The reward rt is cached and held for K steps. Each single-interface policy refinement run uses one selected reward model and its modality-specific parameters.
+Policy Optimization and Refinement: We utilize Proximal Policy Optimization (PPO) to update the policy parameters ϕ. The policy is optimized with the clipped surrogate objective:
+|
+| ℒPPO​(ϕ)=−𝔼t​[min⁡(ρt​A^t,ρ¯t​A^t)],
+|
+| (9)
+where
+ρt=πϕ​(at∣It,d)/πϕold​(at∣It,d)
+is the probability ratio between the updated and behavior policies,
+and ρ¯t=clip⁡(ρt,1−ϵ,1+ϵ)
+is its clipped value. To ensure stable convergence and handle the dense nature of LRM feedback, we employ Generalized Advantage Estimation (GAE) to compute the advantage A^t:
+|
+| A^t=∑l=0T−t−1(γ​λ)l​δt+l,δt=rt+γ​Vψ​(It+1)−Vψ​(It),
+|
+| (10)
+where δt is the TD error computed from the LRM reward rt,
+enabling optimization from visual feedback rather than privileged
+simulator state or hand-coded rewards.
+IV EXPERIMENTAL RESULTS
+We evaluate LRMs at both the reward-model and policy levels. We first compare each specialized reward interface with zero-shot Qwen3-VL using identical prompts and parsers. We then assess downstream utility through closed-loop PPO refinement on held-out ManiSkill3 [30] tasks and analyze reward alignment with privileged simulator signals on collected rollouts. Query-interval and latency experiments quantify the computational trade-offs of online deployment. Finally, we evaluate progress-weighted behavioral cloning on four real-world tasks across two robot platforms, demonstrating an offline use of LRM feedback for policy adaptation.
+IV-A Evaluating Large Reward Models (LRMs)
+Before policy refinement, we evaluate whether specialization improves reward prediction.
+We test the three reward modalities—rc​o​n​t, rp​r​o​g, and rc​o​m​p—against the zero-shot Qwen3-VL-8B-Instruct baseline on held-out evaluation sets. This isolates modality-specific specialization from prompt engineering because the baseline uses the original pretrained weights with the same reward prompts and parsers.
+Contrastive Discrimination Model:
+Table I compares the zero-shot baseline with our fine-tuned LRM on the generation quality of the Temporal Contrastive Reward, rc​o​n​t=LRMc​o​n​t​(ℐc​o​n​t,d).
+The ranking correlation metrics improve: both Kendall’s τ and Spearman’s ρ increase by 15.3%. These metrics capture the model’s ability to produce consistent temporal orderings required for a stable directional gradient.
+TABLE I: Contrastive Discrimination performance. LRM specialization improves ranking correlation as measured by Kendall’s τ and Spearman’s ρ, indicating more consistent temporal ordering.
+| Model
+| Kendall’s τ
+| Spearman’s ρ
+| Qwen3-VL
+| 0.257
+| 0.257
+| Our LRM
+| 0.296
+| 0.296
+| Improvement
+| +15.3%
+| +15.3%
+Progress Estimation Model:
+Table II reports progress prediction against temporal proxy labels. Relative to zero-shot Qwen3-VL, LRM reduces MAE from 0.378 to 0.302 and RMSE from 0.490 to 0.395, while Acc@±0.2 increases from 41.95% to 50.58%. Exact accuracy changes more modestly, from 13.10% to 13.87%, so the gain is more apparent when allowing a tolerance around the target label. Figure 2 presents this comparison across tolerance thresholds.
+Together, these metrics show that LRM specialization improves agreement with the temporal progress labels relative to the base VLM.
+TABLE II: Progress estimation against temporal proxy labels. LRM has lower MAE and RMSE and higher prediction accuracy than zero-shot Qwen3-VL.
+| Metric
+| Qwen3-VL
+| Our LRM
+| Δ
+| Exact Acc
+| 13.10%
+| 13.87%
+| +0.77%
+| Acc@±0.2
+| 41.95%
+| 50.58%
+| +8.63%
+| MAE
+| 0.378
+| 0.302
+| −20.0%
+| RMSE
+| 0.490
+| 0.395
+| −19.3%
+Fig. 2: Cumulative accuracy at varying tolerance thresholds (±Δ). LRM improves over zero-shot Qwen3-VL by 8.63 percentage points at ±0.2.
+Task Completion Model:
+The task completion model achieves 69.38% accuracy, compared to 69.23% for zero-shot Qwen3-VL. Specialization provides little additional benefit on this evaluation set, consistent with a strong base-model prior for goal recognition.
+IV-B Policy Refinement on the ManiSkill3 Benchmark
+Starting from a π0.5 SFT baseline, we evaluate policy refinement on ManiSkill3 [30] for 30 RL iterations (≈768,000 environment steps). We organize the closed-loop results into two comparisons. Table III compares our reward interfaces against zero-shot Qwen3-VL reward prompts, a privileged environment reward upper bound, and a tri-reward combination. Table IV separately compares LRM-rp​r​o​g with prior progress-style VLM reward models.
+Closed-Loop Performance Evaluation: Table III shows that the strongest LRM reward is LRM-rp​r​o​g, which reaches 58.94%±2.18% from a 55.62%±3.30% SFT baseline. This improves over the IL baseline while still remaining below the privileged environment reward upper bound (60.69%±1.90%). The benefit of specialization is clearest for progress and contrastive rewards: LRM-rp​r​o​g improves over the corresponding zero-shot Qwen3-VL progress prompt by 4.57 percentage points, while LRM-rc​o​n​t improves over the zero-shot contrastive prompt by 3.25 percentage points. In contrast, the base and adapted completion models achieve similar mean performance, consistent with the intrinsic completion evaluation above.
+TABLE III: Closed-loop success rate (%) on ManiSkill3. Mean ± standard deviation (SD) over 5 evaluation seeds for 1 trained checkpoint per condition. LRM-rp​r​o​g has the highest non-privileged mean success rate.
+| Group
+| Method
+| Success Rate
+| π0.5 SFT Baseline
+| 55.62±3.30
+| Privileged
+| Env Reward
+| 60.69±1.90
+| Zero-shot VLM
+| Qwen3-VL-rc​o​m​p
+| 57.63±2.53
+| Zero-shot VLM
+| Qwen3-VL-rc​o​n​t
+| 53.31±1.20
+| Zero-shot VLM
+| Qwen3-VL-rp​r​o​g
+| 54.37±2.53
+| LRM
+| LRM-rc​o​m​p
+| 57.00±2.22
+| LRM
+| LRM-rc​o​n​t
+| 56.56±1.15
+| LRM
+| LRM-rp​r​o​g
+| 58.94±2.18
+| Combined
+| Tri-reward LRM
+| 55.31±1.94
+The Tri-reward LRM directly sums the three reward outputs and reaches 55.31%±1.94%, below all individual LRM interfaces. These results favor selecting an interface for the downstream setting over simply mixing all three outputs: progress supplies intermediate feedback for policy improvement, completion supports terminal success verification, and contrastive comparison supplies relative temporal ordering.
+Table IV compares prior progress reward models under the same PPO protocol and query interval (K=10). LRM-rp​r​o​g achieves the highest mean success rate in this setting.
+Open-Loop Reward Quality Analysis: We assess reward alignment on 80 trajectories using privileged simulator signals. Each LRM remains fixed; the SFT and RL columns identify the policies generating the evaluated trajectories. For absolute rewards, we report ROC-AUC, pairwise accuracy, and both global and per-trajectory Pearson correlation. These measures characterize discriminative performance and temporal agreement at complementary levels. For contrastive reward, step-level metrics assess the direction of local changes and the monotonicity of accumulated feedback.
+In Table V, completion and progress ROC-AUC are higher on RL-policy rollouts (0.795 and 0.950) than on SFT-policy rollouts (0.660 and 0.874). Pairwise accuracy follows the same pattern, increasing from 45.4% to 63.9% for completion and from 80.1% to 93.4% for progress. Progress reaches a per-trajectory Pearson correlation of 0.671 on RL rollouts, indicating positive agreement within individual executions as well as in the pooled observations. Completion also exhibits positive alignment, with global and per-trajectory correlations of 0.757 and 0.331, respectively.
+TABLE IV: Progress reward comparison on ManiSkill3 (%). All methods use the same PPO setting and K=10. Mean ± SD over 5 evaluation seeds for 1 trained checkpoint per method; LRM-rp​r​o​g has the highest mean success rate.
+| Progress Reward Model
+| Success Rate
+| RoboReward-8B [19]
+| 53.37±1.85
+| Robometer-4B [20]
+| 57.37±1.18
+| TOPReward [18]
+| 51.06±1.63
+| LRM-rp​r​o​g
+| 58.94±2.18
+TABLE V: Open-loop reward alignment. Fixed LRMs show higher agreement with simulator signals on RL-policy rollouts than on SFT-policy rollouts. Columns identify the rollout policy for each reward interface.
+|
+| rc​o​m​p
+| rp​r​o​g
+| Metric
+| SFT
+| RL
+| SFT
+| RL
+| ROC-AUC
+| 0.660
+| 0.795
+| 0.874
+| 0.950
+| Pairwise Acc (%)
+| 45.4
+| 63.9
+| 80.1
+| 93.4
+| Global Pearson
+| 0.398
+| 0.757
+| 0.739
+| 0.773
+| Per-traj Pearson
+| 0.257
+| 0.331
+| 0.577
+| 0.671
+The fixed contrastive LRM maintains similar directional accuracy across the two rollout sets (85.2% and 85.5%; Table VI). Progress recall changes from 85.6% to 86.0%, while cumulative-reward monotonicity on successful trajectories increases from 0.535 to 0.559. Because the reward model remains fixed, these differences reflect the rollout distribution after refinement, in which the policy visits high-progress and successful states more frequently. Together with the absolute-reward results, these measurements indicate that the three LRM interfaces provide task-relevant feedback that is broadly consistent with privileged simulator signals across both SFT and refined-policy rollouts.
+TABLE VI: Open-loop step-level reliability (rc​o​n​t). The fixed contrastive LRM shows similar directional accuracy on SFT and RL rollouts, with slightly higher metrics on RL rollouts.
+| Metric
+| SFT
+| RL-rc​o​n​t
+| Direction Acc (%)
+| 85.2
+| 85.5
+| Progress Recall (%)
+| 85.6
+| 86.0
+| Monotonicity (success)
+| 0.535
+| 0.559
+IV-C Query Interval and Inference Cost
+Table VII evaluates the effect of the reward query interval K. Decreasing K from 10 to 5 doubles the query frequency but does not consistently improve success rates. Completion and progress remain relatively stable across the tested intervals and achieve their highest mean performance at K=10, whereas contrastive reward has a lower mean at K=16. This pattern is consistent with frequent queries observing nearly identical states, while long holds can apply earlier pairwise judgments to states that have already changed. We therefore use K=10, which halves the query frequency relative to K=5 while maintaining performance and avoiding the degradation observed for contrastive reward at K=16.
+TABLE VII: Query interval sweep (%). Mean ± SD over 5 evaluation seeds for 1 trained checkpoint per configuration. Progress and completion remain stable across the tested intervals, while contrastive reward drops at K=16, supporting K=10 as a practical trade-off.
+| Reward
+| K=5
+| K=10
+| K=16
+| rc​o​m​p
+| 55.50±2.83
+| 57.00±2.22
+| 56.00±0.81
+| rc​o​n​t
+| 57.12±2.05
+| 56.56±1.15
+| 52.62±1.42
+| rp​r​o​g
+| 57.81±3.68
+| 58.94±2.18
+| 56.81±2.65
+Table VIII reports single-query HTTP round-trip latency on an NVIDIA RTX 6000 Ada GPU using representative rollout frames, excluding model loading and server startup. Progress and completion run in the 340–410 ms range with little LoRA overhead, whereas contrastive reward is much slower because it compares two observations and generates the only physical reasoning response. These measurements favor progress or completion for frequent online reward queries and reserve contrastive comparison for settings where relative ordering is worth the additional inference cost.
+TABLE VIII: Single-query reward inference latency. HTTP round-trip time in ms (mean ± SD). Progress and completion are sub-second; contrastive queries include reasoning generation and are substantially slower.
+| Reward Query
+| Qwen3-VL
+| LRM
+| Progress
+| 409±9
+| 360±19
+| Completion
+| 342±6
+| 340±5
+| Contrastive
+| 6838±2184
+| 7093±2307
+Fig. 3: Qualitative comparison of real-world rollouts. On the giraffe-in-bowl task, the SFT baseline places the toy beside the target bowl, whereas the policy after LRM-guided progress-weighted fine-tuning places it inside the bowl. On the tissue-out-of-box task, the SFT baseline fails to grasp the tissue, whereas the policy after LRM-guided progress-weighted fine-tuning successfully grasps and pulls it out of the box. These examples illustrate that LRM-guided adaptation corrects distinct policy failure modes and improves real-world task execution.
+IV-D Real-World Policy Self-Improvement
+We further test whether progress rewards can improve physical robot policies through offline adaptation. Instead of querying a VLM reward online during robot control, we use progress scores to weight collected rollouts for behavioral cloning (BC).
+We evaluate four tasks across two robot platforms: pick up the toy giraffe and place it in the bowl, stack the can on the cube, open a drawer, and pull a tissue out of a tissue box. Starting from the SFT policy, we collect 60 real-world rollouts per task. We score the same rollouts separately with zero-shot Qwen3-VL and LRM progress, using identical prompts and parsers. For each rollout, we sample 5 frames uniformly across the full trajectory and 5 frames from the final 60 frames, remove duplicates, and score the sampled observations with rp​r​o​g. Let Pe denote the sampled progress scores for episode e; we define the episode score as se=mean⁡(top3⁡(Pe)). This top-3 mean is less sensitive to isolated score noise than the peak score and less sensitive to terminal occlusion than the final sampled score.
+We oversample high-confidence rollouts as full trajectories, retain high-progress rollouts as prefixes ending shortly after peak progress, and discard low-progress rollouts. Trajectory duplication implements weighted sampling with the standard BC objective.
+Table IX shows that LRM-scored BC consistently improves over the SFT baseline across all four tasks, with gains ranging from 11.7 to 80.0 percentage points. In contrast, zero-shot Qwen3-VL scoring produces task-dependent outcomes: it improves performance on giraffe-in-bowl and tissue-out-of-box, but reduces success by 11.6 and 28.4 percentage points on can-on-cube and open-drawer. Although Qwen3-VL achieves the highest result on tissue-out-of-box, its mixed effects indicate that LRM specialization provides a more consistent direction of policy improvement across manipulation tasks and robot platforms. Figure 3 presents representative qualitative examples.
+TABLE IX: Real-world progress-weighted BC. Success rates (%) with successful trials out of 60. Across two robot platforms, LRM scoring consistently improves over SFT on all four tasks, whereas zero-shot Qwen3-VL scoring produces task-dependent improvements and degradations.
+| Task
+| SFT Baseline
+| Qwen3-VL-rp​r​o​g
+| LRM-rp​r​o​g
+| Giraffe-in-bowl
+| 38.3 (23/60)
+| 45.0 (27/60)
+| 56.7 (34/60)
+| Can-on-cube
+| 43.3 (26/60)
+| 31.7 (19/60)
+| 55.0 (33/60)
+| Open-drawer
+| 46.7 (28/60)
+| 18.3 (11/60)
+| 61.7 (37/60)
+| Tissue-out-of-box
+| 8.3 (5/60)
+| 95.0 (57/60)
+| 88.3 (53/60)
+V CONCLUSIONS
+We introduced LRMs, which derive modality-specific contrastive, progress, and completion reward models from the same pretrained VLM. All three interfaces achieve higher mean success rates than the IL baseline in our simulation setting, with progress scoring performing best among the evaluated non-privileged rewards and narrowing the gap to privileged environment rewards. Across four real-world tasks on two robot platforms, LRM-scored BC consistently improves over SFT and provides more reliable gains across tasks than zero-shot Qwen3-VL scoring. These results support VLM reward specialization for online policy refinement and offline adaptation without hand-coded task rewards.
+ACKNOWLEDGMENT
+The USC Physical Superintelligence Lab acknowledges generous supports from Toyota Research Institute, Dolby, Google DeepMind, Capital One, Nvidia, and Qualcomm. Yue Wang is also supported by a Powell Research Award.
+References
+[1]
+A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu, et al. (2022)
+Rt-1: robotics transformer for real-world control at scale.
+arXiv preprint arXiv:2212.06817.
+Cited by: §I,
+§II.
+[2]
+A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, X. Chen, K. Choromanski, T. Ding, D. Driess, A. Dubey, C. Finn, et al. (2023)
+Rt-2: vision-language-action models transfer web knowledge to robotic control.
+arXiv preprint arXiv:2307.15818.
+Cited by: §I,
+§II.
+[3]
+A. O’Neill, A. Rehman, A. Maddukuri, A. Gupta, A. Padalkar, A. Lee, A. Pooley, A. Gupta, A. Mandlekar, A. Jain, et al. (2024)
+Open x-embodiment: robotic learning datasets and rt-x models: open x-embodiment collaboration 0.
+In 2024 IEEE International Conference on Robotics and Automation (ICRA),
+pp. 6892–6903.
+Cited by: §I,
+§I,
+§II,
+§III-A.
+[4]
+O. M. Team, D. Ghosh, H. Walke, K. Pertsch, K. Black, O. Mees, S. Dasari, J. Hejna, T. Kreiman, C. Xu, et al. (2024)
+Octo: an open-source generalist robot policy.
+arXiv preprint arXiv:2405.12213.
+Cited by: §I,
+§II.
+[5]
+S. Levine, C. Finn, T. Darrell, and P. Abbeel (2016)
+End-to-end training of deep visuomotor policies.
+Journal of Machine Learning Research 17 (39), pp. 1–40.
+Cited by: §I.
+[6]
+H. Zhu, J. Yu, A. Gupta, D. Shah, K. Hartikainen, A. Singh, V. Kumar, and S. Levine (2020)
+The ingredients of real-world robotic reinforcement learning.
+arXiv preprint arXiv:2004.12570.
+Cited by: §I,
+§II.
+[7]
+R. Mendonca, E. Panov, B. Bucher, J. Wang, and D. Pathak (2024)
+Continuously improving mobile manipulation with autonomous real-world rl.
+arXiv preprint arXiv:2409.20568.
+Cited by: §I,
+§II.
+[8]
+J. Luo, C. Xu, J. Wu, and S. Levine (2025)
+Precise and dexterous robotic manipulation via human-in-the-loop reinforcement learning.
+Science Robotics 10 (105), pp. eads5033.
+Cited by: §I,
+§II.
+[9]
+K. Lei, H. Li, D. Yu, Z. Wei, L. Guo, Z. Jiang, Z. Wang, S. Liang, and H. Xu (2025)
+Rl-100: performant robotic manipulation with real-world reinforcement learning.
+arXiv preprint arXiv:2510.14830.
+Cited by: §I,
+§II.
+[10]
+P. Intelligence, A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo, et al. (2025)
+π0.6∗: a VLA that learns from experience.
+arXiv preprint arXiv:2511.14759.
+Cited by: §I,
+§II.
+[11]
+P. Sermanet, C. Lynch, Y. Chebotar, J. Hsu, E. Jang, S. Schaal, S. Levine, and G. Brain (2018)
+Time-contrastive networks: self-supervised learning from video.
+In 2018 IEEE international conference on robotics and automation (ICRA),
+pp. 1134–1141.
+Cited by: §I,
+§II.
+[12]
+Y. Ma, A. Shen, D. Jayaraman, and O. Bastani (2022)
+Versatile offline imitation from observations and examples via regularized state-occupancy matching.
+In International Conference on Machine Learning,
+pp. 14639–14663.
+Cited by: §I,
+§II.
+[13]
+Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang (2022)
+Vip: towards universal visual reward and representation via value-implicit pre-training.
+arXiv preprint arXiv:2210.00030.
+Cited by: §I,
+§II.
+[14]
+Y. J. Ma, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman (2023)
+Liv: language-image representations and rewards for robotic control.
+In International Conference on Machine Learning,
+pp. 23301–23320.
+Cited by: §I,
+§II.
+[15]
+Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson (2024)
+Rl-vlm-f: reinforcement learning from vision language foundation model feedback.
+arXiv preprint arXiv:2402.03681.
+Cited by: §I,
+§II.
+[16]
+Y. J. Ma, W. Liang, G. Wang, D. Huang, O. Bastani, D. Jayaraman, Y. Zhu, J. Fan, et al. (2024)
+Eureka: human-level reward design via coding large language models.
+In International conference on learning Representations,
+Vol. 2024, pp. 26516–26560.
+Cited by: §I,
+§II.
+[17]
+Y. J. Ma, J. Hejna, C. Fu, D. Shah, J. Liang, Z. Xu, S. Kirmani, P. Xu, D. Driess, T. Xiao, et al. (2025)
+Vision language models are in-context value learners.
+In International Conference on Learning Representations,
+Vol. 2025, pp. 33984–34009.
+Cited by: §I,
+§II.
+[18]
+S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna (2026)
+Topreward: token probabilities as hidden zero-shot rewards for robotics.
+arXiv preprint arXiv:2602.19313.
+Cited by: §I,
+§II,
+TABLE IV.
+[19]
+T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn (2026)
+Roboreward: general-purpose vision-language reward models for robotics.
+arXiv preprint arXiv:2601.00675.
+Cited by: §I,
+§II,
+TABLE IV.
+[20]
+A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox, et al. (2026)
+Robometer: scaling general-purpose robotic reward models via trajectory comparisons.
+arXiv preprint arXiv:2603.02115.
+Cited by: §I,
+§II,
+TABLE IV.
+[21]
+H. Lightman, V. Kosaraju, Y. Burda, H. Edwards, B. Baker, T. Lee, J. Leike, J. Schulman, I. Sutskever, and K. Cobbe (2024)
+Let’s verify step by step.
+In International Conference on Learning Representations,
+Vol. 2024, pp. 39578–39601.
+Cited by: §I,
+§II.
+[22]
+S. Zhai, Q. Zhang, T. Zhang, F. Huang, H. Zhang, M. Zhou, S. Zhang, L. Liu, S. Lin, and J. Pang (2025)
+A vision-language-action-critic model for robotic real-world reinforcement learning.
+arXiv preprint arXiv:2509.15937.
+Cited by: §I,
+§II.
+[23]
+H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co, et al. (2025)
+Robo-dopamine: general process reward modeling for high-precision robotic manipulation.
+arXiv preprint arXiv:2512.23703.
+Cited by: §I,
+§II.
+[24]
+T. W. Ayalew, X. Zhang, K. Y. Wu, T. Jiang, M. Maire, and M. R. Walter (2025)
+Progressor: a perceptually guided reward estimator with self-supervised online refinement.
+In 2025 IEEE/CVF International Conference on Computer Vision (ICCV),
+pp. 10297–10306.
+Cited by: §I,
+§II.
+[25]
+S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge, et al. (2025)
+Qwen3-vl technical report.
+arXiv preprint arXiv:2511.21631.
+Cited by: §I.
+[26]
+Y. Liu, Y. Liu, C. Jiang, K. Lyu, W. Wan, H. Shen, B. Liang, Z. Fu, H. Wang, and L. Yi (2022)
+Hoi4d: a 4d egocentric dataset for category-level human-object interaction.
+In 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR),
+pp. 20981–20990.
+Cited by: §I,
+§III-A.
+[27]
+R. Hoque, P. Huang, D. Yoon, J. Zhang, et al. (2026)
+Egodex: learning dexterous manipulation from large-scale egocentric video.
+In International Conference on Learning Representations,
+Vol. 2026, pp. 4218–4237.
+Cited by: §I,
+§III-A.
+[28]
+B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone (2023)
+Libero: benchmarking knowledge transfer for lifelong robot learning.
+Advances in Neural Information Processing Systems 36, pp. 44776–44791.
+Cited by: §I,
+§III-A.
+[29]
+S. Nasiriany, A. Maddukuri, L. Zhang, A. Parikh, A. Lo, A. Joshi, A. Mandlekar, and Y. Zhu (2024)
+Robocasa: large-scale simulation of everyday tasks for generalist robots.
+arXiv preprint arXiv:2406.02523.
+Cited by: §I,
+§III-A.
+[30]
+S. Tao, F. Xiang, A. Shukla, Y. Qin, X. Hinrichsen, X. Yuan, C. Bao, X. Lin, Y. Liu, T. Chan, et al. (2024)
+Maniskill3: gpu parallelized robotics simulation and rendering for generalizable embodied ai.
+arXiv preprint arXiv:2410.00425.
+Cited by: §I,
+§IV-B,
+§IV.
+[31]
+J. Tobin, R. Fong, A. Ray, J. Schneider, W. Zaremba, and P. Abbeel (2017)
+Domain randomization for transferring deep neural networks from simulation to the real world.
+In 2017 IEEE/RSJ international conference on intelligent robots and systems (IROS),
+pp. 23–30.
+Cited by: §II.
+[32]
+X. B. Peng, M. Andrychowicz, W. Zaremba, and P. Abbeel (2018)
+Sim-to-real transfer of robotic control with dynamics randomization.
+In 2018 IEEE international conference on robotics and automation (ICRA),
+pp. 3803–3810.
+Cited by: §II.
+[33]
+T. Johannink, S. Bahl, A. Nair, J. Luo, A. Kumar, M. Loskyll, J. A. Ojea, E. Solowjow, and S. Levine (2019)
+Residual reinforcement learning for robot control.
+In 2019 international conference on robotics and automation (ICRA),
+pp. 6023–6029.
+Cited by: §II.
+[34]
+J. Luo, P. Dong, Y. Zhai, Y. Ma, and S. Levine (2024)
+Rlif: interactive imitation learning as reinforcement learning.
+In International Conference on Learning Representations,
+Vol. 2024, pp. 36329–36351.
+Cited by: §II.
+[35]
+Y. Feng, H. Shi, H. Li, X. Guo, Y. Wang, C. Zhang, J. Zhang, X. Zhang, J. Tang, and J. Zhang (2026)
+ProcVLM: learning procedure-grounded progress rewards for robotic manipulation.
+arXiv preprint arXiv:2605.08774.
+Cited by: §II.
+[36]
+Q. Chen, H. Zheng, J. Yu, S. Huang, J. Sun, K. Goldberg, C. Wen, P. Abbeel, Y. Shentu, P. Wu, et al. (2026)
+SARM2: multi-task stage aware reward modeling for self improving robotic manipulation.
+arXiv preprint arXiv:2606.10305.
+Cited by: §II.
+[37]
+Y. Fang, W. Dong, J. Liu, Y. Yang, M. Huo, Y. Mu, H. Yao, L. E. Li, D. Szafir, and M. Ding (2026)
+DenseReward: dense reward learning via failure synthesis for robotic manipulation.
+arXiv preprint arXiv:2607.13033.
+Cited by: §II.
+[38]
+H. Zhang, Z. Zeng, B. Wang, L. Li, L. Lin, and L. Cheng (2026)
+Dream2Reward: transition-alignment reward models from positive demonstrations for robotic manipulation.
+arXiv preprint arXiv:2608.18787.
+Cited by: §II.
+[39]
+K. Chen, W. Chen, W. Sun, and M. Hu (2026)
+VLM-ar3l: vision-language models for absolute and relative rewards in reinforcement learning.
+arXiv preprint arXiv:2607.00483.
+Cited by: §II.
+[40]
+E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen (2021)
+Lora: low-rank adaptation of large language models.
+arXiv preprint arXiv:2106.09685.
+Cited by: §II,
+§III-C.
+[41]
+R. Rafailov, A. Sharma, E. Mitchell, C. D. Manning, S. Ermon, and C. Finn (2023)
+Direct preference optimization: your language model is secretly a reward model.
+Advances in neural information processing systems 36, pp. 53728–53741.
+Cited by: §III-C.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

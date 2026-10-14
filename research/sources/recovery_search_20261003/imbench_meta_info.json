@@ -1,0 +1,352 @@
+{
+  "codebase_version": "v3.0",
+  "robot_type": "Panda",
+  "task_id": "pb-puzzle-stack-collapse-recovery-v1",
+  "total_episodes": 10,
+  "total_frames": 11325,
+  "fps": 100,
+  "control_freq": 100,
+  "save_freq": {
+    "proprio": 100,
+    "force_torque": 50,
+    "object_state": 50,
+    "cameras": 25,
+    "tactile": 50
+  },
+  "chunk_size": 1000,
+  "features": {
+    "action": {
+      "dtype": "float32",
+      "shape": [
+        7
+      ],
+      "fps": 100,
+      "description": "Robot action vector"
+    },
+    "reward": {
+      "dtype": "float32",
+      "shape": [
+        1
+      ],
+      "fps": 100
+    },
+    "task_score": {
+      "dtype": "float32",
+      "shape": [
+        1
+      ],
+      "fps": 100
+    },
+    "observation.ee_poses": {
+      "dtype": "float32",
+      "shape": [
+        9
+      ],
+      "fps": 100
+    },
+    "observation.force_torque": {
+      "dtype": "float32",
+      "shape": [
+        6
+      ],
+      "fps": 50
+    },
+    "observation.force_torque_world": {
+      "dtype": "float32",
+      "shape": [
+        3
+      ],
+      "fps": 100
+    },
+    "observation.joint_positions": {
+      "dtype": "float32",
+      "shape": [
+        9
+      ],
+      "fps": 100
+    },
+    "observation.object_pos": {
+      "dtype": "float32",
+      "shape": [
+        3
+      ],
+      "fps": 50
+    },
+    "observation.object_quat": {
+      "dtype": "float32",
+      "shape": [
+        4
+      ],
+      "fps": 50
+    },
+    "observation.object_state": {
+      "dtype": "float32",
+      "shape": [
+        31
+      ],
+      "fps": 50
+    },
+    "observation.robot0_eef_pos": {
+      "dtype": "float32",
+      "shape": [
+        3
+      ],
+      "fps": 100
+    },
+    "observation.robot0_eef_quat": {
+      "dtype": "float32",
+      "shape": [
+        4
+      ],
+      "fps": 100
+    },
+    "observation.robot0_gripper_qpos": {
+      "dtype": "float32",
+      "shape": [
+        2
+      ],
+      "fps": 100
+    },
+    "observation.robot0_joint_pos": {
+      "dtype": "float32",
+      "shape": [
+        7
+      ],
+      "fps": 100
+    },
+    "observation.robot0_joint_vel": {
+      "dtype": "float32",
+      "shape": [
+        7
+      ],
+      "fps": 100
+    },
+    "observation.robot0_tactile_left": {
+      "dtype": "float32",
+      "shape": [
+        8,
+        8
+      ],
+      "fps": 50
+    },
+    "observation.robot0_tactile_right": {
+      "dtype": "float32",
+      "shape": [
+        8,
+        8
+      ],
+      "fps": 50
+    },
+    "observation.rgb_ego_cam": {
+      "dtype": "video",
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "fps": 25,
+      "video_path": "videos/observation.rgb_ego_cam/chunk-{chunk_index:03d}/file-{file_index:03d}.mp4"
+    },
+    "frame_index.rgb_ego_cam": {
+      "dtype": "int64",
+      "shape": [
+        1
+      ],
+      "description": "Video frame index for rgb_ego_cam",
+      "fps": 100
+    },
+    "observation.rgb_exo_bird_cam": {
+      "dtype": "video",
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "fps": 25,
+      "video_path": "videos/observation.rgb_exo_bird_cam/chunk-{chunk_index:03d}/file-{file_index:03d}.mp4"
+    },
+    "frame_index.rgb_exo_bird_cam": {
+      "dtype": "int64",
+      "shape": [
+        1
+      ],
+      "description": "Video frame index for rgb_exo_bird_cam",
+      "fps": 100
+    },
+    "observation.rgb_gripper_cam": {
+      "dtype": "video",
+      "shape": [
+        480,
+        640,
+        3
+      ],
+      "fps": 25,
+      "video_path": "videos/observation.rgb_gripper_cam/chunk-{chunk_index:03d}/file-{file_index:03d}.mp4"
+    },
+    "frame_index.rgb_gripper_cam": {
+      "dtype": "int64",
+      "shape": [
+        1
+      ],
+      "description": "Video frame index for rgb_gripper_cam",
+      "fps": 100
+    }
+  },
+  "task_config": {
+    "task_id": "pb-puzzle-stack-collapse-recovery-v1",
+    "description": "Puzzle: three cubes of slightly increasing side length start stacked largest-on-bottom. The tower is always knocked over a few steps into the episode \u2014 half the time only the top cube is kicked off, half the time both upper cubes are. Restack the cubes and hold them stable.",
+    "max_episode_steps": 800,
+    "reward_type": "sparse",
+    "action_mode": "cartesian_delta",
+    "control_freq": 100,
+    "scene": {
+      "table": {
+        "full_size": [
+          0.5,
+          0.5,
+          0.05
+        ],
+        "height": 0.8,
+        "offset": null
+      },
+      "robot_offset": null
+    },
+    "placement": {
+      "center": null,
+      "x_range": 0.15,
+      "y_range": 0.15,
+      "spawn_margin": 0.03,
+      "spawn_max_attempts": 400
+    },
+    "randomization": {
+      "object_color": {
+        "enabled": false
+      },
+      "table_color": {
+        "enabled": false
+      },
+      "lighting": {
+        "position": true,
+        "color": false
+      }
+    },
+    "task": {
+      "stable_steps": 100,
+      "collapse": {
+        "both_prob": 0.5,
+        "step": 5,
+        "speed": 0.6
+      },
+      "placement": {
+        "xy_range": [
+          0.08,
+          0.1
+        ]
+      }
+    },
+    "task_conditions": {
+      "success": {
+        "score_threshold": 1.0
+      },
+      "failure": {
+        "floor_z_threshold": 0.05
+      }
+    },
+    "recording": {
+      "save_freq": {
+        "proprio": 100,
+        "force_torque": 50,
+        "object_state": 50,
+        "cameras": 25,
+        "tactile": 50
+      },
+      "save": {
+        "action": true,
+        "reward": true,
+        "task_score": true,
+        "joint_positions": true,
+        "ee_poses": true
+      }
+    },
+    "controller": {
+      "type": "OSC_POSE",
+      "robot": "Panda",
+      "kp": 200,
+      "damping_ratio": 1,
+      "impedance_mode": "fixed",
+      "uncouple_pos_ori": true,
+      "input_type": "delta",
+      "input_ref_frame": "base"
+    },
+    "obs": {
+      "proprio": {
+        "enabled": true,
+        "keys": [
+          "robot0_eef_pos",
+          "robot0_eef_quat",
+          "robot0_gripper_qpos",
+          "robot0_joint_pos",
+          "robot0_joint_vel"
+        ],
+        "save": true
+      },
+      "object_state": {
+        "enabled": true,
+        "save": true
+      },
+      "cameras": {
+        "gripper_cam": {
+          "enabled": true,
+          "robosuite_name": "robot0_eye_in_hand",
+          "width": 640,
+          "height": 480,
+          "depth": false,
+          "save": true
+        },
+        "ego_cam": {
+          "enabled": true,
+          "robosuite_name": "robot0_robotview",
+          "width": 640,
+          "height": 480,
+          "depth": false,
+          "save": true
+        },
+        "exo_bird_cam": {
+          "enabled": true,
+          "robosuite_name": "birdview",
+          "width": 640,
+          "height": 480,
+          "depth": false,
+          "save": true
+        }
+      },
+      "force_torque": {
+        "enabled": true,
+        "keys": [
+          "robot0_ft_sensor"
+        ],
+        "save": true
+      },
+      "tactile": {
+        "enabled": true,
+        "fingers": [
+          "right",
+          "left"
+        ],
+        "rows": 8,
+        "cols": 8,
+        "spacing": 0.001,
+        "save": true
+      }
+    }
+  },
+  "data_files_size_in_mb": 100,
+  "video_files_size_in_mb": 200,
+  "data_path": "data/chunk-{chunk_index:03d}/file-{file_index:03d}.parquet",
+  "video_path": "videos/{video_key}/chunk-{chunk_index:03d}/file-{file_index:03d}.mp4",
+  "total_videos": 3,
+  "total_chunks": 1,
+  "splits": {
+    "train": "0:10"
+  }
+}

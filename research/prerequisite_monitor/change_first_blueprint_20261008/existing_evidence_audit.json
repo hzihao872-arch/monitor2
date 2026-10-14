@@ -1,0 +1,48 @@
+{
+  "audit_time_beijing": "2026-10-08T19:06:37.950635+08:00",
+  "kind": "read_only_recalculation_of_existing_outputs_no_inference",
+  "qwen_calls": 162,
+  "statuses": {
+    "valid": 133,
+    "schema_or_evidence_failure": 15,
+    "direction_conflict": 14
+  },
+  "total_seconds": 1588.371,
+  "input_tokens": 388482,
+  "output_tokens": 54785,
+  "peak_allocated_gib": 17.085902214050293,
+  "raw_sha256": "64826041121f876c190a0be218e0648a80a7a300f0df3ce036de0c8199f5ee08",
+  "curve_rows": 126,
+  "pair_rows": 84,
+  "identical_auto_relation_counterclaim_inputs": 18,
+  "E_pair_outcomes": {
+    "P0_original": {
+      "loss": 6
+    },
+    "P4_causal_fact": {
+      "tie": 1,
+      "win": 3,
+      "loss": 2
+    },
+    "P4_neutral": {
+      "loss": 5,
+      "win": 1
+    },
+    "auto_counterclaim": {
+      "win": 4,
+      "loss": 2
+    },
+    "auto_relation": {
+      "win": 4,
+      "loss": 2
+    },
+    "general_preparation": {
+      "win": 5,
+      "loss": 1
+    },
+    "matched_neutral": {
+      "win": 5,
+      "loss": 1
+    }
+  }
+}

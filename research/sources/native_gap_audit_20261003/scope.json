@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-03",
+  "max_saved_source_bytes": 6291456,
+  "scope": "Reuse papers and snapshots; missing RoboMeter v2 HTML, ep510/513/514 fixed directory metadata and bounded view1 frames; optional exact scoring source. No weights/models/API inference.",
+  "source_priority": "native task and labels before model output",
+  "models_run": 0,
+  "inclusion": "Keep all three preselected episodes irrespective of event presence. H-D requires earlier achieved persistent final outcome, later distinct subtask success, and observable loss. Keep retention/legal withdrawal/occlusion/repair as controls or missing, never infer from direction alone.",
+  "native_target": "RoboPulse++ Rising/Falling under C.4; no per-condition scoring from scalar",
+  "output_mapping": "absolute progress first difference then five-frame causal average then sign; zero and endpoints unresolved; do not invent a score",
+  "units": "episode is independent material unit; frame labels are not independent tasks",
+  "holdout_eligible": false
+}

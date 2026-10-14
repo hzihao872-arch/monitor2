@@ -1,0 +1,34 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 97.67it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+0001.mp4 0 {"destination_non_goal_present": "true", "destination_evidence": "A red cube is inside the green tray.", "source_non_goal_present": "false", "source_evidence": "The robotic arm's gripper is empty and not holding any object."}
+0001.mp4 14 {"destination_non_goal_present": "false", "source_non_goal_present": "false", "destination_evidence": "green tray is empty and clear", "source_evidence": "robot gripper holds red cube, blue cube is on table nearby"}
+0002.mp4 0 {"destination_non_goal_present": "true", "destination_evidence": "A red cube is inside the green tray.", "source_non_goal_present": "false", "source_evidence": "The robotic arm's gripper is empty and not holding any object."}
+0002.mp4 14 {"destination_non_goal_present": "true", "destination_evidence": "A red cube is inside the green tray.", "source_non_goal_present": "false", "source_evidence": "The robotic arm's gripper is empty and not holding any object."}
+0003.mp4 0 {"destination_non_goal_present": "false", "source_non_goal_present": "false", "destination_evidence": "The green tray is empty and has no objects inside or directly over it.", "source_evidence": "The blue cube is on the wooden surface, not being held, and no other objects are directly above or in its grasp area."}
+0003.mp4 14 {"destination_non_goal_present": "false", "source_non_goal_present": "false", "destination_evidence": "The green tray is empty and has no objects inside or directly over it.", "source_evidence": "The blue cube is on the wooden surface, not being held, and no other objects are directly above or in its grasp area."}
+0004.mp4 0 {"destination_non_goal_present": "true", "destination_evidence": "A red cube is inside the green tray.", "source_non_goal_present": "false", "source_evidence": "The robotic arm's gripper is empty and not holding any object."}
+0004.mp4 14 {"destination_non_goal_present": "true", "destination_evidence": "A red cube is inside the green tray.", "source_non_goal_present": "false", "source_evidence": "The robotic arm's gripper is empty and not holding any object."}
+0005.mp4 0 {
+  "destination_non_goal_present": "true",
+  "destination_evidence": "The blue cube is inside the green tray.",
+  "source_non_goal_present": "false",
+  "source_evidence": "The robot gripper is above the red cube, with no other objects in its grasp area."
+}
+0005.mp4 14 {
+  "destination_non_goal_present": "false",
+  "source_non_goal_present": "false",
+  "destination_evidence": "The green tray contains only the blue cube; no other objects are inside or directly over it.",
+  "source_evidence": "The robot's gripper is holding only the red cube; no other objects are in or directly above its grasp area."
+}
+0006.mp4 0 {
+  "destination_non_goal_present": "false",
+  "source_non_goal_present": "false",
+  "destination_evidence": "The green tray is empty and has no objects inside or directly over it.",
+  "source_evidence": "The robot's gripper is holding a red cube, with no other objects in or directly above its grasp area."
+}
+0006.mp4 14 {
+  "destination_non_goal_present": "false",
+  "source_non_goal_present": "false",
+  "destination_evidence": "The green tray is empty and has no objects inside or directly over it.",
+  "source_evidence": "The robot's gripper is holding a red cube, with no other objects in or directly above the grasp area."
+}

@@ -1,0 +1,7577 @@
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1
+Introduction
+2
+Related Work
+Reconstruction-based visual planning.
+Visual planning without decoding.
+Learning symbolic abstractions.
+3
+Problem Formulation
+Observation and Action Data.
+Action-Relevant Abstraction Assumption.
+Test-Time Planning Objective.
+4
+Background: STRIPS Propositional Planning
+5
+Methodology
+5.1
+Image-Grounded Task Graph
+5.2
+Learning STRIPS Operators and Predicates from the Task Graph
+Observed transitions provide positive evidence.
+Trusted missing state-action pairs provide negative evidence.
+Lexicographic model selection.
+Guarantees.
+5.3
+Visual Predicate Classification and Test-Time Planning
+6
+Experiments & Results
+Visual Planning Domains:
+Visual Planning Baselines.
+RQ1: Does
+strips-wm
+learn the correct abstraction?
+RQ2: How well does
+strips-wm
+scale to long-horizon tasks?
+RQ3: Are predicates better than monolithic graph search?
+7
+Limitations
+References
+A
+Architecture and Implementation Details
+A.1
+Image-grounded task graph model
+Latent nondeterminism.
+Latent sweep and checkpoint selection.
+A.2
+Operator-learning hyperparameters
+A.3
+Visual predicate classifier
+B
+Additional Theoretical Details
+B.1
+Exact CP-SAT Encoding for Operator Learning
+Observed applications satisfy learned preconditions.
+Observed edges follow
+strips
+effects with inertia.
+Negative evidence from trusted missing pairs.
+Optional distinctness constraints.
+Solver-side regularization.
+B.2
+Formal Guarantees for Operator Learning
+Trusted missing-pair assumption.
+Interpretation.
+C
+Extended Experiments and Results
+RQ4: Is negative evidence necessary for learning useful preconditions?
+License: arXiv.org perpetual non-exclusive license
+arXiv:2606.06832v1 [cs.RO] 05 Jun 2026
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+Abhiroop Ajith
+Affiliation:
+Department of Robotics Engineering
+Affiliation:
+Worcester Polytechnic Institute
+Affiliation:
+United States
+Email:
+aajith@wpi.edu
+Constantinos Chamzas
+Affiliation:
+Department of Robotics Engineering
+Affiliation:
+Worcester Polytechnic Institute
+Affiliation:
+United States
+Email:
+cchamzas@wpi.edu
+Abstract
+Robots performing long-horizon visual manipulation observe high-dimensional images, but
+successful plans depend on action-relevant facts: what can be done now and what changes
+afterward. Classical task planners exploit this structure through symbolic operators with
+preconditions and effects, but obtaining such representations from raw visual experience
+remains challenging. We study a visual task-planning setting in which a robot receives only
+action-image transitions: the current image, executed high-level action, and resulting image.
+At test time, given start and goal images, the robot must produce a sequence of high-level
+actions that reaches the goal. We introduce
+strips-wm
+, a framework for learning image-grounded
+strips
+-style world models directly from visual transitions.
+strips-wm
+first induces a finite
+abstract transition graph from images, then learns binary predicates and propositional
+operators that explain this graph. The learned predicates are grounded back into perception through a visual classifier, enabling classical
+planning directly from novel start and goal images. Experiments on visual rearrangement
+tasks show that
+strips-wm
+improves image-to-plan success over the tested visual rollout, latent graph-search, and latent-symbolic baselines.
+Keywords:
+Learning Logic-Based Representations, Visual Task Planning
+Figure 1:
+Three planning spaces for the same visual task.
+Top:
+In image space, the robot observes RGB states connected by high-level
+action identifiers,
+o
+t
+→
+a
+t
+o
+t
++
+1
+o_{t}\xrightarrow{a_{t}}o_{t+1}
+; planning here would require
+reasoning over future images.
+Middle:
+In the learned task-graph space, observations are compressed into
+abstract states
+s
+^
+\hat{s}
+, yielding action-indexed transitions
+s
+^
+t
+→
+a
+t
+s
+^
+t
++
+1
+\hat{s}_{t}\xrightarrow{a_{t}}\hat{s}_{t+1}
+. This enables graph search, but requires
+a flat enumeration of abstract states and edges.
+Bottom:
+In the learned
+strips
+space, abstract states receive predicate vectors
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+, and each action identifier
+a
+a
+receives a grounded
+operator
+ω
+^
+a
+\hat{\omega}_{a}
+with preconditions and effects. This task representation enables
+classical task planning over predicate states rather than images or enumerated graph edges.
+1
+Introduction
+Robots perceive their surroundings through high-dimensional
+observations such as RGB images. Yet, long-horizon manipulation tasks often admit much
+simpler abstract descriptions
+[
+11
+]
+. In the table-setting example
+of
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+, the robot must reach a
+target arrangement by executing a sequence of high-level actions. Planning directly in
+image space would require predicting long sequences of future images
+[
+19
+]
+. However, the pixel level is too
+fine-grained for task planning: most visual variation is irrelevant to whether an action
+can be applied or what it will change. What matters is the smaller set of action-relevant
+conditions that hold in the scene and how actions transform them
+[
+17
+]
+.
+Classical task planning formalizes this idea through symbolic states and transition models.
+In
+strips
+planning, states are represented by symbolic facts (predicates), and actions are represented
+by operators with preconditions and add/delete effects
+[
+10
+]
+.
+Given such a model, the remaining search problem is exactly the kind of discrete planning
+problem that off-the-shelf task planners can solve, rather than
+predicting future images. This structure is illustrated at the bottom of
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+:
+instead of raw observations,
+strips
+represents the world using symbolic states
+s
+s
+with
+predicate vectors
+𝐱
+s
+\mathbf{x}_{s}
+; instead of treating actions only as identifiers
+a
+a
+,
+it represents them as operators
+ω
+a
+\omega_{a}
+with preconditions and effects. The central
+challenge is therefore to learn this symbolic world model from data.
+We propose
+strips-wm
+to address this challenge directly. Given only
+action-indexed visual transitions
+𝒟
+𝒪
+=
+{
+(
+o
+i
+,
+a
+i
+,
+o
+i
+′
+)
+}
+i
+=
+1
+N
+,
+\mathcal{D_{O}}=\{(o_{i},a_{i},o^{\prime}_{i})\}_{i=1}^{N},
+we learn an image-grounded
+strips
+world model. As illustrated from the top to the bottom
+of
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+, this means learning a mapping from observations to predicate states
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+, together with one operator
+ω
+^
+a
+\hat{\omega}_{a}
+for each action
+identifier.
+strips-wm
+learns this model in three stages, mirroring the three levels shown
+in
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+. First, an action-conditioned visual dynamics model induces an image-grounded task graph, converting visual transitions
+o
+t
+→
+a
+t
+o
+t
++
+1
+o_{t}\xrightarrow{a_{t}}o_{t+1}
+into abstract transitions
+s
+^
+t
+→
+a
+t
+s
+^
+t
++
+1
+\hat{s}_{t}\xrightarrow{a_{t}}\hat{s}_{t+1}
+. Second, a CP-SAT solver assigns
+binary predicate vectors
+𝐱
+^
+s
+^
+∈
+{
+0
+,
+1
+}
+m
+\hat{\mathbf{x}}_{\hat{s}}\in\{0,1\}^{m}
+to graph nodes and
+learns one grounded operator
+ω
+^
+a
+\hat{\omega}_{a}
+per action identifier, so that graph edges
+are explained by
+strips
+-style preconditions and add/delete effects. Third, a visual
+predicate classifier grounds these learned predicate assignments back to images, enabling
+classical planning directly from novel start and goal observations.
+Our contributions are: (i) a framework for learning image-grounded propositional
+strips
+world models from action-indexed visual transitions, without object-centric
+supervision or hand-designed predicates; (ii) a CP-SAT formulation that jointly learns
+binary predicate assignments for abstract states and grounded
+strips
+operators explaining
+the observed transition graph; and (iii) an image-to-plan pipeline that grounds the learned
+predicates in perception and enables classical planning from novel start and goal images.
+Experiments on simulated and real rearrangement tasks show improved long-horizon
+planning over visual rollout, latent graph-search, and latent-symbolic baselines.
+2
+Related Work
+Reconstruction-based visual planning.
+Such methods plan from images by learning forward predictive models and searching over candidate action sequences, either by predicting future images
+[
+19
+,
+28
+,
+14
+,
+21
+,
+9
+,
+20
+]
+, or by planning through imagined latent rollouts from pixels
+[
+13
+,
+12
+,
+27
+]
+. These methods optimize
+representations for visual prediction, often requiring reconstruction of
+pixel-level observations, which can preserve details irrelevant to action applicability and
+effects.
+strips-wm
+does not reconstruct or predict images.
+Visual planning without decoding.
+These methods avoid pixel reconstruction by learning continuous latent
+representations with contrastive, predictive, or goal-conditioned objectives
+[
+29
+,
+7
+,
+26
+,
+4
+,
+15
+,
+18
+]
+.
+While these methods discard some irrelevant visual detail, their latent spaces lack the
+logical structure of symbolic representations. Planning depends on neural forward prediction in the learned latent space, without the guarantees provided by classical planners.
+strips-wm
+learns predicate states and grounded operators, yielding a symbolic model that can be searched by classical planners.
+Learning symbolic abstractions.
+A complementary line of work learns symbolic abstractions for planning. This foundational line of work grounds symbols in
+the preconditions and effects of high-level skills
+[
+16
+,
+17
+]
+, while recent neuro-symbolic methods
+learn predicates, operators, or relational transition models for planning
+[
+25
+,
+24
+,
+8
+,
+23
+]
+.
+These methods show the value of symbolic structure, but typically assume object-centric,
+relational, or continuous state inputs rather than raw images. Closest to our setting,
+LatPlan learns propositional
+strips
+from unlabeled image pairs
+[
+3
+]
+, and we include it as our main baseline.
+3
+Problem Formulation
+Observation and Action Data.
+We assume the robot observes the world through RGB images and executes actions from a
+fixed finite library of high-level primitives. Let
+𝒪
+\mathcal{O}
+denote the space of RGB
+observations, and let
+𝒜
+=
+{
+1
+​
+…
+,
+L
+}
+\mathcal{A}=\{1\ldots,L\}
+denote the finite set of executable action identifiers. The action identifiers are opaque:
+each identifier denotes one reusable primitive, but provides no semantic information about
+the primitive’s meaning, arguments, applicability, or effects. Additionally, the robot is
+given a dataset of visual transitions:
+D
+𝒪
+=
+{
+(
+o
+i
+,
+a
+i
+,
+o
+i
+′
+)
+}
+i
+=
+1
+N
+,
+o
+i
+,
+o
+i
+′
+∈
+𝒪
+,
+a
+i
+∈
+𝒜
+.
+D_{\mathcal{O}}=\{(o_{i},a_{i},o^{\prime}_{i})\}_{i=1}^{N},\qquad o_{i},o^{\prime}_{i}\in\mathcal{O},\;\;a_{i}\in\mathcal{A}.
+Each triplet records the observation before an action, the identifier of the executed action,
+and the observation after execution. We assume no access to object identities, segmentation
+masks, object poses, hand-designed predicates, symbolic state labels, or symbolic goals
+during training.
+Action-Relevant Abstraction Assumption.
+Following the skills-to-symbols perspective of Konidaris et al.
+[
+17
+]
+,
+we assume that the available high-level primitives induce a finite task-level abstraction of
+the underlying world. Intuitively, two physical world states belong to the same abstract
+state if they are interchangeable for planning: the same high-level actions are applicable,
+executing those actions leads to the same abstract outcomes (deterministic world), and the same task goals are satisfied. Low-level variations within an abstract state may change the RGB image, but they do not affect the feasibility or outcome of high-level action sequences. This assumption is what makes discrete high-level planning well defined from visual observations.
+We also assume that the dataset
+𝒟
+𝒪
+\mathcal{D}_{\mathcal{O}}
+sufficiently covers the relevant part of the task space.
+Test-Time Planning Objective.
+At test time, the robot is given a start image
+o
+start
+o_{\mathrm{start}}
+and a goal image
+o
+goal
+o_{\mathrm{goal}}
+. The objective is to produce a sequence:
+π
+=
+(
+a
+1
+,
+…
+,
+a
+H
+)
+,
+a
+h
+∈
+𝒜
+,
+\pi=(a_{1},\ldots,a_{H}),\qquad a_{h}\in\mathcal{A},
+such that executing
+π
+\pi
+from the world state depicted by
+o
+start
+o_{\mathrm{start}}
+reaches a
+world state that is task-equivalent to the one depicted by
+o
+goal
+o_{\mathrm{goal}}
+.
+4
+Background: STRIPS Propositional Planning
+We review
+strips
+planning since our method heavily builds on its concepts.
+strips
+is a classical formalism for representing deterministic planning problems using
+symbolic states and action models
+[
+10
+]
+. In the propositional setting, a vocabulary of
+m
+m
+Boolean predicates
+𝒫
+=
+{
+p
+1
+,
+…
+,
+p
+m
+}
+\mathcal{P}=\{p_{1},\ldots,p_{m}\}
+is given.
+A symbolic state
+σ
+\sigma
+is represented by a binary vector
+𝐱
+σ
+∈
+{
+0
+,
+1
+}
+m
+\mathbf{x_{\sigma}}\in\{0,1\}^{m}
+, where
+𝐱
+σ
+,
+i
+=
+1
+\mathbf{x}_{\sigma,i}=1
+means that
+p
+i
+p_{i}
+is true in state
+σ
+\sigma
+, and
+𝐱
+σ
+,
+i
+=
+0
+\mathbf{x}_{\sigma,i}=0
+means that it is false.
+Each action
+a
+a
+is represented by an operator:
+ω
+a
+=
+⟨
+𝐩𝐫𝐞
+a
++
+,
+𝐩𝐫𝐞
+a
+−
+,
+𝐚𝐝𝐝
+a
+,
+𝐝𝐞𝐥
+a
+⟩
+,
+\omega_{a}=\left\langle\mathbf{pre}^{+}_{a},\mathbf{pre}^{-}_{a},\mathbf{add}_{a},\mathbf{del}_{a}\right\rangle,
+where
+𝐩𝐫𝐞
+a
++
+,
+𝐩𝐫𝐞
+a
+−
+,
+𝐚𝐝𝐝
+a
+,
+𝐝𝐞𝐥
+a
+∈
+{
+0
+,
+1
+}
+m
+\mathbf{pre}^{+}_{a},\mathbf{pre}^{-}_{a},\mathbf{add}_{a},\mathbf{del}_{a}\in\{0,1\}^{m}
+are binary masks over the predicate vocabulary. The masks
+𝐩𝐫𝐞
+a
++
+\mathbf{pre}^{+}_{a}
+and
+𝐩𝐫𝐞
+a
+−
+\mathbf{pre}^{-}_{a}
+specify which predicates must be true
+or false for action
+a
+a
+to be applicable. In state
+σ
+\sigma
+, action
+a
+a
+is applicable if
+𝐩𝐫𝐞
+a
++
+≤
+𝐱
+σ
+,
+𝐩𝐫𝐞
+a
+−
+≤
+𝟏
+−
+𝐱
+σ
+,
+\mathbf{pre}^{+}_{a}\leq\mathbf{x}_{\sigma},\qquad\mathbf{pre}^{-}_{a}\leq\mathbf{1}-\mathbf{x}_{\sigma},
+where inequalities are interpreted elementwise. If the action is applicable, it produces a successor state
+𝐱
+σ
+𝟏
+\mathbf{x_{\sigma_{1}}}
+by setting predicates in
+𝐚𝐝𝐝
+a
+\mathbf{add}_{a}
+to true, setting predicates in
+𝐝𝐞𝐥
+a
+\mathbf{del}_{a}
+to false, and leaving
+all other predicates unchanged. Equivalently, each operator
+ω
+a
+\omega_{a}
+induces a
+partial transition function
+τ
+ω
+a
+\tau_{\omega_{a}}
+, defined on applicable states as:
+𝐱
+σ
+1
+=
+τ
+ω
+a
+​
+(
+𝐱
+σ
+0
+)
+=
+𝐚𝐝𝐝
+a
+∨
+(
+𝐱
+σ
+0
+∧
+¬
+𝐝𝐞𝐥
+a
+)
+.
+\mathbf{x}_{\sigma_{1}}=\tau_{\omega_{a}}(\mathbf{x}_{\sigma_{0}})=\mathbf{add}_{a}\;\lor\;\bigl(\mathbf{x}_{\sigma_{0}}\land\neg\mathbf{del}_{a}\bigr).
+The add and delete masks are disjoint, and the effects are state-independent:
+whenever the preconditions of
+a
+a
+hold, the same add/delete masks are applied.
+This yields a compact transition model for search over symbolic states.
+A
+strips
+planning problem consists of an initial symbolic state, a goal
+condition, and a set of operators. In our setting, neither the predicate
+vocabulary
+𝒫
+\mathcal{P}
+nor the operator masks are given; both must be learned
+from visual transition data.
+5
+Methodology
+5.1
+Image-Grounded Task Graph
+The goal of this stage is to use the visual transition dataset
+D
+𝒪
+=
+{
+(
+o
+i
+,
+a
+i
+,
+o
+i
+′
+)
+}
+i
+=
+1
+N
+D_{\mathcal{O}}=\{(o_{i},a_{i},o^{\prime}_{i})\}_{i=1}^{N}
+to learn an image-grounded task
+graph
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{E})
+. We do this by learning a discrete
+state assignment
+α
+:
+𝒪
+→
+𝒮
+^
+\alpha:\mathcal{O}\rightarrow\hat{\mathcal{S}}
+that maps each
+observation to a learned symbolic-state identity
+s
+^
+=
+α
+⁡
+(
+o
+)
+\hat{s}=\alpha(o)
+. Ideally,
+observations that are interchangeable for high-level planning receive the same
+state identity, even if they differ in irrelevant visual details.
+Fig. 2
+shows the architecture used to learn this
+assignment. A student encoder maps the current observation
+o
+t
+o_{t}
+to a latent
+representation, which is discretized with finite scalar quantization to produce
+a code
+z
+t
+z_{t}
+. A slowly updated teacher encoder maps the successor observation
+o
+t
++
+1
+o_{t+1}
+to a target code
+z
+t
++
+1
+tar
+z^{\mathrm{tar}}_{t+1}
+. Given
+z
+t
+z_{t}
+and the opaque
+action identifier
+a
+t
+a_{t}
+, an action-conditioned predictor is trained to predict
+the successor code. This gives a JEPA-style
+[
+4
+]
+objective:
+prediction happens in latent code space rather than through pixel
+reconstruction.
+To encourage the representation to retain action-relevant information, we
+also train an inverse dynamics head that predicts the executed action
+identifier from the current and successor latent codes. This auxiliary
+loss discourages collapsed codes that explain the visual data but fail to
+distinguish transitions produced by different actions.
+After training, each observation is assigned an abstract-state identifier
+s
+^
+\hat{s}
+from its quantized code:
+s
+^
+=
+α
+⁡
+(
+o
+)
+\hat{s}=\alpha(o)
+.
+We apply this map to every visual transition in
+D
+𝒪
+D_{\mathcal{O}}
+. For each transition
+(
+o
+i
+,
+a
+i
+,
+o
+i
+′
+)
+(o_{i},a_{i},o^{\prime}_{i})
+, we obtain the abstract transition
+t
+^
+i
+=
+(
+α
+⁡
+(
+o
+i
+)
+,
+a
+i
+,
+α
+⁡
+(
+o
+i
+′
+)
+)
+.
+\hat{t}_{i}=\bigl(\alpha(o_{i}),a_{i},\alpha(o^{\prime}_{i})\bigr).
+Collecting these transformed transitions yields the learned action task graph.
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+,
+E
+^
+=
+{
+(
+s
+i
+^
+,
+a
+i
+,
+s
+i
+^
+′
+)
+}
+i
+=
+1
+N
+.
+\hat{G}=(\hat{\mathcal{S}},\hat{E}),\qquad\hat{E}=\left\{\bigl(\hat{s_{i}},a_{i},\hat{s_{i}}^{\prime}\bigr)\right\}_{i=1}^{N}.
+The nodes of this graph are grounded in images, and the edges record
+observed effects of the opaque action identifiers. However, the graph is
+not yet a symbolic planning model: it has no predicates, preconditions,
+or reusable add/delete effects. The next stage learns those symbolic structures.
+Figure 2:
+Learning the image-grounded task graph:
+A student encoder maps the current observation to a quantized FSQ code, while an EMA teacher encoder provides the target successor code. An action-conditioned dynamics model predicts the next code from the current code and action identifier, and an inverse model predicts the action from current and successor codes. Unique quantized codes define visual task-graph nodes, and observed transitions define labeled graph edges.
+5.2
+Learning STRIPS Operators and Predicates from the Task Graph
+The learned task graph
+G
+^
+\hat{G}
+from
+Sec. 5.1
+gives us a
+discrete model of the visual experience, but it is still not a symbolic planning
+model. Its nodes are opaque abstract states, and its edges are labeled only by
+opaque action identifiers. To perform
+strips
+-style planning, we must
+obtain a binary predicate vector
+𝐱
+^
+s
+^
+∈
+{
+0
+,
+1
+}
+m
+\hat{\mathbf{x}}_{\hat{s}}\in\{0,1\}^{m}
+for each graph node
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+, together with one grounded propositional operator
+ω
+^
+a
+\hat{\omega}_{a}
+for each action identifier
+a
+∈
+𝒜
+a\in\mathcal{A}
+.
+We cast this as a combinatorial search over predicate assignments and operator
+masks, and encode the search as a binary CP-SAT problem
+[
+22
+]
+. Similar in spirit to Bonet and Geffner, who learn symbolic planning
+representations from state-space graphs using a SAT-based formulation
+[
+6
+]
+, we use graph
+structure as supervision. Our setting differs in that the graph nodes are
+induced from raw images, and the learned operators are grounded propositional
+operators rather than lifted first-order schemas.
+We formulate the CP-SAT problem as:
+find
+\displaystyle\text{find}
+X
+^
+=
+{
+𝐱
+^
+s
+^
+}
+s
+^
+∈
+𝒮
+^
+,
+Ω
+^
+=
+{
+ω
+^
+a
+}
+a
+∈
+𝒜
+\displaystyle\hat{X}=\{\hat{\mathbf{x}}_{\hat{s}}\}_{\hat{s}\in\hat{\mathcal{S}}},\qquad\hat{\Omega}=\{\hat{\omega}_{a}\}_{a\in\mathcal{A}}
+such that
+\displaystyle\text{such that}
+ω
+^
+a
+​
+is applicable in
+​
+𝐱
+^
+s
+^
+0
+,
+∀
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+,
+(
+C1
+)
+\displaystyle\hat{\omega}_{a}\text{ is applicable in }\hat{\mathbf{x}}_{\hat{s}_{0}},\qquad\forall(\hat{s}_{0},a,\hat{s}_{1})\in\hat{E},\qquad\mathrm{(C1)}
+τ
+ω
+^
+a
+(
+𝐱
+^
+s
+^
+0
+)
+=
+𝐱
+^
+s
+^
+1
+,
+∀
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+,
+(
+C2
+)
+\displaystyle\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}_{0}})=\hat{\mathbf{x}}_{\hat{s}_{1}},\qquad\forall(\hat{s}_{0},a,\hat{s}_{1})\in\hat{E},\qquad\mathrm{(C2)}
+ω
+^
+a
+​
+is not applicable in
+​
+𝐱
+^
+s
+^
+,
+∀
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+,
+(
+C3
+)
+.
+\displaystyle\hat{\omega}_{a}\text{ is not applicable in }\hat{\mathbf{x}}_{\hat{s}},\qquad\forall(\hat{s},a)\in\hat{\mathcal{N}},\qquad\mathrm{(C3)}.
+Here,
+X
+^
+\hat{X}
+assigns a learned symbolic predicate vector to every learned
+abstract state,
+Ω
+^
+\hat{\Omega}
+assigns one learned grounded
+strips
+-style operator to every action identifier, and
+τ
+ω
+^
+a
+\tau_{\hat{\omega}_{a}}
+denotes the
+strips
+transition induced by operator
+ω
+^
+a
+\hat{\omega}_{a}
+. The set
+𝒩
+^
+\hat{\mathcal{N}}
+contains the trusted missing
+state-action pairs used for negative evidence.
+Let
+𝒮
+^
+trust
+⊆
+𝒮
+^
+\hat{\mathcal{S}}_{\mathrm{trust}}\subseteq\hat{\mathcal{S}}
+denote the
+subset of graph states on which we apply the closed-world negative-evidence
+assumption. These are graph states on which we make a local closed-world assumption over outgoing action labels. Missing action labels from states outside
+𝒮
+^
+trust
+\hat{\mathcal{S}}_{\mathrm{trust}}
+are ignored. We
+define the trusted missing state-action pairs as
+𝒩
+^
+=
+{
+(
+s
+^
+,
+a
+)
+|
+s
+^
+∈
+𝒮
+^
+trust
+,
+∄
+s
+^
+′
+∈
+𝒮
+^
+such that
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+}
+.
+\hat{\mathcal{N}}=\left\{(\hat{s},a)\;\middle|\;\hat{s}\in\hat{\mathcal{S}}_{\mathrm{trust}},\;\nexists\hat{s}^{\prime}\in\hat{\mathcal{S}}\text{ such that }(\hat{s},a,\hat{s}^{\prime})\in\hat{E}\right\}.
+Constraints
+(
+C1
+)
+\mathrm{(C1)}
+and
+(
+C2
+)
+\mathrm{(C2)}
+say that
+observed edges provide positive evidence
+. If
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+(\hat{s}_{0},a,\hat{s}_{1})\in\hat{E}
+, then action
+a
+a
+must be applicable in
+𝐱
+^
+s
+^
+0
+\hat{\mathbf{x}}_{\hat{s}_{0}}
+, and its effects must map the predicate vector of
+s
+^
+0
+\hat{s}_{0}
+to the predicate vector of
+s
+^
+1
+\hat{s}_{1}
+.
+Constraint
+(
+C3
+)
+\mathrm{(C3)}
+says that trusted missing state-action pairs provide
+negative evidence: if
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+, then action
+a
+a
+was not observed from trusted state
+s
+^
+\hat{s}
+and is
+not applicable in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+, unless applicability slack is
+used.
+Observed transitions provide positive evidence.
+First we encode the positive requirements
+(
+C1
+)
+,
+(
+C2
+)
+\mathrm{(C1)},\mathrm{(C2)}
+as binary constraints. Each observed edge
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+(\hat{s}_{0},a,\hat{s}_{1})\in\hat{E}
+is treated as a successful execution of
+action
+a
+a
+. Thus
+(
+C1
+)
+\mathrm{(C1)}
+requires the learned preconditions
+𝐩𝐫𝐞
++
+a
+,
+𝐩𝐫𝐞
+−
+a
+\mathbf{pre^{+}}_{a},\mathbf{pre^{-}}_{a}
+to hold in
+𝐱
+^
+𝐬
+^
+𝟎
+\mathbf{\hat{x}_{\hat{s}_{0}}}
+:
+x
+^
+s
+^
+0
+,
+p
+≥
+𝑝𝑟𝑒
+a
+,
+p
++
+,
+x
+^
+s
+^
+0
+,
+p
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+≤
+1
+,
+∀
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+,
+p
+∈
+[
+m
+]
+.
+\hat{x}_{\hat{s}_{0},p}\geq\mathit{pre}^{+}_{a,p},\qquad\hat{x}_{\hat{s}_{0},p}+\mathit{pre}^{-}_{a,p}\leq 1,\qquad\forall(\hat{s}_{0},a,\hat{s}_{1})\in\hat{E},\;p\in[m].
+Thus, if predicate
+p
+p
+is a positive precondition of
+a
+a
+, it must be true in
+every observed source state of
+a
+a
+; if it is a negative precondition, it must be
+false.
+Constraint
+(
+C2
+)
+\mathrm{(C2)}
+requires the learned effects of
+𝐚𝐝𝐝
+a
+,
+𝐝𝐞𝐥
+a
+\mathbf{add}_{a},\mathbf{del}_{a}
+to produce the
+successor state
+s
+1
+^
+\hat{s_{1}}
+. Expanding the
+strips
+transition
+τ
+ω
+^
+a
+\tau_{\hat{\omega}_{a}}
+to linear constraints for every
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+(\hat{s}_{0},a,\hat{s}_{1})\in\hat{E}
+and
+p
+p
+:
+x
+^
+s
+^
+1
+,
+p
+≥
+𝑎𝑑𝑑
+a
+,
+p
+,
+x
+^
+s
+^
+1
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+≤
+1
+,
+\hat{x}_{\hat{s}_{1},p}\geq\mathit{add}_{a,p},\qquad\hat{x}_{\hat{s}_{1},p}+\mathit{del}_{a,p}\leq 1,
+x
+^
+s
+^
+1
+,
+p
+−
+x
+^
+s
+^
+0
+,
+p
+≤
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+,
+x
+^
+s
+^
+0
+,
+p
+−
+x
+^
+s
+^
+1
+,
+p
+≤
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+.
+\hat{x}_{\hat{s}_{1},p}-\hat{x}_{\hat{s}_{0},p}\leq\mathit{add}_{a,p}+\mathit{del}_{a,p},\qquad\hat{x}_{\hat{s}_{0},p}-\hat{x}_{\hat{s}_{1},p}\leq\mathit{add}_{a,p}+\mathit{del}_{a,p}.
+The first inequality forces added predicates to be true in the successor, while
+the second forces deleted predicates to be false. The last two inequalities
+encode inertia: if action
+a
+a
+neither adds nor deletes predicate
+p
+p
+, then the
+truth value of
+p
+p
+must be unchanged from
+s
+^
+0
+\hat{s}_{0}
+to
+s
+^
+1
+\hat{s}_{1}
+.
+Finally, we enforce the usual consistency constraints
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+≤
+1
+,
+𝑝𝑟𝑒
+a
+,
+p
++
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+≤
+1
+,
+∀
+a
+∈
+𝒜
+,
+p
+∈
+[
+m
+]
+,
+\mathit{add}_{a,p}+\mathit{del}_{a,p}\leq 1,\qquad\mathit{pre}^{+}_{a,p}+\mathit{pre}^{-}_{a,p}\leq 1,\qquad\forall a\in\mathcal{A},\;p\in[m],
+so an operator cannot both add and delete the same predicate, or require the
+same predicate to be both true and false.
+In practice, we keep the observed-applicability constraints in
+C1
+\mathrm{C1}
+hard since every observed edge is a successful execution, and soften only the effect/inertia constraints in
+(
+C2
+)
+\mathrm{(C2)}
+with transition slack.
+Let
+e
+^
+=
+(
+s
+^
+0
+,
+a
+,
+s
+^
+1
+)
+\hat{e}=(\hat{s}_{0},a,\hat{s}_{1})
+index an observed edge. We introduce a
+slack variable
+ξ
+e
+^
+,
+p
+\xi_{\hat{e},p}
+for each observed edge–predicate pair, which
+allows isolated violations when the visual abstraction aliases states or
+contains noise. The exact softened linear constraints are given in
+Appendix
+B.1
+.
+Trusted missing state-action pairs provide negative evidence.
+We now encode the negative-applicability requirement
+(
+C3
+)
+\mathrm{(C3)}
+. Observed
+executions alone do not force informative preconditions:
+an operator with empty preconditions can explain all observed executions, but it
+would also make the action applicable from every learned state. To learn when
+actions are not applicable, we use the trusted missing pairs
+𝒩
+^
+\hat{\mathcal{N}}
+as negative evidence
+[
+1
+]
+.
+For each trusted missing pair
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+, the learned
+preconditions of action
+a
+a
+should be violated in state
+s
+^
+\hat{s}
+. Thus we require:
+∑
+p
+=
+1
+m
+(
+𝑝𝑟𝑒
+a
+,
+p
++
+​
+(
+1
+−
+x
+^
+s
+^
+,
+p
+)
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+​
+x
+^
+s
+^
+,
+p
+)
++
+η
+s
+^
+,
+a
+≥
+1
+,
+∀
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+.
+\sum_{p=1}^{m}\left(\mathit{pre}^{+}_{a,p}(1-\hat{x}_{\hat{s},p})+\mathit{pre}^{-}_{a,p}\hat{x}_{\hat{s},p}\right)+\eta_{\hat{s},a}\geq 1,\qquad\forall(\hat{s},a)\in\hat{\mathcal{N}}.
+The first term counts violated positive preconditions, and the second counts
+violated negative preconditions. Thus, every trusted missing action must either
+violate at least one learned precondition or pay applicability slack
+η
+s
+^
+,
+a
+\eta_{\hat{s},a}
+. This prevents the precondition model from collapsing to the
+empty set while making exceptions to the closed-world assumption explicit.
+The products above are between binary decision variables. In the CP-SAT
+encoding, we linearize them with auxiliary violation variables, so that the
+constraint simply enforces that at least one precondition of
+a
+a
+is incompatible
+with the learned predicate assignment of
+s
+^
+\hat{s}
+, unless slack is used. The
+exact linearized constraints are given in
+Sec. B.1
+.
+Lexicographic model selection.
+Many predicate/operator assignments may satisfy the semantic constraints.
+We therefore choose among feasible models using a lexicographic objective:
+min
+lex
+⁡
+(
+∑
+e
+^
+∈
+E
+^
+∑
+p
+=
+1
+m
+ξ
+e
+^
+,
+p
+,
+∑
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+η
+s
+^
+,
+a
+,
+∑
+a
+∈
+𝒜
+∑
+p
+=
+1
+m
+(
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+)
+,
+∑
+a
+∈
+𝒜
+∑
+p
+=
+1
+m
+(
+𝑝𝑟𝑒
+a
+,
+p
++
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+)
+)
+\min_{\mathrm{lex}}\left(\sum_{\hat{e}\in\hat{E}}\sum_{p=1}^{m}\xi_{\hat{e},p},\;\sum_{(\hat{s},a)\in\hat{\mathcal{N}}}\eta_{\hat{s},a},\;\sum_{a\in\mathcal{A}}\sum_{p=1}^{m}(\mathit{add}_{a,p}+\mathit{del}_{a,p}),\;\sum_{a\in\mathcal{A}}\sum_{p=1}^{m}(\mathit{pre}^{+}_{a,p}+\mathit{pre}^{-}_{a,p})\right)
+(1)
+The priority order reflects what we want from the learned model. First,
+we minimize transition slack, because observed executions should be
+explained whenever possible. Second, we minimize applicability slack, so
+that trusted missing state-action pairs are ruled out by learned preconditions rather
+than ignored. Third, we prefer sparse effects, since actions in
+manipulation domains usually change only a small number of task-relevant
+facts. Finally, among equally good explanations, we prefer sparse
+preconditions.
+Guarantees.
+In Appendix
+B.2
+we provide formal guarantees for
+strips-wm
+. The key point is that the constraints define a space of grounded propositional
+strips
+models. Proposition
+7
+shows that every feasible assignment induces well-formed
+strips
+operators, regardless of whether slack is used. In the zero-slack regime,
+Theorem 10
+establishes soundness and completeness of the encoding: feasible solutions correspond exactly to
+m
+m
+-predicate grounded
+strips
+models that reproduce the observed transitions and rule out the selected trusted missing state-action pairs. The complete CP-SAT encoding is given in Appendix
+B.1
+.
+5.3
+Visual Predicate Classification and Test-Time Planning
+The previous stage produces a predicate target
+x
+^
+s
+^
+∈
+{
+0
+,
+1
+}
+m
+\hat{x}_{\hat{s}}\in\{0,1\}^{m}
+for each learned state
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+. These targets are obtained offline by discrete
+optimization and cannot be directly applied to a new image. We therefore train
+a visual predicate classifier
+b
+ϕ
+:
+𝒪
+→
+[
+0
+,
+1
+]
+m
+b_{\phi}:\mathcal{O}\rightarrow[0,1]^{m}
+to predict
+the learned predicate vector from pixels.
+Let
+𝒟
+pred
+=
+{
+(
+o
+j
+,
+s
+^
+j
+)
+}
+j
+=
+1
+N
+pred
+\mathcal{D}_{\mathrm{pred}}=\{(o_{j},\hat{s}_{j})\}_{j=1}^{N_{\mathrm{pred}}}
+denote the set of training observations paired with their learned state
+identity from the visual task graph. For each pair
+(
+o
+j
+,
+s
+^
+j
+)
+(o_{j},\hat{s}_{j})
+, we have the target predicate vector
+x
+^
+s
+^
+j
+\hat{x}_{\hat{s}_{j}}
+. We then train
+b
+ϕ
+b_{\phi}
+with a multi-label binary prediction
+loss:
+ℒ
+pred
+=
+∑
+(
+o
+j
+,
+s
+^
+j
+)
+∈
+𝒟
+pred
+BCE
+⁡
+(
+b
+ϕ
+​
+(
+o
+j
+)
+,
+x
+^
+s
+^
+j
+)
+.
+\mathcal{L}_{\mathrm{pred}}=\sum_{(o_{j},\hat{s}_{j})\in\mathcal{D}_{\mathrm{pred}}}\operatorname{BCE}\left(b_{\phi}(o_{j}),\hat{x}_{\hat{s}_{j}}\right).
+At test time, the input is a start image
+o
+start
+o_{\mathrm{start}}
+and a goal image
+o
+goal
+o_{\mathrm{goal}}
+. The visual predicate classifier maps them to predicate
+probabilities, which we binarize as
+𝐱
+^
+start
+=
+bin
+⁡
+(
+b
+ϕ
+​
+(
+o
+start
+)
+)
+\hat{\mathbf{x}}_{\mathrm{start}}=\operatorname{bin}(b_{\phi}(o_{\mathrm{start}}))
+and
+𝐱
+^
+goal
+=
+bin
+⁡
+(
+b
+ϕ
+​
+(
+o
+goal
+)
+)
+\hat{\mathbf{x}}_{\mathrm{goal}}=\operatorname{bin}(b_{\phi}(o_{\mathrm{goal}}))
+.
+We then solve a classical planning problem in the learned predicate space with
+initial state
+𝐱
+^
+start
+\hat{\mathbf{x}}_{\mathrm{start}}
+, goal state
+𝐱
+^
+goal
+\hat{\mathbf{x}}_{\mathrm{goal}}
+, and operator set
+Ω
+^
+\hat{\Omega}
+. During
+search, an action identifier
+a
+∈
+𝒜
+a\in\mathcal{A}
+is considered only if the learned
+operator
+ω
+^
+a
+\hat{\omega}_{a}
+is applicable in the current predicate state
+x
+x
+; the
+successor is computed by the learned
+strips
+transition
+x
+′
+=
+τ
+ω
+^
+a
+​
+(
+x
+)
+x^{\prime}=\tau_{\hat{\omega}_{a}}(x)
+. Search terminates when the goal predicate code is
+reached and returns the corresponding action sequence
+π
+=
+(
+a
+1
+,
+…
+,
+a
+H
+)
+\pi=(a_{1},\ldots,a_{H})
+.
+6
+Experiments & Results
+Table 1:
+Domain and learned abstraction statistics.
+Domain Statistics
+strips-wm
+Statistics
+Domain
+|
+𝒜
+|
+|\mathcal{A}|
+|
+𝒟
+O
+|
+|\mathcal{D}_{O}|
+|
+𝒮
+⋆
+|
+|\mathcal{S}^{\star}|
+|
+𝒮
+^
+|
+|\hat{\mathcal{S}}|
+|
+𝒳
+^
+|
+|\hat{\mathcal{X}}|
+m
+m
+∑
+ξ
+\sum\xi
+∑
+η
+\sum\eta
+BlocksWorld
+18
+5,000
+16
+16
+16
+9
+0
+0
+DinnerTable
+70
+12,000
+101
+101
+101
+35
+0
+9
+DinnerTable Real
+64
+3,000
+71
+111
+71
+35
+0
+13
+Visual Planning Domains:
+We evaluate the performance of
+strips-wm
+in three image-based rearrangement domains.
+BlocksWorld
+consists of three identical blocks and three stacking regions as in
+[
+2
+]
+.
+DinnerTable
+is a simulated tabletop rearrangement problem with five distinct objects and seven possible placements.
+DinnerTable Real
+uses real images from the same tabletop rearrangement setting, with additional static distractor objects such as a plate, bowl, and shelf, as shown in
+STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images
+.
+For evaluation purposes, we manually create ground-truth transition task graphs
+G
+⋆
+=
+(
+𝒮
+⋆
+,
+ℰ
+⋆
+)
+G^{\star}=(\mathcal{S}^{\star},\mathcal{E}^{\star})
+, for each planning domain that explain
+D
+𝒪
+D_{\mathcal{O}}
+. The statistics for each domain are reported in
+Table 1
+. We note that for
+DinnerTable Real
+and
+DinnerTable
+, we explored a subset of the potential task space with the collected dataset
+D
+𝒪
+D_{\mathcal{O}}
+.
+Visual Planning Baselines.
+We compare STRIPS-WM against four baselines.
+WM-Rollout:
+rolls out candidate action sequences with the learned
+action-conditioned FSQ dynamics model and selects the sequence whose predicted code is
+closest to the goal. This follows the spirit of rollout-based visual MPC and latent
+world-model planning
+[
+19
+,
+14
+,
+27
+]
+.
+WM-BFS:
+uses the same learned dynamics model, but replaces sequence rollout
+with discrete graph search in the FSQ space: from the start code, it applies each action
+identifier, enqueues unseen successor codes, and stops when the goal code is reached.
+This follows latent graph-search approaches to visual planning
+[
+5
+]
+.
+LSR
+[
+20
+]
+learns a continuous visual latent space from
+image transitions, clusters latent observations into roadmap nodes, and adds directed
+edges from observed transitions. It can be viewed as learning a latent task graph
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{E})
+, with planning performed by graph search over the roadmap.
+LatPlan-AMA3
+[
+3
+]
+is the most similar work to
+strips-wm
+.
+It learns
+strips
+-style predicates, operators, binary latent image codes, and an action-conditioned neural transition model with add/delete/no-op style bit effects. We adapted the AMA3 model to use our provided action identifiers for a fair comparison.
+Figure 3:
+Planning success as a function of shortest-path horizon. Each point is evaluated by executing the returned action sequence in the ground-truth transition graph. Success therefore requires reaching the true goal state, not merely the goal predicted by the learned model.
+RQ1: Does
+strips-wm
+learn the correct abstraction?
+The data in
+Table 1
+show how the learned abstraction compares
+to the ground-truth task graph. Let
+𝒳
+^
+\hat{\mathcal{X}}
+denote the set of distinct predicate states produced by operator learning. In
+BlocksWorld
+,
+strips-wm
+recovers the abstraction
+exactly:
+|
+𝒮
+^
+|
+=
+|
+𝒮
+⋆
+|
+=
+|
+𝒳
+^
+|
+=
+16
+|\hat{\mathcal{S}}|=|\mathcal{S}^{\star}|=|\hat{\mathcal{X}}|=16
+. The
+model uses
+m
+=
+9
+m=9
+predicates and has zero transition and applicability slack
+(
+∑
+ξ
+=
+0
+,
+∑
+η
+=
+0
+)
+(\sum\xi=0,\sum\eta=0)
+. Thus, BlocksWorld lies in the exact zero-slack regime
+of
+Theorem 10
+: the learned
+strips
+model is sound and
+complete with respect to the learned graph and the selected trusted missing
+state-action pairs. In
+DinnerTable
+,
+strips-wm
+again recovers the ground-truth abstraction,
+with
+|
+𝒮
+^
+|
+=
+|
+𝒮
+⋆
+|
+=
+|
+𝒳
+^
+|
+=
+101
+|\hat{\mathcal{S}}|=|\mathcal{S}^{\star}|=|\hat{\mathcal{X}}|=101
+, and has
+zero transition slack
+(
+∑
+ξ
+=
+0
+)
+(\sum\xi=0)
+and a small amount of
+applicability slack
+(
+∑
+η
+=
+9
+)
+(\sum\eta=9)
+, indicating residual applicability errors
+in the learned precondition model. In
+DinnerTable Real
+, the visual abstraction over-splits the task space,
+producing
+|
+𝒮
+^
+|
+=
+111
+|\hat{\mathcal{S}}|=111
+visual nodes for only
+|
+𝒮
+⋆
+|
+=
+71
+|\mathcal{S}^{\star}|=71
+task states. The CP-SAT solver collapses these into
+|
+𝒳
+^
+|
+=
+71
+|\hat{\mathcal{X}}|=71
+distinct predicate states, again with zero transition
+slack
+(
+∑
+ξ
+=
+0
+)
+(\sum\xi=0)
+. The remaining applicability slack
+(
+∑
+η
+=
+13
+)
+(\sum\eta=13)
+is
+therefore best interpreted as a fragmentation-induced negative-evidence conflict,
+rather than a failure to model the observed transition dynamics.
+RQ2: How well does
+strips-wm
+scale to long-horizon tasks?
+We evaluate image-to-plan performance using the ground-truth transition graph
+G
+⋆
+=
+(
+𝒮
+⋆
+,
+ℰ
+⋆
+)
+G^{\star}=(\mathcal{S}^{\star},\mathcal{E}^{\star})
+. For each domain and
+shortest-path horizon
+ℓ
+\ell
+, we sample 200 start–goal image queries whose
+endpoints are distance
+ℓ
+\ell
+in
+G
+⋆
+G^{\star}
+. Each method receives only the
+start and goal images and returns either an action sequence or no plan. Returned
+plans are executed in
+G
+⋆
+G^{\star}
+, and success is the fraction of queries whose plans reach the
+ground-truth goal state. Thus, reaching the goal only in the learned model is not
+sufficient.
+The results in
+Fig. 3
+show that
+strips-wm
+achieves 100%
+success in BlocksWorld, consistent with the zero-slack abstraction in
+Table 1
+and the exact regime of
+Theorem 10
+. In DinnerTable Real,
+strips-wm
+also achieves
+100% success despite using slack: here, slack reflects the collapse of an
+over-split visual graph into the correct task-level
+strips
+abstraction.
+In simulated DinnerTable, however, the introduced slack corresponds to genuine
+errors in the learned applicability model, which appear as failures at longer
+horizons.
+The baselines degrade quickly over longer horizons. WM-Rollout compounds latent prediction errors, and
+WM-BFS searches the same FSQ space without explicit preconditions or persistent effects.
+LSR solves BlocksWorld but relies on flat roadmap connectivity, which is less reliable
+in larger long-horizon domains. LatPlan-AMA3 learns a STRIPS-style latent model, but
+does not recover reliable predicates and operators in these visual settings.
+RQ3: Are predicates better than monolithic graph search?
+Figure 4:
+Planning success on DinnerTable Real.
+We compare
+strips-wm
+to direct graph search over the learned task graph
+G
+^
+=
+(
+𝒮
+^
+,
+ℰ
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{\mathcal{E}})
+. As shown in
+Fig. 4
+, the learned
+strips
+model achieves a higher success rate because the
+CP-SAT layer can collapse over-split but action-equivalent visual nodes and repair
+inconsistencies in the flat graph.
+Furthermore, the predicate representation is more compact: instead of classifying among
+monolithic graph nodes
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+,
+strips-wm
+predicts an
+m
+m
+-dimensional binary predicate vector
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+, with
+m
+≪
+|
+𝒮
+^
+|
+m\ll|\hat{\mathcal{S}}|
+. This reduces the perception problem in
+Sec. 5.3
+and enables planning with a few symbolic operators rather than memorized graph edges.
+7
+Limitations
+strips-wm
+inherits three limitations. First, it assumes deterministic
+strips
+dynamics with
+fixed preconditions and add/delete effects, and therefore does not model stochastic
+outcomes or hidden state. Second, the learned model depends on the quality and coverage
+of
+G
+^
+\hat{G}
+: visual aliasing or incomplete outgoing action coverage can produce
+incorrect preconditions or unreliable negative evidence. Third,
+strips-wm
+learns grounded
+propositional operators rather than lifted relational schemas, so it does not
+generalize compositionally to new object sets or action arguments without additional
+data.
+References
+[1]
+D. Aineto and E. Scala
+(2024)
+Action model learning with guarantees
+.
+In
+Proceedings of the 21st International Conference on Principles of Knowledge Representation and Reasoning
+,
+KR ’24
+.
+External Links:
+ISBN 978-1-956792-05-8
+,
+Link
+,
+Document
+Cited by:
+§5.2
+.
+[2]
+A. Ajith and C. Chamzas
+(2026)
+Learning discrete abstractions for visual rearrangement tasks using vision-guided graph coloring
+.
+External Links:
+2509.14460
+,
+Link
+Cited by:
+§6
+.
+[3]
+M. Asai, H. Kajino, A. Fukunaga, and C. Muise
+(2022)
+Classical planning in deep latent space
+.
+J. Artif. Int. Res.
+74
+.
+External Links:
+ISSN 1076-9757
+,
+Link
+,
+Document
+Cited by:
+§2
+,
+§6
+.
+[4]
+M. Assran, Q. Duval, I. Misra, P. Bojanowski, P. Vincent, M. G. Rabbat, Y. LeCun, and N. Ballas
+(2023)
+Self-supervised learning from images with a joint-embedding predictive architecture
+.
+In
+CVPR
+,
+pp. 15619–15629
+.
+External Links:
+Link
+Cited by:
+§2
+,
+§5.1
+.
+[5]
+M. Bagatella, M. Olšák, M. Rolínek, and G. Martius
+(2021)
+Planning from pixels in environments with combinatorially hard search spaces
+.
+Advances in Neural Information Processing Systems
+34
+,
+pp. 24707–24718
+.
+Cited by:
+§6
+.
+[6]
+B. Bonet and H. Geffner
+(2020)
+Learning first-order symbolic representations for planning from the structure of the state space
+.
+External Links:
+1909.05546
+,
+Link
+Cited by:
+§5.2
+.
+[7]
+C. Chamzas, M. Lippi, M. C. Welle, A. Varava, L. E. Kavraki, and D. Kragic
+(2022)
+Comparing reconstruction-and contrastive-based models for visual task planning
+.
+In
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+,
+pp. 12550–12557
+.
+External Links:
+Document
+,
+Link
+Cited by:
+§2
+.
+[8]
+R. Chitnis, T. Silver, J. B. Tenenbaum, T. Lozano-Pérez, and L. P. Kaelbling
+(2022)
+Learning Neuro-Symbolic Relational Transition Models for Bilevel Planning
+.
+In
+2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+,
+pp. 4166–4173
+.
+Note:
+ISSN: 2153-0866
+External Links:
+ISSN 2153-0866
+,
+Link
+,
+Document
+Cited by:
+§2
+.
+[9]
+D. Driess, J. Ha, and M. Toussaint
+(2020)
+Deep Visual Reasoning: Learning to Predict Action Sequences for Task and Motion Planning from an Initial Scene Image
+.
+In
+Robotics: Science and Systems XVI
+,
+(
+en
+).
+External Links:
+ISBN 978-0-9923747-6-1
+,
+Link
+,
+Document
+Cited by:
+§2
+.
+[10]
+R. E. Fikes and N. J. Nilsson
+(1971)
+STRIPS: a new approach to the application of theorem proving to problem solving
+.
+Artificial intelligence
+2
+(
+3-4
+),
+pp. 189–208
+.
+Cited by:
+§1
+,
+§4
+.
+[11]
+M. Ghallab, D. Nau, and P. Traverso
+(2004)
+Automated planning: theory and practice
+.
+Elsevier
+.
+Cited by:
+§1
+.
+[12]
+D. Hafner, K. Lee, I. Fischer, and P. Abbeel
+(2022)
+Deep hierarchical planning from pixels
+.
+Advances in Neural Information Processing Systems
+35
+,
+pp. 26091–26104
+.
+Cited by:
+§2
+.
+[13]
+D. Hafner, T. Lillicrap, I. Fischer, R. Villegas, D. Ha, H. Lee, and J. Davidson
+(2019)
+Learning Latent Dynamics for Planning from Pixels
+.
+arXiv
+.
+Note:
+arXiv:1811.04551 [cs]Comment: 20 pages, 12 figures, 1 table
+External Links:
+Link
+,
+Document
+Cited by:
+§2
+.
+[14]
+B. Ichter and M. Pavone
+(2019)
+Robot motion planning in learned latent spaces
+.
+IEEE Robotics and Automation Letters
+4
+(
+3
+),
+pp. 2407–2414
+.
+Cited by:
+§2
+,
+§6
+.
+[15]
+T. Kipf, E. van der Pol, and M. Welling
+(2020)
+Contrastive learning of structured world models
+.
+External Links:
+1911.12247
+,
+Link
+Cited by:
+§2
+.
+[16]
+G. Konidaris, L. Kaelbling, and T. Lozano-Perez
+(2014)
+Constructing Symbolic Representations for High-Level Planning
+.
+Proceedings of the AAAI Conference on Artificial Intelligence
+28
+(
+1
+) (
+en
+).
+External Links:
+ISSN 2374-3468
+,
+Link
+,
+Document
+Cited by:
+§2
+.
+[17]
+G. Konidaris, L. P. Kaelbling, and T. Lozano-Perez
+(2018)
+From Skills to Symbols: Learning Symbolic Representations for Abstract High-Level Planning
+.
+Journal of Artificial Intelligence Research
+61
+,
+pp. 215–289
+(
+en
+).
+External Links:
+ISSN 1076-9757
+,
+Link
+,
+Document
+Cited by:
+§1
+,
+§2
+,
+§3
+.
+[18]
+M. Laskin, A. Srinivas, and P. Abbeel
+(2020)
+Curl: contrastive unsupervised representations for reinforcement learning
+.
+In
+International conference on machine learning
+,
+pp. 5639–5650
+.
+Cited by:
+§2
+.
+[19]
+S. Levine, C. Finn, T. Darrell, and P. Abbeel
+(2016)
+End-to-end training of deep visuomotor policies
+.
+Journal of Machine Learning Research
+17
+(
+39
+),
+pp. 1–40
+.
+Cited by:
+§1
+,
+§2
+,
+§6
+.
+[20]
+M. Lippi, P. Poklukar, M. C. Welle, A. Varava, H. Yin, A. Marino, and D. Kragic
+(2023)
+Enabling Visual Action Planning for Object Manipulation Through Latent Space Roadmap
+.
+IEEE Transactions on Robotics
+39
+(
+1
+),
+pp. 57–75
+.
+External Links:
+ISSN 1941-0468
+,
+Link
+,
+Document
+Cited by:
+§2
+,
+§6
+.
+[21]
+C. Paxton, Y. Barnoy, K. Katyal, R. Arora, and G. D. Hager
+(2019)
+Visual Robot Task Planning
+.
+In
+2019 International Conference on Robotics and Automation (ICRA)
+,
+pp. 8832–8838
+.
+External Links:
+ISSN 2577-087X
+,
+Link
+,
+Document
+Cited by:
+§2
+.
+[22]
+L. Perron and F. Didier
+(2025)
+CP-sat
+.
+Google
+.
+External Links:
+Link
+Cited by:
+§5.2
+.
+[23]
+N. Shah, J. Nagpal, P. Verma, and S. Srivastava
+(2024)
+From reals to logic and back: inventing symbolic vocabularies, actions and models for planning from raw data
+.
+arXiv preprint arXiv:2402.11871
+2
+,
+pp. A14
+.
+Cited by:
+§2
+.
+[24]
+T. Silver, A. Athalye, J. B. Tenenbaum, T. Lozano-Pérez, and L. P. Kaelbling
+(2023)
+Learning Neuro-Symbolic Skills for Bilevel Planning
+.
+In
+Proceedings of The 6th Conference on Robot Learning
+,
+pp. 701–714
+(
+en
+).
+External Links:
+ISSN 2640-3498
+,
+Link
+Cited by:
+§2
+.
+[25]
+T. Silver, R. Chitnis, J. Tenenbaum, L. P. Kaelbling, and T. Lozano-Pérez
+(2021)
+Learning Symbolic Operators for Task and Motion Planning
+.
+In
+2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+,
+pp. 3182–3189
+.
+Note:
+ISSN: 2153-0866
+External Links:
+ISSN 2153-0866
+,
+Link
+,
+Document
+Cited by:
+§2
+.
+[26]
+A. Srinivas, A. Jabri, P. Abbeel, S. Levine, and C. Finn
+(2018)
+Universal planning networks
+.
+External Links:
+1804.00645
+,
+Link
+Cited by:
+§2
+.
+[27]
+P. Wu, A. Escontrela, D. Hafner, P. Abbeel, and K. Goldberg
+(2022)
+DayDreamer: world models for physical robot learning
+.
+In
+6th Annual Conference on Robot Learning
+,
+External Links:
+Link
+Cited by:
+§2
+,
+§6
+.
+[28]
+L. Yen-Chen, M. Bauza, and P. Isola
+(2020)
+Experience-embedded visual foresight
+.
+In
+Conference on Robot Learning
+,
+pp. 1015–1024
+.
+Cited by:
+§2
+.
+[29]
+G. Zhou, H. Pan, Y. LeCun, and L. Pinto
+(2025)
+DINO-WM: world models on pre-trained visual features enable zero-shot planning
+.
+In
+Forty-second International Conference on Machine Learning
+,
+External Links:
+Link
+Cited by:
+§2
+.
+Appendix
+Appendix A
+Architecture and Implementation Details
+This section gives additional implementation details for the three
+learned components of
+strips-wm
+: the image-grounded task graph in
+Sec. 5.1
+, the operator-learning stage in
+Sec. 5.2
+, and the visual predicate classifier in
+Sec. 5.3
+.
+A.1
+Image-grounded task graph model
+To construct the image-grounded task graph
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{E})
+, we learn a discrete state
+assignment
+α
+:
+𝒪
+→
+𝒮
+^
+\alpha:\mathcal{O}\rightarrow\hat{\mathcal{S}}
+. As shown in
+Fig. 2
+, the model has a student image encoder, an EMA
+teacher encoder, a finite-scalar-quantized latent code, an
+action-conditioned latent dynamics model, and an inverse dynamics head.
+The student encoder
+f
+θ
+f_{\theta}
+maps the current observation
+o
+t
+o_{t}
+to
+a continuous latent vector. Finite scalar quantization then maps this
+vector to a discrete code
+z
+t
+=
+q
+⁡
+(
+f
+θ
+​
+(
+o
+t
+)
+)
+.
+z_{t}=q(f_{\theta}(o_{t})).
+The successor observation
+o
+t
++
+1
+o_{t+1}
+is encoded by an exponential-moving
+average teacher encoder
+f
+θ
+¯
+f_{\bar{\theta}}
+. The teacher parameters are
+updated after each optimization step as
+θ
+¯
+←
+μ
+​
+θ
+¯
++
+(
+1
+−
+μ
+)
+​
+θ
+,
+\bar{\theta}\leftarrow\mu\bar{\theta}+(1-\mu)\theta,
+with
+μ
+=
+0.996
+\mu=0.996
+. The teacher output is quantized with the same FSQ
+quantizer to produce the target successor code
+z
+t
++
+1
+tar
+=
+q
+⁡
+(
+f
+θ
+¯
+​
+(
+o
+t
++
+1
+)
+)
+.
+z^{\mathrm{tar}}_{t+1}=q(f_{\bar{\theta}}(o_{t+1})).
+The action-conditioned latent dynamics model predicts a successor code
+z
+^
+t
++
+1
+\hat{z}_{t+1}
+from
+z
+t
+z_{t}
+and the action identifier
+a
+t
+a_{t}
+. The
+inverse model predicts
+a
+t
+a_{t}
+from the current and successor codes,
+which discourages collapsed representations that ignore action-relevant
+visual differences.
+We train this architecture with the following objective:
+ℒ
+total
+=
+ℒ
+dyn
++
+λ
+inv
+​
+ℒ
+inv
++
+λ
+com
+​
+ℒ
+com
++
+λ
+aug
+​
+ℒ
+aug
++
+λ
+sep
+​
+ℒ
+sep
+.
+\mathcal{L}_{\mathrm{total}}=\mathcal{L}_{\mathrm{dyn}}+\lambda_{\mathrm{inv}}\mathcal{L}_{\mathrm{inv}}+\lambda_{\mathrm{com}}\mathcal{L}_{\mathrm{com}}+\lambda_{\mathrm{aug}}\mathcal{L}_{\mathrm{aug}}+\lambda_{\mathrm{sep}}\mathcal{L}_{\mathrm{sep}}.
+The dynamics loss is
+ℒ
+dyn
+=
+‖
+z
+^
+t
++
+1
+−
+z
+t
++
+1
+tar
+‖
+2
+2
+,
+\mathcal{L}_{\mathrm{dyn}}=\|\hat{z}_{t+1}-z^{\mathrm{tar}}_{t+1}\|_{2}^{2},
+and trains the latent dynamics model to predict the teacher successor
+code. The inverse loss is
+ℒ
+inv
+=
+CE
+⁡
+(
+a
+^
+t
+,
+a
+t
+)
+,
+\mathcal{L}_{\mathrm{inv}}=\operatorname{CE}(\hat{a}_{t},a_{t}),
+where
+a
+^
+t
+\hat{a}_{t}
+is the inverse model prediction. This term encourages
+the code to preserve information that distinguishes which action caused
+a transition.
+The commitment loss stabilizes the quantized representation. Let
+z
+~
+t
+\tilde{z}_{t}
+denote the continuous latent value immediately before
+straight-through rounding, and let
+z
+t
+z_{t}
+denote the corresponding
+quantized code. We use
+ℒ
+com
+=
+‖
+z
+~
+t
+−
+stopgrad
+⁡
+(
+z
+t
+)
+‖
+2
+2
+.
+\mathcal{L}_{\mathrm{com}}=\|\tilde{z}_{t}-\operatorname{stopgrad}(z_{t})\|_{2}^{2}.
+This pulls the encoder output toward the discrete FSQ grid point it is
+assigned to, reducing oscillation near quantization boundaries while
+leaving the quantized target fixed.
+For real-image training, we also used mild same-image augmentation
+consistency. If
+aug
+⁡
+(
+o
+t
+)
+\operatorname{aug}(o_{t})
+is an augmented version of the
+same observation, then
+ℒ
+aug
+\mathcal{L}_{\mathrm{aug}}
+encourages
+o
+t
+o_{t}
+and
+aug
+⁡
+(
+o
+t
+)
+\operatorname{aug}(o_{t})
+to receive the same latent code.
+This term is used as a visual invariance regularizer.
+Latent nondeterminism.
+We also monitor the determinism of the learned latent transition graph.
+Given the encoded transitions
+(
+z
+i
+,
+a
+i
+,
+z
+i
+′
+)
+,
+(z_{i},a_{i},z^{\prime}_{i}),
+we say that a latent state-action pair
+(
+z
+,
+a
+)
+(z,a)
+is
+latent-nondeterministic
+if it has more than one observed successor
+code:
+|
+{
+z
+′
+∣
+(
+z
+,
+a
+,
+z
+′
+)
+​
+is observed
+}
+|
+>
+1
+.
+\left|\{z^{\prime}\mid(z,a,z^{\prime})\text{ is observed}\}\right|>1.
+This diagnostic uses only the learned codes and the action identifiers in
+D
+𝒪
+D_{\mathcal{O}}
+. It does not use ground-truth symbolic states, object
+metadata, or manually labeled predicates. Low latent nondeterminism is
+desirable because the downstream CP-SAT stage learns deterministic
+strips
+operators. If a single learned code
+z
+z
+with the same action
+label
+a
+a
+leads to multiple successor codes, then the visual abstraction
+has either aliased different task states or introduced transition noise.
+The predictive separation term is designed to reduce this failure mode.
+When two examples have the same current code and the same action label
+but different successor codes,
+ℒ
+sep
+\mathcal{L}_{\mathrm{sep}}
+encourages
+their pre-quantized current latents to move apart. This makes it easier
+for the quantizer to assign distinct codes to states that are visually
+similar but action-relevantly different.
+Latent sweep and checkpoint selection.
+For each domain, we swept the FSQ latent dimensionality while keeping a
+centered five-level scalar grid in each active dimension. The candidate
+latent spaces were
+[
+5
+]
+5
+,
+[
+5
+]
+6
+,
+[
+5
+]
+7
+,
+[5]^{5},\qquad[5]^{6},\qquad[5]^{7},
+corresponding to
+B
+∈
+{
+5
+,
+6
+,
+7
+}
+B\in\{5,6,7\}
+FSQ dimensions with five levels per
+dimension. We selected checkpoints using the total training loss and
+latent-nondeterminism diagnostics, preferring lower latent nondeterminism
+among comparable low-loss checkpoints.
+Setting
+BlocksWorld
+DinnerTable
+DinnerTable Real
+Encoder backbone
+ConvNeXt-Tiny
+ConvNeXt-Tiny
+ConvNeXt-Tiny
+Image resolution
+228
+×
+228
+228\times 228
+228
+×
+228
+228\times 228
+228
+×
+228
+228\times 228
+FSQ latent sweep
+[
+5
+]
+5
+,
+[
+5
+]
+6
+,
+[
+5
+]
+7
+[5]^{5},[5]^{6},[5]^{7}
+[
+5
+]
+5
+,
+[
+5
+]
+6
+,
+[
+5
+]
+7
+[5]^{5},[5]^{6},[5]^{7}
+[
+5
+]
+5
+,
+[
+5
+]
+6
+,
+[
+5
+]
+7
+[5]^{5},[5]^{6},[5]^{7}
+Selected FSQ levels
+[
+5
+]
+5
+[5]^{5}
+[
+5
+]
+7
+[5]^{7}
+[
+5
+]
+7
+[5]^{7}
+Optimizer
+AdamW
+AdamW
+AdamW
+Learning rate
+8
+×
+10
+−
+4
+8\times 10^{-4}
+8
+×
+10
+−
+4
+8\times 10^{-4}
+8
+×
+10
+−
+4
+8\times 10^{-4}
+Batch size
+64
+64
+64
+Training epochs
+170
+170
+170
+Teacher EMA decay
+μ
+\mu
+0.996
+0.996
+0.996
+Inverse loss weight
+λ
+inv
+\lambda_{\mathrm{inv}}
+5.0
+5.0
+5.0
+Commitment loss weight
+λ
+com
+\lambda_{\mathrm{com}}
+0.05
+0.05
+0.05
+Predictive separation weight
+λ
+sep
+\lambda_{\mathrm{sep}}
+0.03
+0.03
+0.03
+Table 2:
+Image-grounded task-graph training hyperparameters. We swept the FSQ latent dimensionality
+for each domain and selected the final checkpoint using training loss and latent-graph diagnostics.
+A.2
+Operator-learning hyperparameters
+Given the learned task graph
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{E})
+, the
+operator-learning stage assigns a binary predicate vector
+𝐱
+^
+s
+^
+∈
+{
+0
+,
+1
+}
+m
+\hat{\mathbf{x}}_{\hat{s}}\in\{0,1\}^{m}
+to each learned graph node
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+, and learns one grounded propositional
+operator
+ω
+^
+a
+\hat{\omega}_{a}
+for each action identifier
+a
+∈
+𝒜
+a\in\mathcal{A}
+. We use the CP-SAT formulation described in
+Sec. 5.2
+, with the exact linearized constraints
+given in
+Sec. B.1
+.
+The main hyperparameter in this stage is the predicate dimension
+m
+m
+.
+For each domain, we swept
+m
+m
+and selected the smallest predicate
+dimension that produced a compact STRIPS explanation within the solver
+budget. In particular, we prioritized models that
+reproduce the observed graph transitions with zero transition slack, and
+then used the lexicographic objective in
+Equation 1
+to trade off applicability slack, effect
+sparsity, and precondition sparsity. Each fixed-
+m
+m
+CP-SAT run was
+given a total wall-clock budget of 300 seconds. This budget is applied to
+the complete solver run for that candidate predicate dimension, rather
+than to each individual objective term.
+The slack variables have different interpretations. Transition slack is
+represented by variables
+ξ
+e
+^
+,
+p
+\xi_{\hat{e},p}
+, one for each observed edge
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+and predicate
+p
+∈
+[
+m
+]
+p\in[m]
+.
+These variables relax the requirement that the learned add/delete/inertia
+effects exactly reproduce the observed successor predicate value. The
+aggregate transition slack reported in the experiments is
+∑
+ξ
+=
+∑
+e
+^
+∈
+E
+^
+∑
+p
+=
+1
+m
+ξ
+e
+^
+,
+p
+.
+\sum\xi=\sum_{\hat{e}\in\hat{E}}\sum_{p=1}^{m}\xi_{\hat{e},p}.
+Thus,
+∑
+ξ
+=
+0
+\sum\xi=0
+means that every observed edge in the learned graph
+is reproduced exactly in predicate space. Applicability slack is
+represented by variables
+η
+s
+^
+,
+a
+\eta_{\hat{s},a}
+, one for each trusted
+missing state-action pair
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+. The
+aggregate applicability slack is
+∑
+η
+=
+∑
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+η
+s
+^
+,
+a
+.
+\sum\eta=\sum_{(\hat{s},a)\in\hat{\mathcal{N}}}\eta_{\hat{s},a}.
+Thus,
+∑
+η
+>
+0
+\sum\eta>0
+does not mean that an observed edge is modeled
+incorrectly; it means that some trusted missing action remained
+applicable under the learned precondition model.
+Setting
+BlocksWorld
+DinnerTable
+DinnerTable Real
+Solver backend
+CP-SAT
+CP-SAT
+CP-SAT
+Wall-clock budget per fixed-
+m
+m
+run
+300s
+300s
+300s
+Selected predicate dimension
+m
+m
+9
+35
+35
+Transition slack in selected solution
+∑
+ξ
+\sum\xi
+0
+0
+0
+Applicability slack in selected solution
+∑
+η
+\sum\eta
+0
+9
+13
+Table 3:
+Operator-learning settings and selected CP-SAT solutions.
+The formal guarantees in
+Sec. B.2
+apply
+directly to these learned models. In particular,
+Proposition 7
+shows that every feasible CP-SAT
+assignment induces well-formed grounded propositional
+strips
+operators,
+regardless of the slack values. When both transition slack and
+applicability slack are zero,
+Theorem 10
+gives the
+exact soundness and completeness statement for the learned graph and the
+selected trusted missing state-action pairs.
+A.3
+Visual predicate classifier
+The operator-learning stage assigns a learned predicate vector
+x
+^
+s
+^
+∈
+{
+0
+,
+1
+}
+m
+\hat{x}_{\hat{s}}\in\{0,1\}^{m}
+to each learned graph node
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+. These predicate assignments are defined only on the
+offline learned task graph, so they cannot be directly applied to a new
+start or goal image. We therefore train a visual predicate classifier
+b
+ϕ
+:
+𝒪
+→
+[
+0
+,
+1
+]
+m
+b_{\phi}:\mathcal{O}\rightarrow[0,1]^{m}
+, as described in
+Sec. 5.3
+. The classifier grounds the learned predicates
+back into perception by predicting the predicate vector associated with
+the graph node assigned to an image.
+Let
+g
+ϕ
+​
+(
+o
+)
+∈
+ℝ
+m
+g_{\phi}(o)\in\mathbb{R}^{m}
+denote the classifier logits, and let
+b
+ϕ
+​
+(
+o
+)
+=
+σ
+⁡
+(
+g
+ϕ
+​
+(
+o
+)
+)
+b_{\phi}(o)=\sigma(g_{\phi}(o))
+denote the corresponding predicate probabilities.
+For each visual transition
+(
+o
+i
+,
+a
+i
+,
+o
+i
+′
+)
+∈
+D
+𝒪
+(o_{i},a_{i},o^{\prime}_{i})\in D_{\mathcal{O}}
+, the
+learned state assignment maps the images to graph nodes:
+s
+^
+i
+=
+α
+⁡
+(
+o
+i
+)
+,
+s
+^
+i
+′
+=
+α
+⁡
+(
+o
+i
+′
+)
+.
+\hat{s}_{i}=\alpha(o_{i}),\qquad\hat{s}^{\prime}_{i}=\alpha(o^{\prime}_{i}).
+We use the corresponding learned predicate assignments as binary
+supervision vectors:
+y
+i
+=
+x
+^
+s
+^
+i
+,
+y
+i
+′
+=
+x
+^
+s
+^
+i
+′
+.
+y_{i}=\hat{x}_{\hat{s}_{i}},\qquad y^{\prime}_{i}=\hat{x}_{\hat{s}^{\prime}_{i}}.
+Thus, the predicate classifier is trained only from predicate assignments
+learned by
+strips-wm
+.
+We train the classifier with binary cross-entropy on both the current and
+successor images:
+ℒ
+BCE
+=
+1
+2
+​
+[
+BCE
+⁡
+(
+g
+ϕ
+​
+(
+o
+i
+)
+,
+y
+i
+)
++
+BCE
+⁡
+(
+g
+ϕ
+​
+(
+o
+i
+′
+)
+,
+y
+i
+′
+)
+]
+.
+\mathcal{L}_{\mathrm{BCE}}=\frac{1}{2}\left[\operatorname{BCE}(g_{\phi}(o_{i}),y_{i})+\operatorname{BCE}(g_{\phi}(o^{\prime}_{i}),y^{\prime}_{i})\right].
+Here
+BCE
+\operatorname{BCE}
+denotes binary cross-entropy with logits. We
+also use a small confidence regularizer on the logits:
+ℒ
+margin
+=
+1
+2
+​
+[
+ReLU
+⁡
+(
+γ
+−
+|
+g
+ϕ
+​
+(
+o
+i
+)
+|
+)
++
+ReLU
+⁡
+(
+γ
+−
+|
+g
+ϕ
+​
+(
+o
+i
+′
+)
+|
+)
+]
+,
+\mathcal{L}_{\mathrm{margin}}=\frac{1}{2}\left[\operatorname{ReLU}(\gamma-|g_{\phi}(o_{i})|)+\operatorname{ReLU}(\gamma-|g_{\phi}(o^{\prime}_{i})|)\right],
+averaged over predicates. This term encourages predictions to move away from the binarization
+threshold while the binary cross-entropy term anchors them to the learned
+predicate assignments. The reported predicate-classifier objective is
+ℒ
+pred
+=
+ℒ
+BCE
++
+λ
+margin
+​
+ℒ
+margin
+.
+\mathcal{L}_{\mathrm{pred}}=\mathcal{L}_{\mathrm{BCE}}+\lambda_{\mathrm{margin}}\mathcal{L}_{\mathrm{margin}}.
+At test time, the classifier maps a start image and goal image to
+predicate probabilities. We binarize each predicate independently:
+x
+^
+start
+=
+bin
+⁡
+(
+b
+ϕ
+​
+(
+o
+start
+)
+)
+,
+x
+^
+goal
+=
+bin
+⁡
+(
+b
+ϕ
+​
+(
+o
+goal
+)
+)
+,
+\hat{x}_{\mathrm{start}}=\operatorname{bin}(b_{\phi}(o_{\mathrm{start}})),\qquad\hat{x}_{\mathrm{goal}}=\operatorname{bin}(b_{\phi}(o_{\mathrm{goal}})),
+where
+bin
+⁡
+(
+b
+)
+p
+=
+{
+1
+,
+b
+p
+≥
+0.5
+,
+0
+,
+b
+p
+<
+0.5
+.
+\operatorname{bin}(b)_{p}=\begin{cases}1,&b_{p}\geq 0.5,\\
+0,&b_{p}<0.5.\end{cases}
+Planning then uses
+x
+^
+start
+\hat{x}_{\mathrm{start}}
+,
+x
+^
+goal
+\hat{x}_{\mathrm{goal}}
+, and the learned operator set
+Ω
+^
+\hat{\Omega}
+exactly as described in
+Sec. 5.3
+.
+Setting
+BlocksWorld
+DinnerTable
+DinnerTable Real
+Classifier backbone
+ConvNeXt-Tiny
+ConvNeXt-Tiny
+ConvNeXt-Tiny
+Input resolution
+228
+×
+228
+228\times 228
+228
+×
+228
+228\times 228
+228
+×
+228
+228\times 228
+Output dimension
+m
+=
+9
+m=9
+m
+=
+35
+m=35
+m
+=
+35
+m=35
+Optimizer
+Adam
+Adam
+Adam
+Learning rate
+10
+−
+3
+10^{-3}
+10
+−
+3
+10^{-3}
+10
+−
+3
+10^{-3}
+Batch size
+64
+64
+64
+Training epochs
+50
+150
+150
+Margin
+γ
+\gamma
+1.0
+1.0
+1.0
+Margin weight
+λ
+margin
+\lambda_{\mathrm{margin}}
+0.1
+0.1
+0.1
+Binarization threshold
+0.5
+0.5
+0.5
+Table 4:
+Visual predicate classifier hyperparameters. The output dimension is the selected predicate dimension
+m
+m
+from
+Table 1
+.
+Appendix B
+Additional Theoretical Details
+B.1
+Exact CP-SAT Encoding for Operator Learning
+This section gives the exact binary optimization used for the
+operator-learning stage in
+Sec. 5.2
+. The input is
+the learned task graph
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{E})
+, together
+with the trusted missing state-action pairs
+𝒩
+^
+\hat{\mathcal{N}}
+. For a
+fixed predicate dimension
+m
+m
+, the CP-SAT solver assigns predicate
+vectors to learned graph nodes and learns one grounded propositional
+strips
+operator for each action identifier.
+For every learned graph node
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+and
+predicate
+p
+∈
+[
+m
+]
+p\in[m]
+, we introduce a binary predicate variable
+x
+^
+s
+^
+,
+p
+∈
+{
+0
+,
+1
+}
+.
+\hat{x}_{\hat{s},p}\in\{0,1\}.
+The full predicate vector for
+s
+^
+\hat{s}
+is
+𝐱
+^
+s
+^
+=
+(
+x
+^
+s
+^
+,
+1
+,
+…
+,
+x
+^
+s
+^
+,
+m
+)
+∈
+{
+0
+,
+1
+}
+m
+.
+\hat{\mathbf{x}}_{\hat{s}}=(\hat{x}_{\hat{s},1},\ldots,\hat{x}_{\hat{s},m})\in\{0,1\}^{m}.
+For every action identifier
+a
+∈
+𝒜
+a\in\mathcal{A}
+and predicate
+p
+∈
+[
+m
+]
+p\in[m]
+,
+we introduce binary operator-mask variables
+𝑎𝑑𝑑
+a
+,
+p
+,
+𝑑𝑒𝑙
+a
+,
+p
+∈
+{
+0
+,
+1
+}
+,
+𝑝𝑟𝑒
+a
+,
+p
++
+,
+𝑝𝑟𝑒
+a
+,
+p
+−
+∈
+{
+0
+,
+1
+}
+.
+\mathit{add}_{a,p},\mathit{del}_{a,p}\in\{0,1\},\qquad\mathit{pre}^{+}_{a,p},\mathit{pre}^{-}_{a,p}\in\{0,1\}.
+We also use transition slack variables
+ξ
+e
+^
+,
+p
+∈
+{
+0
+,
+1
+}
+\xi_{\hat{e},p}\in\{0,1\}
+. Here
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+denotes an observed edge in the
+learned task graph, and
+p
+∈
+[
+m
+]
+p\in[m]
+denotes a predicate. Thus
+ξ
+e
+^
+,
+p
+\xi_{\hat{e},p}
+is the per-edge/per-predicate form of the aggregate
+transition slack
+∑
+ξ
+\sum\xi
+reported in the main text. We use
+applicability slack variables
+η
+s
+^
+,
+a
+∈
+{
+0
+,
+1
+}
+\eta_{\hat{s},a}\in\{0,1\}
+for trusted missing pairs
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+, and auxiliary violation and
+distinctness variables introduced below.
+Observed applications satisfy learned preconditions.
+Each observed edge
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+records a successful execution of action identifier
+a
+a
+from
+s
+^
+\hat{s}
+to
+s
+^
+′
+\hat{s}^{\prime}
+. The action identifier
+a
+a
+is the edge
+label. Therefore, the learned preconditions of
+a
+a
+must hold in the
+predicate vector of the source node
+s
+^
+\hat{s}
+. For every
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+and every
+p
+∈
+[
+m
+]
+p\in[m]
+, we impose
+x
+^
+s
+^
+,
+p
+\displaystyle\hat{x}_{\hat{s},p}
+≥
+𝑝𝑟𝑒
+a
+,
+p
++
+,
+\displaystyle\geq\mathit{pre}^{+}_{a,p},
+(2)
+x
+^
+s
+^
+,
+p
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+\displaystyle\hat{x}_{\hat{s},p}+\mathit{pre}^{-}_{a,p}
+≤
+1
+.
+\displaystyle\leq 1.
+(3)
+Thus, if predicate
+p
+p
+is a positive precondition of
+a
+a
+, it must be
+true in every observed source node for
+a
+a
+. If
+p
+p
+is a negative
+precondition, it must be false in every observed source node for
+a
+a
+.
+Observed edges follow
+strips
+effects with inertia.
+For each observed edge
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+and each predicate
+p
+∈
+[
+m
+]
+p\in[m]
+, we impose
+x
+^
+s
+^
+′
+,
+p
++
+ξ
+e
+^
+,
+p
+\displaystyle\hat{x}_{\hat{s}^{\prime},p}+\xi_{\hat{e},p}
+≥
+𝑎𝑑𝑑
+a
+,
+p
+,
+\displaystyle\geq\mathit{add}_{a,p},
+(4)
+x
+^
+s
+^
+′
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+\displaystyle\hat{x}_{\hat{s}^{\prime},p}+\mathit{del}_{a,p}
+≤
+1
++
+ξ
+e
+^
+,
+p
+,
+\displaystyle\leq 1+\xi_{\hat{e},p},
+(5)
+x
+^
+s
+^
+′
+,
+p
+−
+x
+^
+s
+^
+,
+p
+\displaystyle\hat{x}_{\hat{s}^{\prime},p}-\hat{x}_{\hat{s},p}
+≤
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
++
+ξ
+e
+^
+,
+p
+,
+\displaystyle\leq\mathit{add}_{a,p}+\mathit{del}_{a,p}+\xi_{\hat{e},p},
+(6)
+x
+^
+s
+^
+,
+p
+−
+x
+^
+s
+^
+′
+,
+p
+\displaystyle\hat{x}_{\hat{s},p}-\hat{x}_{\hat{s}^{\prime},p}
+≤
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
++
+ξ
+e
+^
+,
+p
+.
+\displaystyle\leq\mathit{add}_{a,p}+\mathit{del}_{a,p}+\xi_{\hat{e},p}.
+(7)
+The add/delete masks and positive/negative precondition masks are
+disjoint:
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+≤
+1
+,
+𝑝𝑟𝑒
+a
+,
+p
++
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+≤
+1
+,
+\mathit{add}_{a,p}+\mathit{del}_{a,p}\leq 1,\qquad\mathit{pre}^{+}_{a,p}+\mathit{pre}^{-}_{a,p}\leq 1,
+(8)
+for all
+a
+∈
+𝒜
+a\in\mathcal{A}
+and
+p
+∈
+[
+m
+]
+p\in[m]
+. When
+ξ
+e
+^
+,
+p
+=
+0
+\xi_{\hat{e},p}=0
+, these constraints implement the standard bitwise
+strips
+update:
+x
+^
+s
+^
+′
+,
+p
+=
+{
+1
+,
+𝑎𝑑𝑑
+a
+,
+p
+=
+1
+,
+0
+,
+𝑑𝑒𝑙
+a
+,
+p
+=
+1
+,
+x
+^
+s
+^
+,
+p
+,
+𝑎𝑑𝑑
+a
+,
+p
+=
+𝑑𝑒𝑙
+a
+,
+p
+=
+0
+.
+\hat{x}_{\hat{s}^{\prime},p}=\begin{cases}1,&\mathit{add}_{a,p}=1,\\
+0,&\mathit{del}_{a,p}=1,\\
+\hat{x}_{\hat{s},p},&\mathit{add}_{a,p}=\mathit{del}_{a,p}=0.\end{cases}
+Thus, add effects set predicates to true, delete effects set predicates
+to false, and all other predicates obey inertia.
+Negative evidence from trusted missing pairs.
+The trusted missing state-action pairs are
+𝒩
+^
+=
+{
+(
+s
+^
+,
+a
+)
+∣
+s
+^
+∈
+𝒮
+^
+trust
+,
+∄
+s
+^
+′
+such that
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+}
+.
+\hat{\mathcal{N}}=\{(\hat{s},a)\mid\hat{s}\in\hat{\mathcal{S}}_{\mathrm{trust}},\ \nexists\hat{s}^{\prime}\text{ such that }(\hat{s},a,\hat{s}^{\prime})\in\hat{E}\}.
+For each
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+, the learned preconditions
+of action
+a
+a
+should be violated in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+,
+unless applicability slack is used. We linearize these violations using
+binary variables
+v
+s
+^
+,
+a
+,
+p
++
+,
+v
+s
+^
+,
+a
+,
+p
+−
+∈
+{
+0
+,
+1
+}
+.
+v^{+}_{\hat{s},a,p},v^{-}_{\hat{s},a,p}\in\{0,1\}.
+For every
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+and
+p
+∈
+[
+m
+]
+p\in[m]
+, we impose
+v
+s
+^
+,
+a
+,
+p
++
+\displaystyle v^{+}_{\hat{s},a,p}
+≤
+𝑝𝑟𝑒
+a
+,
+p
++
+,
+\displaystyle\leq\mathit{pre}^{+}_{a,p},
+v
+s
+^
+,
+a
+,
+p
++
+\displaystyle v^{+}_{\hat{s},a,p}
+≤
+1
+−
+x
+^
+s
+^
+,
+p
+,
+\displaystyle\leq 1-\hat{x}_{\hat{s},p},
+v
+s
+^
+,
+a
+,
+p
++
+\displaystyle v^{+}_{\hat{s},a,p}
+≥
+𝑝𝑟𝑒
+a
+,
+p
++
+−
+x
+^
+s
+^
+,
+p
+,
+\displaystyle\geq\mathit{pre}^{+}_{a,p}-\hat{x}_{\hat{s},p},
+(9)
+v
+s
+^
+,
+a
+,
+p
+−
+\displaystyle v^{-}_{\hat{s},a,p}
+≤
+𝑝𝑟𝑒
+a
+,
+p
+−
+,
+\displaystyle\leq\mathit{pre}^{-}_{a,p},
+v
+s
+^
+,
+a
+,
+p
+−
+\displaystyle v^{-}_{\hat{s},a,p}
+≤
+x
+^
+s
+^
+,
+p
+,
+\displaystyle\leq\hat{x}_{\hat{s},p},
+v
+s
+^
+,
+a
+,
+p
+−
+\displaystyle v^{-}_{\hat{s},a,p}
+≥
+𝑝𝑟𝑒
+a
+,
+p
+−
++
+x
+^
+s
+^
+,
+p
+−
+1
+.
+\displaystyle\geq\mathit{pre}^{-}_{a,p}+\hat{x}_{\hat{s},p}-1.
+(10)
+These constraints encode
+v
+s
+^
+,
+a
+,
+p
++
+=
+𝑝𝑟𝑒
+a
+,
+p
++
+∧
+(
+1
+−
+x
+^
+s
+^
+,
+p
+)
+,
+v
+s
+^
+,
+a
+,
+p
+−
+=
+𝑝𝑟𝑒
+a
+,
+p
+−
+∧
+x
+^
+s
+^
+,
+p
+.
+v^{+}_{\hat{s},a,p}=\mathit{pre}^{+}_{a,p}\wedge(1-\hat{x}_{\hat{s},p}),\qquad v^{-}_{\hat{s},a,p}=\mathit{pre}^{-}_{a,p}\wedge\hat{x}_{\hat{s},p}.
+We then require
+∑
+p
+=
+1
+m
+(
+v
+s
+^
+,
+a
+,
+p
++
++
+v
+s
+^
+,
+a
+,
+p
+−
+)
++
+η
+s
+^
+,
+a
+≥
+1
+,
+∀
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+.
+\sum_{p=1}^{m}\bigl(v^{+}_{\hat{s},a,p}+v^{-}_{\hat{s},a,p}\bigr)+\eta_{\hat{s},a}\geq 1,\qquad\forall(\hat{s},a)\in\hat{\mathcal{N}}.
+(11)
+Thus, every trusted missing state-action pair must either violate at
+least one learned precondition or pay applicability slack.
+Optional distinctness constraints.
+The solver may optionally require selected learned graph nodes to receive
+different predicate vectors. Let
+𝒫
+dist
+\mathcal{P}_{\mathrm{dist}}
+denote the set of unordered node pairs on
+which this constraint is imposed. Full distinctness corresponds to
+including every pair
+{
+s
+^
+,
+r
+^
+}
+⊆
+𝒮
+^
+\{\hat{s},\hat{r}\}\subseteq\hat{\mathcal{S}}
+, while the relaxed
+settings used in some experiments impose fewer or no distinctness
+constraints.
+For each
+{
+s
+^
+,
+r
+^
+}
+∈
+𝒫
+dist
+\{\hat{s},\hat{r}\}\in\mathcal{P}_{\mathrm{dist}}
+and
+predicate
+p
+∈
+[
+m
+]
+p\in[m]
+, we introduce a binary difference variable
+d
+s
+^
+,
+r
+^
+,
+p
+∈
+{
+0
+,
+1
+}
+d_{\hat{s},\hat{r},p}\in\{0,1\}
+and impose
+d
+s
+^
+,
+r
+^
+,
+p
+\displaystyle d_{\hat{s},\hat{r},p}
+≥
+x
+^
+s
+^
+,
+p
+−
+x
+^
+r
+^
+,
+p
+,
+\displaystyle\geq\hat{x}_{\hat{s},p}-\hat{x}_{\hat{r},p},
+(12)
+d
+s
+^
+,
+r
+^
+,
+p
+\displaystyle d_{\hat{s},\hat{r},p}
+≥
+x
+^
+r
+^
+,
+p
+−
+x
+^
+s
+^
+,
+p
+,
+\displaystyle\geq\hat{x}_{\hat{r},p}-\hat{x}_{\hat{s},p},
+(13)
+d
+s
+^
+,
+r
+^
+,
+p
+\displaystyle d_{\hat{s},\hat{r},p}
+≤
+x
+^
+s
+^
+,
+p
++
+x
+^
+r
+^
+,
+p
+,
+\displaystyle\leq\hat{x}_{\hat{s},p}+\hat{x}_{\hat{r},p},
+(14)
+d
+s
+^
+,
+r
+^
+,
+p
+\displaystyle d_{\hat{s},\hat{r},p}
+≤
+2
+−
+x
+^
+s
+^
+,
+p
+−
+x
+^
+r
+^
+,
+p
+,
+\displaystyle\leq 2-\hat{x}_{\hat{s},p}-\hat{x}_{\hat{r},p},
+(15)
+∑
+p
+=
+1
+m
+d
+s
+^
+,
+r
+^
+,
+p
+\displaystyle\sum_{p=1}^{m}d_{\hat{s},\hat{r},p}
+≥
+1
+.
+\displaystyle\geq 1.
+(16)
+Together, these constraints enforce
+𝐱
+^
+s
+^
+≠
+𝐱
+^
+r
+^
+\hat{\mathbf{x}}_{\hat{s}}\neq\hat{\mathbf{x}}_{\hat{r}}
+for each selected pair
+{
+s
+^
+,
+r
+^
+}
+∈
+𝒫
+dist
+\{\hat{s},\hat{r}\}\in\mathcal{P}_{\mathrm{dist}}
+.
+Solver-side regularization.
+The constraints above are the semantic core of the formulation. In the
+implementation, we also use solver-side choices such as
+predicate-frequency symmetry breaking, anti-collapse constraints, and
+relaxed distinctness over selected node pairs. These choices affect which
+feasible solution is preferred or how efficiently it is found, but they
+do not change the
+strips
+form of the learned operators.
+B.2
+Formal Guarantees for Operator Learning
+The guarantees below are stated directly for the learned task graph
+G
+^
+=
+(
+𝒮
+^
+,
+E
+^
+)
+\hat{G}=(\hat{\mathcal{S}},\hat{E})
+and the selected trusted missing
+pairs
+𝒩
+^
+\hat{\mathcal{N}}
+. They do not assume access to the full
+physical state space. Slack variables determine how strictly the learned
+model must agree with
+E
+^
+\hat{E}
+and
+𝒩
+^
+\hat{\mathcal{N}}
+, but they do
+not change the form of the learned operators.
+Trusted missing-pair assumption.
+All statements involving
+𝒩
+^
+\hat{\mathcal{N}}
+are relative to the trusted
+set of missing state-action pairs selected by the method. Thus, the
+negative-evidence guarantees below should be read as guarantees about
+pairs in
+𝒩
+^
+\hat{\mathcal{N}}
+itself. When
+𝒮
+^
+trust
+\hat{\mathcal{S}}_{\mathrm{trust}}
+corresponds to graph nodes with
+complete outgoing action-label information, these guarantees have the
+standard interpretation that missing labels imply inapplicability.
+For any feasible assignment, define
+𝐱
+^
+s
+^
+=
+(
+x
+^
+s
+^
+,
+1
+,
+…
+,
+x
+^
+s
+^
+,
+m
+)
+∈
+{
+0
+,
+1
+}
+m
+\hat{\mathbf{x}}_{\hat{s}}=(\hat{x}_{\hat{s},1},\ldots,\hat{x}_{\hat{s},m})\in\{0,1\}^{m}
+for each
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+, and define
+Add
+⁡
+(
+a
+)
+=
+{
+p
+∈
+[
+m
+]
+∣
+𝑎𝑑𝑑
+a
+,
+p
+=
+1
+}
+,
+Del
+⁡
+(
+a
+)
+=
+{
+p
+∈
+[
+m
+]
+∣
+𝑑𝑒𝑙
+a
+,
+p
+=
+1
+}
+,
+\operatorname{Add}(a)=\{p\in[m]\mid\mathit{add}_{a,p}=1\},\qquad\operatorname{Del}(a)=\{p\in[m]\mid\mathit{del}_{a,p}=1\},
+Pre
++
+⁡
+(
+a
+)
+=
+{
+p
+∈
+[
+m
+]
+∣
+𝑝𝑟𝑒
+a
+,
+p
++
+=
+1
+}
+,
+Pre
+−
+⁡
+(
+a
+)
+=
+{
+p
+∈
+[
+m
+]
+∣
+𝑝𝑟𝑒
+a
+,
+p
+−
+=
+1
+}
+.
+\operatorname{Pre}^{+}(a)=\{p\in[m]\mid\mathit{pre}^{+}_{a,p}=1\},\qquad\operatorname{Pre}^{-}(a)=\{p\in[m]\mid\mathit{pre}^{-}_{a,p}=1\}.
+The induced grounded propositional
+strips
+operator for action identifier
+a
+a
+is
+ω
+^
+a
+=
+⟨
+Pre
++
+⁡
+(
+a
+)
+,
+Pre
+−
+⁡
+(
+a
+)
+,
+Add
+⁡
+(
+a
+)
+,
+Del
+⁡
+(
+a
+)
+⟩
+.
+\hat{\omega}_{a}=\bigl\langle\operatorname{Pre}^{+}(a),\operatorname{Pre}^{-}(a),\operatorname{Add}(a),\operatorname{Del}(a)\bigr\rangle.
+Its successor function is
+τ
+ω
+^
+a
+​
+(
+𝐱
+)
+p
+=
+{
+1
+,
+p
+∈
+Add
+⁡
+(
+a
+)
+,
+0
+,
+p
+∈
+Del
+⁡
+(
+a
+)
+,
+x
+p
+,
+otherwise.
+\tau_{\hat{\omega}_{a}}(\mathbf{x})_{p}=\begin{cases}1,&p\in\operatorname{Add}(a),\\
+0,&p\in\operatorname{Del}(a),\\
+x_{p},&\text{otherwise.}\end{cases}
+Action
+a
+a
+is applicable in
+𝐱
+\mathbf{x}
+if
+x
+p
+=
+1
+x_{p}=1
+for all
+p
+∈
+Pre
++
+⁡
+(
+a
+)
+p\in\operatorname{Pre}^{+}(a)
+and
+x
+p
+=
+0
+x_{p}=0
+for all
+p
+∈
+Pre
+−
+⁡
+(
+a
+)
+p\in\operatorname{Pre}^{-}(a)
+.
+Lemma 1
+(Well-formed operators)
+.
+For every feasible assignment and every action identifier
+a
+∈
+𝒜
+a\in\mathcal{A}
+,
+Add
+⁡
+(
+a
+)
+∩
+Del
+⁡
+(
+a
+)
+=
+∅
+and
+Pre
++
+⁡
+(
+a
+)
+∩
+Pre
+−
+⁡
+(
+a
+)
+=
+∅
+.
+\operatorname{Add}(a)\cap\operatorname{Del}(a)=\varnothing\qquad\text{and}\qquad\operatorname{Pre}^{+}(a)\cap\operatorname{Pre}^{-}(a)=\varnothing.
+Hence each induced operator
+ω
+^
+a
+\hat{\omega}_{a}
+is a well-formed
+grounded propositional
+strips
+operator.
+Proof.
+This follows directly from
+Equation 8
+, which enforces
+𝑎𝑑𝑑
+a
+,
+p
++
+𝑑𝑒𝑙
+a
+,
+p
+≤
+1
+and
+𝑝𝑟𝑒
+a
+,
+p
++
++
+𝑝𝑟𝑒
+a
+,
+p
+−
+≤
+1
+\mathit{add}_{a,p}+\mathit{del}_{a,p}\leq 1\qquad\text{and}\qquad\mathit{pre}^{+}_{a,p}+\mathit{pre}^{-}_{a,p}\leq 1
+for all
+a
+∈
+𝒜
+a\in\mathcal{A}
+and
+p
+∈
+[
+m
+]
+p\in[m]
+.
+∎
+Lemma 2
+(Bitwise
+strips
+semantics under zero transition slack)
+.
+Fix an observed edge
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+and a predicate
+p
+∈
+[
+m
+]
+p\in[m]
+.
+If
+ξ
+e
+^
+,
+p
+=
+0
+\xi_{\hat{e},p}=0
+, then
+x
+^
+s
+^
+′
+,
+p
+=
+τ
+ω
+^
+a
+​
+(
+𝐱
+^
+s
+^
+)
+p
+.
+\hat{x}_{\hat{s}^{\prime},p}=\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}})_{p}.
+Equivalently, when the transition slack for this edge-predicate pair is
+zero, the learned effects obey exact
+strips
+add/delete/inertia
+semantics for predicate
+p
+p
+.
+Proof.
+By
+Equation 8
+, the pair
+(
+𝑎𝑑𝑑
+a
+,
+p
+,
+𝑑𝑒𝑙
+a
+,
+p
+)
+(\mathit{add}_{a,p},\mathit{del}_{a,p})
+can take only one of three
+forms.
+If
+𝑎𝑑𝑑
+a
+,
+p
+=
+1
+\mathit{add}_{a,p}=1
+, then
+𝑑𝑒𝑙
+a
+,
+p
+=
+0
+\mathit{del}_{a,p}=0
+, and
+Equation 4
+gives
+x
+^
+s
+^
+′
+,
+p
+≥
+1
+.
+\hat{x}_{\hat{s}^{\prime},p}\geq 1.
+Thus
+x
+^
+s
+^
+′
+,
+p
+=
+1
+\hat{x}_{\hat{s}^{\prime},p}=1
+.
+If
+𝑑𝑒𝑙
+a
+,
+p
+=
+1
+\mathit{del}_{a,p}=1
+, then
+𝑎𝑑𝑑
+a
+,
+p
+=
+0
+\mathit{add}_{a,p}=0
+, and
+Equation 5
+gives
+x
+^
+s
+^
+′
+,
+p
++
+1
+≤
+1
+.
+\hat{x}_{\hat{s}^{\prime},p}+1\leq 1.
+Thus
+x
+^
+s
+^
+′
+,
+p
+=
+0
+\hat{x}_{\hat{s}^{\prime},p}=0
+.
+If
+𝑎𝑑𝑑
+a
+,
+p
+=
+𝑑𝑒𝑙
+a
+,
+p
+=
+0
+\mathit{add}_{a,p}=\mathit{del}_{a,p}=0
+, then
+Equation 6
+–
+Equation 7
+reduce to
+x
+^
+s
+^
+′
+,
+p
+−
+x
+^
+s
+^
+,
+p
+≤
+0
+and
+x
+^
+s
+^
+,
+p
+−
+x
+^
+s
+^
+′
+,
+p
+≤
+0
+,
+\hat{x}_{\hat{s}^{\prime},p}-\hat{x}_{\hat{s},p}\leq 0\qquad\text{and}\qquad\hat{x}_{\hat{s},p}-\hat{x}_{\hat{s}^{\prime},p}\leq 0,
+which imply
+x
+^
+s
+^
+′
+,
+p
+=
+x
+^
+s
+^
+,
+p
+\hat{x}_{\hat{s}^{\prime},p}=\hat{x}_{\hat{s},p}
+. These are exactly the
+three cases in the definition of
+τ
+ω
+^
+a
+​
+(
+𝐱
+^
+s
+^
+)
+p
+\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}})_{p}
+.
+∎
+Corollary 3
+(Exact reproduction when transition slack is zero)
+.
+If
+ξ
+e
+^
+,
+p
+=
+0
+\xi_{\hat{e},p}=0
+for all
+p
+∈
+[
+m
+]
+p\in[m]
+on an observed edge
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})
+, then
+𝐱
+^
+s
+^
+′
+=
+τ
+ω
+^
+a
+​
+(
+𝐱
+^
+s
+^
+)
+.
+\hat{\mathbf{x}}_{\hat{s}^{\prime}}=\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}}).
+In particular, if
+∑
+ξ
+=
+0
+\sum\xi=0
+, then every observed edge in
+E
+^
+\hat{E}
+is reproduced exactly in predicate space.
+Proof.
+Apply
+Lemma 2
+component-wise for all
+p
+∈
+[
+m
+]
+p\in[m]
+.
+∎
+Lemma 4
+(Observed edges satisfy learned preconditions)
+.
+For every observed edge
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+, action
+a
+a
+is applicable in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+.
+Proof.
+Fix
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+and
+p
+∈
+[
+m
+]
+p\in[m]
+. If
+𝑝𝑟𝑒
+a
+,
+p
++
+=
+1
+\mathit{pre}^{+}_{a,p}=1
+, then
+Equation 2
+gives
+x
+^
+s
+^
+,
+p
+≥
+1
+,
+\hat{x}_{\hat{s},p}\geq 1,
+so
+x
+^
+s
+^
+,
+p
+=
+1
+\hat{x}_{\hat{s},p}=1
+. If
+𝑝𝑟𝑒
+a
+,
+p
+−
+=
+1
+\mathit{pre}^{-}_{a,p}=1
+, then
+Equation 3
+gives
+x
+^
+s
+^
+,
+p
++
+1
+≤
+1
+,
+\hat{x}_{\hat{s},p}+1\leq 1,
+so
+x
+^
+s
+^
+,
+p
+=
+0
+\hat{x}_{\hat{s},p}=0
+. Therefore all positive and negative
+preconditions of
+a
+a
+hold in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+, and
+a
+a
+is applicable.
+∎
+Lemma 5
+(Violation indicators are exact)
+.
+For every trusted missing pair
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+and predicate
+p
+∈
+[
+m
+]
+p\in[m]
+,
+Equation 9
+–
+Equation 10
+enforce
+v
+s
+^
+,
+a
+,
+p
++
+=
+1
+⇔
+(
+𝑝𝑟𝑒
+a
+,
+p
++
+=
+1
+​
+and
+​
+x
+^
+s
+^
+,
+p
+=
+0
+)
+,
+v^{+}_{\hat{s},a,p}=1\iff\bigl(\mathit{pre}^{+}_{a,p}=1\text{ and }\hat{x}_{\hat{s},p}=0\bigr),
+v
+s
+^
+,
+a
+,
+p
+−
+=
+1
+⇔
+(
+𝑝𝑟𝑒
+a
+,
+p
+−
+=
+1
+​
+and
+​
+x
+^
+s
+^
+,
+p
+=
+1
+)
+.
+v^{-}_{\hat{s},a,p}=1\iff\bigl(\mathit{pre}^{-}_{a,p}=1\text{ and }\hat{x}_{\hat{s},p}=1\bigr).
+Thus
+v
+s
+^
+,
+a
+,
+p
++
+v^{+}_{\hat{s},a,p}
+and
+v
+s
+^
+,
+a
+,
+p
+−
+v^{-}_{\hat{s},a,p}
+are exact
+indicators of positive- and negative-precondition violations.
+Proof.
+We prove the claim for
+v
+s
+^
+,
+a
+,
+p
++
+v^{+}_{\hat{s},a,p}
+; the argument for
+v
+s
+^
+,
+a
+,
+p
+−
+v^{-}_{\hat{s},a,p}
+is analogous. Since all variables are binary,
+there are three relevant cases.
+If
+𝑝𝑟𝑒
+a
+,
+p
++
+=
+0
+\mathit{pre}^{+}_{a,p}=0
+, then
+Equation 9
+gives
+v
+s
+^
+,
+a
+,
+p
++
+≤
+0
+v^{+}_{\hat{s},a,p}\leq 0
+, so
+v
+s
+^
+,
+a
+,
+p
++
+=
+0
+v^{+}_{\hat{s},a,p}=0
+. If
+𝑝𝑟𝑒
+a
+,
+p
++
+=
+1
+\mathit{pre}^{+}_{a,p}=1
+and
+x
+^
+s
+^
+,
+p
+=
+1
+\hat{x}_{\hat{s},p}=1
+, then
+Equation 9
+gives
+v
+s
+^
+,
+a
+,
+p
++
+≤
+1
+−
+x
+^
+s
+^
+,
+p
+=
+0
+v^{+}_{\hat{s},a,p}\leq 1-\hat{x}_{\hat{s},p}=0
+, so
+v
+s
+^
+,
+a
+,
+p
++
+=
+0
+v^{+}_{\hat{s},a,p}=0
+. Finally, if
+𝑝𝑟𝑒
+a
+,
+p
++
+=
+1
+\mathit{pre}^{+}_{a,p}=1
+and
+x
+^
+s
+^
+,
+p
+=
+0
+\hat{x}_{\hat{s},p}=0
+, then
+Equation 9
+gives
+v
+s
+^
+,
+a
+,
+p
++
+≥
+𝑝𝑟𝑒
+a
+,
+p
++
+−
+x
+^
+s
+^
+,
+p
+=
+1
+,
+v^{+}_{\hat{s},a,p}\geq\mathit{pre}^{+}_{a,p}-\hat{x}_{\hat{s},p}=1,
+so
+v
+s
+^
+,
+a
+,
+p
++
+=
+1
+v^{+}_{\hat{s},a,p}=1
+. Therefore
+v
+s
+^
+,
+a
+,
+p
++
+=
+1
+v^{+}_{\hat{s},a,p}=1
+exactly when a positive precondition is violated.
+The proof for
+v
+s
+^
+,
+a
+,
+p
+−
+v^{-}_{\hat{s},a,p}
+is identical, using
+Equation 10
+.
+∎
+Lemma 6
+(Trusted missing pairs are excluded when applicability slack is zero)
+.
+For every trusted missing pair
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+, if
+η
+s
+^
+,
+a
+=
+0
+\eta_{\hat{s},a}=0
+, then action
+a
+a
+is not applicable in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+.
+Proof.
+By
+Equation 11
+, if
+η
+s
+^
+,
+a
+=
+0
+\eta_{\hat{s},a}=0
+, then
+∑
+p
+=
+1
+m
+(
+v
+s
+^
+,
+a
+,
+p
++
++
+v
+s
+^
+,
+a
+,
+p
+−
+)
+≥
+1
+.
+\sum_{p=1}^{m}\bigl(v^{+}_{\hat{s},a,p}+v^{-}_{\hat{s},a,p}\bigr)\geq 1.
+Hence, for some predicate
+p
+p
+, either
+v
+s
+^
+,
+a
+,
+p
++
+=
+1
+v^{+}_{\hat{s},a,p}=1
+or
+v
+s
+^
+,
+a
+,
+p
+−
+=
+1
+v^{-}_{\hat{s},a,p}=1
+. By
+Lemma 5
+, this means that either a positive
+precondition of
+a
+a
+is false in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+, or a
+negative precondition of
+a
+a
+is true in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+. In either case,
+a
+a
+is not applicable
+in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+.
+∎
+Proposition 7
+(Every feasible solution is
+strips
+-compatible)
+.
+Any feasible assignment to
+Equation 2
+–
+Equation 11
+,
+together with
+Equation 8
+, induces a family of
+well-formed grounded propositional
+strips
+operators
+{
+ω
+^
+a
+}
+a
+∈
+𝒜
+\{\hat{\omega}_{a}\}_{a\in\mathcal{A}}
+. This statement holds
+regardless of the values of the transition slack variables
+ξ
+e
+^
+,
+p
+\xi_{\hat{e},p}
+and applicability slack variables
+η
+s
+^
+,
+a
+\eta_{\hat{s},a}
+.
+Proof.
+Well-formedness follows from
+Lemma 1
+. Transition slack
+only relaxes agreement with observed edges, and applicability slack only
+relaxes exclusion of trusted missing pairs. Neither changes
+Add
+⁡
+(
+a
+)
+\operatorname{Add}(a)
+,
+Del
+⁡
+(
+a
+)
+\operatorname{Del}(a)
+,
+Pre
++
+⁡
+(
+a
+)
+\operatorname{Pre}^{+}(a)
+, or
+Pre
+−
+⁡
+(
+a
+)
+\operatorname{Pre}^{-}(a)
+, and
+therefore neither changes the
+strips
+form of the induced operators.
+∎
+Proposition 8
+(Lexicographic optimization preserves semantics)
+.
+The lexicographic objective in
+Equation 1
+does not
+change the semantic form of the learned model; it only ranks feasible
+strips
+models according to slack and sparsity.
+Proof.
+The
+strips
+semantics are determined by the structural constraints in
+the formulation. The objective in
+Equation 1
+selects among assignments that already satisfy those constraints.
+Therefore any optimizer remains a feasible
+strips
+model and inherits the
+properties proved above.
+∎
+Corollary 9
+(Node-level nondeterminism is incompatible with full distinctness and zero transition slack)
+.
+Assume full state distinctness, so that
+𝐱
+^
+s
+^
+1
+≠
+𝐱
+^
+s
+^
+2
+\hat{\mathbf{x}}_{\hat{s}_{1}}\neq\hat{\mathbf{x}}_{\hat{s}_{2}}
+is required whenever
+s
+^
+1
+≠
+s
+^
+2
+\hat{s}_{1}\neq\hat{s}_{2}
+. Also assume zero
+transition slack. If the learned graph contains
+(
+s
+^
+,
+a
+,
+s
+^
+1
+)
+∈
+E
+^
+and
+(
+s
+^
+,
+a
+,
+s
+^
+2
+)
+∈
+E
+^
+(\hat{s},a,\hat{s}_{1})\in\hat{E}\qquad\text{and}\qquad(\hat{s},a,\hat{s}_{2})\in\hat{E}
+with
+s
+^
+1
+≠
+s
+^
+2
+\hat{s}_{1}\neq\hat{s}_{2}
+, then the formulation is infeasible.
+Proof.
+By
+Corollary 3
+,
+𝐱
+^
+s
+^
+1
+=
+τ
+ω
+^
+a
+​
+(
+𝐱
+^
+s
+^
+)
+=
+𝐱
+^
+s
+^
+2
+.
+\hat{\mathbf{x}}_{\hat{s}_{1}}=\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}})=\hat{\mathbf{x}}_{\hat{s}_{2}}.
+This contradicts the full distinctness requirement
+𝐱
+^
+s
+^
+1
+≠
+𝐱
+^
+s
+^
+2
+\hat{\mathbf{x}}_{\hat{s}_{1}}\neq\hat{\mathbf{x}}_{\hat{s}_{2}}
+.
+∎
+Theorem 10
+(Soundness and completeness of the exact encoding)
+.
+Fix the predicate dimension
+m
+m
+, the trusted missing-pair set
+𝒩
+^
+\hat{\mathcal{N}}
+, and the selected distinctness constraints. Consider
+the exact regime in which
+∑
+e
+^
+∈
+E
+^
+∑
+p
+=
+1
+m
+ξ
+e
+^
+,
+p
+=
+0
+and
+∑
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+η
+s
+^
+,
+a
+=
+0
+.
+\sum_{\hat{e}\in\hat{E}}\sum_{p=1}^{m}\xi_{\hat{e},p}=0\qquad\text{and}\qquad\sum_{(\hat{s},a)\in\hat{\mathcal{N}}}\eta_{\hat{s},a}=0.
+Equivalently, all transition slack variables and all applicability slack
+variables are fixed to zero. Then the formulation
+consisting of
+Equation 2
+–
+Equation 11
+,
+together with
+Equation 8
+and any selected distinctness
+constraints from
+Equation 12
+–
+Equation 16
+, is feasible if and
+only if there exist:
+1.
+predicate vectors
+𝐱
+^
+s
+^
+∈
+{
+0
+,
+1
+}
+m
+\hat{\mathbf{x}}_{\hat{s}}\in\{0,1\}^{m}
+for all
+s
+^
+∈
+𝒮
+^
+\hat{s}\in\hat{\mathcal{S}}
+, and
+2.
+grounded propositional
+strips
+operators
+{
+ω
+^
+a
+}
+a
+∈
+𝒜
+\{\hat{\omega}_{a}\}_{a\in\mathcal{A}}
+over these
+m
+m
+predicates,
+such that:
+1.
+every observed edge
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+satisfies the preconditions of
+ω
+^
+a
+\hat{\omega}_{a}
+at
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+;
+2.
+every observed edge
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+satisfies
+τ
+ω
+^
+a
+​
+(
+𝐱
+^
+s
+^
+)
+=
+𝐱
+^
+s
+^
+′
+;
+\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}})=\hat{\mathbf{x}}_{\hat{s}^{\prime}};
+3.
+every trusted missing pair
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+is inapplicable in
+𝐱
+^
+s
+^
+\hat{\mathbf{x}}_{\hat{s}}
+;
+4.
+every selected distinctness constraint is satisfied.
+Proof.
+For the forward direction, suppose the formulation is feasible in the
+exact regime. By
+Proposition 7
+, the induced operators
+are well-formed grounded propositional
+strips
+operators. By
+Lemma 4
+, every observed edge satisfies the
+learned preconditions. By
+Corollary 3
+, every observed
+edge is reproduced exactly in predicate space. By
+Lemma 6
+, every trusted missing pair is
+inapplicable. The selected distinctness constraints hold by construction
+whenever they are included.
+For the reverse direction, suppose such predicate vectors and grounded
+propositional
+strips
+operators exist. Assign
+x
+^
+s
+^
+,
+p
+\hat{x}_{\hat{s},p}
+according to the given predicate vectors. Set
+𝑎𝑑𝑑
+a
+,
+p
+\mathit{add}_{a,p}
+,
+𝑑𝑒𝑙
+a
+,
+p
+\mathit{del}_{a,p}
+,
+𝑝𝑟𝑒
+a
+,
+p
++
+\mathit{pre}^{+}_{a,p}
+, and
+𝑝𝑟𝑒
+a
+,
+p
+−
+\mathit{pre}^{-}_{a,p}
+according to
+Add
+⁡
+(
+a
+)
+\operatorname{Add}(a)
+,
+Del
+⁡
+(
+a
+)
+\operatorname{Del}(a)
+,
+Pre
++
+⁡
+(
+a
+)
+\operatorname{Pre}^{+}(a)
+, and
+Pre
+−
+⁡
+(
+a
+)
+\operatorname{Pre}^{-}(a)
+.
+Because the operators are well-formed,
+Equation 8
+holds.
+For each observed edge
+e
+^
+=
+(
+s
+^
+,
+a
+,
+s
+^
+′
+)
+∈
+E
+^
+\hat{e}=(\hat{s},a,\hat{s}^{\prime})\in\hat{E}
+, the assumed precondition
+satisfaction gives
+Equation 2
+–
+Equation 3
+. The assumed
+successor equality
+τ
+ω
+^
+a
+​
+(
+𝐱
+^
+s
+^
+)
+=
+𝐱
+^
+s
+^
+′
+\tau_{\hat{\omega}_{a}}(\hat{\mathbf{x}}_{\hat{s}})=\hat{\mathbf{x}}_{\hat{s}^{\prime}}
+gives
+Equation 4
+–
+Equation 7
+with
+ξ
+e
+^
+,
+p
+=
+0
+\xi_{\hat{e},p}=0
+for all
+p
+∈
+[
+m
+]
+p\in[m]
+.
+For each trusted missing pair
+(
+s
+^
+,
+a
+)
+∈
+𝒩
+^
+(\hat{s},a)\in\hat{\mathcal{N}}
+, set
+v
+s
+^
+,
+a
+,
+p
++
+=
+1
+v^{+}_{\hat{s},a,p}=1
+exactly when a positive precondition is violated
+at predicate
+p
+p
+, and set
+v
+s
+^
+,
+a
+,
+p
+−
+=
+1
+v^{-}_{\hat{s},a,p}=1
+exactly when a
+negative precondition is violated. Then
+Equation 9
+–
+Equation 10
+hold. Since
+(
+s
+^
+,
+a
+)
+(\hat{s},a)
+is inapplicable, at least one learned precondition is
+violated, so
+Equation 11
+holds with
+η
+s
+^
+,
+a
+=
+0
+\eta_{\hat{s},a}=0
+. Finally, the selected distinctness constraints
+hold by assumption. Hence the CP-SAT formulation is feasible.
+∎
+Interpretation.
+Proposition 7
+is the unconditional structural
+guarantee: every feasible assignment induces grounded propositional
+strips
+operators. Slack affects agreement with the learned graph, not
+the form of the operators. When
+∑
+ξ
+=
+0
+\sum\xi=0
+,
+Corollary 3
+shows that every observed edge in
+E
+^
+\hat{E}
+is reproduced exactly in predicate space. When
+∑
+η
+=
+0
+\sum\eta=0
+as well,
+Lemma 6
+shows that
+every trusted missing pair in
+𝒩
+^
+\hat{\mathcal{N}}
+is ruled out by at
+least one learned precondition. The exact zero-slack correspondence is
+summarized by
+Theorem 10
+.
+Appendix C
+Extended Experiments and Results
+RQ4: Is negative evidence necessary for learning useful preconditions?
+The main operator-learning formulation uses trusted missing state-action
+pairs
+𝒩
+^
+\hat{\mathcal{N}}
+as negative evidence. We ablate this design
+choice on DinnerTable and DinnerTable Real to test whether observed
+transitions alone are sufficient to learn useful preconditions.
+We compare three conditions. The first is the standard STRIPS-WM setting
+used in the main experiments, which includes negative evidence. The
+second keeps the same solver setting but removes the negative-evidence
+constraints from
+𝒩
+^
+\hat{\mathcal{N}}
+. The third also removes negative
+evidence, but adds a minimum-unique-state constraint
+|
+X
+^
+|
+≥
+|
+S
+⋆
+|
+,
+|\hat{X}|\geq|S^{\star}|,
+where
+S
+⋆
+S^{\star}
+is the ground-truth task-state set used only for
+evaluation. This last condition tests whether simply forcing the solver
+to keep enough distinct predicate states can replace negative evidence.
+Figure 5:
+Negative-evidence ablation on DinnerTable and DinnerTable Real. Removing negative evidence makes planning fail, even when the solver is guided with the true minimum number of task states.
+Fig. 5
+shows that negative evidence is
+essential for planning. Without negative evidence, both domains collapse
+to two distinct predicate vectors under the standard relaxed-distinctness
+setting, and planning success drops to
+0
+%
+0\%
+. Adding the
+minimum-unique-state constraint prevents this two-state collapse, but it
+does not recover useful preconditions: planning remains poor because the
+learned model still permits thousands of unobserved state-action pairs.
+Domain
+Condition
+|
+S
+⋆
+|
+|S^{\star}|
+∑
+ξ
+\sum\xi
+∑
+η
+\sum\eta
+False positives
+|
+X
+^
+|
+|\hat{X}|
+DinnerTable
+STRIPS-WM
+101
+0
+9
+9
+101
+DinnerTable
+No neg.
+101
+0
+0
+6864
+2
+DinnerTable
+No neg. + min-unique
+101
+0
+0
+6864
+101
+DinnerTable Real
+STRIPS-WM
+71
+0
+13
+13
+71
+DinnerTable Real
+No neg.
+71
+0
+0
+6893
+2
+DinnerTable Real
+No neg. + min-unique
+71
+32
+0
+6893
+83
+Table 5:
+Negative-evidence ablation for operator learning. False positives count applicable state-action pairs that are not observed in the learned task graph. The min-unique condition adds the constraint
+|
+X
+^
+|
+≥
+|
+S
+⋆
+|
+|\hat{X}|\geq|S^{\star}|
+, using the ground-truth task-state count only as a diagnostic guide.
+The operator-learning statistics in
+Table 5
+show the same failure mode.
+With negative evidence, STRIPS-WM learns compact preconditions:
+DinnerTable has only 9 false-positive applicable state-action pairs, and
+DinnerTable Real has 13. Removing
+negative evidence increases this number to 6864 and 6893, respectively.
+The min-unique constraint does not fix the issue. It can force a larger
+predicate-state set, but it does not tell the solver which actions should
+be inapplicable in which states.
+The ablation highlights a failure mode that is hidden if we only look at
+whether observed transitions can be explained. Without negative evidence,
+the solver can fit the observed executions while leaving many unobserved
+actions applicable. The min-unique constraint changes the size of the
+predicate-state set, but it does not resolve this applicability ambiguity:
+DinnerTable still has 6864 false-positive state-action pairs, and
+DinnerTable Real has 6893. The trusted missing pairs
+𝒩
+^
+\hat{\mathcal{N}}
+therefore provide the signal that rules out these
+spurious applications, which is what makes the learned operators useful
+for long-horizon planning.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

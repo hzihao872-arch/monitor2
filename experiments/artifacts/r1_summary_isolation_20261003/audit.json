@@ -1,0 +1,62 @@
+{
+  "status": "isolation_finished_content_gate_failed",
+  "actual_model_calls": 9,
+  "max_calls": 80,
+  "unused_conditional_calls": 71,
+  "chain_performed": false,
+  "full_diagnostic_performed": false,
+  "joint_summary_syntax_pass": true,
+  "joint_summary_content_pass": false,
+  "cumulative_calls_in_three_R_C_batches": 83,
+  "totals": {
+    "input_tokens": 4272,
+    "output_tokens": 923,
+    "peak_vram_bytes": 4443588608,
+    "infer_and_inspect_elapsed_ms": 32366.076700622216
+  },
+  "by_mode": [
+    {
+      "mode": "text",
+      "calls": 3,
+      "format_valid": 3,
+      "summary_syntax_pass": 3,
+      "output_cap": 0,
+      "input_tokens": 1343,
+      "output_tokens": 98,
+      "elapsed_ms": 4411.956300260499
+    },
+    {
+      "mode": "json",
+      "calls": 3,
+      "format_valid": 1,
+      "summary_syntax_pass": 1,
+      "output_cap": 2,
+      "input_tokens": 1385,
+      "output_tokens": 554,
+      "elapsed_ms": 18612.383800325915
+    },
+    {
+      "mode": "joint",
+      "calls": 3,
+      "format_valid": 3,
+      "summary_syntax_pass": 3,
+      "output_cap": 0,
+      "input_tokens": 1544,
+      "output_tokens": 271,
+      "elapsed_ms": 9341.736600035802
+    }
+  ],
+  "verification": {
+    "frozen_files": 42,
+    "source_hashes": 266,
+    "unchanged_prior_artifact_files": 28,
+    "new_ledger_rows": 9,
+    "same_frames_across_modes": true,
+    "empty_memory_all_cells": true,
+    "processor_replay": "experiments/artifacts/r1_summary_isolation_20261003/input_boundary_audit.json",
+    "reference_draft_unchanged": true,
+    "preregistration_sha256": "6e28169db69b57021a8287e5043d857208f6e4e3bc7731994290684a2edeabe0"
+  },
+  "interpretation": "No valid rolling S1 evaluated. Zero-history visually unsupported completion survives removing JSON; interface-only explanation insufficient. Perception versus goal-conditioned language remains unresolved. No H1 efficacy or mechanism claim.",
+  "cost_clock_scope": "Timer starts after frame/instruction selection and covers backend infer plus output inspection. Excludes model loading, frame selection, CPU input replay, and human review; not full online-tick latency."
+}

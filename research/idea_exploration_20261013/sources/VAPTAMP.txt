@@ -1,0 +1,2123 @@
+0001: Robot Planning and Situation Handling with Active Perception
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: arXiv.org perpetual non-exclusive license
+0009: arXiv:2604.26988v1 [cs.RO] 28 Apr 2026
+0010: Robot Planning and Situation Handling
+0011: with Active Perception
+0012: Austine Oloo
+0013: Affiliation:
+0014: SUNY Binghamton
+0015: Zainab Altaweel
+0016: Affiliation:
+0017: SUNY Binghamton
+0018: Yohei Hayamizu
+0019: Affiliation:
+0020: SUNY Binghamton
+0021: Peiqi Liu
+0022: Affiliation:
+0023: CMU
+0024: Yan Ding
+0025: Affiliation:
+0026: SUNY Binghamton
+0027: Saeid Amiri
+0028: Affiliation:
+0029: SUNY Binghamton
+0030: Hao Yang
+0031: Affiliation:
+0032: Ford Research
+0033: Andy Kaminski
+0034: Affiliation:
+0035: Ford Research
+0036: Chad Esselink
+0037: Affiliation:
+0038: Ford Research
+0039: Chris Paxton
+0040: Affiliation:
+0041: Agility Robotics
+0042: Xiaohan Zhang
+0043: Affiliation:
+0044: SUNY Binghamton
+0045: Shiqi Zhang
+0046: Affiliation:
+0047: SUNY Binghamton
+0048: Abstract
+0049: Current robots are capable of computing plans to accomplish complex tasks.
+0050: However, real-world environments are inherently open and dynamic, and unforeseen situations frequently arise during plan execution, such as jamming doors and fallen objects on the floor.
+0051: These situations may result from the robot’s own action failures or from external disturbances, such as human activities.
+0052: Detecting and handling such execution-time situations remains a significant challenge, limiting those robots’ ability to achieve long-term autonomy.
+0053: In this paper, we develop a planning and situation-handling framework, called VAP-TAMP, that enables robots to actively perceive and address unforeseen situations during plan execution.
+0054: VAP-TAMP leverages action knowledge to strategically prompt vision-language models for active view selection and situation assessment, while constructing and reasoning over scene graphs for integrated task and motion planning.
+0055: We evaluated VAP-TAMP using service tasks in simulation and on a mobile manipulation platform.
+0056: Project page:
+0057: vap-tamp.github.io/vap-tamp
+0058: I
+0059: Introduction
+0060: Robots need planning capabilities to sequence actions to achieve complex goals.
+0061: Task planning is on high-level symbolic actions; and motion planning methods generate continuous trajectories for realizing those discrete actions in geometric spaces.
+0062: Integrated task and motion planning (TAMP) algorithms compute task-motion plans that are in the form of multiple motion trajectories for achieving complex goals
+0063: [
+0064: 1
+0065: ,
+0066: 2
+0067: ]
+0068: .
+0069: While existing TAMP methods well support plan generation, unforeseen situations frequently get the robots stuck during plan execution.
+0070: Prior work has explored several directions to address unforeseen situations in open-world planning.
+0071: Example open-world planning ideas include novel knowledge representations for explaining and addressing task failures
+0072: [
+0073: 3
+0074: ]
+0075: , leveraging large language models (LLMs) to dynamically augment action knowledge for situation handling
+0076: [
+0077: 4
+0078: ]
+0079: , and triggering human intervention when the robot is unsure about solutions
+0080: [
+0081: 5
+0082: ]
+0083: .
+0084: These methods implicitly assumed that situations are
+0085: fully observable
+0086: , and hence directly focused on addressing those situations.
+0087: In the real world, situations are only
+0088: partially observable
+0089: , and robots will have to rely on its on-board, unreliable sensors to perceive the situations before tackling them.
+0090: Fig. 1:
+0091: Two examples of unforeseen situations during action execution.
+0092: On the left, the robot attempted to navigate through a doorway to reach the room. It was expected that the door would be fully open and passable (envisioned in the “cloud”), while the door was only half-open.
+0093: On the right shows the robot cutting a lemon. It was expected that both lemon halves would remain in the plate, while one half had fallen outside.
+0094: In this paper, we present
+0095: VAP-TAMP
+0096: , a novel TAMP framework that performs situation handling through
+0097: V
+0098: LM-based
+0099: A
+0100: ctive
+0101: P
+0102: erception.
+0103: VAP-TAMP dynamically maintains a scene graph as the symbolic state representation and leverages vision-language models (VLMs)
+0104: [
+0105: 6
+0106: ]
+0107: for plan monitoring and active perception.
+0108: The novelty of VAP-TAMP lies in the interaction between VLMs and action knowledge.
+0109: VAP-TAMP actively prompts VLMs using the predicates of the current action’s preconditions and effects in action knowledge, while leveraging the VLM outputs to update the action knowledge for situation handling.
+0110: At the motion level, VAP-TAMP prompts VLMs for active viewpoint selection towards maximizing information gain.
+0111: At the task level, VLMs are used for visually evaluating whether preconditions and effects are satisfied before and after each action for plan monitoring.
+0112: Action knowledge is encoded in PDDL
+0113: [
+0114: 7
+0115: ]
+0116: in this work.
+0117: This integration of VLMs and PDDL-based action knowledge enables the robots to actively detect and address execution-time situations, enabling robust plan generation and execution in open worlds.
+0118: VAP-TAMP has been extensively evaluated in simulation and real-world settings, where the robot is challenged by novel situations, as illustrated in Fig
+0119: 1
+0120: .
+0121: In our real-world experiments with 100 service task trials on a mobile manipulator, VAP-TAMP achieved 88% task success rate, whereas baselines OK-Robot
+0122: [
+0123: 8
+0124: ]
+0125: and COWP
+0126: [
+0127: 4
+0128: ]
+0129: achieved 76% and 69% respectively.
+0130: II
+0131: Related Work
+0132: Task and Motion Planning (TAMP).
+0133: Early work on belief-space TAMP addressed partial observability but requires known uncertainty models
+0134: [
+0135: 9
+0136: ]
+0137: .
+0138: Subsequent approaches like PDDLStream and FFRob achieve impressive performance but assume fully observable, static environments with perfect state estimation
+0139: [
+0140: 10
+0141: ,
+0142: 11
+0143: ]
+0144: .
+0145: Recent work addresses visual grounding in TAMP.
+0146: One example is LLM-GROP that grounds predicates in visual observations using language models
+0147: [
+0148: 12
+0149: ]
+0150: .
+0151: For goal specification, L3M+P extends this with external knowledge graphs for lifelong planning
+0152: [
+0153: 13
+0154: ]
+0155: .
+0156: Recent work such as TAMPURA
+0157: [
+0158: 14
+0159: ]
+0160: extends TAMP to reason under uncertainty and risk.
+0161: Another line of work guides TAMP using machine learning and reinforcement learning to improve planning efficiency in complex manipulation tasks
+0162: [
+0163: 15
+0164: ]
+0165: .
+0166: Recent articles reviewed TAMP literature
+0167: [
+0168: 1
+0169: ,
+0170: 2
+0171: ]
+0172: .
+0173: Our work assumes partial observability of the world states (and situations), and leverages VLMs for active perception to detect and resolve situations at plan execution time.
+0174: Vision-Language Models for Robot Planning.
+0175: VLMs have transformed robotic perception through open-vocabulary scene understanding
+0176: [
+0177: 16
+0178: ,
+0179: 8
+0180: ]
+0181: . SayCan grounds language instructions via learned affordances
+0182: [
+0183: 17
+0184: ]
+0185: , Code as Policies generates executable robot code
+0186: [
+0187: 18
+0188: ]
+0189: , and PaLM-E integrates visual tokens for embodied reasoning
+0190: [
+0191: 19
+0192: ]
+0193: . VoxPoser synthesizes 3D value maps from VLM outputs
+0194: [
+0195: 20
+0196: ]
+0197: .
+0198: However, these systems treat VLM outputs as infallible oracles which are queried once, trusted implicitly, never verified. VLMs exhibit systematic failures under occlusion and suboptimal viewpoints
+0199: [
+0200: 21
+0201: ]
+0202: , yet provide no calibrated uncertainty signal
+0203: [
+0204: 22
+0205: ]
+0206: .
+0207: By comparison, VAP-TAMP (ours) transforms VLM uncertainty into an actionable signal that triggers deliberate information gathering.
+0208: Active Perception in Robotics.
+0209: There is a long history of research on active perception in robotics
+0210: [
+0211: 23
+0212: ,
+0213: 24
+0214: ]
+0215: .
+0216: For example, next-best-view (NBV) algorithms maximize geometric coverage
+0217: [
+0218: 25
+0219: ,
+0220: 26
+0221: ]
+0222: .
+0223: NBV methods optimize over geometric primitives and cannot determine which viewpoints would resolve VLM uncertainty about semantic predicates such as containment or spatial relationships.
+0224: Interactive perception methods have been developed to physically interact with objects to reveal occluded surfaces
+0225: [
+0226: 27
+0227: ,
+0228: 28
+0229: ]
+0230: .
+0231: Different from those methods, VAP-TAMP prompts VLMs with its current state and action information to actively select viewpoints and verify predicate values towards successful plan execution.
+0232: Scene Graphs for Robot Reasoning.
+0233: Scene graphs provide structured representations for robot reasoning
+0234: [
+0235: 29
+0236: ,
+0237: 30
+0238: ,
+0239: 31
+0240: ]
+0241: .
+0242: ConceptGraphs grounds open-vocabulary concepts using VLM features
+0243: [
+0244: 32
+0245: ]
+0246: , and OK-Robot combines such representations with learned manipulation primitives
+0247: [
+0248: 8
+0249: ]
+0250: .
+0251: VAP-TAMP maintains a dynamic scene graph, where the process is driven by its percepts, actions and states.
+0252: In this work, scene graphs, as a representation of world state, are integrated into TAMP, VLM prompting and situation handling.
+0253: Failure Detection and Recovery.
+0254: Robust execution requires detecting failures and generating recovery strategies
+0255: [
+0256: 33
+0257: ]
+0258: . Classical approaches monitor preconditions and trigger replanning but assume accurate state estimation
+0259: [
+0260: 34
+0261: ]
+0262: . SuccessVQA verifies action outcomes but without quantifying confidence
+0263: [
+0264: 35
+0265: ]
+0266: . Inner Monologue incorporates multi-modal feedback but cannot actively resolve ambiguity
+0267: [
+0268: 36
+0269: ]
+0270: . SayPlan uses 3D scene graphs for grounded replanning but inherits static representation limitations
+0271: [
+0272: 37
+0273: ]
+0274: .
+0275: By comparison, VAP-TAMP (ours) diagnoses whether discrepancies stem from perception error (correctable through active perception), world state change (requiring plan adaptation), or execution failure (requiring recovery).
+0276: III
+0277: Problem Formulation
+0278: We consider a mobile manipulator tasked with achieving goals specified in natural language in open world indoor environments. The system receives the following inputs.
+0279: •
+0280: RGB-D observations
+0281: o
+0282: t
+0283: ∈
+0284: ℐ
+0285: o_{t}\in\mathcal{I}
+0286: from onboard cameras at each timestep
+0287: t
+0288: t
+0289: .
+0290: •
+0291: Robot pose
+0292: ξ
+0293: t
+0294: ∈
+0295: S
+0296: ​
+0297: E
+0298: ​
+0299: (
+0300: 3
+0301: )
+0302: \xi_{t}\in SE(3)
+0303: from localization.
+0304: •
+0305: Natural language goal
+0306: g
+0307: NL
+0308: g_{\text{NL}}
+0309: (e.g., “store the firewood in the basket”).
+0310: •
+0311: Planning domain
+0312: 𝒟
+0313: =
+0314: ⟨
+0315: 𝒯
+0316: ,
+0317: 𝒫
+0318: ,
+0319: 𝒜
+0320: ⟩
+0321: \mathcal{D}=\langle\mathcal{T},\mathcal{P},\mathcal{A}\rangle
+0322: specifying object types
+0323: 𝒯
+0324: \mathcal{T}
+0325: , predicates
+0326: 𝒫
+0327: \mathcal{P}
+0328: , and actions
+0329: 𝒜
+0330: \mathcal{A}
+0331: with preconditions and effects defined over
+0332: 𝒫
+0333: \mathcal{P}
+0334: . For example,
+0335: 𝒫
+0336: \mathcal{P}
+0337: includes predicate symbols such as
+0338: on
+0339: ,
+0340: holding
+0341: , and
+0342: hand_empty
+0343: ; there are preconditions
+0344: {
+0345: on(obj, surface)
+0346: ,
+0347: hand_empty
+0348: }
+0349: \{\texttt{on(obj, surface)},\texttt{hand\_empty}\}
+0350: and effects
+0351: {
+0352: holding(obj)
+0353: ,
+0354: ¬
+0355: on(obj, surface)
+0356: }
+0357: \{\texttt{holding(obj)},\neg\texttt{on(obj, surface)}\}
+0358: for action
+0359: pick(obj, surface)
+0360: .
+0361: We assume access to a library of parameterized motion primitives (such as navigate, pick, place, and push) with associated motion planners. The system determines which primitives to invoke and with what parameters.
+0362: We further assume the robot can localize within a known map and that objects of interest are detectable, though their symbolic properties must be inferred from visual observations.
+0363: The objective is to generate and execute a sequence of actions that achieves the goal, maximizing task success rate:
+0364: max
+0365: ⁡
+0366: (
+0367: ℙ
+0368: ⁡
+0369: (
+0370: s
+0371: T
+0372: ⊧
+0373: g
+0374: )
+0375: )
+0376: \max\left(\mathbb{P}\left(s_{T}\models g\right)\right)
+0377: (1)
+0378: where
+0379: ℙ
+0380: ⁡
+0381: (
+0382: ⋅
+0383: )
+0384: \mathbb{P}(\cdot)
+0385: denotes probability,
+0386: s
+0387: T
+0388: s_{T}
+0389: is the final symbolic state, and
+0390: g
+0391: g
+0392: is the goal condition derived from
+0393: g
+0394: NL
+0395: g_{\text{NL}}
+0396: .
+0397: Open world settings are fundamentally characterized by environmental dynamism, e.g.,
+0398: objects are displaced by humans, access paths become blocked, and task-relevant conditions shift.
+0399: This dynamism manifests in three interrelated challenges.
+0400: First
+0401: , perception is unreliable.
+0402: Predicate evaluation from visual observations may produce errors due to occlusion, clutter, or suboptimal viewing angles, yet provides no confidence signal to indicate when estimates are wrong.
+0403: Second
+0404: , the environment changes between planning and execution, causing plans computed from initial observations to become invalid.
+0405: Third
+0406: , actuation is imperfect, e.g., manipulation actions may fail to achieve their intended effects, with grasps slipping or placements missing their targets.
+0407: When classical systems encounter these failures, they either halt or require human intervention.
+0408: We aim to develop robot systems that autonomously evaluate perceptual uncertainty, actively gather disambiguating observations when the current view is insufficient, and recover from execution failures through replanning.
+0409: IV
+0410: Methodology
+0411: VAP-TAMP is a TAMP framework that performs situation handling through VLM-based active perception.
+0412: The system maintains a scene graph as symbolic state representation, leverages action knowledge to prompt VLMs for situation assessment, and actively selects new viewpoints when the current view is insufficient for reliable evaluation.
+0413: Fig. 2:
+0414: VAP-TAMP System Overview.
+0415: Given RGB-D observations and a goal description in natural language,
+0416: VAP-TAMP builds a 3D point cloud (map), extracts an instance memory and scene graph (Section
+0417: IV-A
+0418: ), and translates to PDDL for planning.
+0419: During execution, preconditions and effects are verified before and after each action (Section
+0420: IV-C
+0421: ), with uncertainty evaluation triggering active perception when needed (Section
+0422: IV-B
+0423: ).
+0424: Verification failures at either stage constitute situations that prompt state correction and replanning.
+0425: Fig.
+0426: 2
+0427: illustrates the architecture.
+0428: Given a natural language goal
+0429: g
+0430: NL
+0431: g_{\text{NL}}
+0432: , the system parses it into a symbolic goal specification
+0433: g
+0434: g
+0435: , generates an action sequence
+0436: ρ
+0437: \rho
+0438: using a PDDL planner, and executes each action with active perception for precondition and effect verification. Three modules support robust TAMP execution: 1)
+0439: scene graph generator
+0440: constructs and maintains the symbolic state representation required for planning, 2)
+0441: active perception module
+0442: grounds predicates using VLMs to verify action preconditions and effects, and 3)
+0443: situation handling
+0444: detects execution failures and triggers replanning when the world state diverges from expectations.
+0445: Algorithm
+0446: 1
+0447: presents the execution procedure. The framework operates over the planning domain
+0448: 𝒟
+0449: \mathcal{D}
+0450: defined in Section
+0451: III
+0452: . Each action
+0453: a
+0454: ∈
+0455: 𝒜
+0456: a\in\mathcal{A}
+0457: has preconditions
+0458: Pre
+0459: ​
+0460: (
+0461: a
+0462: )
+0463: \text{Pre}(a)
+0464: that must hold before execution and effects
+0465: Eff
+0466: +
+0467: ​
+0468: (
+0469: a
+0470: )
+0471: \text{Eff}^{+}(a)
+0472: ,
+0473: Eff
+0474: −
+0475: ​
+0476: (
+0477: a
+0478: )
+0479: \text{Eff}^{-}(a)
+0480: specifying predicates added or removed after execution.
+0481: The system first constructs a scene graph
+0482: 𝒢
+0483: =
+0484: (
+0485: 𝒪
+0486: ,
+0487: ℛ
+0488: )
+0489: \mathcal{G}=(\mathcal{O},\mathcal{R})
+0490: from RGB-D observations, where
+0491: 𝒪
+0492: \mathcal{O}
+0493: is the set of detected objects and
+0494: ℛ
+0495: \mathcal{R}
+0496: is the set of grounded predicates encoding spatial relationships. A VLM parses the natural language goal
+0497: g
+0498: NL
+0499: g_{\text{NL}}
+0500: into a PDDL goal specification
+0501: g
+0502: g
+0503: using the scene graph and domain knowledge. The PDDL planner then generates an action sequence
+0504: ρ
+0505: =
+0506: [
+0507: a
+0508: 0
+0509: ,
+0510: …
+0511: ,
+0512: a
+0513: n
+0514: −
+0515: 1
+0516: ]
+0517: \rho=[a_{0},\ldots,a_{n-1}]
+0518: that transforms the initial state into one satisfying
+0519: g
+0520: g
+0521: .
+0522: For each action
+0523: a
+0524: a
+0525: in the plan, execution proceeds through a verify-execute-verify cycle. The robot navigates to the task-relevant area, captures an observation, and verifies that all preconditions
+0526: Pre
+0527: ​
+0528: (
+0529: a
+0530: )
+0531: \text{Pre}(a)
+0532: hold using VLM-based predicate verification. If verification succeeds, the robot executes the action, updates the scene graph with expected effects, and verifies that intended effects were achieved. If any verification fails, the scene graph is corrected based on observation and the PDDL planner generates a recovery plan from the updated state. This tight coupling between symbolic planning and perceptual verification ensures that TAMP execution remains grounded in physical reality.
+0533: Algorithm 1
+0534: VAP-TAMP: Closed-Loop TAMP Execution
+0535: 1:
+0536: Goal
+0537: g
+0538: NL
+0539: g_{\text{NL}}
+0540: , domain
+0541: 𝒟
+0542: \mathcal{D}
+0543: , VLM
+0544: V
+0545: V
+0546: 2:
+0547: Task success or failure
+0548: 3:
+0549: 𝒢
+0550: ←
+0551: \mathcal{G}\leftarrow
+0552: BuildSceneGraph()
+0553: ⊳
+0554: \triangleright
+0555: Sec.
+0556: IV-A
+0557: 4:
+0558: g
+0559: ←
+0560: g\leftarrow
+0561: ParseGoal(
+0562: g
+0563: NL
+0564: g_{\text{NL}}
+0565: ,
+0566: 𝒢
+0567: \mathcal{G}
+0568: ,
+0569: 𝒟
+0570: \mathcal{D}
+0571: )
+0572: ⊳
+0573: \triangleright
+0574: VLM-based
+0575: 5:
+0576: ρ
+0577: ←
+0578: \rho\leftarrow
+0579: Plan(
+0580: 𝒢
+0581: \mathcal{G}
+0582: ,
+0583: g
+0584: g
+0585: ,
+0586: 𝒟
+0587: \mathcal{D}
+0588: )
+0589: ⊳
+0590: \triangleright
+0591: PDDL planner
+0592: 6:
+0593: while
+0594: ρ
+0595: ≠
+0596: ∅
+0597: \rho\neq\emptyset
+0598: do
+0599: 7:
+0600: a
+0601: ←
+0602: ρ
+0603: a\leftarrow\rho
+0604: .pop(); Navigate(
+0605: a
+0606: a
+0607: ,
+0608: 𝒢
+0609: \mathcal{G}
+0610: );
+0611: o
+0612: ←
+0613: o\leftarrow
+0614: Observe()
+0615: 8:
+0616: for
+0617: p
+0618: ∈
+0619: Pre
+0620: ​
+0621: (
+0622: a
+0623: )
+0624: p\in\text{Pre}(a)
+0625: do
+0626: ⊳
+0627: \triangleright
+0628: Precondition verification, Sec.
+0629: IV-C
+0630: 9:
+0631: v
+0632: p
+0633: ←
+0634: v_{p}\leftarrow
+0635: VerifyPredicate
+0636: (
+0637: o
+0638: o
+0639: ,
+0640: p
+0641: p
+0642: ,
+0643: V
+0644: V
+0645: ,
+0646: 𝒢
+0647: \mathcal{G}
+0648: )
+0649: ⊳
+0650: \triangleright
+0651: Sec.
+0652: IV-B
+0653: 10:
+0654: if
+0655: v
+0656: p
+0657: =
+0658: False
+0659: v_{p}=\text{False}
+0660: then
+0661: 11:
+0662: 𝒢
+0663: ←
+0664: \mathcal{G}\leftarrow
+0665: UpdateGraph(
+0666: p
+0667: p
+0668: ,
+0669: v
+0670: p
+0671: v_{p}
+0672: ,
+0673: 𝒢
+0674: \mathcal{G}
+0675: )
+0676: 12:
+0677: ρ
+0678: ←
+0679: \rho\leftarrow
+0680: Plan(
+0681: 𝒢
+0682: \mathcal{G}
+0683: ,
+0684: g
+0685: g
+0686: ,
+0687: 𝒟
+0688: \mathcal{D}
+0689: );
+0690: continue
+0691: 13:
+0692: end
+0693: if
+0694: 14:
+0695: end
+0696: for
+0697: 15:
+0698: Execute(
+0699: a
+0700: a
+0701: );
+0702: 𝒢
+0703: ←
+0704: \mathcal{G}\leftarrow
+0705: ApplyEffects(
+0706: a
+0707: a
+0708: ,
+0709: 𝒢
+0710: \mathcal{G}
+0711: )
+0712: 16:
+0713: o
+0714: ←
+0715: o\leftarrow
+0716: Observe()
+0717: 17:
+0718: for
+0719: p
+0720: ∈
+0721: Eff
+0722: +
+0723: ​
+0724: (
+0725: a
+0726: )
+0727: p\in\text{Eff}^{+}(a)
+0728: do
+0729: ⊳
+0730: \triangleright
+0731: Effect verification, Sec.
+0732: IV-C
+0733: 18:
+0734: v
+0735: p
+0736: ←
+0737: v_{p}\leftarrow
+0738: VerifyPredicate
+0739: (
+0740: o
+0741: o
+0742: ,
+0743: p
+0744: p
+0745: ,
+0746: V
+0747: V
+0748: ,
+0749: 𝒢
+0750: \mathcal{G}
+0751: )
+0752: 19:
+0753: if
+0754: v
+0755: p
+0756: =
+0757: False
+0758: v_{p}=\text{False}
+0759: then
+0760: 20:
+0761: 𝒢
+0762: ←
+0763: \mathcal{G}\leftarrow
+0764: UpdateGraph(
+0765: p
+0766: p
+0767: ,
+0768: v
+0769: p
+0770: v_{p}
+0771: ,
+0772: 𝒢
+0773: \mathcal{G}
+0774: )
+0775: 21:
+0776: ρ
+0777: ←
+0778: \rho\leftarrow
+0779: Plan(
+0780: 𝒢
+0781: \mathcal{G}
+0782: ,
+0783: g
+0784: g
+0785: ,
+0786: 𝒟
+0787: \mathcal{D}
+0788: );
+0789: break
+0790: 22:
+0791: end
+0792: if
+0793: 23:
+0794: end
+0795: for
+0796: 24:
+0797: end
+0798: while
+0799: 25:
+0800: return
+0801: 𝒢
+0802: ⊧
+0803: g
+0804: \mathcal{G}\models g
+0805: IV-A
+0806: Scene Graph Generator
+0807: The scene graph serves as the symbolic state representation for PDDL planning, bridging perceptual observations and the discrete state space over which the planner searches.
+0808: IV-A
+0809: 1
+0810: Construction
+0811: The system builds an initial scene graph through RGB-D exploration. RGB-D observations collected during exploration are aggregated into a point cloud map
+0812: ℳ
+0813: \mathcal{M}
+0814: , and instance segmentation partitions
+0815: ℳ
+0816: \mathcal{M}
+0817: into object instances forming
+0818: 𝒪
+0819: \mathcal{O}
+0820: . Each object
+0821: o
+0822: ​
+0823: b
+0824: ​
+0825: j
+0826: i
+0827: ∈
+0828: 𝒪
+0829: obj_{i}\in\mathcal{O}
+0830: is stored with its identifier, 3D centroid
+0831: c
+0832: i
+0833: ∈
+0834: ℝ
+0835: 3
+0836: c_{i}\in\mathbb{R}^{3}
+0837: , bounding box
+0838: b
+0839: i
+0840: ∈
+0841: ℝ
+0842: 6
+0843: b_{i}\in\mathbb{R}^{6}
+0844: , and CLIP embedding
+0845: e
+0846: i
+0847: e_{i}
+0848: for open-vocabulary retrieval.
+0849: From the object set, the relationship set
+0850: ℛ
+0851: \mathcal{R}
+0852: is constructed through geometric reasoning. For each object pair
+0853: (
+0854: o
+0855: ​
+0856: b
+0857: ​
+0858: j
+0859: i
+0860: ,
+0861: o
+0862: ​
+0863: b
+0864: ​
+0865: j
+0866: j
+0867: )
+0868: (obj_{i},obj_{j})
+0869: , spatial predicates are evaluated:
+0870: •
+0871: on
+0872: ​
+0873: (
+0874: o
+0875: ​
+0876: b
+0877: ​
+0878: j
+0879: i
+0880: ,
+0881: o
+0882: ​
+0883: b
+0884: ​
+0885: j
+0886: j
+0887: )
+0888: \texttt{on}(obj_{i},obj_{j})
+0889: holds if
+0890: o
+0891: ​
+0892: b
+0893: ​
+0894: j
+0895: i
+0896: obj_{i}
+0897: ’s centroid lies above
+0898: o
+0899: ​
+0900: b
+0901: ​
+0902: j
+0903: j
+0904: obj_{j}
+0905: ’s support surface within a threshold.
+0906: •
+0907: inside
+0908: ​
+0909: (
+0910: o
+0911: ​
+0912: b
+0913: ​
+0914: j
+0915: i
+0916: ,
+0917: o
+0918: ​
+0919: b
+0920: ​
+0921: j
+0922: j
+0923: )
+0924: \texttt{inside}(obj_{i},obj_{j})
+0925: holds if
+0926: o
+0927: ​
+0928: b
+0929: ​
+0930: j
+0931: i
+0932: obj_{i}
+0933: ’s bounding box is contained within
+0934: o
+0935: ​
+0936: b
+0937: ​
+0938: j
+0939: j
+0940: obj_{j}
+0941: ’s volume.
+0942: •
+0943: near
+0944: ​
+0945: (
+0946: o
+0947: ​
+0948: b
+0949: ​
+0950: j
+0951: i
+0952: ,
+0953: o
+0954: ​
+0955: b
+0956: ​
+0957: j
+0958: j
+0959: )
+0960: \texttt{near}(obj_{i},obj_{j})
+0961: holds if the distance between centroids is below a threshold.
+0962: Algorithm 2
+0963: VerifyPredicate: Active Perception for Predicate Verification
+0964: 1:
+0965: Observation
+0966: o
+0967: o
+0968: , predicate
+0969: p
+0970: p
+0971: , VLM
+0972: V
+0973: V
+0974: , graph
+0975: 𝒢
+0976: \mathcal{G}
+0977: , budget
+0978: K
+0979: K
+0980: 2:
+0981: Predicate value
+0982: v
+0983: p
+0984: ∈
+0985: {
+0986: True
+0987: ,
+0988: False
+0989: }
+0990: v_{p}\in\{\text{True},\text{False}\}
+0991: 3:
+0992: for
+0993: k
+0994: =
+0995: 0
+0996: k=0
+0997: to
+0998: K
+0999: K
+1000: do
+1001: 4:
+1002: 𝒬
+1003: p
+1004: ←
+1005: \mathcal{Q}_{p}\leftarrow
+1006: GenerateParaphrases(
+1007: p
+1008: p
+1009: )
+1010: ⊳
+1011: \triangleright
+1012: N
+1013: N
+1014: variants
+1015: 5:
+1016: 𝐲
+1017: ←
+1018: [
+1019: V
+1020: (
+1021: o
+1022: ,
+1023: q
+1024: )
+1025: for
+1026: q
+1027: ∈
+1028: 𝒬
+1029: p
+1030: ]
+1031: \mathbf{y}\leftarrow[V(o,q)\text{ for }q\in\mathcal{Q}_{p}]
+1032: ⊳
+1033: \triangleright
+1034: Query VLM
+1035: 6:
+1036: v
+1037: p
+1038: ←
+1039: 𝟏
+1040: [
+1041: mean
+1042: (
+1043: 𝐲
+1044: )
+1045: >
+1046: 0.5
+1047: ]
+1048: v_{p}\leftarrow\mathbf{1}[\text{mean}(\mathbf{y})>0.5]
+1049: ⊳
+1050: \triangleright
+1051: Majority vote
+1052: 7:
+1053: if
+1054: responses consistent
+1055: then
+1056: ⊳
+1057: \triangleright
+1058: High agreement
+1059: 8:
+1060: s
+1061: ←
+1062: s\leftarrow
+1063: ConfirmSufficiency(
+1064: o
+1065: o
+1066: ,
+1067: p
+1068: p
+1069: ,
+1070: V
+1071: V
+1072: )
+1073: 9:
+1074: if
+1075: s
+1076: =
+1077: True
+1078: s=\text{True}
+1079: then
+1080: return
+1081: v
+1082: p
+1083: v_{p}
+1084: 10:
+1085: end
+1086: if
+1087: 11:
+1088: end
+1089: if
+1090: 12:
+1091: d
+1092: ←
+1093: d\leftarrow
+1094: SuggestViewpoint(
+1095: o
+1096: o
+1097: ,
+1098: p
+1099: p
+1100: ,
+1101: V
+1102: V
+1103: )
+1104: ⊳
+1105: \triangleright
+1106: VLM-guided
+1107: 13:
+1108: Navigate(
+1109: d
+1110: d
+1111: );
+1112: o
+1113: ←
+1114: o\leftarrow
+1115: Observe()
+1116: 14:
+1117: 𝒢
+1118: ←
+1119: \mathcal{G}\leftarrow
+1120: UpdateFromObservation(
+1121: o
+1122: o
+1123: ,
+1124: 𝒢
+1125: \mathcal{G}
+1126: )
+1127: 15:
+1128: end
+1129: for
+1130: 16:
+1131: return
+1132: v
+1133: p
+1134: v_{p}
+1135: ⊳
+1136: \triangleright
+1137: Budget exhausted
+1138: IV-A
+1139: 2
+1140: Maintenance
+1141: The scene graph must remain synchronized with physical reality as the robot manipulates the environment. Updates occur through two mechanisms:
+1142: Action-driven updates
+1143: apply immediately after action execution. Given action
+1144: a
+1145: a
+1146: with effects
+1147: Eff
+1148: +
+1149: ​
+1150: (
+1151: a
+1152: )
+1153: \text{Eff}^{+}(a)
+1154: and
+1155: Eff
+1156: −
+1157: ​
+1158: (
+1159: a
+1160: )
+1161: \text{Eff}^{-}(a)
+1162: , the scene graph is updated by removing predicates in
+1163: Eff
+1164: −
+1165: ​
+1166: (
+1167: a
+1168: )
+1169: \text{Eff}^{-}(a)
+1170: and adding predicates in
+1171: Eff
+1172: +
+1173: ​
+1174: (
+1175: a
+1176: )
+1177: \text{Eff}^{+}(a)
+1178: . For example, executing
+1179: pick(cup, table)
+1180: removes
+1181: on(cup, table)
+1182: and adds
+1183: holding(robot, cup)
+1184: .
+1185: Observation-driven updates
+1186: occur when predicate verification detects a discrepancy between the scene graph and physical reality. If the verified value differs from the recorded value, the scene graph is corrected accordingly. This correction triggers replanning from the updated state, ensuring the PDDL planner always operates on an accurate world model.
+1187: IV-B
+1188: Active Perception
+1189: The robot performs active perception to support situation handling in plan execution. In particular, we leverage VLMs and domain knowledge (action preconditions and effects) for predicate verification and viewpoint selection.
+1190: The active perception module takes an observation
+1191: o
+1192: o
+1193: , a grounded predicate
+1194: p
+1195: p
+1196: to verify (e.g.,
+1197: p
+1198: =
+1199: on(cup, table)
+1200: p=\texttt{on(cup, table)}
+1201: ), and the current scene graph
+1202: 𝒢
+1203: \mathcal{G}
+1204: . It returns a truth value
+1205: v
+1206: p
+1207: ∈
+1208: {
+1209: True
+1210: ,
+1211: False
+1212: }
+1213: v_{p}\in\{\text{True},\text{False}\}
+1214: and a potentially updated scene graph. Algorithm
+1215: 2
+1216: presents the procedure.
+1217: IV-B
+1218: 1
+1219: Predicate Verification
+1220: Given predicate
+1221: p
+1222: p
+1223: and observation
+1224: o
+1225: o
+1226: , the system queries the VLM to determine whether
+1227: p
+1228: p
+1229: holds. To improve reliability, we generate a set of
+1230: N
+1231: N
+1232: semantically equivalent natural language questions from the predicate. For predicate
+1233: p
+1234: =
+1235: on(cup, table)
+1236: p=\texttt{on(cup, table)}
+1237: , variants include “Is the cup on the table?”, “Is the cup resting on the table surface?”, and “Is the cup positioned on top of the table?”
+1238: For each query
+1239: q
+1240: i
+1241: q_{i}
+1242: , the VLM returns a binary response
+1243: y
+1244: i
+1245: ∈
+1246: {
+1247: 0
+1248: ,
+1249: 1
+1250: }
+1251: y_{i}\in\{0,1\}
+1252: indicating whether the predicate holds. From the
+1253: N
+1254: N
+1255: responses, we compute the final predicate value by majority vote:
+1256: v
+1257: p
+1258: =
+1259: 𝟏
+1260: [
+1261: 1
+1262: N
+1263: ∑
+1264: i
+1265: =
+1266: 1
+1267: N
+1268: y
+1269: i
+1270: >
+1271: 0.5
+1272: ]
+1273: v_{p}=\mathbf{1}\left[\frac{1}{N}\sum_{i=1}^{N}y_{i}>0.5\right]
+1274: (2)
+1275: where
+1276: 𝟏
+1277: ​
+1278: [
+1279: ⋅
+1280: ]
+1281: \mathbf{1}[\cdot]
+1282: is the indicator function returning True if the condition holds.
+1283: When responses are consistent, we query the VLM to confirm whether the current view provides sufficient information. If the VLM confirms sufficiency, the predicate value
+1284: v
+1285: p
+1286: v_{p}
+1287: is accepted. Otherwise, viewpoint selection is triggered.
+1288: Fig. 3:
+1289: Active perception resolving visual ambiguity during predicate verification for a
+1290: grasp
+1291: action. In (a), the robot captures an initial observation and queries the VLM with
+1292: N
+1293: N
+1294: semantically equivalent paraphrases of the target predicate; inconsistent responses signal
+1295: perceptual uncertainty. In (b), the VLM confirms the view is insufficient and suggests a better viewing direction, prompting the robot to actively perceive the scene. In (c), the inset shows the improved close-up view from which the VLM now returns consistent responses across all paraphrases, enabling confident predicate verification, scene graph update, and plan continuation.
+1296: IV-B
+1297: 2
+1298: Viewpoint Selection
+1299: When predicate verification cannot be completed confidently from the current viewpoint, the system queries the VLM to suggest another viewing position, as illustrated in Fig.
+1300: 3
+1301: .
+1302: The VLM analyzes the current observation and target predicate, returning a direction
+1303: d
+1304: ∈
+1305: {
+1306: left
+1307: ,
+1308: right
+1309: ,
+1310: closer
+1311: ,
+1312: above
+1313: ,
+1314: …
+1315: }
+1316: d\in\{\text{left},\text{right},\text{closer},\text{above},\ldots\}
+1317: that would provide potentially clearer visual evidence. The robot navigates in the suggested direction and captures new observations.
+1318: The verification process repeats with the new observation until the VLM confirms sufficient information or a viewpoint budget
+1319: K
+1320: K
+1321: is exhausted.
+1322: Fig. 4:
+1323: VAP-TAMP integrates robot perception with domain knowledge by formulating the verifications of action preconditions and effects as visual question answering (VQA) queries.
+1324: The left shows an example of precondition verification, where VAP-TAMP verifies the action preconditions one at a time.
+1325: The precondition predicates are dynamically extracted from the PDDL-based description of the current action.
+1326: IV-C
+1327: Situation Handling
+1328: The situation handler detects execution failures and triggers PDDL replanning, enabling recovery from unexpected world states as shown in Fig.
+1329: 4
+1330: . We define a
+1331: situation
+1332: as an unexpected world state that prevents task completion using a plan that would normally succeed. Situations arise from environmental changes (objects displaced by humans), perceptual errors (incorrect initial state), and execution failures (failed grasps).
+1333: IV-C
+1334: 1
+1335: Precondition Verification
+1336: Before executing action
+1337: a
+1338: a
+1339: , the situation handler verifies that all preconditions
+1340: Pre
+1341: ​
+1342: (
+1343: a
+1344: )
+1345: \text{Pre}(a)
+1346: hold. For action
+1347: a
+1348: =
+1349: pick(cup, table)
+1350: a=\texttt{pick(cup, table)}
+1351: , preconditions include
+1352: on(cup, table)
+1353: ,
+1354: reachable(cup)
+1355: , and
+1356: hand_empty
+1357: . Each predicate
+1358: p
+1359: ∈
+1360: Pre
+1361: ​
+1362: (
+1363: a
+1364: )
+1365: p\in\text{Pre}(a)
+1366: is verified using the active perception module.
+1367: When a precondition evaluates to False, the system detects a situation. The scene graph is corrected accordingly, and the PDDL planner generates a new plan from the corrected state.
+1368: IV-C
+1369: 2
+1370: Effect Verification
+1371: After executing action
+1372: a
+1373: a
+1374: , the situation handler verifies that intended effects
+1375: Eff
+1376: +
+1377: ​
+1378: (
+1379: a
+1380: )
+1381: \text{Eff}^{+}(a)
+1382: were achieved. For
+1383: a
+1384: =
+1385: pick(cup, table)
+1386: a=\texttt{pick(cup, table)}
+1387: , the expected effect is
+1388: holding(robot, cup)
+1389: becoming true. Each effect predicate is verified using the active perception module.
+1390: When an expected effect evaluates to False, an execution failure is detected. The scene graph is corrected based on observation rather than assumed effects, and PDDL replanning proceeds. This closed-loop verification ensures the symbolic state remains grounded in physical reality despite imperfect actuation, enabling robust TAMP execution in open-world environments.
+1391: TABLE I:
+1392: Actions, preconditions, and situations (unexpected outcomes) that VAP-TAMP must detect and recover from.
+1393: Action
+1394: Preconditions
+1395: Situations
+1396: find
+1397: Object and agent in same room
+1398: Object not inview after navigation; no free space near object; held object drops during navigation
+1399: grasp
+1400: Object inview; hand empty
+1401: Grasp fails, object unchanged; grasp fails, object drops nearby
+1402: placein
+1403: Object inhand; receptacle inview; receptacle open
+1404: Place fails, object remains inhand; place fails, object drops nearby
+1405: placeon
+1406: Object inhand; receptacle inview
+1407: Place fails, object remains inhand; place fails, object drops nearby
+1408: open
+1409: Object inview
+1410: Open fails, object remains closed
+1411: close
+1412: Object inview
+1413: Close fails, object remains open
+1414: turnon
+1415: Object inview
+1416: Turn on fails, object remains off
+1417: cut
+1418: Object inview; knife inhand
+1419: Object not cut, knife inhand; object not cut, knife drops nearby
+1420: V
+1421: Experiments
+1422: We evaluate VAP-TAMP in both real-world and simulation settings. Our experiments test two hypotheses: (H1) VAP-TAMP achieves higher task success rate than competitive baselines across diverse mobile manipulation tasks; (H2) VLM-guided active perception for VAP-TAMP resolves visual ambiguity more efficiently than greedy perception, enabling reliable predicate verification with fewer viewpoints.
+1423: Fig. 5:
+1424: Distribution of situations across tasks. Flows connect tasks (left) to situation (right), with occurrence count.
+1425: V-A
+1426: Real-World Experiments
+1427: V-A
+1428: 1
+1429: Setup
+1430: We use a mobile manipulator comprising a Segway RMP base, UR5e arm, Robotiq 2F-85 gripper, and wrist-mounted Intel RealSense D435i RGB-D camera. VLM queries use Gemini Vision
+1431: [
+1432: 6
+1433: ]
+1434: . Motion primitives (navigate, pick, place, push) are implemented using MoveIt
+1435: [
+1436: 38
+1437: ]
+1438: for arm planning.
+1439: We evaluate on four household tasks in three rooms with 25 trials each (100 total).
+1440: T1: Collect Cup
+1441: requires picking up a cup from one room and taking it to another.
+1442: T2: Cut Lemon
+1443: requires locating a lemon, finding a knife, and cutting the lemon.
+1444: T3: Store Firewood
+1445: requires collecting wooden pieces and placing them into a storage room.
+1446: T4: Pick Plate
+1447: requires retrieving a plate from a cluttered table and placing it on a shelf.
+1448: We compare against three baselines.
+1449: OK-Robot
+1450: [
+1451: 8
+1452: ]
+1453: is a state-of-the-art open-vocabulary mobile manipulation system that combines CLIP-based object retrieval with VLM-based situation handling, but without active perception.
+1454: COWP
+1455: [
+1456: 4
+1457: ]
+1458: uses LLM commonsense to dynamically augment action knowledge for situation handling but supports task planning only (no motion planning).
+1459: Closed World
+1460: is a classical TAMP baseline with no situation handling that assumes perfect state estimation.
+1461: Table
+1462: I
+1463: shows the situations that can occur during task execution. Each action has preconditions that must hold before execution and effects that should hold after. Situations arise when preconditions are violated unexpectedly or when effects fail to materialize. These situations stem from environmental dynamics (objects displaced by humans), perceptual errors (incorrect initial state estimation), and manipulation failures (gripper slip, object drops).
+1464: Fig.
+1465: 5
+1466: presents the distribution of situations across tasks. Out of 100 trials, 72 included at least one situation requiring detection and recovery. T2 (Cut Lemon) exhibited the highest situation rate due to the multi-step nature of the task and frequent scene disturbances during execution.
+1467: Fig. 6:
+1468: Success rate vs. execution time across all methods. Points closer to the top-left indicate better overall performance. VAP-TAMP achieves the highest success rate with the lowest execution time.
+1469: Fig. 7:
+1470: Success rates by task. VAP-TAMP maintains consistent performance across all tasks, while baselines show larger variance.
+1471: V-A
+1472: 2
+1473: Results and Analysis
+1474: Fig. 8:
+1475: Viewpoint efficiency: (a) distribution of viewpoints required per uncertainty resolution, (b) average viewpoints with standard deviation.
+1476: Fig.
+1477: 6
+1478: shows results supporting H1. VAP-TAMP’s improvement over OK-Robot demonstrates that active perception provides meaningful gains in predicate verification reliability. COWP’s lower performance reflects the limitation of task planning without motion planning. Closed World’s poor performance confirms that situation handling is essential in open-world environments.
+1479: Fig.
+1480: 7
+1481: shows per-task results. The largest performance gap occurs on T2, which has the highest situation rate. Scene disturbances during execution remain undetected by baselines, causing cascading failures. VAP-TAMP’s situation handling detects state changes through precondition and effect verification, triggering replanning from the corrected state.
+1482: To evaluate H2, we compare VLM-guided viewpoint selection against a greedy baseline within VAP-TAMP.
+1483: Greedy perception
+1484: exhaustively visits predefined viewpoints arranged around the target object. The number of predefined viewpoints varies by task (i.e. some tasks like Collect Cup require a range of 2-4 viewpoints (grasping within a confined 120° workspace), while multi-object tasks like Cut Lemon require 6 viewpoints (verifying knife,lemon, and cutting surface across 270°). Across all tasks, greedy perception averages 4.35 viewpoints. In contrast,
+1485: VLM-guided perception
+1486: queries the VLM to suggest which direction would provide clearer evidence, navigating directly to discriminative viewpoints.
+1487: Fig.
+1488: 8
+1489: shows that VLM-guided selection resolves uncertainty over greedy perception. By reasoning about visual informativeness, VAP-TAMP avoids exhaustive exploration and navigates directly to disambiguating perspectives.
+1490: Fig.
+1491: 9
+1492: reveals failure mode distributions across all methods. VAP-TAMP’s failures are dominated by manipulation errors (hardware limitations), whereas OK-Robot and COWP show higher rates of visual ambiguity and state/access issues. Closed World’s failures are dominated by visual ambiguity. By integrating active perception with situation handling, VAP-TAMP shifts the reliability bottleneck from perception to hardware: failures occur where the system lacks physical capability, not where it lacks perceptual information.
+1493: V-B
+1494: Simulation Experiments
+1495: V-B
+1496: 1
+1497: Setup
+1498: We use OmniGibson
+1499: [
+1500: 39
+1501: ]
+1502: for simulation experiments, which provides realistic physics and diverse household environments.
+1503: In simulation experiment, we focus on evaluating how PDDL-based action knowledge helps VLM prompting for actively evaluating pre- and post-conditions, while the robot’s view point does not change with respect to the robot base.
+1504: Simulation enables systematic evaluation of situation handling through controlled situation injection with predefined failure probabilities.
+1505: We evaluate on five tasks with varying complexity.
+1506: S1: Boil Water
+1507: requires picking up an empty cup from a closed cabinet, filling it with water using a sink, and heating it in a microwave.
+1508: S2: Retrieve Bottles
+1509: requires finding two empty bottles in the garden and bringing them inside.
+1510: S3: Heat Frozen Pie
+1511: requires taking an apple pie out of the fridge and heating it using an oven.
+1512: S4: Halve Egg
+1513: requires finding a knife in the kitchen and using it to cut a hard-boiled egg in half.
+1514: S5: Gather Kindling
+1515: requires collecting two wooden sticks and placing them on a table. These tasks differ from real-world experiments to test generalization across diverse action sequences and object interactions not present in the physical setup.
+1516: We inject situations by assigning failure probabilities to each action type, as shown in Table
+1517: II
+1518: .
+1519: High manipulation actions have higher failure rates:
+1520: grasp
+1521: and
+1522: cut
+1523: each have 50% combined failure probability (25% object unchanged, 25% object drops nearby). Simpler actions such as
+1524: open
+1525: ,
+1526: close
+1527: , and
+1528: turnon
+1529: have 10% failure rates. Some situations depend on external factors like navigation outcomes and are not directly injected.
+1530: TABLE II:
+1531: Situation injection probabilities for simulation experiments. Each probability defines the likelihood of the corresponding situation occurring when the action is executed.
+1532: Action
+1533: Situation
+1534: Prob.
+1535: find
+1536: Object not inview after navigation
+1537: N/A
+1538: No free space near object
+1539: N/A
+1540: Held object drops during navigation
+1541: 0.10
+1542: grasp
+1543: Grasp fails, object unchanged
+1544: 0.25
+1545: Grasp fails, object drops nearby
+1546: 0.25
+1547: placein
+1548: Place fails, object remains inhand
+1549: 0.10
+1550: Place fails, object drops nearby
+1551: 0.10
+1552: placeon
+1553: Place fails, object remains inhand
+1554: 0.10
+1555: Place fails, object drops nearby
+1556: 0.10
+1557: fill
+1558: Container not fully filled
+1559: 0.05
+1560: Container drops nearby
+1561: 0.05
+1562: open
+1563: Object remains closed
+1564: 0.10
+1565: close
+1566: Object remains open
+1567: 0.10
+1568: turnon
+1569: Object remains off
+1570: 0.10
+1571: cut
+1572: Object not cut, knife inhand
+1573: 0.25
+1574: Object not cut, knife drops nearby
+1575: 0.25
+1576: Fig. 9:
+1577: Failure mode distribution across all methods.
+1578: We compare against verification strategies from the literature that differ in how they query the VLM for situation detection.
+1579: VLM-planner
+1580: uses the VLM to generate task plans directly, similar to SayCan
+1581: [
+1582: 17
+1583: ]
+1584: ; we provide domain knowledge in prompts for fair comparison.
+1585: Classical-planner
+1586: assumes all executions succeed without perception.
+1587: SuccessVQA
+1588: queries action success after execution (“Did the robot successfully
+1589: <action>
+1590: ?”), inspired by
+1591: [
+1592: 35
+1593: ]
+1594: , but does not verify next-action executability.
+1595: AffordanceVQA
+1596: queries feasibility before execution (“Is it possible to
+1597: <action>
+1598: ?”), based on prompts from PaLM-E
+1599: [
+1600: 19
+1601: ]
+1602: , but does not verify previous-action success.
+1603: Suc.Aff.-QA
+1604: combines both strategies. Our predicate-based approach differs by querying concrete state predicates (e.g., “Is the robot holding the cup?”) rather than abstract action outcomes.
+1605: Fig. 10:
+1606: Situation handling evaluation in simulation comparing verification strategies.
+1607: TABLE III:
+1608: Ablation of verification stages in simulation experiments.
+1609: Verification
+1610: S1
+1611: S2
+1612: S3
+1613: S4
+1614: S5
+1615: Avg.
+1616: Both (full)
+1617: 66.7
+1618: 90.0
+1619: 60.9
+1620: 75.0
+1621: 40.0
+1622: 66.5
+1623: Effects only
+1624: 50.0
+1625: 93.8
+1626: 26.7
+1627: 66.7
+1628: 28.0
+1629: 53.0
+1630: Preconditions only
+1631: 17.6
+1632: 75.0
+1633: 35.0
+1634: 55.0
+1635: 20.0
+1636: 41.5
+1637: V-B
+1638: 2
+1639: Results
+1640: Fig.
+1641: 10
+1642: compares verification strategies. Our predicate-based approach outperforms all baselines across tasks. VLM-planner and Classical-planner lack verification entirely, leading to poor recovery from injected failures. SuccessVQA and AffordanceVQA each capture only one verification stage, missing failures detectable by the other. Even Suc.Aff.-QA, which combines both, underperforms our approach because VLMs reason more reliably about observable state predicates than abstract action outcomes.
+1643: Table
+1644: III
+1645: ablates verification stages. Both precondition and effect verification contribute to overall performance, with effect verification providing larger gains. This aligns with our situation injection: high-probability failures like
+1646: grasp
+1647: and
+1648: cut
+1649: (50% combined failure rate each) are only detectable after execution through effect verification.
+1650: VI
+1651: Conclusion and Future Work
+1652: We introduced VAP-TAMP, a task and motion planning framework that enables robots to actively perceive and address unforeseen situations during plan execution.
+1653: Unlike prior approaches that assume situations are fully observable, VAP-TAMP handles partial observability by leveraging action knowledge to strategically prompt VLMs for situation assessment and active viewpoint selection.
+1654: The framework closes the loop between planning and execution: when expected action conditions are not satisfied, the robot gathers disambiguating observations and replans with updated world state.
+1655: Experimental results demonstrate substantial improvement over baselines, confirming that situation-aware planning with active perception is essential for reliable operation in open-world environments.
+1656: One direction for future work is to perform whole-body optimization, where currently the base movements (navigation) and upper body movements (manipulation) are optimized separately.
+1657: Another direction is to integrate reinforcement learning to enable the robot to improve from failures.
+1658: Finally, VAP-TAMP can be further strengthened to perform interactive perception for situation handling by physically changing the real-world configurations for perception.
+1659: References
+1660: [1]
+1661: C. R. Garrett, R. Chitnis, R. Holladay, B. Kim, T. Silver, L. P. Kaelbling, and
+1662: T. Lozano-Pérez, “Integrated task and motion planning,”
+1663: Annual
+1664: Review of Control, Robotics, and Autonomous Systems
+1665: , 2021.
+1666: [2]
+1667: Z. Zhao, S. Cheng, Y. Ding, Z. Zhou, S. Zhang, D. Xu, and Y. Zhao, “A survey
+1668: of optimization-based task and motion planning: From classical to learning
+1669: approaches,”
+1670: IEEE/ASME Transactions on Mechatronics
+1671: , 2024.
+1672: [3]
+1673: M. Hanheide, M. Göbelbecker, G. S. Horn
+1674: et al.
+1675: , “Robot task
+1676: planning and explanation in open and uncertain worlds,”
+1677: Artificial
+1678: Intelligence
+1679: , 2017.
+1680: [4]
+1681: Y. Ding, X. Zhang, S. Amiri, N. Cao, H. Yang, A. Kaminski, C. Esselink, and
+1682: S. Zhang, “Integrating action knowledge and llms for task planning and
+1683: situation handling in open worlds,”
+1684: Autonomous Robots
+1685: , 2023.
+1686: [5]
+1687: A. Z. Ren, A. Dixit, A. Bodrova, S. Singh, S. Tu
+1688: et al.
+1689: , “Robots that
+1690: ask for help: Uncertainty alignment for large language model planners,”
+1691: arXiv preprint arXiv:2307.01928
+1692: , 2023.
+1693: [6]
+1694: G. Gemini Team, “Gemini: A family of highly capable multimodal models,”
+1695: arXiv preprint arXiv:2312.11805
+1696: , 2023.
+1697: [7]
+1698: P. Haslum, N. Lipovetzky, D. Magazzeni, C. Muise, R. Brachman, F. Rossi, and
+1699: P. Stone,
+1700: An introduction to the planning domain definition
+1701: language
+1702: . Springer, 2019, vol. 13.
+1703: [8]
+1704: P. Liu, Y. Orru, J. Vakil, C. Paxton, N. Shafiullah, and L. Pinto, “Ok-robot:
+1705: What really matters in integrating open-knowledge models for robotics,” in
+1706: Robotics: Science and Systems (RSS)
+1707: , 2024.
+1708: [9]
+1709: L. P. Kaelbling and T. Lozano-Pérez, “Integrated task and motion planning
+1710: in belief space,”
+1711: The International Journal of Robotics Research
+1712: ,
+1713: 2013.
+1714: [10]
+1715: C. R. Garrett, T. Lozano-Pérez, and L. P. Kaelbling, “Pddlstream:
+1716: Integrating symbolic planners and blackbox samplers,” in
+1717: International
+1718: Conference on Automated Planning and Scheduling (ICAPS)
+1719: , 2020.
+1720: [11]
+1721: C. R. Garrett, T. Lozano-Perez, and L. P. Kaelbling, “Ffrob: Leveraging
+1722: symbolic planning for efficient task and motion planning,”
+1723: The
+1724: International Journal of Robotics Research
+1725: , 2018.
+1726: [12]
+1727: X. Zhang, Y. Ding, Y. Hayamizu, Z. Altaweel, Y. Zhu, Y. Zhu, P. Stone,
+1728: C. Paxton, and S. Zhang, “Llm-grop: Visually grounded robot task and motion
+1729: planning with large language models,”
+1730: The International Journal of
+1731: Robotics Research
+1732: , 2025.
+1733: [13]
+1734: K. Agarwal, Y. Jiang, J. Hu, B. Liu, and P. Stone, “L3m+p: Lifelong planning
+1735: with large language models,” in
+1736: IEEE/RSJ International Conference on
+1737: Intelligent Robots and Systems (IROS)
+1738: , 2025.
+1739: [14]
+1740: A. Curtis, G. Matheos, N. Gothoskar, V. Mansinghka, J. Tenenbaum,
+1741: T. Lozano-Pérez, and L. P. Kaelbling, “Partially observable task and
+1742: motion planning with uncertainty and risk awareness,”
+1743: arXiv preprint
+1744: arXiv:2403.10454
+1745: , 2024.
+1746: [15]
+1747: R. Chitnis, D. Hadfield-Menell, A. Gupta, S. Srivastava, E. Groshev, C. Lin,
+1748: and P. Abbeel, “Guided search for task and motion plans using learned
+1749: heuristics,” in
+1750: 2016 IEEE International Conference on Robotics and
+1751: Automation (ICRA)
+1752: . IEEE, 2016, pp.
+1753: 447–454.
+1754: [16]
+1755: A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh
+1756: et al.
+1757: , “Learning
+1758: transferable visual models from natural language supervision,” in
+1759: International Conference on Machine Learning (ICML)
+1760: , 2021.
+1761: [17]
+1762: M. Ahn, A. Brohan, N. Brown, Y. Chebotar, O. Cortes, B. David, C. Finn
+1763: et al.
+1764: , “Do as i can, not as i say: Grounding language in robotic
+1765: affordances,”
+1766: arXiv preprint arXiv:2204.01691
+1767: , 2022.
+1768: [18]
+1769: J. Liang, W. Huang, F. Xia, P. Xu, K. Hausman
+1770: et al.
+1771: , “Code as
+1772: policies: Language model programs for embodied control,”
+1773: arXiv
+1774: preprint arXiv:2209.07753
+1775: , 2022.
+1776: [19]
+1777: D. Driess, F. Xia, M. S. Sajjadi, C. Lynch, A. Chowdhery
+1778: et al.
+1779: ,
+1780: “Palm-e: An embodied multimodal language model,” 2023.
+1781: [20]
+1782: W. Huang, C. Wang, R. Zhang, Y. Li, J. Wu, and L. Fei-Fei, “Voxposer:
+1783: Composable 3d value maps for robotic manipulation with language models,”
+1784: arXiv preprint arXiv:2307.05973
+1785: , 2023.
+1786: [21]
+1787: P. Rahmanzadehgervi, L. Bolton, M. R. Taesiri, and A. T. Nguyen, “Vision
+1788: language models are blind,”
+1789: arXiv preprint arXiv:2407.06581
+1790: , 2024.
+1791: [22]
+1792: Z. Lin, S. Trivedi, and J. Sun, “Generating with confidence: Uncertainty
+1793: quantification for black-box large language models,”
+1794: arXiv preprint
+1795: arXiv:2305.19187
+1796: , 2023.
+1797: [23]
+1798: R. Bajcsy, “Active perception,”
+1799: Proceedings of the IEEE
+1800: , 1988.
+1801: [24]
+1802: R. Bajcsy, Y. Aloimonos, and J. K. Tsotsos, “Revisiting active perception,”
+1803: Autonomous Robots
+1804: , 2018.
+1805: [25]
+1806: S. Kriegel, T. Bodenmüller, M. Suppa, and G. Hirzinger, “A surface-based
+1807: next-best-view approach for automated 3d model completion of unknown
+1808: objects,” in
+1809: IEEE International Conference on Robotics and Automation
+1810: (ICRA)
+1811: , 2011.
+1812: [26]
+1813: S. Isler, R. Sabzevari, J. Delmerico, and D. Scaramuzza, “An information gain
+1814: formulation for active volumetric 3d reconstruction,” in
+1815: IEEE
+1816: International Conference on Robotics and Automation (ICRA)
+1817: , 2016.
+1818: [27]
+1819: J. Bohg, K. Hausman, B. Sankaran, O. Brock, D. Kragic, S. Schaal, and G. S.
+1820: Sukhatme, “Interactive perception: Leveraging action in perception and
+1821: perception in action,”
+1822: IEEE Transactions on Robotics
+1823: , 2017.
+1824: [28]
+1825: X. Zhang, J. Sinapov, and S. Zhang, “Planning multimodal exploratory actions
+1826: for online robot attribute learning,” in
+1827: Proceedings of Robotics:
+1828: Science and Systems
+1829: , 2021.
+1830: [29]
+1831: A. Rosinol, A. Violette, M. Abate, N. Hughes, Y. Chang
+1832: et al.
+1833: , “Kimera:
+1834: From slam to spatial perception with 3d dynamic scene graphs,”
+1835: The
+1836: International Journal of Robotics Research
+1837: , 2021.
+1838: [30]
+1839: N. Hughes, Y. Chang, and L. Carlone, “Hydra: A real-time spatial perception
+1840: system for 3d scene graph construction and optimization,”
+1841: arXiv
+1842: preprint arXiv:2201.13360
+1843: , 2022.
+1844: [31]
+1845: S. Amiri, S. Wei, S. Zhang, J. Sinapov, and P. Stone, “Reasoning with scene
+1846: graphs for robot planning under partial observability,”
+1847: IEEE Robotics
+1848: and Automation Letters
+1849: , 2022.
+1850: [32]
+1851: Q. Gu, A. Kuwajerwala, S. Morin, K. M. Jatavallabhula, B. Sen
+1852: et al.
+1853: ,
+1854: “Conceptgraphs: Open-vocabulary 3d scene graphs for perception and
+1855: planning,” in
+1856: IEEE International Conference on Robotics and Automation
+1857: (ICRA)
+1858: , 2024.
+1859: [33]
+1860: F. Ingrand and M. Ghallab, “Deliberation for autonomous robots: A survey,”
+1861: Artificial Intelligence
+1862: , 2017.
+1863: [34]
+1864: M. Brenner and B. Nebel, “Continual planning and acting in dynamic multiagent
+1865: environments,” in
+1866: International Symposium on Practical Cognitive
+1867: Agents and Robots
+1868: , 2006.
+1869: [35]
+1870: Y. Du, K. Konyushkova, M. Denil, A. Raju
+1871: et al.
+1872: , “Vision-language
+1873: models as success detectors,”
+1874: arXiv preprint arXiv:2303.07280
+1875: , 2023.
+1876: [36]
+1877: W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang
+1878: et al.
+1879: , “Inner monologue:
+1880: Embodied reasoning through planning with language models,”
+1881: arXiv
+1882: preprint arXiv:2207.05608
+1883: , 2022.
+1884: [37]
+1885: K. Rana, J. Haviland, S. Garg, J. Abou-Chakra, I. Reid, and N. Suenderhauf,
+1886: “Sayplan: Grounding large language models using 3d scene graphs for scalable
+1887: robot task planning,”
+1888: arXiv preprint arXiv:2307.06135
+1889: , 2023.
+1890: [38]
+1891: D. Coleman, I. Sucan, S. Chitta, and N. Correll, “Reducing the barrier to
+1892: entry of complex robotic software: a moveit! case study,” in
+1893: Journal
+1894: of Software Engineering for Robotics
+1895: , 2014.
+1896: [39]
+1897: C. Li, R. Zhang, J. Wong, C. Gokmen, S. Srivastava
+1898: et al.
+1899: ,
+1900: “Behavior-1k: A benchmark for embodied ai with 1,000 everyday activities and
+1901: realistic simulation,” in
+1902: Conference on Robot Learning (CoRL)
+1903: , 2023.
+1904: Appendix A
+1905: VLM Prompt Templates
+1906: This appendix provides the complete set of prompt templates used for VLM queries in VAP-TAMP. As described in Section
+1907: IV
+1908: , the system uses VLMs for: (1) parsing natural language goals into PDDL specifications, (2) verifying predicates through paraphrased queries, (3) assessing view sufficiency, and (4) suggesting better viewpoints when needed. All prompts are designed to elicit binary or structured responses for reliable automated parsing.
+1909: A-
+1910: 1
+1911: Goal Parsing
+1912: Given a natural language instruction
+1913: g
+1914: NL
+1915: g_{\text{NL}}
+1916: , the system uses the VLM to generate a PDDL goal specification
+1917: g
+1918: g
+1919: based on the current scene graph
+1920: 𝒢
+1921: \mathcal{G}
+1922: and domain knowledge
+1923: 𝒟
+1924: \mathcal{D}
+1925: .
+1926: Goal Parsing Prompt
+1927: You are a robot task planner. Convert the natural language instruction into a goal state.
+1928: Instruction: {instruction}
+1929: Available objects: {object_list}
+1930: Available predicates: {predicate_list}
+1931: Output the goal as a list of predicates that should be true when the task is complete.
+1932: Format: predicate(object1, object2), predicate(object), ...
+1933: Goal:
+1934: Example:
+1935: •
+1936: Input: Instruction = ‘‘Put the cup in the cabinet’’
+1937: •
+1938: Objects = [cup, cabinet, table, plate]
+1939: •
+1940: Predicates = [on(X,Y), inside(X,Y), holding(X), open(X)]
+1941: •
+1942: Output: inside(cup, cabinet)
+1943: A-
+1944: 2
+1945: Predicate Verification
+1946: As described in Section
+1947: IV-B
+1948: , predicate verification uses
+1949: N
+1950: =
+1951: 5
+1952: N=5
+1953: semantically equivalent paraphrases to improve reliability. Each paraphrase is sent to the VLM with the current observation, and the final predicate value is determined by majority vote over the responses.
+1954: Predicate Query Template
+1955: [Image attached]
+1956: Analyze this image carefully.
+1957: Question: {paraphrased_question}
+1958: Respond with only ‘‘yes’’ or ‘‘no’’.
+1959: For example, to verify predicate
+1960: p
+1961: =
+1962: on(cup, table)
+1963: p=\texttt{on(cup, table)}
+1964: , we generate five paraphrased questions and query the VLM five times with the same observation. If 4 out of 5 responses are “yes”, the predicate evaluates to True. Section
+1965: A-5
+1966: provides the complete set of paraphrase templates for all predicates.
+1967: A-
+1968: 3
+1969: View Sufficiency Check
+1970: When predicate verification produces consistent responses (high agreement among paraphrases), the system queries the VLM to determine whether the current viewpoint provides adequate visual information to confidently accept the result. If the VLM indicates insufficiency, viewpoint selection is triggered.
+1971: View Sufficiency Prompt
+1972: [Image attached]
+1973: You are assessing whether this camera view provides sufficient information to answer the following question:
+1974: ‘‘{predicate_question}’’
+1975: Consider:
+1976: •
+1977: Is the target object clearly visible?
+1978: •
+1979: Are relevant spatial relationships observable?
+1980: •
+1981: Is the view free from significant occlusion?
+1982: Respond ‘‘yes’’ if the current view is sufficient.
+1983: Respond ‘‘no’’ if a different viewpoint would provide clearer evidence.
+1984: Answer:
+1985: A-
+1986: 4
+1987: Viewpoint Selection
+1988: When the view is insufficient, the system queries the VLM to suggest a better viewing direction. The robot navigates in the suggested direction and re-attempts predicate verification, repeating until the view is sufficient or the viewpoint budget
+1989: K
+1990: K
+1991: is exhausted.
+1992: Viewpoint Selection Prompt
+1993: [Image attached]
+1994: The robot is trying to verify: ‘‘{predicate_question}’’
+1995: The current view does not provide sufficient visual evidence. Suggest which direction the robot should move to get a clearer view of the {target_object}.
+1996: Options: left, right, front, behind, above, closer
+1997: Choose the single best direction:
+1998: A-
+1999: 5
+2000: Predicate Paraphrase Templates
+2001: For each predicate type in the domain, we define
+2002: N
+2003: =
+2004: 5
+2005: N=5
+2006: semantically equivalent phrasings. These paraphrases reduce sensitivity to specific wording and enable majority voting for robust verification.
+2007: A-
+2008: 6
+2009: on(X, Y) – Object Resting on Surface
+2010: 1.
+2011: Is the {X} on the {Y}?
+2012: 2.
+2013: Is the {X} resting on the {Y} surface?
+2014: 3.
+2015: Is the {X} placed on top of the {Y}?
+2016: 4.
+2017: Is the {X} positioned on the {Y}?
+2018: 5.
+2019: Is the {X} sitting on the {Y}?
+2020: A-
+2021: 7
+2022: inside(X, Y) – Containment
+2023: 1.
+2024: Is the {X} inside the {Y}?
+2025: 2.
+2026: Is the {X} contained within the {Y}?
+2027: 3.
+2028: Can you see the {X} stored inside the {Y}?
+2029: 4.
+2030: Is the {X} located within the {Y}?
+2031: 5.
+2032: Is the {X} placed inside the {Y}?
+2033: A-
+2034: 8
+2035: holding(robot, X) – Gripper Grasping Object
+2036: 1.
+2037: Is the robot holding the {X}?
+2038: 2.
+2039: Is the {X} grasped by the robot gripper?
+2040: 3.
+2041: Does the robot have the {X} in its gripper?
+2042: 4.
+2043: Is the robot’s gripper gripping the {X}?
+2044: 5.
+2045: Is the {X} held by the robot?
+2046: A-
+2047: 9
+2048: hand_empty – Empty Gripper
+2049: 1.
+2050: Is the robot gripper empty?
+2051: 2.
+2052: Is the robot holding nothing?
+2053: 3.
+2054: Is the robot’s gripper free and not grasping anything?
+2055: 4.
+2056: Are the robot’s fingers not holding any object?
+2057: 5.
+2058: Is there nothing in the robot’s gripper?
+2059: A-
+2060: 10
+2061: open(X) – Door or Container State
+2062: 1.
+2063: Is the {X} open?
+2064: 2.
+2065: Is the {X} in an open position?
+2066: 3.
+2067: Can you see inside the {X}, indicating it is open?
+2068: 4.
+2069: Is the {X} door/lid currently opened?
+2070: 5.
+2071: Is the interior of the {X} visible and accessible?
+2072: A-
+2073: 11
+2074: reachable(X) – Object Accessibility
+2075: 1.
+2076: Can the robot reach the {X}?
+2077: 2.
+2078: Is the {X} accessible to the robot arm?
+2079: 3.
+2080: Is there a clear path for the robot to reach the {X}?
+2081: 4.
+2082: Can the robot arm access the {X} without obstruction?
+2083: 5.
+2084: Is the {X} within the robot’s reachable workspace?
+2085: A-
+2086: 12
+2087: blocking(X, Y) – Obstruction
+2088: 1.
+2089: Is the {X} blocking access to the {Y}?
+2090: 2.
+2091: Is the {X} obstructing the {Y}?
+2092: 3.
+2093: Does the {X} prevent reaching the {Y}?
+2094: 4.
+2095: Is the {X} in the way of the {Y}?
+2096: 5.
+2097: Would the {X} need to be moved to access the {Y}?
+2098: A-
+2099: 13
+2100: clear(X) – Surface Unoccupied
+2101: 1.
+2102: Is the top of the {X} clear?
+2103: 2.
+2104: Is there nothing on top of the {X}?
+2105: 3.
+2106: Is the {X} surface empty?
+2107: 4.
+2108: Is the top of the {X} free of objects?
+2109: 5.
+2110: Can an object be placed on the {X} without obstruction?
+2111: A-
+2112: 14
+2113: inview(X) – Object Visibility
+2114: 1.
+2115: Is the {X} visible in this image?
+2116: 2.
+2117: Can you see the {X} in this view?
+2118: 3.
+2119: Is the {X} present and visible in this image?
+2120: 4.
+2121: Does this image contain the {X}?
+2122: 5.
+2123: Is the {X} observable from this viewpoint?

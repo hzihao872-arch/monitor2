@@ -1,0 +1,10092 @@
+Video2STL: Grounding VLM-Generated Temporal Specifications for Robot Learning
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1
+Introduction
+2
+Related Work
+3
+Technical Background and Preliminaries
+3.1
+Problem Setting
+3.2
+Signal Temporal Logic (STL) & Quantitative Robustness
+4
+Methodology
+4.1
+Video to an Embodiment-Independent Semantic Trace
+4.2
+Semantic Trace to a Parametric STL Bank
+4.3
+Target-Embodiment Grounding
+4.4
+Expert-Consistency Filtering
+4.5
+Quantitative STL and Sign-Preserving Smooth Semantics
+4.6
+Two-Timescale Temporal Reward
+4.6.1
+Local Rolling-Window Robustness
+4.6.2
+Long-Horizon Causal Progress
+5
+Experiments
+5.1
+Quadruped Locomotion
+5.2
+Robot Manipulation
+6
+Conclusion
+References
+A
+Appendix
+A.1
+Quadruped Locomotion
+A.1.1
+Comparison of VLM Configurations
+A.1.2
+Reward Construction
+A.1.3
+Hyperparameters and Domain Randomization
+A.1.4
+Sources Videos & VLM Prompts For Quadruped Locomotion
+A.2
+Robot Manipulation
+A.2.1
+Reward Construction
+A.2.2
+Hyperparameters
+A.2.3
+Source Videos & VLM Prompts For Manipulation
+License: CC BY 4.0
+arXiv:2609.37519v1 [cs.RO] 29 Sep 2026
+Video2STL: Grounding VLM-Generated Temporal Specifications for Robot Learning
+Merve Atasever
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Email:
+shahrooe@usc.edu
+Keyan Azbijari
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Email:
+biyik@usc.edu
+Cagan Bakirci
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Email:
+jdeshmuk@usc.edu
+Alfredo Reina Corona
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Email:
+yangrichard@ufl.edu
+Bo-Ruei Huang
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Tolga Izdas
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Zahra Shahrooei
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Richard Yang
+Affiliation:
+University of FloridaGainesville, FL, USA
+Erdem Biyik
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Jyotirmoy V. Deshmukh
+Affiliation:
+Department of Computer Science,
+University of Southern CaliforniaLos Angeles, CA, USA
+{atasever, azbijari, cbakirci, reinacor, borueihu, izdas,
+Abstract
+Video-based policy learning is particularly promising, as it illustrates target behaviors without requiring action annotations or embodiment-matched demonstrations. A central challenge, however, is deciding what information should be transferred from the video to the robot. Existing approaches commonly convert visual observations into scalar similarity or value signals, or ask foundation models to directly generate reward code. While effective, these approaches can make the temporal structure of a task difficult to inspect, ground, and reuse. We present Video2STL, a framework that converts observation-only videos into parametric Signal Temporal Logic (STL) specifications and uses the resulting formal representation for robot learning. A vision-language model first extracts an embodiment-independent semantic event trace and then constructs a bank of symbolic temporal specifications. The model determines the task structure, while numerical predicate thresholds and temporal bounds are grounded from successful robot trajectories. For policy learning, we separate short- and long-timescale temporal information: short-horizon specifications provide dense rewards through rolling-window quantitative robustness, while a causal monitor over a retained long-horizon specification provides one-time progress rewards for valid temporal prefixes. The same representation is intended to support cross-embodiment transfer from human or animal videos to robot control while remaining interpretable at every stage. Across four manipulation tasks, Video2STL achieves
+85.8
+%
+85.8\%
+average success-once and
+67.0
+%
+67.0\%
+success-at-end, compared with
+81.5
+%
+/
+59.5
+%
+81.5\%/59.5\%
+for native dense PPO and
+65.0
+%
+/
+42.3
+%
+65.0\%/42.3\%
+for Text2Reward; in quadruped locomotion, the Qwen-3.8 and GPT-5.6-based Video2STL policies achieve
+100
+%
+100\%
+success across velocities from
+0.3
+0.3
+to
+2.1
+​
+m
+/
+s
+2.1\,\mathrm{m/s}
+while remaining competitive in high-speed energy efficiency. Project webpage:
+video2stl
+.
+1
+Introduction
+Reinforcement learning has become a practical tool for robot control, but reward design remains one of the parts that is least reusable across tasks. A reward that works well often combines geometric errors, contact heuristics, success bonuses, regularizers, and task-specific schedules. The resulting function may train a strong policy while still being difficult to interpret or modify. This problem becomes more pronounced when the desired behavior is easier to show than to describe numerically. Human and animal videos provide abundant examples of manipulation and locomotion, yet they do not expose the demonstrator’s actions in the robot action space, and the morphology of the demonstrator may be very different from that of the target robot.
+Recent work has moved toward more natural interfaces for reward and behavior specification along two largely parallel lines. On the visual side, learning from human video has been framed as a cross-domain imitation problem
+(
+Li et al., 2022
+)
+. VIP derives dense, goal-conditioned rewards from a representation pretrained on large-scale human video
+(
+Ma et al., 2023
+)
+, and contrastive vision-language models such as CLIP have been used directly as zero-shot, language-specified reward models
+(
+Rocamonde et al., 2024
+)
+. Generative Value Learning moves further toward general progress estimation, using a VLM to infer per-frame task progress on over 300 real-world tasks spanning many robot embodiments, with human videos usable as in-context examples
+(
+Ma et al., 2025
+)
+. On the language side, language models have served as proxy reward functions that judge behavior against a user’s examples or description
+(
+Kwon et al., 2023
+)
+. Text2Reward and Eureka showed that they can also write dense reward programs and refine them through feedback or evolutionary search
+(
+Xie et al., 2024
+;
+Ma et al., 2024
+)
+. ROSETTA constructs code-based rewards from unconstrained, evolving language preferences
+(
+Srivastava et al., 2026
+)
+. Taken together, these results make a strong case that foundation models can provide task-level supervision. That supervision, however, takes the form of a scalar reward or progress signal for a task specified in language or as a goal image, which leaves open a question: what intermediate representation should connect an observation-only video to low-level robot learning?
+A scalar reward is convenient for optimization, but it hides how the task unfolds over time. Consider a simple placement behavior. "Near the object", "move it toward the destination", "place it", and "leave it stable" are not four unrelated scores; they form a temporal structure. A reward program generated directly from text or video can encode this structure implicitly, but the structure is then mixed with numerical thresholds, simulator APIs, and implementation choices. Visual embedding rewards have the opposite advantage: they require little explicit structure, but it can be difficult to tell why a rollout receives a particular score or whether a high score corresponds to the intended temporal behavior. These limitations matter most in cross-embodiment settings, where pixel or pose correspondence is unreliable and where the transferable content is often semantic rather than kinematic.
+Our central design choice is to separate
+what the video should decide
+from
+what robot data should decide
+. The video determines symbolic task structure: which entities matter, which semantic events occur, and how those events are ordered. Robot trajectories determine embodiment-specific numerical quantities: how close counts as
+Near
+, how much object motion counts as
+Displaced
+, and how long a temporal relation should be allowed to take. Signal Temporal Logic (STL) provides a natural interface between these two levels because it combines human-readable temporal operators with quantitative robustness semantics over real-valued robot signals
+(
+Maler and Nickovic, 2004
+;
+Fainekos and Pappas, 2009
+;
+Donzé and Maler, 2010
+)
+. The same formula can therefore be read as a requirement, evaluated as a monitor, and converted into a dense learning signal.
+Figure 1:
+Overview of Video2STL framework. A VLM parses an observation video into a semantic event trace and generates parametric STL formulas. Predicate thresholds and temporal bounds are then fitted to target-embodiment trajectories. Smooth rolling-window robustness over short-horizon formulas provides dense local guidance, while a causal prefix monitor over the long-horizon backbone yields milestone progress rewards for RL policy training.
+We introduce Video2STL, a video to formal specification pipeline for robot learning. Given an observation-only video
+V
+V
+, a vision-language model (VLM) first maps the video to an embodiment-independent semantic event trace
+E
+E
+. A second stage maps
+E
+E
+to a bank of parametric STL formulas
+Φ
+\Phi
+. We deliberately do not ask the VLM to estimate robot-specific distances, velocities, or timing constants. Instead, we collect successful robot trajectories and split them once into a grounding set and a held-out filtering set. The grounding split is used to fit predicate thresholds and temporal bounds. The filtering split is used only to test whether each grounded formula is compatible with successful target-embodiment behavior.
+The second design problem is how to turn a temporal specification into an RL signal without destroying credit assignment. Prior work has shown that STL can define non-Markovian rewards and encode sequential dependencies
+(
+Venkataraman et al., 2020
+;
+Puranic et al., 2021
+)
+. An earlier locomotion work also showed that the robustness of finite-history STL can provide a structured reward once temporal templates are available
+(
+Atasever et al., 2026
+)
+. In our setting, however, the formulas are produced from video and can span very different timescales. We therefore use a two-timescale construction. Short formulas are evaluated on a trailing window
+[
+t
+−
+H
+local
+,
+t
+]
+[t-H_{\mathrm{local}},t]
+and produce a dense local reward. Long formulas are not compressed into the same local window; instead, a causal prefix monitor provides a one-time reward when a new valid stage of the temporal sequence is reached. This keeps the dense signal local while preserving the ordering and deadlines of the long task.
+A final issue is smooth robustness. Standard STL robustness uses nested min/max operations. Replacing them with conventional smooth approximations can improve optimization but can also change the sign of robustness, so a formula that is false under hard STL can become positive after smoothing. We use sign-preserving Boltzmann reductions whose output has the same sign as the corresponding hard min/max. This keeps the logical satisfaction boundary exact while still providing smoother within-region magnitudes for reward construction.
+Our contributions are:
+1.
+We formulate observation-only video as a source of
+formal temporal task structure
+. A two-stage VLM pipeline maps video to a semantic trace and then to a bank of parametric STL specifications, using one reusable ontology across manipulation tasks rather than task-specific reward templates.
+2.
+We separate symbolic inference from embodiment-specific grounding. Numerical predicate thresholds and temporal bounds are fit on one set of successful robot trajectories, while a disjoint held-out set is used for expert-consistency filtering. The expert data calibrates and validates the VLM specifications but does not supply action supervision or define their symbolic structure.
+3.
+We develop a two-timescale specification reward: rolling-window robustness from short formulas provides dense feedback, while a causal monitor of a long temporal backbone provides sparse, non-farmable progress.
+4.
+We instantiate the framework in robot manipulation and quadruped locomotion, targeting cross-embodiment transfer in which the source demonstrator and target robot need not share morphology. The resulting representation remains inspectable from video interpretation through policy training.
+2
+Related Work
+Learning Robot Behavior from Video.
+Early work on learning from observation focused largely on closing the domain gap between human demonstrations and robot execution. This was approached through context translation between demonstrator and robot observations
+(
+Liu et al., 2018
+)
+, viewpoint-invariant visual representations for human-to-robot imitation
+(
+Sermanet et al., 2018
+)
+, and domain-adaptive meta-learning with paired human and robot demonstrations
+(
+Yu et al., 2018
+)
+.
+Li et al. (2022)
+further reduced the need for robot demonstrations during meta-training by translating human videos into robot-domain demonstrations. In these approaches, the information transferred from video is mainly represented through learned visual features, translated demonstrations, or adapted policies.
+More recent methods use pretrained visual models to extract a learning signal directly from video. VIP learns a value-implicit representation from large-scale human video and constructs dense rewards from distances in the learned embedding space
+(
+Ma et al., 2023
+)
+. RoboCLIP compares an agent’s
+interaction trajectory with a video or language task specification using a pretrained video-language model and uses the resulting similarity as an episodic reward
+(
+Sontakke et al., 2023
+)
+. GVL instead uses a VLM to estimate task progress by reasoning over the temporal ordering of video frames, with support for in-context examples from different tasks and embodiments
+(
+Ma et al., 2025
+)
+.
+Foundation Models for Reward Design.
+A related line of work uses language and vision-language models to construct reward functions from high-level task descriptions.
+Kwon et al. (2023)
+uses an LLM as a proxy reward function conditioned on a natural-language objective. Text2Reward generates
+executable dense reward programs from language instructions and environment APIs
+(
+Xie et al., 2024
+)
+, while Eureka iteratively improves LLM-generated reward code using downstream policy performance as feedback
+(
+Ma et al., 2024
+)
+.
+Rocamonde et al. (2024)
+uses
+pretrained vision-language similarity directly as an RL reward, and RL-VLM-F queries a VLM for pairwise
+preferences over visual observations and trains a reward model from those comparisons
+(
+Wang et al., 2024
+)
+. Video2Reward extracts motion keypoint trajectories from the video, prompts an LLM to generate executable reward code for legged robot learning, and iteratively refines the reward using visual feedback from the learned policy
+(
+Zeng et al., 2024
+)
+. More recently, ROSETTA uses language preferences to construct staged reward code for manipulation
+(
+Srivastava et al., 2026
+)
+.
+Temporal Logic for Robot Learning.
+Prior work has explored logic-guided RL by converting temporal-logic objectives into quantitative rewards
+(
+Hasanbeig et al., 2020
+;
+Li et al., 2017
+;
+Kapoor et al., 2020
+;
+Puranic et al., 2021
+)
+. Other work has studied learning temporal-logic specifications from demonstrations
+(
+Venkataraman et al., 2020
+;
+Puranic et al., 2021
+)
+. Formal specifications have also guided planning and control for legged robots, including locomotion over cluttered terrain and logic-driven gait learning for quadrupeds
+Gu et al. (2025)
+;
+Humphreys and Zhou (2025)
+;
+DeFazio et al. (2024)
+;
+Atasever et al. (2026)
+.
+A related line of work translates natural-language commands into formal specifications.
+Lang2LTL grounds complex commands into LTL for long-horizon robot navigation in previously unseen environments
+(
+Liu et al., 2023
+)
+.
+The important distinction is the source and use of the specification.
+Lang2LTL starts from language and uses logic primarily to represent commands for planning/execution.
+In contrast, Video2STL does not assume that the temporal task structure is given in advance: the structure is extracted from video by VLM and then checked against embodiment-specific robot data.
+Figure 2:
+Video2STL
+1:
+Video
+V
+V
+, successful trajectories
+𝒟
++
+\mathcal{D}^{+}
+2:
+Policy
+π
+θ
+\pi_{\theta}
+3:
+E
+←
+VLM
+event
+​
+(
+V
+)
+E\leftarrow\mathrm{VLM}_{\mathrm{event}}(V)
+4:
+Φ
+←
+VLM
+STL
+​
+(
+E
+)
+\Phi\leftarrow\mathrm{VLM}_{\mathrm{STL}}(E)
+5:
+Split
+𝒟
++
+→
+(
+𝒟
+ground
+,
+𝒟
+filter
+)
+\mathcal{D}^{+}\rightarrow(\mathcal{D}_{\mathrm{ground}},\mathcal{D}_{\mathrm{filter}})
+6:
+ϑ
+←
+Ground
+⁡
+(
+Φ
+,
+𝒟
+ground
+)
+\vartheta\leftarrow\mathrm{Ground}(\Phi,\mathcal{D}_{\mathrm{ground}})
+7:
+Φ
+keep
+←
+Filter
+⁡
+(
+Φ
+ϑ
+,
+𝒟
+filter
+)
+\Phi_{\mathrm{keep}}\leftarrow\mathrm{Filter}(\Phi_{\vartheta},\mathcal{D}_{\mathrm{filter}})
+8:
+Construct
+r
+t
+local
+r_{t}^{\mathrm{local}}
+9:
+Construct
+r
+t
+progress
+r_{t}^{\mathrm{progress}}
+10:
+r
+t
+←
+λ
+L
+​
+r
+t
+local
++
+λ
+P
+​
+r
+t
+progress
+r_{t}\leftarrow\lambda_{L}r_{t}^{\mathrm{local}}+\lambda_{P}r_{t}^{\mathrm{progress}}
+11:
+π
+θ
+←
+RL
+⁡
+(
+r
+t
+)
+\pi_{\theta}\leftarrow\mathrm{RL}(r_{t})
+The closest prior lines can be summarized by what they transfer from the source signal. Video imitation methods transfer appearance or behavior representations; visual-reward methods transfer scalar similarity or progress; LLM reward-generation methods transfer language intent into executable code; language-to-logic methods transfer explicit commands into symbolic temporal constraints.
+Video2STL focuses on a different interface between these directions:
+video
+→
+\rightarrow
+explicit temporal specification
+→
+\rightarrow
+grounded quantitative reward and causal monitor
+. The proposed representation is deliberately more constrained than free-form reward code and more structured than a scalar visual reward. The temporal specifications determine which quantities must be grounded, provide explicit satisfaction boundaries that can be checked on held-out expert trajectories, and support different credit-assignment mechanisms for short- and long-horizon temporal structure.
+3
+Technical Background and Preliminaries
+3.1
+Problem Setting
+We consider a target robot controlled by a policy
+π
+θ
+​
+(
+a
+t
+∣
+o
+t
+)
+\pi_{\theta}(a_{t}\mid o_{t})
+in an episodic Markov decision process
+ℳ
+=
+(
+𝒮
+,
+𝒜
+,
+P
+,
+T
+)
+\mathcal{M}=(\mathcal{S},\mathcal{A},P,T)
+. We assume a source video
+V
+V
+showing a successful behavior, and a set of successful robot trajectories
+𝒟
++
+=
+{
+τ
+(
+n
+)
+}
+n
+=
+1
+N
+\mathcal{D}^{+}=\{\tau^{(n)}\}_{n=1}^{N}
+, where
+τ
+(
+n
+)
+=
+(
+x
+0
+(
+n
+)
+,
+…
+,
+x
+T
+n
+(
+n
+)
+)
+\tau^{(n)}=(x^{(n)}_{0},\ldots,x^{(n)}_{T_{n}})
+. The source video and robot trajectories do not need to come from the same embodiment. We first prompt the VLM to extract a semantic event trace
+E
+E
+from the source video, identifying the task-relevant events and their temporal relationships. The VLM is then prompted a second time to convert this semantic description into a bank of parametric STL formulas
+Φ
+\Phi
+. At this stage, the formulas define the symbolic structure of the task but leave embodiment-specific quantities, such as geometric thresholds and temporal bounds, unspecified. Successful robot trajectories are subsequently used to ground these numerical parameters and to perform expert-consistency filtering, removing formulas that are not supported by held-out successful behavior. The method follows one principle throughout: the video determines the symbolic task structure, while robot data determines its numerical parameters. This separation allows a human or animal video to define the task without requiring morphological correspondence between the demonstrator and the robot.
+3.2
+Signal Temporal Logic (STL) & Quantitative Robustness
+Signal Temporal Logic (STL) specifies temporal properties over real-valued signals
+x
+⁡
+(
+t
+)
+x(t)
+using Boolean and temporal operators
+(
+Maler and Nickovic, 2004
+)
+.
+Formulas are built from atomic predicates
+f
+⁡
+(
+x
+⁡
+(
+t
+)
+)
+≥
+0
+f(x(t))\geq 0
+, Boolean connectives (
+∧
+,
+∨
+,
+¬
+\wedge,\vee,\neg
+), and time-bounded temporal operators
+𝐆
+[
+a
+,
+b
+]
+\mathbf{G}_{[a,b]}
+(always) and
+𝐅
+[
+a
+,
+b
+]
+\mathbf{F}_{[a,b]}
+(eventually).
+We use quantitative semantics of STL
+(
+Donzé and Maler, 2010
+;
+Fainekos and Pappas, 2009
+)
+; for a given trace
+x
+x
+, and each formula
+φ
+\varphi
+ρ
+φ
+​
+(
+t
+)
+\rho^{\varphi}(t)
+assigns a real value capturing the degree of satisfaction.
+Positive values imply satisfaction; negative imply violation, and the magnitude measures the satisfaction margin.
+For atomic predicates,
+ρ
+⁡
+(
+f
+⁡
+(
+x
+)
+≥
+0
+,
+x
+,
+t
+)
+=
+f
+⁡
+(
+x
+⁡
+(
+t
+)
+)
+\rho(f(x)\geq 0,x,t)=f(x(t))
+.
+For conjunction/disjunction, robustness uses min/max:
+ρ
+φ
+∧
+ψ
+​
+(
+t
+)
+=
+min
+⁡
+(
+ρ
+φ
+​
+(
+t
+)
+,
+ρ
+ψ
+​
+(
+t
+)
+)
+\rho^{\varphi\wedge\psi}(t)=\min(\rho^{\varphi}(t),\rho^{\psi}(t))
+, and
+ρ
+φ
+∨
+ψ
+​
+(
+t
+)
+=
+max
+⁡
+(
+ρ
+φ
+​
+(
+t
+)
+,
+ρ
+ψ
+​
+(
+t
+)
+)
+.
+\rho^{\varphi\vee\psi}(t)=\max(\rho^{\varphi}(t),\rho^{\psi}(t)).
+For time-bounded operators, we have
+ρ
+𝐆
+I
+​
+φ
+​
+(
+t
+)
+=
+inf
+t
+′
+∈
+t
++
+I
+ρ
+φ
+​
+(
+t
+′
+)
+\rho^{\mathbf{G}_{I}\varphi}(t)=\inf_{t^{\prime}\in t+I}\rho^{\varphi}(t^{\prime})
+,
+and
+ρ
+𝐅
+I
+​
+φ
+​
+(
+t
+)
+=
+sup
+t
+′
+∈
+t
++
+I
+ρ
+φ
+​
+(
+t
+′
+)
+\rho^{\mathbf{F}_{I}\varphi}(t)=\sup_{t^{\prime}\in t+I}\rho^{\varphi}(t^{\prime})
+for an arbitrary time interval
+I
+=
+[
+a
+,
+b
+]
+I=[a,b]
+.
+Parametric Signal Temporal Logic (PSTL) extends STL by allowing constants in predicates and intervals in temporal operators to be represented by parameters
+(
+Asarin et al., 2011
+)
+. The
+specification mining
+problem seeks to infer parameter ranges where the template formula is satisfied providing a data-driven way to instantiate temporal specifications from expert-provided locomotion trajectories.
+4
+Methodology
+4.1
+Video to an Embodiment-Independent Semantic Trace
+Directly asking a VLM to write a reward from pixels entangles perception, task interpretation, robot geometry, and reward engineering in one call. We instead first ask for a semantic trace that will later be translated into temporal logic. All videos use the same global ontology for manipulation and quadruped locomotion separately. For manipulation, the current entity roles are
+ℛ
+=
+{
+effector
+,
+object
+,
+receptacle
+,
+handle
+,
+articulated_part
+,
+goal
+,
+support
+}
+,
+\mathcal{R}=\{\texttt{effector},\texttt{object},\texttt{receptacle},\texttt{handle},\texttt{articulated\_part},\texttt{goal},\texttt{support}\},
+and the predicate vocabulary is
+𝒫
+=
+{
+\displaystyle\mathcal{P}=\{
+Near
+​
+(
+a
+,
+b
+)
+,
+Engaged
+​
+(
+e
+,
+x
+)
+,
+Grasped
+​
+(
+o
+)
+,
+Released
+​
+(
+o
+)
+,
+\displaystyle\texttt{Near}(a,b),\ \texttt{Engaged}(e,x),\ \texttt{Grasped}(o),\ \texttt{Released}(o),
+Displaced
+​
+(
+o
+)
+,
+Toward_goal
+​
+(
+o
+)
+,
+At_goal
+​
+(
+o
+)
+,
+\displaystyle\texttt{Displaced}(o),\ \texttt{Toward\_goal}(o),\ \texttt{At\_goal}(o),
+On_support
+(
+o
+,
+s
+)
+,
+In_receptacle
+(
+o
+,
+r
+)
+,
+Static
+(
+x
+)
+,
+Open
+(
+q
+)
+}
+.
+\displaystyle\texttt{On\_support}(o,s),\ \texttt{In\_receptacle}(o,r),\ \texttt{Static}(x),\ \texttt{Open}(q)\}.
+For quadruped locomotion, the current entity roles are
+ℛ
+=
+{
+trunk
+,
+front_left
+,
+front_right
+,
+hind_left
+,
+hind_right
+,
+support
+}
+,
+\mathcal{R}=\{\texttt{trunk},\texttt{front\_left},\texttt{front\_right},\texttt{hind\_left},\texttt{hind\_right},\texttt{support}\},
+and the predicate vocabulary is
+𝒫
+=
+{
+\displaystyle\mathcal{P}=\{
+Contact
+​
+(
+l
+​
+e
+​
+g
+)
+,
+Swing
+​
+(
+l
+​
+e
+​
+g
+)
+,
+Touchdown
+​
+(
+l
+​
+e
+​
+g
+)
+,
+Liftoff
+​
+(
+l
+​
+e
+​
+g
+)
+,
+\displaystyle\texttt{Contact}(leg),\ \texttt{Swing}(leg),\ \texttt{Touchdown}(leg),\ \texttt{Liftoff}(leg),
+Support_count_at_least
+​
+(
+k
+,
+l
+​
+e
+​
+g
+)
+,
+Trunk_height_stable
+​
+(
+t
+)
+,
+\displaystyle\texttt{Support\_count\_at\_least}(k,leg),\ \texttt{Trunk\_height\_stable}(t),
+Trunk_pitch_stable
+(
+t
+)
+,
+Trunk_roll_stable
+(
+t
+)
+,
+Periodic_leg_motion
+(
+l
+e
+g
+)
+}
+.
+\displaystyle\texttt{Trunk\_pitch\_stable}(t),\ \texttt{Trunk\_roll\_stable}(t),\ \texttt{Periodic\_leg\_motion}(leg)\}.
+The first query outputs a set of event records
+e
+k
+=
+(
+p
+k
+,
+c
+k
+)
+e_{k}=\big(p_{k},\,\,c_{k}\big)
+where
+p
+k
+∈
+𝒫
+p_{k}\in\mathcal{P}
+is the predicate and
+c
+k
+c_{k}
+is an event class (essential/terminal/incidental candidate). The output also includes pairwise temporal relations, such as
+before
+,
+overlaps
+, and
+alternates_with
+, persistent properties and a missing concepts field. If a visually important concept is absent from the ontology, the VLM must report the missing concept rather than invent a new predicate. This turns ontology insufficiency into an observable failure mode instead of silently changing the specification language.
+4.2
+Semantic Trace to a Parametric STL Bank
+In this stage, the VLM receives the semantic trace as a JSON file, not the original video. Its purpose is to formalize temporal relationships. The model constructs a variable-size bank
+Φ
+=
+{
+ϕ
+1
+,
+…
+,
+ϕ
+K
+}
+\Phi=\{\phi_{1},\ldots,\phi_{K}\}
+using only predicates supported by the trace. Numerical predicate thresholds and time constants are forbidden at this stage, only symbolic parameters such as
+H
+task
+H_{\mathrm{task}}
+,
+h
+goal
+h_{\mathrm{goal}}
+, or
+h
+settle
+h_{\mathrm{settle}}
+are allowed. The current grammar contains atomic predicates, conjunction, bounded eventually and always, and nested bounded responses:
+ϕ
+:
+:=
+μ
+|
+ϕ
+1
+∧
+ϕ
+2
+​
+∣
+𝐅
+[
+0
+,
+h
+]
+​
+ϕ
+∣
+​
+𝐆
+[
+0
+,
+h
+]
+​
+ϕ
+\phi::=\mu\mid\phi_{1}\wedge\phi_{2}\mid\mathbf{F}_{[0,h]}\phi\mid\mathbf{G}_{[0,h]}\phi
+with implication represented through standard Boolean composition when needed. The nested form
+𝐅
+[
+0
+,
+H
+]
+​
+(
+μ
+1
+∧
+𝐅
+[
+0
+,
+h
+1
+]
+​
+(
+μ
+2
+∧
+𝐅
+[
+0
+,
+h
+2
+]
+​
+μ
+3
+)
+)
+\mathbf{F}_{[0,H]}\left(\mu_{1}\wedge\mathbf{F}_{[0,h_{1}]}\left(\mu_{2}\wedge\mathbf{F}_{[0,h_{2}]}\mu_{3}\right)\right)
+expresses a bounded event sequence, while
+𝐅
+[
+0
+,
+H
+]
+​
+𝐆
+[
+0
+,
+h
+]
+​
+μ
+\mathbf{F}_{[0,H]}\mathbf{G}_{[0,h]}\mu
+expresses eventual persistence. We use a bank rather than forcing a single large formula because the source video can support multiple useful requirements at different temporal scales. For example, for PushCube, the bank contains seven formulas. Representative examples are
+ϕ
+1
+\displaystyle\phi_{1}
+=
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Near
+∧
+𝐅
+[
+0
+,
+h
+engage
+]
+​
+Engaged
+)
+,
+\displaystyle=\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\texttt{Near}\wedge\mathbf{F}_{[0,h_{\mathrm{engage}}]}\texttt{Engaged}\right),
+(1)
+ϕ
+2
+\displaystyle\phi_{2}
+=
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+TowardGoal
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+AtGoal
+)
+,
+\displaystyle=\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\texttt{TowardGoal}\wedge\mathbf{F}_{[0,h_{\mathrm{goal}}]}\texttt{AtGoal}\right),
+(2)
+ϕ
+5
+\displaystyle\phi_{5}
+=
+𝐆
+[
+0
+,
+H
+task
+]
+​
+OnSupport
+,
+\displaystyle=\mathbf{G}_{[0,H_{\mathrm{task}}]}\texttt{OnSupport},
+(3)
+ϕ
+7
+\displaystyle\phi_{7}
+=
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+TowardGoal
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+(
+AtGoal
+∧
+𝐅
+[
+0
+,
+h
+settle
+]
+​
+Static
+)
+)
+.
+\displaystyle=\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\texttt{TowardGoal}\wedge\mathbf{F}_{[0,h_{\mathrm{goal}}]}\left(\texttt{AtGoal}\wedge\mathbf{F}_{[0,h_{\mathrm{settle}}]}\texttt{Static}\right)\right).
+(4)
+The remaining formulas cover engagement-to-progress, displacement/progress, and goal-to-settling relationships. The full bank is reported in the Appendix.
+4.3
+Target-Embodiment Grounding
+The VLM output is symbolic. To evaluate it on a robot, each predicate must be mapped to a real-valued signed margin and each symbolic temporal parameter must be assigned a numerical bound. We split the successful trajectories into disjoint grounding and filtering sets,
+𝒟
++
+=
+𝒟
+ground
+∪
+𝒟
+filter
+\mathcal{D}^{+}=\mathcal{D}_{\mathrm{ground}}\cup\mathcal{D}_{\mathrm{filter}}
+, with
+𝒟
+ground
+∩
+𝒟
+filter
+=
+∅
+\mathcal{D}_{\mathrm{ground}}\cap\mathcal{D}_{\mathrm{filter}}=\varnothing
+. Our current experiments use a
+70
+/
+30
+70/30
+split. All thresholds, time bounds, and reward-normalization scales are fit from
+𝒟
+ground
+\mathcal{D}_{\mathrm{ground}}
+only.
+Each semantic predicate
+p
+p
+is associated with a signed atomic robustness
+ρ
+p
+​
+(
+x
+t
+,
+ϑ
+p
+)
+\rho_{p}(x_{t};\vartheta_{p})
+, where
+ϑ
+p
+\vartheta_{p}
+denotes the embodiment-specific numerical parameters of the predicate and
+ρ
+p
+​
+(
+x
+t
+,
+ϑ
+p
+)
+≥
+0
+\rho_{p}(x_{t};\vartheta_{p})\geq 0
+indicates satisfaction. We estimate
+ϑ
+p
+\vartheta_{p}
+using empirical quantiles rather than a single trajectory or hand-tuned thresholds. The choice of quantile depends on the direction of the predicate. For an upper-bound condition
+p
+⁡
+(
+x
+t
+)
+:
+f
+p
+​
+(
+x
+t
+)
+≤
+δ
+p
+p(x_{t}):f_{p}(x_{t})\leq\delta_{p}
+, we define
+ρ
+p
+​
+(
+x
+t
+)
+=
+δ
+p
+−
+f
+p
+​
+(
+x
+t
+)
+\rho_{p}(x_{t})=\delta_{p}-f_{p}(x_{t})
+and choose
+δ
+p
+\delta_{p}
+from a high quantile of the corresponding signal on successful trajectories. Conversely, for a lower-bound condition
+p
+⁡
+(
+x
+t
+)
+:
+f
+p
+​
+(
+x
+t
+)
+≥
+δ
+p
+p(x_{t}):f_{p}(x_{t})\geq\delta_{p}
+, we use
+ρ
+p
+​
+(
+x
+t
+)
+=
+f
+p
+​
+(
+x
+t
+)
+−
+δ
+p
+\rho_{p}(x_{t})=f_{p}(x_{t})-\delta_{p}
+and select
+δ
+p
+\delta_{p}
+from a suitably low quantile of successful behavior.
+The use of tolerant quantiles is particularly important for predicates that appear inside temporal operators such as
+G
+[
+a
+,
+b
+]
+G_{[a,b]}
+, whose robustness is determined by a minimum over the evaluation window. A threshold fitted to an extreme sample can make the specification unnecessarily sensitive to brief deviations. We therefore use high but non-extreme quantiles for error-type quantities, such as the
+95
+95
+th percentile, and low quantiles for floor-type quantities. The same principle is applied to temporal parameters: event delays observed in successful trajectories are summarized with empirical quantiles to obtain embodiment-specific temporal bounds.
+4.4
+Expert-Consistency Filtering
+VLM-generated formulas can be syntactically valid but incompatible with target-robot behavior.
+After grounding, we therefore evaluate each formula on the disjoint held-out set
+𝒟
+filter
+\mathcal{D}_{\mathrm{filter}}
+.
+Let
+r
+i
+​
+j
+=
+ρ
+⁡
+(
+ϕ
+i
+,
+τ
+j
+)
+r_{ij}=\rho(\phi_{i},\tau_{j})
+be full-trajectory robustness of grounded formula
+ϕ
+i
+\phi_{i}
+on held-out trajectory
+τ
+j
+\tau_{j}
+. We retain
+ϕ
+i
+∈
+Φ
+keep
+⇔
+Q
+α
+​
+(
+{
+r
+i
+​
+j
+:
+τ
+j
+∈
+𝒟
+filter
+}
+)
+≥
+0
+,
+\phi_{i}\in\Phi_{\mathrm{keep}}\iff Q_{\alpha}\!\left(\{r_{ij}:\tau_{j}\in\mathcal{D}_{\mathrm{filter}}\}\right)\geq 0,
+(5)
+with
+α
+=
+0.10
+\alpha=0.10
+quantile in the current experiments. For PushCube task, all seven formulas pass the
+Q
+0.10
+≥
+0
+Q_{0.10}\geq 0
+test. Thus, this stage acts as held-out validation rather than aggressive pruning.
+4.5
+Quantitative STL and Sign-Preserving Smooth Semantics
+To preserve logical satisfaction while using Boltzmann-weighted
+reductions, for
+z
+∈
+ℝ
+K
+z\in\mathbb{R}^{K}
+,
+β
+>
+0
+\beta>0
+, and a nonempty
+index set
+A
+⊆
+{
+1
+,
+…
+,
+K
+}
+A\subseteq\{1,\ldots,K\}
+, define
+BMin
+β
+⁡
+(
+z
+;
+A
+)
+=
+∑
+i
+∈
+A
+e
+−
+β
+​
+z
+i
+​
+z
+i
+∑
+j
+∈
+A
+e
+−
+β
+​
+z
+j
+\operatorname{BMin}_{\beta}(z;A)=\frac{\sum_{i\in A}e^{-\beta z_{i}}z_{i}}{\sum_{j\in A}e^{-\beta z_{j}}}
+;
+BMax
+β
+\operatorname{BMax}_{\beta}
+uses positive exponents.
+When
+min
+i
+⁡
+z
+i
+<
+0
+\min_{i}z_{i}<0
+,
+smin
+β
+sp
+⁡
+(
+z
+)
+\operatorname{smin}^{\mathrm{sp}}_{\beta}(z)
+applies
+BMin
+β
+\operatorname{BMin}_{\beta}
+only to negative coordinates;
+when
+min
+i
+⁡
+z
+i
+>
+0
+\min_{i}z_{i}>0
+, it uses all coordinates; otherwise it
+returns zero. Symmetrically,
+smax
+β
+sp
+⁡
+(
+z
+)
+\operatorname{smax}^{\mathrm{sp}}_{\beta}(z)
+uses positive
+coordinates when
+max
+i
+⁡
+z
+i
+>
+0
+\max_{i}z_{i}>0
+, all coordinates when
+max
+i
+⁡
+z
+i
+<
+0
+\max_{i}z_{i}<0
+, and returns zero otherwise. These operators preserve the satisfaction boundary:
+smin
+β
+sp
+⁡
+(
+z
+)
+≥
+0
+⇔
+min
+i
+⁡
+z
+i
+≥
+0
+,
+smax
+β
+sp
+⁡
+(
+z
+)
+≥
+0
+⇔
+max
+i
+⁡
+z
+i
+≥
+0
+.
+\operatorname{smin}^{\mathrm{sp}}_{\beta}(z)\geq 0\iff\min_{i}z_{i}\geq 0,\qquad\operatorname{smax}^{\mathrm{sp}}_{\beta}(z)\geq 0\iff\max_{i}z_{i}\geq 0.
+(6)
+4.6
+Two-Timescale Temporal Reward
+4.6.1
+Local Rolling-Window Robustness
+Long-horizon STL specifications are useful for describing the complete task, but their robustness is not always suitable as a dense reward during policy learning. We therefore use short-horizon specifications to provide local feedback over the recent trajectory history. Let
+span
+⁡
+(
+ϕ
+)
+\operatorname{span}(\phi)
+denote the temporal span required to evaluate a specification
+ϕ
+\phi
+. Given a local horizon
+H
+local
+H_{\mathrm{local}}
+, we define
+Φ
+local
+=
+{
+ϕ
+i
+∈
+Φ
+keep
+:
+span
+⁡
+(
+ϕ
+i
+)
+≤
+H
+local
+}
+\Phi_{\mathrm{local}}=\left\{\phi_{i}\in\Phi_{\mathrm{keep}}:\operatorname{span}(\phi_{i})\leq H_{\mathrm{local}}\right\}
+. At time
+t
+t
+, each local specification is evaluated over the trailing window
+W
+t
+=
+[
+max
+⁡
+(
+0
+,
+t
+−
+H
+local
+)
+,
+t
+]
+W_{t}=\left[\max(0,t-H_{\mathrm{local}}),\,t\right]
+.
+For each
+ϕ
+i
+∈
+Φ
+local
+\phi_{i}\in\Phi_{\mathrm{local}}
+, we compute its quantitative robustness
+ρ
+ϕ
+i
+sp
+​
+(
+W
+t
+)
+\rho^{\mathrm{sp}}_{\phi_{i}}(W_{t})
+over
+W
+t
+W_{t}
+using the sign-preserving smooth semantics.
+Because robustness magnitudes can differ substantially across formulas, we normalize each specification using a scale
+s
+i
+=
+Q
+α
+​
+(
+|
+ρ
+sp
+​
+ϕ
+i
+​
+(
+W
+t
+)
+|
+)
+s_{i}=Q_{\alpha}(|\rho^{\mathrm{sp}}{\phi_{i}}(W_{t})|)
+, estimated over
+τ
+∈
+𝒟
+​
+ground
+\tau\in\mathcal{D}{\mathrm{ground}}
+, with an empirical quantile.
+The normalized robustness is
+ρ
+¯
+ϕ
+i
+​
+(
+W
+t
+)
+=
+tanh
+⁡
+(
+ρ
+ϕ
+i
+sp
+​
+(
+W
+t
+)
+/
+s
+i
+)
+\bar{\rho}_{\phi_{i}}(W_{t})=\tanh\!\left(\rho^{\mathrm{sp}}_{\phi_{i}}(W_{t})/s_{i}\right)
+,
+which bounds each contribution to
+[
+−
+1
+,
+1
+]
+[-1,1]
+and prevents formulas with naturally larger robustness magnitudes from dominating the reward. The local STL reward is the mean normalized robustness across the retained short-horizon specifications:
+r
+t
+local
+=
+1
+|
+Φ
+local
+|
+​
+∑
+ϕ
+i
+∈
+Φ
+local
+ρ
+¯
+ϕ
+i
+​
+(
+W
+t
+)
+.
+r_{t}^{\mathrm{local}}=\frac{1}{|\Phi_{\mathrm{local}}|}\sum_{\phi_{i}\in\Phi_{\mathrm{local}}}\bar{\rho}_{\phi_{i}}(W_{t}).
+(7)
+Each formula first retains its own temporal semantics and satisfaction boundary, after which the normalized robustness values are combined to provide dense policy feedback. Specifications whose intrinsic temporal span exceeds this horizon are excluded from the local term and handled separately through the long-horizon causal progress monitor described next.
+4.6.2
+Long-Horizon Causal Progress
+Short-horizon robustness provides dense feedback, but it does not by itself capture the full temporal structure of a task. A long specification may encode a sequence of events that unfolds over most of an episode, and its robustness can remain uninformative until the relevant future events occur. We therefore use a separate causal progress signal for long-horizon temporal structure.
+From the retained specification bank, we select a long-horizon backbone specification
+ϕ
+backbone
+∈
+Φ
+keep
+\phi_{\mathrm{backbone}}\in\Phi_{\mathrm{keep}}
+whose temporal structure represents the main progression of the task. The backbone is monitored causally: at time
+t
+t
+, the monitor only uses the realized trajectory prefix
+x
+0
+:
+t
+x_{0:t}
+and does not access future states. We represent the backbone as an ordered sequence of
+K
+K
+semantic stages,
+p
+1
+→
+p
+2
+→
+⋯
+→
+p
+K
+p_{1}\rightarrow p_{2}\rightarrow\cdots\rightarrow p_{K}
+together with the temporal bounds inherited from the grounded STL specification. The monitor maintains the furthest valid prefix reached so far,
+b
+t
+∈
+{
+0
+,
+1
+,
+…
+,
+K
+}
+b_{t}\in\{0,1,\ldots,K\}
+, where
+b
+t
+=
+k
+b_{t}=k
+indicates that the first
+k
+k
+stages have been satisfied in the required order and within their corresponding temporal constraints.
+The progress reward
+r
+t
+progress
+=
+(
+b
+t
+−
+b
+t
+−
+1
+)
+/
+K
+r_{t}^{\mathrm{progress}}=(b_{t}-b_{t-1})/K
+is issued only when the policy reaches a new valid stage. Because
+b
+t
+b_{t}
+stores the furthest valid prefix reached so far, completed stages cannot be rewarded repeatedly, and therefore
+∑
+t
+r
+t
+progress
+≤
+1
+\sum_{t}r_{t}^{\mathrm{progress}}\leq 1
+. This construction provides sparse but temporally meaningful credit for completing valid task stages, while the rolling-window robustness term supplies dense local feedback. The final reward combines the two signals:
+r
+t
+=
+λ
+L
+​
+r
+t
+local
++
+λ
+P
+​
+r
+t
+progress
+.
+r_{t}=\lambda_{L}r_{t}^{\mathrm{local}}+\lambda_{P}r_{t}^{\mathrm{progress}}.
+(8)
+This separation between local rolling-window robustness and long-horizon causal progress is used only for the manipulation tasks. For quadruped locomotion, we use only the local rolling-window robustness, since locomotion is primarily periodic rather than sequential and does not naturally decompose into a fixed progression of task stages.
+5
+Experiments
+We evaluate Video2STL in two robot-learning domains with different temporal structures: quadruped locomotion and
+object manipulation. These domains provide complementary test cases for the proposed representation. Quadruped locomotion is approximately periodic with desired behavior characterized by recurring contact and stability patterns over time. Manipulation tasks, in contrast, typically consist of a sequence of semantically distinct stages, such as approaching an object, interacting with it, reaching a goal configuration, and maintaining the resulting state. Across both domains, the high-level pipeline is unchanged. Moreover, our main comparison in both domains contrasts three approaches to reward design: (i) a task-specific hand-engineered dense reward, (ii)
+Text2Reward
+(implemented using GPT-5.6 as
+the underlying language model), which directly generates executable reward code from a natural-language task description, and (iii)
+Video2STL
+, which uses an explicit temporal specification as the intermediate representation
+(
+Tao et al., 2025
+;
+Caluwaerts et al., 2023
+;
+Xie et al., 2024
+)
+.
+All methods use the same policy architecture,
+optimization procedure, training budget, environment configuration, and evaluation protocol; only the reward formulation is changed.
+5.1
+Quadruped Locomotion
+Robot and Simulation Setup.
+We evaluate locomotion on Google’s Barkour vb quadruped in
+MuJoCo XLA (MJX)
+(
+Caluwaerts et al., 2023
+;
+Todorov et al., 2012
+)
+.
+The control timestep is
+0.02
+​
+s
+0.02\,\mathrm{s}
+and the policy
+outputs 12 normalized joint-position commands, which are converted to
+actuator torques by the robot’s low-level PD controller. The policy
+receives the commanded linear and angular velocities together with robot proprioception and the previous action. Policies are trained using the JAX-based PPO implementation provided by Brax
+(
+Schulman et al., 2017
+;
+Freeman et al., 2021
+)
+.
+Table 1:
+Quadruped locomotion performance across commanded forward velocities.
+Survival and success are reported as percentages, and CoT denotes cost of transportation.
+Higher is better for survival and success; lower is better for CoT.
+Video2STL (Qwen 3.8)
+Video2STL (GPT-5.6)
+Text2Reward
+Heuristic
+𝐯
+𝐱
+\mathbf{v_{x}}
+(m/s)
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+0.3
+100%
+100%
+2.63
+±
+0.08
+2.63\pm 0.08
+100%
+100%
+2.63
+±
+0.06
+2.63\pm 0.06
+100%
+100%
+0.91
+±
+0.01
+0.91\pm 0.01
+100%
+100%
+1.20
+±
+0.00
+1.20\pm 0.00
+0.5
+100%
+100%
+1.86
+±
+0.03
+1.86\pm 0.03
+100%
+100%
+1.80
+±
+0.04
+1.80\pm 0.04
+100%
+100%
+0.80
+±
+0.00
+0.80\pm 0.00
+100%
+100%
+1.00
+±
+0.00
+1.00\pm 0.00
+0.7
+100%
+100%
+1.58
+±
+0.02
+1.58\pm 0.02
+100%
+100%
+1.52
+±
+0.03
+1.52\pm 0.03
+100%
+100%
+0.75
+±
+0.00
+0.75\pm 0.00
+100%
+100%
+1.00
+±
+0.00
+1.00\pm 0.00
+1.0
+100%
+100%
+1.37
+±
+0.01
+1.37\pm 0.01
+100%
+100%
+1.26
+±
+0.01
+1.26\pm 0.01
+100%
+100%
+0.74
+±
+0.00
+0.74\pm 0.00
+100%
+100%
+1.20
+±
+0.00
+1.20\pm 0.00
+1.3
+100%
+100%
+1.22
+±
+0.01
+1.22\pm 0.01
+100%
+100%
+1.17
+±
+0.01
+1.17\pm 0.01
+100%
+100%
+0.79
+±
+0.00
+0.79\pm 0.00
+100%
+100%
+1.30
+±
+0.00
+1.30\pm 0.00
+1.6
+100%
+100%
+0.92
+±
+0.01
+0.92\pm 0.01
+100%
+100%
+1.12
+±
+0.01
+1.12\pm 0.01
+100%
+100%
+0.87
+±
+0.00
+0.87\pm 0.00
+100%
+100%
+1.40
+±
+0.00
+1.40\pm 0.00
+1.9
+100%
+100%
+0.98
+±
+0.01
+0.98\pm 0.01
+100%
+100%
+1.13
+±
+0.01
+1.13\pm 0.01
+100%
+100%
+1.00
+±
+0.01
+1.00\pm 0.01
+100%
+100%
+1.40
+±
+0.00
+1.40\pm 0.00
+2.0
+100%
+100%
+1.00
+±
+0.01
+1.00\pm 0.01
+100%
+100%
+1.13
+±
+0.01
+1.13\pm 0.01
+100%
+100%
+1.07
+±
+0.01
+1.07\pm 0.01
+100%
+5%
+1.40
+±
+0.00
+1.40\pm 0.00
+2.1
+100%
+100%
+1.02
+±
+0.01
+1.02\pm 0.01
+100%
+100%
+1.15
+±
+0.01
+1.15\pm 0.01
+100%
+100%
+1.14
+±
+0.01
+1.14\pm 0.01
+100%
+0%
+1.40
+±
+0.00
+1.40\pm 0.00
+Evaluation Metrics.
+We evaluate locomotion policies under a set of fixed commanded forward velocities with zero lateral and yaw commands. Each commanded velocity is evaluated using 20
+independent rollouts of 500 simulation steps. The first 50 steps are treated as a warm-up period and excluded from command-tracking statistics. We report three task-level metrics.
+Survival rate
+measures the fraction of rollouts that reach the full evaluation horizon without triggering an environment termination condition.
+Velocity-tracking success
+measures whether the mean post-warm-up local forward velocity is
+within
+15
+%
+15\%
+of the commanded velocity. Specifically, for rollout
+k
+k
+,
+v
+¯
+x
+(
+k
+)
+=
+(
+T
+−
+50
+)
+−
+1
+​
+∑
+t
+=
+51
+T
+v
+x
+,
+loc
+(
+k
+)
+​
+(
+t
+)
+\bar{v}^{(k)}_{x}=(T-50)^{-1}\sum_{t=51}^{T}v^{(k)}_{x,\mathrm{loc}}(t)
+and the rollout is successful if
+|
+v
+¯
+x
+(
+k
+)
+−
+v
+x
+,
+cmd
+|
+≤
+0.15
+​
+|
+v
+x
+,
+cmd
+|
+\left|\bar{v}^{(k)}_{x}-v_{x,\mathrm{cmd}}\right|\leq 0.15|v_{x,\mathrm{cmd}}|
+. We also report the cost of transportation (CoT),
+CoT
+=
+E
+/
+(
+m
+​
+g
+​
+d
+)
+\mathrm{CoT}=E/(mgd)
+, where
+E
+E
+is the total energy consumed,
+m
+m
+is the robot mass,
+g
+g
+is gravitational acceleration, and
+d
+d
+is the planar distance traveled.
+Results.
+Across commanded forward velocities from
+0.3
+0.3
+to
+2.1
+​
+m
+/
+s
+2.1\,\mathrm{m/s}
+, all methods achieve
+100
+%
+100\%
+survival, indicating that survival alone does not distinguish the learned controllers. In terms of task success, Video2STL with Qwen and with GPT-5.6 maintains
+100
+%
+100\%
+success across the entire velocity range, including the highest-speed commands. Text2Reward also achieves
+100
+%
+100\%
+success throughout the tested range. The heuristic/hand-engineered reward baseline shows a high-speed limitation, decreasing to
+5
+%
+5\%
+success at
+2.0
+​
+m
+/
+s
+2.0\,\mathrm{m/s}
+and
+0
+%
+0\%
+at
+2.1
+​
+m
+/
+s
+2.1\,\mathrm{m/s}
+. These results show that the Qwen- and GPT-5.6-generated specifications yield locomotion policies that remain robust across the full commanded-speed range.
+The CoT reveals a complementary trade-off in locomotion efficiency. Text2Reward achieves the lowest CoT over most low- and mid-speed commands, whereas Video2STL-Qwen becomes increasingly competitive as velocity increases. In particular, at
+1.9
+1.9
+,
+2.0
+2.0
+, and
+2.1
+​
+m
+/
+s
+2.1\,\mathrm{m/s}
+, Video2STL-Qwen obtains CoT values of
+0.98
+0.98
+,
+1.00
+1.00
+, and
+1.02
+1.02
+, respectively, compared with
+1.00
+1.00
+,
+1.07
+1.07
+, and
+1.14
+1.14
+for Text2Reward and
+1.40
+1.40
+for the heuristic baseline. Video2STL-GPT-5.6 exhibits equal or lower CoT than the Qwen variant up to
+1.3
+​
+m
+/
+s
+1.3\,\mathrm{m/s}
+and slightly higher CoT at higher speeds, with
+1.13
+1.13
+,
+1.13
+1.13
+, and
+1.15
+1.15
+at
+1.9
+1.9
+,
+2.0
+2.0
+, and
+2.1
+​
+m
+/
+s
+2.1\,\mathrm{m/s}
+. Overall, both VLM-generated specification sets yield full-range task success: Qwen provides the strongest high-speed efficiency, while Text2Reward remains more energy-efficient at lower velocities. The comparison of GPT-5.6, Gemini 3.1, and Qwen configurations is reported in Appendix
+A.1.1
+,
+Table
+2
+.
+5.2
+Robot Manipulation
+Tasks and Simulation Setup.
+We evaluate manipulation in ManiSkill3
+(
+Tao et al., 2025
+)
+using four tasks:
+PushCube-v1
+,
+StackCube-v1
+,
+LiftPegUpright-v1
+, and
+PlaceSphere-v1
+.
+Together, these tasks cover distinct forms of interaction, including
+planar pushing, grasp-and-stack behavior, orientation-dependent object manipulation, and object placement. All manipulation policies use state observations and are trained with the PPO implementation provided with ManiSkill.
+Evaluation Metrics.
+We evaluate all methods using the native task success conditions provided by the corresponding ManiSkill environments.
+We report
+success-once
+, the fraction of episodes in which the native success condition is reached at least once, and
+success-at-end
+, the fraction of episodes satisfying the native success condition in the final state.
+We evaluate all policies using the same evaluation seeds and report the mean and standard deviation across
+128
+128
+episodes.
+Figure 3:
+Manipulation results on ManiSkill3 tasks. We compare the native dense PPO reward, Text2Reward, and Video2STL on PushCube, StackCube, LiftPegUpright, and PlaceSphere.
+Results.
+Averaged over the four tasks, Video2STL reaches
+85.8
+%
+85.8\%
+success-once and
+67.0
+%
+67.0\%
+success-at-end, compared with
+81.5
+%
+/
+59.5
+%
+81.5\%/59.5\%
+for native dense PPO and
+65.0
+%
+/
+42.3
+%
+65.0\%/42.3\%
+for Text2Reward (Fig.
+3
+).
+On PushCube, Video2STL achieves
+95
+%
+/
+93
+%
+95\%/93\%
+, retaining nearly all successes.
+On StackCube, it reaches
+98
+%
+/
+95
+%
+98\%/95\%
+, well above native PPO (
+73
+%
+/
+52
+%
+73\%/52\%
+) and on par with Text2Reward (
+98
+%
+/
+96
+%
+98\%/96\%
+).
+The largest gain is on PlaceSphere (
+91
+%
+/
+75
+%
+91\%/75\%
+vs.
+55
+%
+/
+55
+%
+55\%/55\%
+for native PPO), which Text2Reward fails to solve.
+LiftPegUpright is the hardest task to retain for all methods: native PPO and Text2Reward also lose about half of their successes (
+98
+%
+/
+47
+%
+98\%/47\%
+and
+97
+%
+/
+50
+%
+97\%/50\%
+).
+The benchmark’s check only requires the peg to be upright near the table, even while still grasped, whereas the specification extracted from the demonstration additionally requires the peg to be
+released
+and remain static.
+Video2STL thus optimizes a stricter, unassisted goal: it learns the reorientation (
+59
+%
+59\%
+success-once) but often releases the tall, narrow peg before it settles (
+5
+%
+5\%
+success-at-end), which we trace to a grounded
+Upright
+tolerance (
+15.9
+∘
+15.9^{\circ}
+) looser than the peg’s tipping angle (
+11.8
+∘
+11.8^{\circ}
+).
+Overall, grounded temporal specifications yield a learning signal competitive with native dense rewards and stronger than direct reward generation on three of four tasks.
+6
+Conclusion
+We presented Video2STL, a framework that converts videos into interpretable temporal task specifications and uses them to guide robot learning across different embodiments. Across quadruped locomotion and four manipulation tasks, Video2STL demonstrated that video-derived temporal structure can provide effective learning signals without relying on manually engineered dense rewards. The results suggest that explicit temporal specifications provide a promising intermediate representation between visual demonstrations and robot learning, offering both behavioral interpretability and a structured mechanism for transferring task semantics across embodiments.
+AI use statement
+In this work, we used generative AI tools for code generation and debugging, figure generation and refinement, manuscript drafting, and LaTeX assistance. Generative AI is also part of the proposed methodology, where VLMs extract semantic event traces from videos and generate parametric STL specifications. We did not use generative AI to fabricate experimental data or quantitative results. All AI-generated code was inspected and tested, figures were manually reviewed for technical accuracy, and all manuscript text and claims were checked by the authors. We take responsibility for the final content of this work produced with the aid of generative AI.
+References
+Asarin
+et al.
+(2011)
+E. Asarin, A. Donzé, O. Maler, and D. Nickovic
+Parametric identification of temporal properties
+.
+In
+International Conference on Runtime Verification
+,
+Cited by:
+§3.2
+.
+Atasever
+et al.
+(2026)
+M. Atasever, C. Bakirci, A. Reina Corona, K. Azbijari, and J. V. Deshmukh
+Learning gait-aware quadruped locomotion with temporal logic specifications
+.
+arXiv:2607.00442
+.
+Cited by:
+§1
+,
+§2
+.
+Caluwaerts
+et al.
+(2023)
+K. Caluwaerts, A. Iscen, J. C. Kew, W. Yu, T. Zhang, D. Freeman, K. Lee, L. Lee, S. Saliceti, V. Zhuang,
+et al.
+Barkour: benchmarking animal-level agility with quadruped robots
+.
+arXiv:2305.14654
+.
+Cited by:
+§5.1
+,
+§5
+.
+DeFazio
+et al.
+(2024)
+D. DeFazio, Y. Hayamizu, and S. Zhang
+Learning quadruped locomotion policies using logical rules
+.
+In
+Proceedings of the International Conference on Automated Planning and Scheduling
+,
+Cited by:
+§2
+.
+Donzé and Maler (2010)
+A. Donzé and O. Maler
+Robust satisfaction of temporal logic over real-valued signals
+.
+In
+Formal Modeling and Analysis of Timed Systems
+,
+Lecture Notes in Computer Science
+, Vol.
+6246
+,
+pp. 92–106
+.
+External Links:
+Document
+Cited by:
+§1
+,
+§3.2
+.
+Fainekos and Pappas (2009)
+G. E. Fainekos and G. J. Pappas
+Robustness of temporal logic specifications for continuous-time signals
+.
+Theoretical Computer Science
+410
+(
+42
+),
+pp. 4262–4291
+.
+External Links:
+Document
+Cited by:
+§1
+,
+§3.2
+.
+Freeman
+et al.
+(2021)
+C. D. Freeman, E. Frey, A. Raichuk, S. Girgin, I. Mordatch, and O. Bachem
+Brax–a differentiable physics engine for large scale rigid body simulation
+.
+arXiv:2106.13281
+.
+Cited by:
+§5.1
+.
+Gu
+et al.
+(2025)
+Z. Gu, Y. Zhao, Y. Chen, R. Guo, J. K. Leestma, G. S. Sawicki, and Y. Zhao
+Robust-locomotion-by-logic: perturbation-resilient bipedal locomotion via signal temporal logic guided model predictive control
+.
+IEEE Transactions on Robotics
+.
+Cited by:
+§2
+.
+Hasanbeig
+et al.
+(2020)
+M. Hasanbeig, D. Kroening, and A. Abate
+Deep reinforcement learning with temporal logics
+.
+In
+International Conference on Formal Modeling and Analysis of Timed Systems
+,
+Cited by:
+§2
+.
+Humphreys and Zhou (2025)
+J. Humphreys and C. Zhou
+Learning to adapt through bio-inspired gait strategies for versatile quadruped locomotion
+.
+Nature Machine Intelligence
+7
+(
+7
+),
+pp. 1141–1153
+.
+Cited by:
+§2
+.
+Kapoor
+et al.
+(2020)
+P. Kapoor, A. Balakrishnan, and J. V. Deshmukh
+Model-based reinforcement learning from signal temporal logic specifications
+.
+arXiv:2011.04950
+.
+Cited by:
+§2
+.
+Kwon
+et al.
+(2023)
+M. Kwon, S. M. Xie, K. Bullard, and D. Sadigh
+Reward design with language models
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Li
+et al.
+(2022)
+J. Li, T. Lu, X. Cao, Y. Cai, and S. Wang
+Meta-imitation learning by watching video demonstrations
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Li
+et al.
+(2017)
+X. Li, C. Vasile, and C. Belta
+Reinforcement learning with temporal logic rewards
+.
+In
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+,
+Cited by:
+§2
+.
+Liu
+et al.
+(2023)
+J. X. Liu, Z. Yang, I. Idrees, S. Liang, B. Schornstein, S. Tellex, and A. Shah
+Grounding complex natural language commands for temporal tasks in unseen environments
+.
+In
+Conference on Robotic Learning
+,
+Cited by:
+§2
+.
+Liu
+et al.
+(2018)
+Y. Liu, A. Gupta, P. Abbeel, and S. Levine
+Imitation from observation: learning to imitate behaviors from raw video via context translation
+.
+In
+IEEE International Conference on Robotics and Automation
+,
+Cited by:
+§2
+.
+Ma
+et al.
+(2025)
+Y. J. Ma, J. Hejna, C. Fu, D. Shah, J. Liang, Z. Xu, S. Kirmani, P. Xu, D. Driess, T. Xiao, O. Bastani, D. Jayaraman, W. Yu, T. Zhang, D. Sadigh, and F. Xia
+Vision language models are in-context value learners
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Ma
+et al.
+(2024)
+Y. J. Ma, W. Liang, G. Wang, D. Huang, O. Bastani, D. Jayaraman, Y. Zhu, L. Fan, and A. Anandkumar
+Eureka: human-level reward design via coding large language models
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Ma
+et al.
+(2023)
+Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+VIP: towards universal visual reward and representation via value-implicit pre-training
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Maler and Nickovic (2004)
+O. Maler and D. Nickovic
+Monitoring temporal properties of continuous signals
+.
+In
+Formal Techniques, Modelling and Analysis of Timed and Fault-Tolerant Systems
+,
+pp. 152–166
+.
+External Links:
+Document
+Cited by:
+§1
+,
+§3.2
+.
+Puranic
+et al.
+(2021)
+A. Puranic, J. Deshmukh, and S. Nikolaidis
+Learning from demonstrations using signal temporal logic
+.
+In
+Conference on Robotic Learning
+,
+Cited by:
+§1
+,
+§2
+.
+Rocamonde
+et al.
+(2024)
+J. Rocamonde, V. Montesinos, E. Nava, E. Perez, and D. Lindner
+Vision-language models are zero-shot reward models for reinforcement learning
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Schulman
+et al.
+(2017)
+J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov
+Proximal policy optimization algorithms
+.
+arXiv:1707.06347
+.
+Cited by:
+§5.1
+.
+Sermanet
+et al.
+(2018)
+P. Sermanet, C. Lynch, Y. Chebotar, J. Hsu, E. Jang, S. Schaal, and S. Levine
+Time-contrastive networks: self-supervised learning from video
+.
+In
+IEEE International Conference on Robotics and Automation
+,
+Cited by:
+§2
+.
+Sontakke
+et al.
+(2023)
+S. A. Sontakke, J. Zhang, S. M. R. Arnold, K. Pertsch, E. Bıyık, D. Sadigh, C. Finn, and L. Itti
+RoboCLIP: one demonstration is enough to learn robot policies
+.
+In
+Neural Information Processing Systems
+,
+Cited by:
+§2
+.
+Srivastava
+et al.
+(2026)
+S. Srivastava, K. Wang, Y. Chan, T. Dai, M. Li, R. Zhang, M. Xu, J. Wu, and L. Fei-Fei
+ROSETTA: constructing code-based reward from unconstrained language preference
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+.
+Tao
+et al.
+(2025)
+S. Tao, F. Xiang, A. Shukla, Y. Qin, X. Hinrichsen, X. Yuan, C. Bao, X. Lin, Y. Liu, T. Chan, Y. Gao, X. Li, T. Mu, N. Xiao, A. Gurha, V. N. Rajesh, Y. W. Choi, Y. Chen, Z. Huang, R. Calandra, R. Chen, S. Luo, and H. Su
+ManiSkill3: gpu parallelized robotics simulation and rendering for generalizable embodied ai
+.
+Robotics: Science and Systems
+.
+Cited by:
+§5.2
+,
+§5
+.
+Todorov
+et al.
+(2012)
+E. Todorov, T. Erez, and Y. Tassa
+Mujoco: a physics engine for model-based control
+.
+In
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+,
+Cited by:
+§5.1
+.
+Venkataraman
+et al.
+(2020)
+H. Venkataraman, D. Aksaray, and P. Seiler
+Tractable reinforcement learning of signal temporal logic objectives
+.
+In
+Proceedings of the 2nd Conference on Learning for Dynamics and Control
+,
+Cited by:
+§1
+,
+§2
+.
+Wang
+et al.
+(2024)
+Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson
+RL-VLM-f: reinforcement learning from vision language foundation model feedback
+.
+In
+International Conference on Machine Learning
+,
+Cited by:
+§2
+.
+Xie
+et al.
+(2024)
+T. Xie, S. Zhao, C. H. Wu, Y. Liu, Q. Luo, V. Zhong, Y. Yang, and T. Yu
+Text2Reward: reward shaping with language models for reinforcement learning
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§1
+,
+§2
+,
+§5
+.
+Yu
+et al.
+(2018)
+T. Yu, C. Finn, S. Dasari, A. Xie, T. Zhang, P. Abbeel, and S. Levine
+One-shot imitation from observing humans via domain-adaptive meta-learning
+.
+In
+Robotics: Science and Systems
+,
+Cited by:
+§2
+.
+Zeng
+et al.
+(2024)
+R. Zeng, D. Zhou, Q. Liang, J. Liu, H. Li, C. Huang, J. Li, X. Hu, and F. Sun
+Video2Reward: generating reward function from videos for legged robot behavior learning
+.
+In
+European Conference on Artificial Intelligence
+,
+Cited by:
+§2
+.
+Appendix A
+Appendix
+A.1
+Quadruped Locomotion
+A.1.1
+Comparison of VLM Configurations
+Table
+2
+reports locomotion
+performance for the three VLM configurations. Their
+specifications and implementation settings are detailed below.
+Table 2:
+Quadruped locomotion performance using STL specifications generated by different VLMs.
+Survival and success are reported as percentages, and CoT denotes cost of transportation.
+Higher is better for survival and success; lower is better for CoT.
+GPT-5.6
+Gemini 3.1
+Qwen 3.8
+𝐯
+𝐱
+\mathbf{v_{x}}
+(m/s)
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+Surv.
+↑
+\uparrow
+Succ.
+↑
+\uparrow
+CoT
+↓
+\downarrow
+0.3
+100%
+100%
+2.63
+±
+0.06
+2.63\pm 0.06
+100%
+25%
+2.37
+±
+0.09
+2.37\pm 0.09
+100%
+100%
+2.63
+±
+0.08
+2.63\pm 0.08
+0.5
+100%
+100%
+1.80
+±
+0.04
+1.80\pm 0.04
+100%
+100%
+1.97
+±
+0.04
+1.97\pm 0.04
+100%
+100%
+1.86
+±
+0.03
+1.86\pm 0.03
+0.7
+100%
+100%
+1.52
+±
+0.03
+1.52\pm 0.03
+100%
+100%
+1.66
+±
+0.03
+1.66\pm 0.03
+100%
+100%
+1.58
+±
+0.02
+1.58\pm 0.02
+1.0
+100%
+100%
+1.26
+±
+0.01
+1.26\pm 0.01
+100%
+100%
+1.26
+±
+0.02
+1.26\pm 0.02
+100%
+100%
+1.37
+±
+0.01
+1.37\pm 0.01
+1.3
+100%
+100%
+1.17
+±
+0.01
+1.17\pm 0.01
+100%
+100%
+1.14
+±
+0.01
+1.14\pm 0.01
+100%
+100%
+1.22
+±
+0.01
+1.22\pm 0.01
+1.6
+100%
+100%
+1.12
+±
+0.01
+1.12\pm 0.01
+100%
+40%
+1.16
+±
+0.01
+1.16\pm 0.01
+100%
+100%
+0.92
+±
+0.01
+0.92\pm 0.01
+1.9
+100%
+100%
+1.13
+±
+0.01
+1.13\pm 0.01
+100%
+0%
+1.17
+±
+0.01
+1.17\pm 0.01
+100%
+100%
+0.98
+±
+0.01
+0.98\pm 0.01
+2.0
+100%
+100%
+1.13
+±
+0.01
+1.13\pm 0.01
+95%
+0%
+1.17
+±
+0.01
+1.17\pm 0.01
+100%
+100%
+1.00
+±
+0.01
+1.00\pm 0.01
+2.1
+100%
+100%
+1.15
+±
+0.01
+1.15\pm 0.01
+100%
+0%
+1.17
+±
+0.01
+1.17\pm 0.01
+100%
+100%
+1.02
+±
+0.01
+1.02\pm 0.01
+A.1.2
+Reward Construction
+For locomotion, the source observation is a video of a dog running on treadmill. (available at
+here
+) The VLM extracts embodiment-independent locomotion semantics
+such as limb contact, swing, touchdown and liftoff events, support
+structure, trunk stability, and periodic leg motion.
+GPT-5.6.
+The semantic trace and the specification bank were produced by GPT-5.6
+in a single conversation in which the video remained in context.
+The bank contains 11 candidates.
+φ
+11
+\varphi_{11}
+relies on
+Periodic_leg_motion
+, a predicate that is not grounded in the
+reward implementation, so it was not implemented. Each of the other ten
+candidates was screened on rollouts of the trot expert (50 trajectories,
+500 steps each,
+v
+x
+∈
+[
+0.5
+,
+1.6
+]
+v_{x}\in[0.5,1.6]
+m/s), ignoring the first 50 steps of
+every trajectory, and kept only if the pooled fifth percentile of its
+per-step robustness was at least zero. Four candidates passed this test
+(
+φ
+5
+\varphi_{5}
+,
+φ
+6
+\varphi_{6}
+,
+φ
+9
+\varphi_{9}
+,
+φ
+10
+\varphi_{10}
+). The formulas are
+listed in Table
+3
+and the settings in
+Table
+4
+.
+Table 3:
+GPT-5.6 specifications and final weights. Gray formulas were
+filtered out;
+φ
+11
+\varphi_{11}
+was rejected before training.
+D
+ℓ
+,
+L
+ℓ
+,
+C
+ℓ
+,
+S
+ℓ
+D_{\ell},L_{\ell},C_{\ell},S_{\ell}
+denote touchdown, liftoff,
+contact, and swing.
+ℛ
+⁡
+(
+p
+)
+=
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝐅
+[
+0
+,
+h
+c
+]
+​
+p
+)
+\mathcal{R}(p)=\mathbf{G}_{[0,H]}(\mathbf{F}_{[0,h_{c}]}p)
+and
+ℬ
+⁡
+(
+p
+,
+q
+)
+=
+𝐆
+[
+0
+,
+H
+]
+​
+(
+p
+→
+𝐅
+[
+0
+,
+h
+s
+]
+​
+q
+)
+\mathcal{B}(p,q)=\mathbf{G}_{[0,H]}(p\rightarrow\mathbf{F}_{[0,h_{s}]}q)
+.
+Z
+,
+P
+Z,P
+denote trunk-height and pitch stability.
+All tanh scales are
+s
+i
+=
+1
+s_{i}=1
+.
+ID
+Formula
+𝐰
+𝐢
+\mathbf{w_{i}}
+φ
+1
+\varphi_{1}
+⋀
+ℓ
+∈
+ℒ
+ℛ
+⁡
+(
+D
+ℓ
+)
+\bigwedge_{\ell\in\mathcal{L}}\mathcal{R}(D_{\ell})
+0
+φ
+2
+\varphi_{2}
+⋀
+ℓ
+∈
+ℒ
+ℛ
+⁡
+(
+L
+ℓ
+)
+\bigwedge_{\ell\in\mathcal{L}}\mathcal{R}(L_{\ell})
+0
+φ
+3
+\varphi_{3}
+ℛ
+⁡
+(
+D
+FL
+∧
+D
+HR
+)
+∧
+ℛ
+⁡
+(
+D
+FR
+∧
+D
+HL
+)
+\mathcal{R}(D_{\mathrm{FL}}\wedge D_{\mathrm{HR}})\wedge\mathcal{R}(D_{\mathrm{FR}}\wedge D_{\mathrm{HL}})
+0
+φ
+4
+\varphi_{4}
+ℛ
+⁡
+(
+L
+FL
+∧
+L
+HR
+)
+∧
+ℛ
+⁡
+(
+L
+FR
+∧
+L
+HL
+)
+\mathcal{R}(L_{\mathrm{FL}}\wedge L_{\mathrm{HR}})\wedge\mathcal{R}(L_{\mathrm{FR}}\wedge L_{\mathrm{HL}})
+0
+φ
+5
+\varphi_{5}
+ℛ
+⁡
+(
+C
+FL
+∧
+C
+HR
+)
+∧
+ℛ
+⁡
+(
+C
+FR
+∧
+C
+HL
+)
+\mathcal{R}(C_{\mathrm{FL}}\wedge C_{\mathrm{HR}})\wedge\mathcal{R}(C_{\mathrm{FR}}\wedge C_{\mathrm{HL}})
+1
+φ
+6
+\varphi_{6}
+ℛ
+⁡
+(
+S
+FL
+∧
+S
+HR
+)
+∧
+ℛ
+⁡
+(
+S
+FR
+∧
+S
+HL
+)
+\mathcal{R}(S_{\mathrm{FL}}\wedge S_{\mathrm{HR}})\wedge\mathcal{R}(S_{\mathrm{FR}}\wedge S_{\mathrm{HL}})
+1
+φ
+7
+\varphi_{7}
+ℬ
+⁡
+(
+D
+FL
+,
+D
+FR
+)
+∧
+ℬ
+⁡
+(
+D
+FR
+,
+D
+FL
+)
+∧
+ℬ
+⁡
+(
+D
+HL
+,
+D
+HR
+)
+∧
+ℬ
+⁡
+(
+D
+HR
+,
+D
+HL
+)
+\mathcal{B}(D_{\mathrm{FL}},D_{\mathrm{FR}})\wedge\mathcal{B}(D_{\mathrm{FR}},D_{\mathrm{FL}})\wedge\mathcal{B}(D_{\mathrm{HL}},D_{\mathrm{HR}})\wedge\mathcal{B}(D_{\mathrm{HR}},D_{\mathrm{HL}})
+0
+φ
+8
+\varphi_{8}
+ℬ
+⁡
+(
+S
+FL
+,
+S
+HL
+)
+∧
+ℬ
+⁡
+(
+S
+HL
+,
+S
+FL
+)
+∧
+ℬ
+⁡
+(
+S
+FR
+,
+S
+HR
+)
+∧
+ℬ
+⁡
+(
+S
+HR
+,
+S
+FR
+)
+\mathcal{B}(S_{\mathrm{FL}},S_{\mathrm{HL}})\wedge\mathcal{B}(S_{\mathrm{HL}},S_{\mathrm{FL}})\wedge\mathcal{B}(S_{\mathrm{FR}},S_{\mathrm{HR}})\wedge\mathcal{B}(S_{\mathrm{HR}},S_{\mathrm{FR}})
+0
+φ
+9
+\varphi_{9}
+𝐆
+[
+0
+,
+H
+]
+​
+Z
+∧
+𝐆
+[
+0
+,
+H
+]
+​
+P
+\mathbf{G}_{[0,H]}Z\wedge\mathbf{G}_{[0,H]}P
+1
+φ
+10
+\varphi_{10}
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝑠𝑢𝑝𝑝𝑜𝑟𝑡
+​
+_
+​
+𝑐𝑜𝑢𝑛𝑡
+​
+_
+​
+𝑎𝑡
+​
+_
+​
+𝑙𝑒𝑎𝑠𝑡
+​
+(
+2
+)
+)
+\mathbf{G}_{[0,H]}(\mathit{support\_count\_at\_least}(2))
+1
+φ
+11
+\varphi_{11}
+⋀
+ℓ
+∈
+ℒ
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝑃𝑒𝑟𝑖𝑜𝑑𝑖𝑐
+​
+_
+​
+𝑙𝑒𝑔
+​
+_
+​
+𝑚𝑜𝑡𝑖𝑜𝑛
+​
+(
+ℓ
+)
+)
+\bigwedge_{\ell\in\mathcal{L}}\mathbf{G}_{[0,H]}(\mathit{Periodic\_leg\_motion}(\ell))
+(rejected)
+—
+Table 4:
+GPT-5.6 grounding and reward parameters. All values are fixed in the
+reward implementation, except the support count, which is specified by
+the VLM, and the filtering rule. Triples follow walk/trot/bound mode
+order;
+Δ
+​
+t
+=
+0.02
+\Delta t=0.02
+s.
+Parameter
+Role
+Value
+Temporal
+H
+H
+history-window setting, all modes
+30 steps
+h
+c
+h_{c}
+recurrence bound
+(
+29
+,
+20
+,
+15
+)
+(29,20,15)
+steps
+h
+s
+h_{s}
+response bound
+(
+14
+,
+10
+,
+7
+)
+(14,10,7)
+steps
+Mode hysteresis
+walk/trot entry, exit
+0.72
+,
+0.65
+0.72,\ 0.65
+m/s
+trot/bound entry, exit
+1.55
+,
+1.45
+1.55,\ 1.45
+m/s
+Predicates
+Contact / swing thresholds
+foot clearance
+0.001
+,
+0.025
+0.001,\ 0.025
+m
+Contact / swing scales
+robustness normalization
+0.020
+,
+0.025
+0.020,\ 0.025
+m
+Trunk-height tolerance
+relative to nominal reset height
+0.080
+0.080
+m
+Trunk-pitch tolerance
+angular bound
+0.30
+0.30
+rad
+k
+k
+minimum support count
+2
+Invalid-event robustness
+unavailable predecessor sample
+−
+8
+-8
+Aggregation, reward, and filtering
+Smoothing temperatures
+atomic / temporal / formula
+0.08
+,
+0.12
+,
+0.10
+0.08,\ 0.12,\ 0.10
+s
+i
+s_{i}
+specification tanh scale
+1.0
+Candidate aggregate
+before warmup gate
+∑
+i
+w
+i
+​
+tanh
+⁡
+(
+ρ
+i
+/
+s
+i
+)
+/
+∑
+i
+w
+i
+\sum_{i}w_{i}\tanh(\rho_{i}/s_{i})/\sum_{i}w_{i}
+Specification weight
+within total STL reward
+1.0
+τ
+max
+\tau_{\max}
+joint torque limit
+18
+18
+N m
+w
+safe
+,
+α
+safe
+w_{\mathrm{safe}},\alpha_{\mathrm{safe}}
+safety weight and tanh scale
+0.25
+,
+0.25
+0.25,\ 0.25
+γ
+τ
+\gamma_{\tau}
+torque-effort coefficient
+10
+−
+6
+10^{-6}
+Reward scales
+total STL / linear tracking / angular tracking
+1.0
+,
+1.0
+,
+0.5
+1.0,\ 1.0,\ 0.5
+Action-rate scale
+action-change penalty
+−
+0.01
+-0.01
+Tracking parameter
+tracking_sigma
+0.25
+0.25
+Filter rule
+retain candidate with pooled fifth percentile
+q
+0.05
+≥
+0
+q_{0.05}\geq 0
+Qwen.
+Qwen (
+qwen3.8-max-0902
+) generated stages 1–2,
+with the video retained in stage 2’s context; GPT-5.6 generated
+the reward integration. Of 15 candidates,
+φ
+11
+\varphi_{11}
+was
+rejected for using disjunction. The remaining candidates were
+filtered using 50 trot-expert trajectories of 500 steps,
+v
+x
+∈
+[
+0.5
+,
+1.6
+]
+v_{x}\in[0.5,1.6]
+m/s, discarding the first 50 steps.
+A candidate was retained when the fifth percentile of its
+pooled per-step monitor outputs was non-negative, leaving
+seven candidates. Tables
+5
+and
+6
+give the formulas and settings.
+Table 5:
+Qwen specifications and final weights. Gray formulas were
+filtered out;
+φ
+11
+\varphi_{11}
+was rejected before training.
+D
+ℓ
+,
+L
+ℓ
+,
+C
+ℓ
+,
+S
+ℓ
+D_{\ell},L_{\ell},C_{\ell},S_{\ell}
+denote touchdown, liftoff,
+contact, and swing.
+ℛ
+⁡
+(
+p
+)
+=
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝐅
+[
+0
+,
+h
+c
+]
+​
+p
+)
+\mathcal{R}(p)=\mathbf{G}_{[0,H]}(\mathbf{F}_{[0,h_{c}]}p)
+and
+ℬ
+⁡
+(
+p
+,
+q
+)
+=
+𝐆
+[
+0
+,
+H
+]
+​
+(
+p
+→
+𝐅
+[
+0
+,
+h
+s
+]
+​
+q
+)
+\mathcal{B}(p,q)=\mathbf{G}_{[0,H]}(p\rightarrow\mathbf{F}_{[0,h_{s}]}q)
+.
+Z
+,
+P
+,
+R
+Z,P,R
+denote trunk-height, pitch, and roll stability.
+All tanh scales are
+s
+i
+=
+1
+s_{i}=1
+.
+ID
+Formula
+𝐰
+𝐢
+\mathbf{w_{i}}
+φ
+1
+\varphi_{1}
+ℛ
+⁡
+(
+D
+HR
+)
+∧
+ℛ
+⁡
+(
+L
+HR
+)
+\mathcal{R}(D_{\mathrm{HR}})\wedge\mathcal{R}(L_{\mathrm{HR}})
+0
+φ
+2
+\varphi_{2}
+ℛ
+⁡
+(
+D
+FR
+)
+∧
+ℛ
+⁡
+(
+L
+FR
+)
+\mathcal{R}(D_{\mathrm{FR}})\wedge\mathcal{R}(L_{\mathrm{FR}})
+0
+φ
+3
+\varphi_{3}
+ℛ
+⁡
+(
+D
+HL
+)
+∧
+ℛ
+⁡
+(
+L
+HL
+)
+\mathcal{R}(D_{\mathrm{HL}})\wedge\mathcal{R}(L_{\mathrm{HL}})
+0
+φ
+4
+\varphi_{4}
+ℛ
+⁡
+(
+D
+FL
+)
+∧
+ℛ
+⁡
+(
+L
+FL
+)
+\mathcal{R}(D_{\mathrm{FL}})\wedge\mathcal{R}(L_{\mathrm{FL}})
+0
+φ
+5
+\varphi_{5}
+ℬ
+⁡
+(
+D
+HR
+,
+D
+FR
+)
+\mathcal{B}(D_{\mathrm{HR}},D_{\mathrm{FR}})
+1
+φ
+6
+\varphi_{6}
+ℬ
+⁡
+(
+D
+HL
+,
+D
+FL
+)
+\mathcal{B}(D_{\mathrm{HL}},D_{\mathrm{FL}})
+0.70
+φ
+7
+\varphi_{7}
+ℬ
+⁡
+(
+D
+FR
+,
+D
+FL
+)
+∧
+ℬ
+⁡
+(
+D
+FL
+,
+D
+FR
+)
+\mathcal{B}(D_{\mathrm{FR}},D_{\mathrm{FL}})\wedge\mathcal{B}(D_{\mathrm{FL}},D_{\mathrm{FR}})
+0
+φ
+8
+\varphi_{8}
+ℬ
+⁡
+(
+D
+HR
+,
+D
+HL
+)
+∧
+ℬ
+⁡
+(
+D
+HL
+,
+D
+HR
+)
+\mathcal{B}(D_{\mathrm{HR}},D_{\mathrm{HL}})\wedge\mathcal{B}(D_{\mathrm{HL}},D_{\mathrm{HR}})
+0
+φ
+9
+\varphi_{9}
+ℛ
+⁡
+(
+C
+HR
+∧
+C
+FR
+)
+\mathcal{R}(C_{\mathrm{HR}}\wedge C_{\mathrm{FR}})
+1
+φ
+10
+\varphi_{10}
+ℛ
+⁡
+(
+C
+HL
+∧
+C
+FL
+)
+\mathcal{R}(C_{\mathrm{HL}}\wedge C_{\mathrm{FL}})
+0
+φ
+11
+\varphi_{11}
+𝐆
+[
+0
+,
+H
+]
+​
+C
+HR
+∨
+𝐆
+[
+0
+,
+H
+]
+​
+C
+HR
+\mathbf{G}_{[0,H]}C_{\mathrm{HR}}\vee\mathbf{G}_{[0,H]}C_{\mathrm{HR}}
+(rejected)
+—
+φ
+12
+\varphi_{12}
+𝐆
+[
+0
+,
+H
+]
+​
+Z
+∧
+𝐆
+[
+0
+,
+H
+]
+​
+P
+∧
+𝐆
+[
+0
+,
+H
+]
+​
+R
+\mathbf{G}_{[0,H]}Z\wedge\mathbf{G}_{[0,H]}P\wedge\mathbf{G}_{[0,H]}R
+1
+φ
+13
+\varphi_{13}
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝑠𝑢𝑝𝑝𝑜𝑟𝑡
+​
+_
+​
+𝑐𝑜𝑢𝑛𝑡
+​
+_
+​
+𝑎𝑡
+​
+_
+​
+𝑙𝑒𝑎𝑠𝑡
+​
+(
+2
+)
+)
+\mathbf{G}_{[0,H]}(\mathit{support\_count\_at\_least}(2))
+1
+φ
+14
+\varphi_{14}
+⋀
+ℓ
+∈
+ℒ
+ℛ
+⁡
+(
+C
+ℓ
+)
+\bigwedge_{\ell\in\mathcal{L}}\mathcal{R}(C_{\ell})
+1
+φ
+15
+\varphi_{15}
+⋀
+ℓ
+∈
+ℒ
+ℛ
+⁡
+(
+S
+ℓ
+)
+\bigwedge_{\ell\in\mathcal{L}}\mathcal{R}(S_{\ell})
+1
+Table 6:
+Qwen grounding and reward parameters, supplied by the
+stage-3 configuration except the VLM-specified support
+count and the filtering rule. Triples follow walk/trot/bound
+mode order;
+Δ
+​
+t
+=
+0.02
+\Delta t=0.02
+s.
+Parameter
+Role
+Value
+Temporal
+H
+H
+history-window setting, all modes
+30 steps
+h
+c
+h_{c}
+recurrence bound
+(
+29
+,
+20
+,
+15
+)
+(29,20,15)
+steps
+h
+s
+h_{s}
+response bound
+(
+14
+,
+10
+,
+7
+)
+(14,10,7)
+steps
+Mode hysteresis
+walk/trot entry, exit
+0.72
+,
+0.65
+0.72,\ 0.65
+m/s
+trot/bound entry, exit
+1.55
+,
+1.45
+1.55,\ 1.45
+m/s
+Predicates
+Contact / swing thresholds
+foot clearance
+0.001
+,
+0.025
+0.001,\ 0.025
+m
+Contact / swing scales
+robustness normalization
+0.020
+,
+0.025
+0.020,\ 0.025
+m
+Trunk-height tolerance
+relative to nominal reset height
+0.080
+0.080
+m
+Trunk-pitch / roll tolerances
+angular bounds
+0.30
+,
+0.30
+0.30,\ 0.30
+rad
+k
+k
+minimum support count
+2
+Invalid-event robustness
+unavailable predecessor sample
+−
+8
+-8
+Aggregation, reward, and filtering
+Smoothing temperatures
+atomic / temporal / formula
+0.08
+,
+0.12
+,
+0.10
+0.08,\ 0.12,\ 0.10
+s
+i
+s_{i}
+specification tanh scale
+1.0
+Candidate aggregate
+before warmup gate
+∑
+i
+w
+i
+​
+tanh
+⁡
+(
+ρ
+i
+/
+s
+i
+)
+/
+∑
+i
+w
+i
+\sum_{i}w_{i}\tanh(\rho_{i}/s_{i})/\sum_{i}w_{i}
+Specification weight
+within total STL reward
+1.0
+τ
+max
+\tau_{\max}
+joint torque limit
+18
+18
+N m
+w
+safe
+,
+α
+safe
+w_{\mathrm{safe}},\alpha_{\mathrm{safe}}
+safety weight and tanh scale
+0.25
+,
+0.25
+0.25,\ 0.25
+γ
+τ
+\gamma_{\tau}
+torque-effort coefficient
+10
+−
+6
+10^{-6}
+Reward scales
+total STL / linear tracking / angular tracking
+1.0
+,
+1.0
+,
+0.5
+1.0,\ 1.0,\ 0.5
+Action-rate scale
+action-change penalty
+−
+0.01
+-0.01
+Tracking parameter
+tracking_sigma
+0.25
+0.25
+Filter rule
+retain candidate with pooled fifth percentile
+q
+0.05
+≥
+0
+q_{0.05}\geq 0
+Gemini.
+The Stage-2 output contained six candidate PSTL specifications
+(
+φ
+1
+\varphi_{1}
+–
+φ
+6
+\varphi_{6}
+). Parameters with matching counterparts in the supplied
+Barkour configuration used those values; the remaining numerical groundings
+retained the existing demonstration-specific settings. The candidates and the
+additional torque-safety and velocity-tracking specifications were screened on
+50 rollouts of the supplied expert, each lasting 500 steps with
+v
+x
+∼
+𝒰
+⁡
+(
+0.5
+,
+1.6
+)
+v_{x}\sim\mathcal{U}(0.5,1.6)
+m/s and zero lateral and yaw commands. After
+discarding the first 50 steps of each rollout, a specification was retained
+when the pooled fifth percentile of its smooth robustness was nonnegative.
+Filtering acted on each complete specification. All six Gemini candidates,
+torque safety, and forward tracking were retained; lateral and yaw tracking
+were excluded.
+Table 7:
+Gemini specifications and final aggregation priors. Gray formulas were
+filtered out.
+D
+ℓ
+D_{\ell}
+and
+L
+ℓ
+L_{\ell}
+denote touchdown and liftoff.
+ℛ
+⁡
+(
+p
+)
+=
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝐅
+[
+0
+,
+h
+c
+]
+​
+p
+)
+\mathcal{R}(p)=\mathbf{G}_{[0,H]}(\mathbf{F}_{[0,h_{c}]}p)
+and
+ℬ
+⁡
+(
+p
+,
+q
+)
+=
+𝐆
+[
+0
+,
+H
+]
+​
+(
+p
+→
+𝐅
+[
+0
+,
+h
+p
+]
+​
+q
+)
+\mathcal{B}(p,q)=\mathbf{G}_{[0,H]}(p\rightarrow\mathbf{F}_{[0,h_{p}]}q)
+.
+Z
+Z
+and
+P
+P
+denote trunk-height and pitch stability.
+The first six rows are Gemini-generated; the remaining rows are
+implementation-supplied safety and tracking terms.
+ID
+Formula
+𝐰
+𝐢
+\mathbf{w_{i}}
+φ
+1
+\varphi_{1}
+𝐆
+[
+0
+,
+H
+]
+​
+Z
+∧
+𝐆
+[
+0
+,
+H
+]
+​
+P
+\mathbf{G}_{[0,H]}Z\wedge\mathbf{G}_{[0,H]}P
+1
+φ
+2
+\varphi_{2}
+𝐆
+[
+0
+,
+H
+]
+​
+(
+𝑠𝑢𝑝𝑝𝑜𝑟𝑡
+​
+_
+​
+𝑐𝑜𝑢𝑛𝑡
+​
+_
+​
+𝑎𝑡
+​
+_
+​
+𝑙𝑒𝑎𝑠𝑡
+​
+(
+2
+)
+)
+\mathbf{G}_{[0,H]}(\mathit{support\_count\_at\_least}(2))
+1
+φ
+3
+\varphi_{3}
+ℛ
+⁡
+(
+D
+FL
+)
+∧
+ℛ
+⁡
+(
+D
+HR
+)
+\mathcal{R}(D_{\mathrm{FL}})\wedge\mathcal{R}(D_{\mathrm{HR}})
+1
+φ
+4
+\varphi_{4}
+ℛ
+⁡
+(
+L
+HL
+)
+\mathcal{R}(L_{\mathrm{HL}})
+1
+φ
+5
+\varphi_{5}
+ℬ
+⁡
+(
+D
+HL
+,
+D
+FL
+)
+\mathcal{B}(D_{\mathrm{HL}},D_{\mathrm{FL}})
+1
+φ
+6
+\varphi_{6}
+ℬ
+⁡
+(
+D
+HR
+,
+D
+FR
+)
+\mathcal{B}(D_{\mathrm{HR}},D_{\mathrm{FR}})
+1
+φ
+7
+\varphi_{7}
+𝐆
+[
+0
+,
+H
+]
+​
+(
+⋀
+j
+=
+1
+12
+(
+|
+τ
+j
+|
+≤
+τ
+max
+)
+)
+\mathbf{G}_{[0,H]}\Bigl(\bigwedge_{j=1}^{12}(|\tau_{j}|\leq\tau_{\max})\Bigr)
+1
+φ
+8
+\varphi_{8}
+𝐆
+[
+0
+,
+W
+]
+​
+(
+|
+v
+x
+−
+v
+x
+cmd
+|
+≤
+ϵ
+x
+)
+\mathbf{G}_{[0,W]}\bigl(|v_{x}-v_{x}^{\mathrm{cmd}}|\leq\epsilon_{x}\bigr)
+1
+track
+y
+y
+𝐆
+[
+0
+,
+W
+]
+​
+(
+|
+v
+y
+−
+v
+y
+cmd
+|
+≤
+ϵ
+y
+)
+\mathbf{G}_{[0,W]}\bigl(|v_{y}-v_{y}^{\mathrm{cmd}}|\leq\epsilon_{y}\bigr)
+0
+track yaw
+𝐆
+[
+0
+,
+W
+]
+​
+(
+|
+ω
+z
+−
+ω
+z
+cmd
+|
+≤
+ϵ
+ω
+)
+\mathbf{G}_{[0,W]}\bigl(|\omega_{z}-\omega_{z}^{\mathrm{cmd}}|\leq\epsilon_{\omega}\bigr)
+0
+Table 8:
+Gemini grounding and reward parameters.
+Parenthesized pairs follow walk/trot mode order; unpaired values are shared;
+Δ
+​
+t
+=
+0.02
+\Delta t=0.02
+s.
+Parameter
+Role
+Value
+Temporal
+H
+H
+(
+H
+episode
+H_{\mathrm{episode}}
+)
+outer always bound
+(
+30
+,
+24
+)
+(30,24)
+steps
+h
+c
+h_{c}
+recurrence bound
+25 steps
+h
+p
+h_{p}
+phase-response bound
+13 steps
+W
+W
+velocity/yaw tracking bound
+(
+30
+,
+24
+)
+(30,24)
+steps
+Mode hysteresis
+trot entry / walk return
+0.72
+,
+0.65
+0.72,\ 0.65
+m/s
+Predicates
+z
+th
+z_{\mathrm{th}}
+contact clearance threshold
+0.003
+0.003
+m
+c
+c
+contact robustness scale
+0.002
+0.002
+m
+Contact / swing
+opposite signed margins
+C
+ℓ
+C_{\ell}
+/
+−
+C
+ℓ
+-C_{\ell}
+Touchdown / liftoff
+exact contact transitions
+adjacent samples
+z
+ref
+z_{\mathrm{ref}}
+reference trunk height
+torso height at reset
+δ
+z
+,
+s
+z
+\delta_{z},s_{z}
+height tolerance / margin scale
+0.06
+0.06
+m /
+0.02
+0.02
+m
+θ
+max
+\theta_{\max}
+absolute trunk-pitch tolerance
+(
+8
+∘
+,
+7
+∘
+)
+(8^{\circ},7^{\circ})
+s
+θ
+s_{\theta}
+pitch robustness scale
+5
+∘
+5^{\circ}
+k
+k
+support count (
+k
+k
+th-largest margin)
+2
+ϵ
+x
+\epsilon_{x}
+forward tracking tolerance
+(
+0.55
+,
+0.60
+)
+(0.55,0.60)
+m/s
+ϵ
+y
+,
+ϵ
+ω
+\epsilon_{y},\epsilon_{\omega}
+excluded lateral/yaw tolerances
+0.05
+0.05
+m/s;
+0.05
+0.05
+rad/s
+Aggregation, reward, and filtering
+β
+atom
+,
+β
+temp
+\beta_{\mathrm{atom}},\beta_{\mathrm{temp}}
+Boolean / temporal sharpness
+20
+,
+20
+20,\ 20
+β
+group
+\beta_{\mathrm{group}}
+group Boltzmann soft-min sharpness
+0.5
+w
+i
+w_{i}
+specification prior
+1 active; 0 excluded
+α
+g
+\alpha_{g}
+group tanh scale
+1
+w
+safe
+,
+w
+track
+w_{\mathrm{safe}},w_{\mathrm{track}}
+safety / tracking group weights
+1
+,
+1
+1,\ 1
+w
+pattern
+w_{\mathrm{pattern}}
+gait-pattern group weight
+(
+1.1
+,
+1.2
+)
+(1.1,1.2)
+τ
+max
+,
+s
+τ
+\tau_{\max},s_{\tau}
+torque limit / margin scale
+18
+18
+N m /
+5
+5
+N m
+Forward multiplier
+multiplier of
+ρ
+x
+/
+ϵ
+x
+\rho_{x}/\epsilon_{x}
+1
+Total reward rate
+sum of bounded group rewards
+∑
+g
+w
+g
+​
+tanh
+⁡
+(
+ρ
+g
+/
+α
+g
+)
+\sum_{g}w_{g}\tanh(\rho_{g}/\alpha_{g})
+Filter rule
+pooled retention criterion
+q
+0.05
+≥
+0
+q_{0.05}\geq 0
+A.1.3
+Hyperparameters and Domain Randomization
+We train each policy for
+400
+400
+M environment steps using an unroll
+length of 30, 32 minibatches, 4 updates per batch, discount factor
+γ
+=
+0.955
+\gamma=0.955
+, learning rate
+1.5
+×
+10
+−
+4
+1.5\times 10^{-4}
+, entropy coefficient
+0.004
+0.004
+, 8192 parallel environments, and a batch size of 256. All reward
+variants use the same policy architecture and PPO optimization settings.
+We additionally apply domain
+randomization to friction and actuator parameters. Friction is sampled in
+the range
+(
+0.6
+,
+1.4
+)
+(0.6,1.4)
+, while actuator gain and bias perturbations are
+sampled in the range
+(
+−
+5
+,
+5
+)
+(-5,5)
+.
+A.1.4
+Sources Videos & VLM Prompts For Quadruped Locomotion
+We use two sequential VLM prompts for quadruped locomotion.
+The first extracts an embodiment-independent semantic locomotion trace
+directly from an animal video. The second receives only
+this structured trace and converts it into candidate parametric STL
+specifications.
+Stage 1: Video to Semantic Locomotion Trace
+⬇
+System
+Role
+:
+Act
+as
+an
+expert
+Vision
+-
+Language
+Model
+specializing
+in
+Biomechanics
+and
+Robotic
+Locomotion
+.
+Context
+&
+Objective
+:
+Analyze
+the
+provided
+video
+of
+a
+real
+quadruped
+animal
+performing
+locomotion
+.
+Your
+goal
+is
+to
+extract
+an
+embodiment
+-
+independent
+semantic
+description
+of
+the
+temporal
+locomotion
+structure
+.
+This
+analysis
+will
+later
+be
+used
+to
+construct
+Signal
+Temporal
+Logic
+(
+STL
+)
+specifications
+for
+a
+quadruped
+robot
+with
+different
+morphology
+,
+body
+dimensions
+,
+and
+controllers
+.
+Therefore
+,
+you
+must
+prioritize
+repeated
+,
+behaviorally
+important
+temporal
+structures
+over
+exact
+joint
+angles
+,
+limb
+trajectories
+,
+or
+incidental
+movements
+.
+Ontology
+&
+Permitted
+Vocabulary
+:
+Use
+only
+the
+following
+terms
+for
+your
+analysis
+.
+1.
+Body
+Roles
+:
+Trunk
+:
+The
+main
+body
+/
+torso
+of
+the
+quadruped
+.
+Front_left
+:
+Front
+-
+left
+leg
+/
+foot
+.
+Front_right
+:
+Front
+-
+right
+leg
+/
+foot
+.
+Hind_left
+:
+Hind
+-
+left
+leg
+/
+foot
+.
+Hind_right
+:
+Hind
+-
+right
+leg
+/
+foot
+.
+Support_surface
+:
+The
+surface
+supporting
+locomotion
+,
+including
+ground
+or
+treadmill
+belt
+.
+2.
+States
+&
+Events
+:
+Contact
+(
+leg
+):
+Foot
+is
+visibly
+in
+contact
+with
+the
+support
+surface
+.
+Swing
+(
+leg
+):
+Leg
+is
+in
+the
+aerial
+/
+swing
+phase
+.
+Touchdown
+(
+leg
+):
+Transition
+from
+swing
+to
+contact
+.
+Liftoff
+(
+leg
+):
+Transition
+from
+contact
+to
+swing
+.
+Support_count_at_least
+(
+k
+):
+At
+least
+k
+feet
+are
+supporting
+the
+body
+.
+Trunk_height_stable
+:
+The
+trunk
+maintains
+approximately
+bounded
+vertical
+variation
+over
+repeated
+gait
+cycles
+.
+Trunk_pitch_stable
+:
+The
+trunk
+maintains
+approximately
+bounded
+pitch
+variation
+over
+repeated
+gait
+cycles
+.
+Trunk_roll_stable
+:
+The
+trunk
+maintains
+approximately
+bounded
+roll
+variation
+over
+repeated
+gait
+cycles
+.
+Periodic_leg_motion
+(
+leg
+):
+The
+leg
+exhibits
+a
+repeated
+locomotion
+cycle
+.
+3.
+Temporal
+Relations
+:
+before
+after
+overlaps
+alternates_with
+(
+Events
+repeatedly
+occur
+in
+alternating
+portions
+of
+the
+gait
+cycle
+.)
+approximately_synchronous_with
+(
+Events
+repeatedly
+occur
+close
+together
+.)
+phase_shifted_from
+(
+Consistent
+nonzero
+temporal
+offset
+between
+two
+legs
+.)
+4.
+Observation
+Classes
+:
+Essential_candidate
+:
+Visually
+supported
+,
+embodiment
+-
+independent
+temporal
+relationships
+critical
+to
+describing
+the
+locomotion
+pattern
+.
+Persistent_candidate
+:
+Body
+-
+level
+properties
+persisting
+through
+multiple
+gait
+cycles
+(
+e
+.
+g
+.,
+stable
+trunk
+height
+).
+Incidental
+:
+Visually
+present
+but
+unnecessary
+for
+formal
+description
+(
+e
+.
+g
+.,
+head
+movement
+,
+tail
+motion
+,
+panting
+,
+a
+single
+irregular
+step
+).
+Strict
+Constraints
+&
+Rules
+:
+-
+Do
+NOT
+guess
+:
+If
+left
+/
+right
+identity
+or
+contacts
+cannot
+be
+reliably
+determined
+due
+to
+viewpoint
+or
+occlusion
+,
+explicitly
+report
+the
+uncertainty
+.
+-
+Do
+NOT
+infer
+robot
+-
+specific
+metrics
+:
+Exclude
+joint
+angles
+,
+torques
+,
+actions
+,
+motor
+states
+,
+joint
+velocities
+,
+actuator
+properties
+,
+or
+numerical
+thresholds
+.
+-
+Treadmill
+physics
+:
+If
+the
+animal
+is
+on
+a
+treadmill
+,
+its
+body
+may
+remain
+stationary
+in
+image
+/
+world
+coordinates
+.
+Do
+NOT
+interpret
+this
+as
+zero
+forward
+velocity
+.
+Task
+Requirements
+:
+Analyze
+the
+video
+and
+determine
+:
+1.
+Visible
+body
+parts
+.
+2.
+Repeated
+stance
+/
+contact
+and
+swing
+behaviors
+.
+3.
+Repeated
+touchdown
+and
+liftoff
+ordering
+.
+4.
+Strongest
+inter
+-
+leg
+temporal
+relationships
+(
+synchronization
+,
+alternation
+,
+phase
+offsets
+).
+5.
+Persistent
+body
+-
+level
+regularities
+(
+e
+.
+g
+.,
+stable
+trunk
+pitch
+).
+6.
+Ambiguities
+and
+occlusions
+.
+Output
+Format
+:
+Return
+valid
+JSON
+only
+,
+using
+exactly
+this
+structure
+.
+Do
+not
+include
+markdown
+code
+blocks
+or
+conversational
+text
+outside
+the
+JSON
+.
+{
+"
+locomotion_context
+":
+{
+"
+type
+":
+"
+overground
+|
+treadmill
+|
+uncertain
+",
+"
+confidence
+":
+0.0,
+"
+evidence
+":
+"
+brief
+visual
+justification
+"
+},
+"
+visibility
+":
+{
+"
+trunk
+":
+"
+clear
+|
+partial
+|
+unclear
+",
+"
+front_left
+":
+"
+clear
+|
+partial
+|
+unclear
+",
+"
+front_right
+":
+"
+clear
+|
+partial
+|
+unclear
+",
+"
+hind_left
+":
+"
+clear
+|
+partial
+|
+unclear
+",
+"
+hind_right
+":
+"
+clear
+|
+partial
+|
+unclear
+"
+},
+"
+observed_events
+":
+[
+{
+"
+event_id
+":
+"
+e1
+",
+"
+predicate
+":
+"
+touchdown
+(
+front_left
+)",
+"
+event_class
+":
+"
+essential_candidate
+|
+persistent_candidate
+|
+incidental
+",
+"
+confidence
+":
+0.0,
+"
+visual_evidence
+":
+"
+brief
+explanation
+"
+}
+],
+"
+repeated_states
+":
+[
+{
+"
+predicate
+":
+"
+contact
+(
+front_left
+)",
+"
+confidence
+":
+0.0,
+"
+visual_evidence
+":
+"
+brief
+explanation
+"
+}
+],
+"
+inter_leg_relations
+":
+[
+{
+"
+relation_id
+":
+"
+r1
+",
+"
+leg_1
+":
+"
+front_left
+",
+"
+relation
+":
+"
+before
+|
+after
+|
+overlaps
+|
+alternates_with
+|
+approximately_synchronous_with
+|
+phase_shifted_from
+",
+"
+leg_2
+":
+"
+hind_right
+",
+"
+event_basis
+":
+"
+touchdown
+|
+liftoff
+|
+contact
+|
+swing
+",
+"
+confidence
+":
+0.0,
+"
+evidence
+":
+"
+brief
+explanation
+"
+}
+],
+"
+persistent_properties
+":
+[
+{
+"
+predicate
+":
+"
+Trunk_height_stable
+|
+support_count_at_least
+(
+k
+)",
+"
+confidence
+":
+0.0,
+"
+evidence
+":
+"
+brief
+explanation
+"
+}
+],
+"
+uncertainties
+":
+[
+"
+brief
+description
+of
+an
+ambiguity
+or
+occlusion
+"
+]
+}
+Stage 2: Semantic Trace to PSTL Specifications
+⬇
+System
+Role
+:
+Act
+as
+an
+expert
+Formal
+Methods
+Engineer
+specializing
+in
+Logic
+Synthesis
+for
+Robotic
+Control
+.
+Context
+&
+Objective
+:
+You
+are
+constructing
+Parametric
+Signal
+Temporal
+Logic
+(
+PSTL
+)
+specifications
+based
+on
+a
+semantic
+locomotion
+trace
+.
+This
+trace
+(
+provided
+as
+a
+JSON
+input
+)
+was
+extracted
+from
+a
+video
+of
+a
+real
+quadruped
+animal
+.
+Your
+objective
+is
+to
+translate
+this
+trace
+into
+embodiment
+-
+independent
+,
+candidate
+temporal
+specifications
+that
+describe
+the
+demonstrated
+repeated
+locomotion
+pattern
+.
+These
+specifications
+will
+eventually
+be
+grounded
+to
+a
+four
+-
+legged
+robot
+with
+a
+different
+morphology
+to
+generate
+a
+dense
+,
+continuous
+reward
+signal
+for
+reinforcement
+learning
+.
+Strict
+Constraints
+(
+The
+"
+Zero
+-
+Hallucination
+"
+Rule
+):
+-
+Trace
+-
+Dependent
+Reasoning
+:
+You
+must
+reason
+only
+from
+the
+supplied
+semantic
+trace
+.
+-
+No
+Invention
+:
+Do
+not
+invent
+contact
+events
+,
+predicates
+,
+or
+temporal
+relations
+that
+are
+absent
+from
+the
+input
+data
+.
+Use
+a
+predicate
+only
+if
+it
+is
+explicitly
+supported
+by
+the
+trace
+.
+-
+Symbolic
+Grounding
+:
+All
+temporal
+constants
+and
+numerical
+temporal
+parameters
+must
+remain
+purely
+symbolic
+(
+e
+.
+g
+.,
+H_episode
+,
+h_cycle
+)
+for
+later
+numerical
+grounding
+during
+training
+.
+Allowed
+PSTL
+Grammar
+:
+You
+are
+restricted
+to
+the
+following
+exact
+textual
+grammar
+.
+(
+Note
+:
+mu
+represents
+an
+atomic
+predicate
+;
+phi
+represents
+a
+sub
+-
+formula
+;
+H
+and
+h
+represent
+symbolic
+temporal
+bounds
+).
+Atomic
+predicate
+:
+mu
+Conjunction
+:
+phi_1
+AND
+phi_2
+Bounded
+eventuality
+:
+F_
+[0,
+H
+](
+mu
+)
+Bounded
+persistence
+:
+G_
+[0,
+H
+](
+mu
+)
+Repeated
+-
+event
+requirement
+:
+G_
+[0,
+H
+](
+F_
+[0,
+h
+](
+mu
+))
+Response
+requirement
+:
+G_
+[0,
+H
+](
+mu_1
+->
+F_
+[0,
+h
+](
+mu_2
+))
+Repeated
+paired
+-
+event
+requirement
+:
+G_
+[0,
+H
+](
+F_
+[0,
+h
+](
+mu_1
+AND
+mu_2
+))
+Ordered
+repeated
+response
+:
+G_
+[0,
+H
+](
+mu_1
+->
+F_
+[0,
+h1
+](
+mu_2
+))
+Note
+:
+Conjunctions
+of
+independently
+valid
+formulas
+are
+permitted
+.
+Output
+Format
+:
+Return
+valid
+JSON
+only
+,
+using
+exactly
+the
+structure
+below
+.
+Do
+not
+include
+markdown
+code
+blocks
+,
+conversational
+text
+,
+or
+explanations
+outside
+the
+JSON
+.
+{
+"
+candidate_specifications
+":
+[
+{
+"
+candidate_id
+":
+"
+phi_1
+",
+"
+formula
+":
+"
+PSTL
+formula
+using
+ONLY
+the
+allowed
+textual
+grammar
+",
+"
+predicates_used
+":
+[
+"
+instantiated_predicate_1
+"
+],
+"
+supporting_event_ids
+":
+[
+"
+e1
+"
+],
+"
+supporting_relation_ids
+":
+[
+"
+r1
+"
+],
+"
+excluded_incidental_event_ids
+":
+[
+"
+e7
+"
+],
+"
+symbolic_parameters
+":
+[
+"
+H_episode
+",
+"
+h_cycle
+"
+],
+"
+semantic_complexity
+":
+1,
+"
+rationale
+":
+"
+Brief
+explanation
+grounded
+purely
+in
+the
+input
+semantic
+trace
+"
+}
+],
+"
+stage1_ambiguities_affecting_specification
+":
+[
+"
+Brief
+description
+of
+how
+an
+ambiguity
+in
+the
+input
+trace
+impacts
+the
+formula
+"
+]
+}
+A.2
+Robot Manipulation
+A.2.1
+Reward Construction
+This section lists the parametric Signal Temporal Logic (PSTL)
+specifications generated by the VLM from the semantic traces of the
+manipulation demonstrations. These are the raw candidate specifications
+produced before numerical grounding using robot expert trajectories and
+before expert-consistency filtering. Thus, not every specification listed
+below is necessarily retained in the final reward.
+For compactness, we denote the manipulated object by
+o
+o
+, the robot
+end-effector by
+e
+e
+, the support surface by
+s
+s
+, and the receptacle by
+r
+r
+.
+All temporal bounds, such as
+H
+task
+H_{\mathrm{task}}
+and
+h
+goal
+h_{\mathrm{goal}}
+,
+are symbolic at this stage and are subsequently grounded from expert
+trajectories.
+PushCube-v1
+For
+PushCube
+, the VLM generated the following eight candidate specifications:
+ϕ
+1
+:
+\displaystyle\phi_{1}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Near
+⁡
+(
+e
+,
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+engage
+]
+​
+Engaged
+​
+(
+e
+,
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Near}(e,o)\land\mathbf{F}_{[0,h_{\mathrm{engage}}]}\mathrm{Engaged}(e,o)\right),
+(9)
+ϕ
+2
+:
+\displaystyle\phi_{2}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{At\_goal}(o)\right),
+(10)
+ϕ
+3
+:
+\displaystyle\phi_{3}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Engaged
+⁡
+(
+e
+,
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+progress
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Engaged}(e,o)\land\mathbf{F}_{[0,h_{\mathrm{progress}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{At\_goal}(o)\right)\right),
+(11)
+ϕ
+4
+:
+\displaystyle\phi_{4}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+Displaced
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+H
+task
+]
+​
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\mathrm{Displaced}(o)\land\mathbf{F}_{[0,H_{\mathrm{task}}]}\mathrm{Toward\_goal}(o),
+(12)
+ϕ
+5
+:
+\displaystyle\phi_{5}:\quad
+𝐆
+[
+0
+,
+H
+task
+]
+​
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+,
+\displaystyle\mathbf{G}_{[0,H_{\mathrm{task}}]}\mathrm{On\_support}(o,s),
+(13)
+ϕ
+6
+:
+\displaystyle\phi_{6}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+settle
+]
+​
+Static
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{At\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{settle}}]}\mathrm{Static}(o)\right),
+(14)
+ϕ
+7
+:
+\displaystyle\phi_{7}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+(
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+settle
+]
+​
+Static
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\left(\mathrm{At\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{settle}}]}\mathrm{Static}(o)\right)\right),
+(15)
+ϕ
+8
+:
+\displaystyle\phi_{8}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+∧
+𝐆
+[
+0
+,
+H
+task
+]
+​
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+.
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{At\_goal}(o)\right)\land\mathbf{G}_{[0,H_{\mathrm{task}}]}\mathrm{On\_support}(o,s).
+(16)
+These specifications capture approach and engagement, object displacement,
+goal-directed progress, goal attainment, maintenance of support, and
+post-goal stationarity.
+StackCube-v1
+For
+StackCube
+, the VLM generated seven candidate specifications:
+ϕ
+1
+:
+\displaystyle\phi_{1}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Grasped
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+displace
+]
+​
+Displaced
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Grasped}(o)\land\mathbf{F}_{[0,h_{\mathrm{displace}}]}\mathrm{Displaced}(o)\right),
+(17)
+ϕ
+2
+:
+\displaystyle\phi_{2}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Grasped
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+reach
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Grasped}(o)\land\mathbf{F}_{[0,h_{\mathrm{reach}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{At\_goal}(o)\right)\right),
+(18)
+ϕ
+3
+:
+\displaystyle\phi_{3}:\quad
+𝐆
+[
+0
+,
+H
+task
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+→
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{G}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Toward\_goal}(o)\rightarrow\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{At\_goal}(o)\right),
+(19)
+ϕ
+4
+:
+\displaystyle\phi_{4}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+∧
+𝐅
+[
+0
+,
+h
+release
+]
+​
+(
+Released
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+settle
+]
+​
+Static
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{On\_support}(o,s)\land\mathbf{F}_{[0,h_{\mathrm{release}}]}\left(\mathrm{Released}(o)\land\mathbf{F}_{[0,h_{\mathrm{settle}}]}\mathrm{Static}(o)\right)\right),
+(20)
+ϕ
+5
+:
+\displaystyle\phi_{5}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+support
+]
+​
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{support}}]}\mathrm{On\_support}(o,s)\right),
+(21)
+ϕ
+6
+:
+\displaystyle\phi_{6}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+static
+]
+​
+Static
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{static}}]}\mathrm{Static}(o)\right),
+(22)
+ϕ
+7
+:
+\displaystyle\phi_{7}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Grasped
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+reach
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+)
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Grasped}(o)\land\mathbf{F}_{[0,h_{\mathrm{reach}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{At\_goal}(o)\right)\right)
+∧
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+∧
+𝐅
+[
+0
+,
+h
+release
+]
+​
+(
+Released
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+settle
+]
+​
+Static
+​
+(
+o
+)
+)
+)
+\displaystyle\land\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{On\_support}(o,s)\land\mathbf{F}_{[0,h_{\mathrm{release}}]}\left(\mathrm{Released}(o)\land\mathbf{F}_{[0,h_{\mathrm{settle}}]}\mathrm{Static}(o)\right)\right)
+∧
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+support
+]
+​
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+)
+∧
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+static
+]
+​
+Static
+​
+(
+o
+)
+)
+.
+\displaystyle\land\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{support}}]}\mathrm{On\_support}(o,s)\right)\land\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{static}}]}\mathrm{Static}(o)\right).
+(23)
+The resulting specification set describes grasping and transport toward
+the target, supported placement, release, and persistent terminal
+stability.
+LiftPegUpright-v1
+For
+LiftPegUpright
+, the VLM generated seven candidate
+specifications:
+ϕ
+1
+:
+\displaystyle\phi_{1}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Near
+⁡
+(
+e
+,
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+reach
+]
+​
+Engaged
+​
+(
+e
+,
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Near}(e,o)\land\mathbf{F}_{[0,h_{\mathrm{reach}}]}\mathrm{Engaged}(e,o)\right),
+(24)
+ϕ
+2
+:
+\displaystyle\phi_{2}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Grasped
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+manip
+]
+​
+Displaced
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Grasped}(o)\land\mathbf{F}_{[0,h_{\mathrm{manip}}]}\mathrm{Displaced}(o)\right),
+(25)
+ϕ
+3
+:
+\displaystyle\phi_{3}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+goal
+]
+​
+Upright
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{goal}}]}\mathrm{Upright}(o)\right),
+(26)
+ϕ
+4
+:
+\displaystyle\phi_{4}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Upright
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+terminal
+]
+​
+(
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+∧
+𝐅
+[
+0
+,
+h
+terminal2
+]
+​
+At
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Upright}(o)\land\mathbf{F}_{[0,h_{\mathrm{terminal}}]}\left(\mathrm{On\_support}(o,s)\land\mathbf{F}_{[0,h_{\mathrm{terminal2}}]}\mathrm{At\_goal}(o)\right)\right),
+(27)
+ϕ
+5
+:
+\displaystyle\phi_{5}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Upright
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+release
+]
+​
+(
+Released
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+stable
+]
+​
+Static
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Upright}(o)\land\mathbf{F}_{[0,h_{\mathrm{release}}]}\left(\mathrm{Released}(o)\land\mathbf{F}_{[0,h_{\mathrm{stable}}]}\mathrm{Static}(o)\right)\right),
+(28)
+ϕ
+6
+:
+\displaystyle\phi_{6}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+persist
+]
+​
+Upright
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{persist}}]}\mathrm{Upright}(o)\right),
+(29)
+ϕ
+7
+:
+\displaystyle\phi_{7}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+persist2
+]
+​
+On
+​
+_
+​
+support
+​
+(
+o
+,
+s
+)
+)
+.
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{persist2}}]}\mathrm{On\_support}(o,s)\right).
+(30)
+These candidates characterize approach and interaction with the peg,
+displacement, progress toward an upright configuration, supported
+placement, release followed by stability, and persistence of the terminal
+upright and supported states.
+PlaceSphere-v1
+For
+PlaceSphere
+, the VLM generated eight candidate
+specifications:
+ϕ
+1
+:
+\displaystyle\phi_{1}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Near
+⁡
+(
+e
+,
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+reach
+]
+​
+Grasped
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Near}(e,o)\land\mathbf{F}_{[0,h_{\mathrm{reach}}]}\mathrm{Grasped}(o)\right),
+(31)
+ϕ
+2
+:
+\displaystyle\phi_{2}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Grasped
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+displace
+]
+​
+(
+Displaced
+⁡
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+progress
+]
+​
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Grasped}(o)\land\mathbf{F}_{[0,h_{\mathrm{displace}}]}\left(\mathrm{Displaced}(o)\land\mathbf{F}_{[0,h_{\mathrm{progress}}]}\mathrm{Toward\_goal}(o)\right)\right),
+(32)
+ϕ
+3
+:
+\displaystyle\phi_{3}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Toward
+​
+_
+​
+goal
+​
+(
+o
+)
+∧
+𝐅
+[
+0
+,
+h
+place
+]
+​
+(
+In
+​
+_
+​
+receptacle
+​
+(
+o
+,
+r
+)
+∧
+𝐅
+[
+0
+,
+h
+release
+]
+​
+Released
+​
+(
+o
+)
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Toward\_goal}(o)\land\mathbf{F}_{[0,h_{\mathrm{place}}]}\left(\mathrm{In\_receptacle}(o,r)\land\mathbf{F}_{[0,h_{\mathrm{release}}]}\mathrm{Released}(o)\right)\right),
+(33)
+ϕ
+4
+:
+\displaystyle\phi_{4}:\quad
+𝐆
+[
+0
+,
+H
+task
+]
+​
+(
+Released
+⁡
+(
+o
+)
+→
+𝐅
+[
+0
+,
+h
+settle
+]
+​
+Static
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{G}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Released}(o)\rightarrow\mathbf{F}_{[0,h_{\mathrm{settle}}]}\mathrm{Static}(o)\right),
+(34)
+ϕ
+5
+:
+\displaystyle\phi_{5}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+in
+​
+_
+​
+receptacle
+]
+​
+In
+​
+_
+​
+receptacle
+​
+(
+o
+,
+r
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{in\_receptacle}}]}\mathrm{In\_receptacle}(o,r)\right),
+(35)
+ϕ
+6
+:
+\displaystyle\phi_{6}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+static
+]
+​
+Static
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{static}}]}\mathrm{Static}(o)\right),
+(36)
+ϕ
+7
+:
+\displaystyle\phi_{7}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+in
+​
+_
+​
+receptacle
+]
+​
+In
+​
+_
+​
+receptacle
+​
+(
+o
+,
+r
+)
+)
+∧
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+𝐆
+[
+0
+,
+h
+static
+]
+​
+Static
+​
+(
+o
+)
+)
+,
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{in\_receptacle}}]}\mathrm{In\_receptacle}(o,r)\right)\land\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathbf{G}_{[0,h_{\mathrm{static}}]}\mathrm{Static}(o)\right),
+(37)
+ϕ
+8
+:
+\displaystyle\phi_{8}:\quad
+𝐅
+[
+0
+,
+H
+task
+]
+​
+(
+Near
+⁡
+(
+o
+,
+r
+)
+∧
+𝐅
+[
+0
+,
+h
+enter
+]
+​
+(
+In
+​
+_
+​
+receptacle
+​
+(
+o
+,
+r
+)
+∧
+𝐅
+[
+0
+,
+h
+release
+]
+​
+Released
+​
+(
+o
+)
+)
+)
+.
+\displaystyle\mathbf{F}_{[0,H_{\mathrm{task}}]}\left(\mathrm{Near}(o,r)\land\mathbf{F}_{[0,h_{\mathrm{enter}}]}\left(\mathrm{In\_receptacle}(o,r)\land\mathbf{F}_{[0,h_{\mathrm{release}}]}\mathrm{Released}(o)\right)\right).
+(38)
+The candidate set represents the demonstrated sequence of approaching and
+grasping the object, transporting it toward the receptacle, placing and
+releasing it, and maintaining containment and stationarity after
+placement.
+Example Grounding - PushCube:
+Let
+p
+o
+​
+(
+t
+)
+p_{o}(t)
+,
+p
+e
+​
+(
+t
+)
+p_{e}(t)
+, and
+p
+g
+p_{g}
+denote the positions of the object, end-effector, and goal, respectively. We compute the end-effector distance
+d
+e
+​
+o
+​
+(
+t
+)
+=
+‖
+p
+e
+​
+(
+t
+)
+−
+p
+o
+​
+(
+t
+)
+‖
+2
+d_{eo}(t)=\|p_{e}(t)-p_{o}(t)\|_{2}
+, planar goal distance
+d
+g
+​
+(
+t
+)
+=
+‖
+p
+o
+,
+x
+​
+y
+​
+(
+t
+)
+−
+p
+g
+,
+x
+​
+y
+‖
+2
+d_{g}(t)=\|p_{o,xy}(t)-p_{g,xy}\|_{2}
+, displacement
+d
+disp
+​
+(
+t
+)
+=
+‖
+p
+o
+,
+x
+​
+y
+​
+(
+t
+)
+−
+p
+o
+,
+x
+​
+y
+​
+(
+0
+)
+‖
+2
+d_{\mathrm{disp}}(t)=\|p_{o,xy}(t)-p_{o,xy}(0)\|_{2}
+, cumulative goal progress
+P
+⁡
+(
+t
+)
+=
+d
+g
+​
+(
+0
+)
+−
+d
+g
+​
+(
+t
+)
+P(t)=d_{g}(0)-d_{g}(t)
+, and instantaneous motion
+m
+⁡
+(
+t
+)
+=
+‖
+p
+o
+,
+x
+​
+y
+​
+(
+t
+)
+−
+p
+o
+,
+x
+​
+y
+​
+(
+t
+−
+1
+)
+‖
+2
+m(t)=\|p_{o,xy}(t)-p_{o,xy}(t-1)\|_{2}
+. The grounded atomic margins are then formulated as:
+ρ
+Near
+​
+(
+t
+)
+\displaystyle\rho_{\mathrm{Near}}(t)
+=
+δ
+near
+−
+d
+e
+​
+o
+​
+(
+t
+)
+,
+\displaystyle=\delta_{\mathrm{near}}-d_{eo}(t),
+ρ
+TowardGoal
+​
+(
+t
+)
+\displaystyle\rho_{\mathrm{TowardGoal}}(t)
+=
+P
+⁡
+(
+t
+)
+−
+δ
+progress
+,
+\displaystyle=P(t)-\delta_{\mathrm{progress}},
+ρ
+Displaced
+​
+(
+t
+)
+\displaystyle\rho_{\mathrm{Displaced}}(t)
+=
+d
+disp
+​
+(
+t
+)
+−
+δ
+displaced
+,
+\displaystyle=d_{\mathrm{disp}}(t)-\delta_{\mathrm{displaced}},
+ρ
+AtGoal
+​
+(
+t
+)
+\displaystyle\rho_{\mathrm{AtGoal}}(t)
+=
+δ
+goal
+−
+d
+g
+​
+(
+t
+)
+,
+\displaystyle=\delta_{\mathrm{goal}}-d_{g}(t),
+ρ
+OnSupport
+​
+(
+t
+)
+\displaystyle\rho_{\mathrm{OnSupport}}(t)
+=
+δ
+z
+−
+|
+z
+o
+​
+(
+t
+)
+−
+z
+support
+|
+,
+\displaystyle=\delta_{z}-|z_{o}(t)-z_{\mathrm{support}}|,
+ρ
+Static
+​
+(
+t
+)
+\displaystyle\rho_{\mathrm{Static}}(t)
+=
+δ
+static
+−
+m
+⁡
+(
+t
+)
+,
+\displaystyle=\delta_{\mathrm{static}}-m(t),
+(39)
+with
+ρ
+Engaged
+​
+(
+t
+)
+=
+min
+⁡
+{
+ρ
+Near
+​
+(
+t
+)
+,
+m
+⁡
+(
+t
+)
+−
+δ
+engaged
+}
+\rho_{\mathrm{Engaged}}(t)=\min\{\rho_{\mathrm{Near}}(t),\,m(t)-\delta_{\mathrm{engaged}}\}
+.
+The current PushCube parameters are
+δ
+near
+,
+δ
+engaged
+,
+δ
+displaced
+,
+δ
+progress
+,
+δ
+goal
+,
+δ
+z
+,
+δ
+static
+\delta_{\mathrm{near}},\delta_{\mathrm{engaged}},\delta_{\mathrm{displaced}},\delta_{\mathrm{progress}},\delta_{\mathrm{goal}},\delta_{z},\delta_{\mathrm{static}}
+and temporal bounds are
+H
+task
+,
+h
+engage
+,
+h
+progress
+,
+h
+goal
+,
+h
+settle
+H_{\mathrm{task}},h_{\mathrm{engage}},h_{\mathrm{progress}},h_{\mathrm{goal}},h_{\mathrm{settle}}
+.
+A.2.2
+Hyperparameters
+For all four tasks, we use the standard ManiSkill PPO implementation without modifying the PPO optimization procedure. The common hyperparameters are: learning rate
+3
+×
+10
+−
+4
+3\times 10^{-4}
+, discount factor
+γ
+=
+0.8
+\gamma=0.8
+, GAE parameter
+λ
+=
+0.9
+\lambda=0.9
+, PPO clipping coefficient
+0.2
+0.2
+, value-function coefficient
+0.5
+0.5
+, target KL divergence
+0.1
+0.1
+,
+8
+8
+PPO update epochs per batch, and
+32
+32
+minibatches. The actor and critic are three-layer MLPs with
+256
+256
+hidden units per layer and
+tanh
+\tanh
+activations.
+For PushCube, we use
+2048
+2048
+parallel environments, a rollout length of
+20
+20
+, and a total training budget of
+2
+2
+M environment steps.
+For StackCube, we use
+1024
+1024
+parallel environments, a rollout length of
+50
+50
+, and a total training budget of
+30
+30
+M environment steps.
+For LiftPegUpright, we use
+1024
+1024
+parallel environments, a rollout length of
+50
+50
+, and a total training budget of
+25
+25
+M environment steps.
+For PlaceSphere, we use
+1024
+1024
+parallel environments, a rollout length of
+50
+50
+, and a total training budget of
+10
+10
+M environment steps.
+A.2.3
+Source Videos & VLM Prompts For Manipulation
+For each manipulation task, we record a single human demonstration. The demonstration is processed by the VLM using two sequential, task-agnostic prompts designed for general manipulation. The first prompt extracts a semantic event trace using the shared manipulation ontology, while the second maps this trace to a bank of parametric STL specifications. Importantly, the same prompts are applied to all manipulation tasks without any task-specific modification.
+Stage 1: Human Video to Semantic Manipulation Trace
+⬇
+System
+Role
+:
+Act
+as
+an
+expert
+Vision
+-
+Language
+Model
+specializing
+in
+Biomechanics
+,
+Robotic
+Manipulation
+,
+and
+Signal
+Temporal
+Logic
+(
+STL
+).
+Context
+&
+Objective
+:
+Analyze
+the
+provided
+video
+of
+a
+human
+performing
+a
+manipulation
+task
+.
+Your
+goal
+is
+to
+extract
+an
+embodiment
+-
+independent
+semantic
+description
+of
+the
+temporal
+manipulation
+structure
+.
+This
+analysis
+will
+be
+used
+to
+construct
+STL
+specifications
+for
+a
+robot
+with
+a
+different
+morphology
+,
+body
+dimensions
+,
+and
+controllers
+.
+Therefore
+,
+you
+must
+describe
+what
+happens
+semantically
+rather
+than
+reproducing
+the
+demonstrator
+’
+s
+exact
+trajectory
+,
+human
+kinematics
+,
+speed
+,
+or
+incidental
+movements
+.
+Ontology
+&
+Permitted
+Vocabulary
+:
+Use
+only
+the
+following
+roles
+and
+predicates
+in
+formal
+semantic
+fields
+.
+1.
+Entity
+Roles
+:
+Effector
+:
+The
+component
+directly
+interacting
+with
+the
+environment
+(
+e
+.
+g
+.,
+human
+hand
+,
+robot
+end
+-
+effector
+).
+Object
+:
+A
+manipulable
+object
+whose
+state
+or
+position
+may
+change
+.
+Receptacle
+:
+A
+container
+or
+region
+into
+which
+an
+object
+can
+be
+placed
+.
+Handle
+:
+A
+graspable
+/
+interactable
+component
+used
+to
+manipulate
+an
+articulated
+object
+.
+Articulated_part
+:
+A
+movable
+articulated
+component
+(
+e
+.
+g
+.,
+drawer
+,
+door
+).
+Goal
+:
+A
+visually
+identifiable
+destination
+or
+goal
+region
+.
+Support
+:
+A
+surface
+or
+structure
+physically
+supporting
+an
+object
+.
+2.
+States
+&
+Events
+(
+Predicates
+):
+Near
+(
+a
+,
+b
+):
+Entity
+a
+is
+spatially
+close
+to
+entity
+b
+.
+Engaged
+(
+effector
+,
+x
+):
+The
+effector
+is
+actively
+interacting
+with
+x
+to
+change
+its
+state
+/
+motion
+.
+Grasped
+(
+object
+):
+The
+object
+is
+securely
+held
+by
+the
+effector
+.
+Released
+(
+object
+):
+The
+object
+is
+no
+longer
+grasped
+by
+the
+effector
+.
+Displaced
+(
+object
+):
+The
+object
+has
+moved
+meaningfully
+from
+its
+initial
+location
+.
+Toward_goal
+(
+object
+):
+The
+object
+has
+made
+meaningful
+progress
+toward
+a
+visual
+goal
+.
+Upright
+(
+object
+):
+The
+object
+is
+in
+an
+approximately
+upright
+or
+standing
+orientation
+.
+At_goal
+(
+object
+):
+The
+object
+occupies
+a
+visually
+identifiable
+goal
+region
+.
+On_support
+(
+object
+,
+support
+):
+The
+object
+remains
+supported
+by
+the
+intended
+supporting
+surface
+.
+In_receptacle
+(
+object
+,
+receptacle
+):
+The
+object
+occupies
+the
+interior
+/
+accepted
+region
+of
+a
+receptacle
+.
+Static
+(
+x
+):
+Entity
+x
+is
+approximately
+stationary
+.
+Open
+(
+articulated_part
+):
+The
+articulated
+part
+is
+in
+an
+open
+configuration
+.
+3.
+Temporal
+Relations
+:
+before
+after
+overlaps
+persists_until
+4.
+Observation
+Classes
+:
+Essential_candidate
+:
+Visually
+supported
+,
+embodiment
+-
+independent
+temporal
+relationships
+critical
+to
+describing
+the
+manipulation
+.
+Terminal_candidate
+:
+An
+observed
+state
+/
+event
+that
+plausibly
+represents
+completion
+or
+the
+resulting
+outcome
+.
+Incidental
+:
+Visually
+present
+but
+unnecessary
+for
+formal
+description
+.
+Strict
+Constraints
+&
+Rules
+:
+1.
+A
+role
+,
+state
+,
+or
+event
+may
+be
+absent
+from
+the
+video
+.
+Do
+not
+force
+every
+role
+or
+state
+to
+be
+populated
+.
+2.
+Do
+NOT
+infer
+joint
+angles
+,
+velocities
+,
+or
+numerical
+thresholds
+.
+3.
+Do
+NOT
+use
+human
+-
+specific
+variables
+(
+e
+.
+g
+.,
+hand_x
+,
+wrist_angle
+,
+elbow_pose
+)
+inside
+semantic
+predicates
+.
+4.
+Do
+NOT
+interpret
+exact
+human
+timing
+for
+the
+future
+robot
+.
+Task
+Requirements
+:
+1.
+Identify
+the
+visually
+relevant
+entities
+in
+the
+video
+and
+map
+them
+to
+the
+permitted
+semantic
+roles
+.
+2.
+Formulate
+the
+temporal
+relationships
+among
+observed
+events
+using
+ONLY
+the
+permitted
+predicates
+.
+3.
+Identify
+persistent
+properties
+only
+when
+the
+video
+gives
+clear
+evidence
+that
+a
+property
+is
+maintained
+for
+a
+meaningful
+interval
+.
+4.
+Note
+any
+critical
+ambiguities
+or
+visual
+occlusions
+.
+Output
+Format
+:
+Return
+valid
+JSON
+ONLY
+.
+Do
+not
+include
+markdown
+formatting
+,
+code
+blocks
+,
+or
+conversational
+text
+outside
+the
+JSON
+structure
+.
+Use
+exactly
+this
+schema
+:
+{
+"
+manipulation_context
+":
+{
+"
+confidence
+":
+0.0,
+"
+evidence
+":
+"
+Brief
+visual
+justification
+of
+the
+overall
+task
+being
+performed
+"
+},
+"
+entity_mapping
+":
+{
+"
+effector
+":
+"
+Description
+of
+what
+serves
+as
+the
+effector
+(
+or
+null
+)",
+"
+object
+":
+"
+Description
+of
+the
+object
+(
+or
+null
+)",
+"
+receptacle
+":
+"
+Description
+of
+the
+receptacle
+(
+or
+null
+)",
+"
+handle
+":
+"
+Description
+of
+the
+handle
+(
+or
+null
+)",
+"
+articulated_part
+":
+"
+Description
+of
+the
+articulated
+part
+(
+or
+null
+)",
+"
+goal
+":
+"
+Description
+of
+the
+goal
+region
+(
+or
+null
+)",
+"
+support
+":
+"
+Description
+of
+the
+support
+surface
+(
+or
+null
+)"
+},
+"
+visibility
+":
+{
+"
+effector
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+",
+"
+object
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+",
+"
+receptacle
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+",
+"
+handle
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+",
+"
+articulated_part
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+",
+"
+goal
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+",
+"
+support
+":
+"
+clear
+|
+partial
+|
+unclear
+|
+n
+/
+a
+"
+},
+"
+observed_events
+":
+[
+{
+"
+event_id
+":
+"
+e1
+",
+"
+state_or_event
+":
+"
+e
+.
+g
+.,
+Grasped
+(
+object
+)",
+"
+event_class
+":
+"
+essential_candidate
+|
+terminal_candidate
+|
+incidental
+",
+"
+confidence
+":
+0.0,
+"
+visual_evidence
+":
+"
+Brief
+explanation
+of
+supporting
+visual
+evidence
+"
+}
+],
+"
+temporal_relations
+":
+[
+{
+"
+event_1
+":
+"
+e1
+",
+"
+relation
+":
+"
+before
+|
+after
+|
+overlaps
+|
+persists_until
+",
+"
+event_2
+":
+"
+e2
+",
+"
+confidence
+":
+0.0
+}
+],
+"
+persistent_properties
+":
+[
+{
+"
+state_or_event
+":
+"
+e
+.
+g
+.,
+On_support
+(
+object
+,
+support
+)",
+"
+confidence
+":
+0.0,
+"
+visual_evidence
+":
+"
+Brief
+explanation
+"
+}
+],
+"
+missing_concepts
+":
+[
+{
+"
+description
+":
+"
+Important
+observed
+concept
+not
+expressible
+by
+the
+strict
+ontology
+",
+"
+importance
+":
+"
+low
+|
+medium
+|
+high
+"
+}
+],
+"
+uncertainties
+":
+[
+"
+Brief
+statement
+describing
+an
+important
+ambiguity
+or
+occlusion
+"
+]
+}
+Stage 2: Semantic Manipulation Trace to PSTL Specifications
+⬇
+System
+Role
+:
+Act
+as
+an
+expert
+Formal
+Methods
+Engineer
+specializing
+in
+Logic
+Synthesis
+for
+Robotic
+Control
+.
+Context
+&
+Objective
+:
+You
+are
+constructing
+Parametric
+Signal
+Temporal
+Logic
+(
+PSTL
+)
+specifications
+based
+on
+a
+semantic
+manipulation
+trace
+.
+This
+trace
+(
+provided
+as
+a
+JSON
+input
+)
+was
+extracted
+from
+a
+human
+demonstration
+video
+.
+Your
+objective
+is
+to
+translate
+this
+trace
+into
+embodiment
+-
+independent
+,
+candidate
+temporal
+specifications
+that
+describe
+the
+demonstrated
+behavior
+.
+These
+specifications
+will
+eventually
+be
+grounded
+to
+a
+robot
+with
+a
+different
+morphology
+to
+generate
+a
+dense
+,
+continuous
+reward
+signal
+for
+reinforcement
+learning
+.
+Strict
+Constraints
+:
+-
+Trace
+-
+Dependent
+Reasoning
+:
+You
+must
+reason
+only
+from
+the
+supplied
+semantic
+trace
+.
+-
+No
+Invention
+:
+Do
+not
+invent
+contact
+events
+,
+predicates
+,
+or
+temporal
+relations
+that
+are
+absent
+from
+the
+input
+data
+.
+Use
+a
+predicate
+only
+if
+it
+is
+explicitly
+supported
+by
+the
+trace
+.
+Symbolic
+Grounding
+:
+All
+temporal
+constants
+and
+numerical
+temporal
+parameters
+must
+remain
+purely
+symbolic
+(
+e
+.
+g
+.,
+H_task
+,
+h_persist
+,
+h_reach
+)
+for
+later
+numerical
+grounding
+during
+training
+.
+Allowed
+PSTL
+Grammar
+:
+You
+are
+restricted
+to
+the
+following
+exact
+textual
+grammar
+.
+(
+Note
+:
+mu
+represents
+an
+atomic
+predicate
+;
+phi
+represents
+a
+sub
+-
+formula
+;
+H
+and
+h
+represent
+symbolic
+temporal
+bounds
+).
+Atomic
+predicate
+:
+mu
+Conjunction
+:
+phi_1
+AND
+phi_2
+Bounded
+eventuality
+:
+F_
+[0,
+H
+](
+mu
+)
+Bounded
+persistence
+:
+G_
+[0,
+H
+](
+mu
+)
+Response
+requirement
+:
+G_
+[0,
+H
+](
+mu_1
+->
+F_
+[0,
+h
+](
+mu_2
+))
+Two
+-
+event
+ordered
+sequence
+:
+F_
+[0,
+H
+](
+mu_1
+AND
+F_
+[0,
+h1
+](
+mu_2
+))
+Three
+-
+event
+ordered
+sequence
+:
+F_
+[0,
+H
+](
+mu_1
+AND
+F_
+[0,
+h1
+](
+mu_2
+AND
+F_
+[0,
+h2
+](
+mu_3
+)))
+Terminal
+stability
+:
+F_
+[0,
+H
+](
+G_
+[0,
+h
+](
+mu
+))
+Conjunctions
+of
+independently
+valid
+formulas
+are
+permitted
+.
+Output
+Format
+:
+Return
+valid
+JSON
+only
+,
+using
+exactly
+the
+structure
+below
+.
+Do
+not
+include
+markdown
+code
+blocks
+,
+conversational
+text
+,
+or
+explanations
+outside
+the
+JSON
+.
+{
+"
+ontology_sufficiency
+":
+"
+sufficient
+|
+partially_sufficient
+|
+insufficient
+",
+"
+ontology_note
+":
+"
+Brief
+explanation
+of
+whether
+the
+available
+grammar
+and
+predicates
+adequately
+captured
+the
+trace
+.",
+"
+candidate_specifications
+":
+[
+{
+"
+candidate_id
+":
+"
+phi_1
+",
+"
+description
+":
+"
+Plain
+English
+description
+of
+the
+behavior
+this
+formula
+enforces
+",
+"
+formula
+":
+"
+PSTL
+formula
+using
+exactly
+the
+allowed
+textual
+grammar
+",
+"
+predicates_used
+":
+[
+"
+instantiated
+predicate
+(
+e
+.
+g
+.,
+Grasped
+(
+object
+))"
+],
+"
+supporting_event_ids
+":
+[
+"
+e1
+",
+"
+e2
+"
+],
+"
+excluded_incidental_event_ids
+":
+[
+"
+e4
+"
+],
+"
+ordered_events
+":
+[
+"
+instantiated
+predicate
+1",
+"
+instantiated
+predicate
+2"
+],
+"
+persistent_requirements
+":
+[],
+"
+symbolic_parameters
+":
+[
+"
+H_task
+",
+"
+h1
+"
+],
+"
+semantic_complexity
+":
+"
+low
+|
+moderate
+|
+high
+",
+"
+rationale
+":
+"
+Brief
+explanation
+grounded
+only
+in
+the
+provided
+semantic
+trace
+"
+}
+],
+"
+stage1_ambiguities_affecting_specification
+":
+[
+"
+Brief
+explanation
+of
+any
+ambiguity
+in
+the
+input
+trace
+that
+impacted
+formula
+construction
+"
+]
+}
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

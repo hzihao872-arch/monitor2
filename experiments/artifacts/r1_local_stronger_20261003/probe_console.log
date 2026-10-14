@@ -1,0 +1,4 @@
+probe_neutral_q0 0 plain_text 'Blue cube center, green cube left, red cube right. All cubes on white surface. No occlusion visible.'
+probe_joint_q0 0 valid '{ "memory": "Green cube not stacked on blue cube. Red cube not placed. No three-layer structure formed.", "judgments": [ { "object_id": "green_on_blue", "H": "?", "C": "?", "P": "?", "G": "?", "evidence_time": 0 } ] }'
+probe_joint_q2 2 valid '{ "memory": "Green cube placed on blue cube. Red cube not yet placed. Robot arm visible, task incomplete.", "judgments": [ { "object_id": "green_on_blue", "H": "+", "C": "+", "P": "?", "G": "?", "evidence_time": 2.0 } ] }'
+probe_joint_q6 6 runtime_failure None

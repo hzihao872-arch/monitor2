@@ -1,0 +1,2121 @@
+0001: RoboMonitor: Label-Efficient Runtime Monitoring of Robot Task Execution via Predictive Representation Learning
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: arXiv.org perpetual non-exclusive license
+0009: arXiv:2609.30715v1 [cs.RO] 25 Sep 2026
+0010: RoboMonitor: Label-Efficient Runtime Monitoring of Robot Task Execution via Predictive Representation Learning
+0011: Abhiroop Ajith
+0012: Affiliation:
+0013: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0014: Affiliation:
+0015: Abhiroop and Constantinos are with the ELPIS Lab, Worcester Polytechnic Institute, USA.
+0016: Gokul Narayanan
+0017: Affiliation:
+0018: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0019: Kyle Coelho
+0020: Affiliation:
+0021: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0022: Tingji Zhao
+0023: Affiliation:
+0024: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0025: Yash Shahapurkar
+0026: Affiliation:
+0027: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0028: Brian Zhu
+0029: Affiliation:
+0030: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0031: Melih Erdogan
+0032: Affiliation:
+0033: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0034: Ted Krubasik
+0035: Affiliation:
+0036: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0037: Constantinos Chamzas
+0038: Affiliation:
+0039: Abhiroop and Constantinos are with the ELPIS Lab, Worcester Polytechnic Institute, USA.
+0040: Eugen Solowjow
+0041: †
+0042: †
+0043: thanks:
+0044: †
+0045: Corresponding author:
+0046: gokul.sathya_narayanan@siemens.com
+0047: Affiliation:
+0048: The authors are with Siemens Corporation, USA. This work was conducted while Abhiroop was an intern at Siemens Corporation.
+0049: Abstract
+0050: Learned robot policies produce actions, but their outputs alone do not establish whether execution is progressing as intended. Robot execution monitoring requires identifying the current execution
+0051: phase, detecting failures, and recognizing task completion from
+0052: observations available during execution. Training such monitors requires
+0053: annotations that are scarce in datasets collected for robot-policy
+0054: learning. We present RoboMonitor, a label-efficient vision–language
+0055: execution monitor that learns from these datasets before introducing
+0056: monitoring supervision. We pre-train on 25 hours of multi-camera
+0057: trajectories spanning 12 manipulation tasks and two robot embodiments,
+0058: using action-conditioned future-feature prediction, inverse dynamics,
+0059: and masked-present prediction. We then transfer the learned visual and
+0060: context encoders to a causal monitor and apply temporal supervised
+0061: fine-tuning (Temporal SFT), which combines supervision throughout each
+0062: observation window with consistency objectives within and across
+0063: overlapping windows. At deployment, RoboMonitor requires only the task
+0064: instruction and camera observations.
+0065: On a four-task monitoring benchmark, RoboMonitor trained with 52 labeled
+0066: episodes achieves 93.1% mean phase accuracy and 85.9% macro recall over
+0067: two fine-tuning seeds, exceeding Qwen3-VL and Robometer trained with the
+0068: same monitoring supervision. Its phase accuracy also exceeds that of both Qwen3-VL and
+0069: Robometer trained with 100 episodes. A Qwen3-VL ablation shows that
+0070: Temporal SFT reduces mean spurious phase switching from 15.23% to
+0071: 4.95%. In closed-loop deployment, the integrated system completes
+0072: 39 of 40 simulated Toolbox Sorting trials and 35 of 40 real-world Reel
+0073: Packing trials, with no false recovery triggers observed.
+0074: Fig. 1:
+0075: Overview of RoboMonitor.
+0076: Training has two stages: (1) predictive
+0077: self-supervised pre-training on unlabeled robot trajectories, which uses
+0078: multi-view observations together with recorded robot state and executed
+0079: actions to learn execution-relevant visual and temporal representations; and
+0080: (2) causal supervised fine-tuning (Temporal SFT) on a smaller
+0081: monitoring-labeled dataset to predict execution phase, failure, and task
+0082: completion. At deployment, RoboMonitor receives only the task instruction and
+0083: camera observations, so it can monitor both end-to-end visuomotor policies and
+0084: task-orchestration systems without access to the underlying controller.
+0085: I
+0086: Introduction
+0087: Learned robot policies are increasingly used for long-horizon
+0088: manipulation
+0089: [
+0090: 1
+0091: ,
+0092: 2
+0093: ,
+0094: 3
+0095: ]
+0096: . They can execute complete
+0097: tasks or serve as individual skills within an orchestration system
+0098: that combines learned and conventional robot
+0099: controllers
+0100: [
+0101: 4
+0102: ,
+0103: 5
+0104: ,
+0105: 6
+0106: ]
+0107: .
+0108: In either setting, execution requires feedback about the physical
+0109: outcome of the robot’s actions. A grasp may miss, an object may be
+0110: dropped, or a skill may terminate before achieving its intended effect.
+0111: An execution monitor provides this feedback by identifying the current
+0112: phase, detecting failures, and recognizing task completion from the task
+0113: instruction and recent observations. These predictions can inform task
+0114: progression, recovery, replanning, or human intervention. Their temporal
+0115: stability also matters: phase estimates that fluctuate while the robot
+0116: remains in the same execution stage can give an orchestrator inconsistent
+0117: information about task progress.
+0118: Training such a monitor requires dense temporal annotations that are rarely available in robot-learning datasets.
+0119: Policy datasets contain large amounts of synchronized video, robot state, and action data, but are dominated by
+0120: nominal executions and generally do not indicate the current phase, the onset of a failure, or when the overall task has completed. Collecting representative failures and annotating trajectories frame by frame is costly.
+0121: However, the large amount of robot data already collected during policy development provides an opportunity to learn relevant representations of the task before monitoring annotations are introduced.
+0122: We introduce
+0123: RoboMonitor
+0124: (
+0125: Figure 1
+0126: ), a two-stage approach to
+0127: label-efficient execution monitoring. First, predictive pre-training
+0128: adapts the visual encoder of a vision–language model (VLM) and
+0129: learns a temporal context encoder from multi-camera robot trajectories. The training
+0130: objective combines future-feature prediction conditioned on recorded
+0131: robot state and commands with inverse dynamics and masked-present
+0132: prediction. We then transfer the visual and context encoders to a causal
+0133: monitor and fine-tune it on trajectories annotated with execution phase,
+0134: failure, and task completion. Our Temporal SFT procedure supervises the monitor’s prediction at every timestep of each observation window rather than only at the final one, and encourages consistent predictions within and across overlapping windows. Robot state and commands are confined to pre-training; the deployed monitor uses the task instruction and camera observations.
+0135: Our contributions are: (i) a predictive pre-training and representation
+0136: transfer approach that learns from robot trajectories without monitoring
+0137: annotations; (ii) a causal execution monitor trained with dense
+0138: supervision and temporal consistency objectives; and (iii) an evaluation
+0139: of monitoring accuracy and stability at two annotation budgets, together
+0140: with closed-loop execution and recovery in simulation and on a real
+0141: robot.
+0142: Fig. 2:
+0143: Predictive robot pre-training (stage 1).
+0144: (a) Visual and context encoders process recent multi-camera observations;
+0145: a predictor uses their features, recorded robot state, and commands
+0146: to estimate future visual features. A fixed copy of the original
+0147: visual encoder supplies the targets.
+0148: (b) Masked-present prediction estimates features at masked spatial
+0149: locations.
+0150: (c) Inverse dynamics predicts commands from the difference between
+0151: context summaries. The adapted visual and context encoders are
+0152: retained for execution monitoring.
+0153: II
+0154: Related Work
+0155: Runtime Failure Detection.
+0156: Recent work has explored failure detection using both VLM-based verification and signals from the underlying control policy.
+0157: AHA
+0158: [
+0159: 7
+0160: ]
+0161: detects and reasons about failures for a specified current subtask, while Guardian
+0162: [
+0163: 8
+0164: ]
+0165: verifies whether a given subtask was successfully executed from before-and-after observations.
+0166: These works primarily perform subtask-conditioned verification, whereas RoboMonitor continuously infers the current execution phase, failure state, and task completion directly from causal visual observations without requiring the current subtask to be specified.
+0167: Other approaches
+0168: [
+0169: 9
+0170: ,
+0171: 10
+0172: ,
+0173: 11
+0174: ,
+0175: 12
+0176: ,
+0177: 13
+0178: ]
+0179: detect failures from probing the control policy’s representations, action outputs, or comparing reference trajectories; unlike these methods, RoboMonitor is decoupled from the underlying control policy at deployment.
+0180: Reward Models and Task Progress Estimation.
+0181: Reward models provide dense signals about task execution.
+0182: Robometer
+0183: [
+0184: 14
+0185: ]
+0186: learns general-purpose progress and success rewards from expert, suboptimal, and failed trajectories. SARM2
+0187: [
+0188: 15
+0189: ]
+0190: estimates the current action-primitive stage to condition a multi-task value model for policy self-improvement, while ROVER
+0191: [
+0192: 16
+0193: ]
+0194: uses recursive VLM reasoning to estimate frame-level task progress over long-horizon executions.
+0195: These methods primarily produce reward, progress, or reasoning signals for policy evaluation and improvement. In contrast, RoboMonitor treats execution monitoring as the primary objective, jointly predicting execution phase, failure, and task completion from causal visual observations, with explicit consideration of temporal stability and online inference.
+0196: Visual and sensorimotor pre-training.
+0197: Self-supervised pre-training has produced reusable representations for robot
+0198: learning. R3M learns visual features from human video
+0199: [
+0200: 17
+0201: ]
+0202: , VIP
+0203: learns visual rewards through value-based pre-training
+0204: [
+0205: 18
+0206: ]
+0207: , and
+0208: RPT jointly models robot images, proprioception, and actions before transfer
+0209: to control policies
+0210: [
+0211: 19
+0212: ]
+0213: . Joint-embedding predictive
+0214: architectures learn by predicting target representations rather than
+0215: reconstructing pixels
+0216: [
+0217: 20
+0218: ,
+0219: 21
+0220: ]
+0221: . We use this predictive principle to
+0222: learn from multi-camera robot trajectories and transfer both the adapted
+0223: visual encoder and its temporal context representation to runtime execution
+0224: monitoring.
+0225: III
+0226: Problem Formulation
+0227: We consider a manipulation task specified by an instruction
+0228: g
+0229: g
+0230: , executed
+0231: either by an end-to-end policy or by a high-level planner that selects
+0232: low-level skills from a library
+0233: 𝒦
+0234: \mathcal{K}
+0235: . At time
+0236: t
+0237: t
+0238: , the robot is
+0239: observed through
+0240: C
+0241: C
+0242: cameras,
+0243: o
+0244: t
+0245: =
+0246: (
+0247: o
+0248: t
+0249: 1
+0250: ,
+0251: …
+0252: ,
+0253: o
+0254: t
+0255: C
+0256: )
+0257: o_{t}=(o_{t}^{1},\ldots,o_{t}^{C})
+0258: . Given the instruction and a causal observation
+0259: window
+0260: w
+0261: t
+0262: =
+0263: (
+0264: o
+0265: t
+0266: −
+0267: H
+0268: +
+0269: 1
+0270: ,
+0271: …
+0272: ,
+0273: o
+0274: t
+0275: )
+0276: w_{t}=(o_{t-H+1},\ldots,o_{t})
+0277: , the execution monitor predicts
+0278: M
+0279: ϑ
+0280: ​
+0281: (
+0282: g
+0283: ,
+0284: w
+0285: t
+0286: )
+0287: =
+0288: (
+0289: y
+0290: ^
+0291: t
+0292: phase
+0293: ,
+0294: p
+0295: t
+0296: fail
+0297: ,
+0298: p
+0299: t
+0300: comp
+0301: )
+0302: .
+0303: M_{\vartheta}(g,w_{t})=\left(\hat{y}^{\mathrm{phase}}_{t},\,p^{\mathrm{fail}}_{t},\,p^{\mathrm{comp}}_{t}\right).
+0304: (1)
+0305: where the outputs denote the current execution phase and the probabilities of
+0306: failure and task completion.
+0307: We assume access to a large corpus of robot trajectories containing video, state, and actions, together with a smaller corpus carrying
+0308: monitoring annotations. Our objective is to use the unlabeled
+0309: trajectories to reduce the annotations required to learn
+0310: M
+0311: ϑ
+0312: M_{\vartheta}
+0313: . At deployment, the monitor receives only the task
+0314: instruction and camera observations.
+0315: IV
+0316: Methodology
+0317: RoboMonitor is trained in two stages. Predictive pre-training
+0318: (
+0319: Figure 2
+0320: ) learns visual and temporal representations
+0321: from recorded observations, robot state, and commands without monitoring
+0322: annotations. Temporal SFT (
+0323: Figure 3
+0324: ) transfers these
+0325: representations to an execution monitor and trains its phase, failure,
+0326: and completion predictions using causal observation windows.
+0327: IV-A
+0328: Predictive Robot Pre-training
+0329: Action-conditioned future prediction.
+0330: Let
+0331: o
+0332: t
+0333: =
+0334: (
+0335: o
+0336: t
+0337: 1
+0338: ,
+0339: …
+0340: ,
+0341: o
+0342: t
+0343: C
+0344: )
+0345: o_{t}=(o_{t}^{1},\ldots,o_{t}^{C})
+0346: denote the synchronized observations
+0347: from
+0348: C
+0349: C
+0350: cameras,
+0351: s
+0352: t
+0353: s_{t}
+0354: the recorded robot state, and
+0355: a
+0356: t
+0357: :
+0358: t
+0359: +
+0360: τ
+0361: a_{t:t+\tau}
+0362: the commanded action sequence over
+0363: [
+0364: t
+0365: ,
+0366: t
+0367: +
+0368: τ
+0369: )
+0370: [t,t+\tau)
+0371: ,
+0372: where
+0373: τ
+0374: \tau
+0375: is the prediction horizon. We initialize a visual encoder
+0376: E
+0377: θ
+0378: E_{\theta}
+0379: from
+0380: Qwen3-VL-4B-Instruct
+0381: [
+0382: 22
+0383: ]
+0384: and adapt it using visual LoRA modules
+0385: [
+0386: 23
+0387: ]
+0388: . A separate copy of the original encoder,
+0389: E
+0390: 0
+0391: E_{0}
+0392: , provides prediction targets and remains fixed throughout pre-training. Following joint-embedding predictive learning
+0393: [
+0394: 20
+0395: ,
+0396: 21
+0397: ]
+0398: , we predict features of
+0399: future observations rather than reconstructing their pixels.
+0400: We encode each available camera view at
+0401: t
+0402: −
+0403: δ
+0404: t-\delta
+0405: and
+0406: t
+0407: t
+0408: , where
+0409: δ
+0410: \delta
+0411: is a fixed context interval. The context encoder
+0412: C
+0413: ϕ
+0414: C_{\phi}
+0415: combines these
+0416: visual tokens with camera, spatial-position, and relative-time information:
+0417: (
+0418: H
+0419: t
+0420: ,
+0421: z
+0422: t
+0423: )
+0424: =
+0425: C
+0426: ϕ
+0427: ​
+0428: (
+0429: E
+0430: θ
+0431: ​
+0432: (
+0433: o
+0434: t
+0435: −
+0436: δ
+0437: )
+0438: ,
+0439: E
+0440: θ
+0441: ​
+0442: (
+0443: o
+0444: t
+0445: )
+0446: )
+0447: .
+0448: (H_{t},z_{t})=C_{\phi}\!\left(E_{\theta}(o_{t-\delta}),E_{\theta}(o_{t})\right).
+0449: (2)
+0450: Here,
+0451: H
+0452: t
+0453: H_{t}
+0454: is the contextual token sequence and
+0455: z
+0456: t
+0457: z_{t}
+0458: is a summary computed
+0459: from these tokens. Before future prediction, a learned projection of
+0460: z
+0461: t
+0462: z_{t}
+0463: is added to
+0464: H
+0465: t
+0466: H_{t}
+0467: , so the future-prediction loss also trains the summary
+0468: projection.
+0469: The same observed scene can be followed by different robot commands. We
+0470: therefore condition the future predictor
+0471: P
+0472: ψ
+0473: P_{\psi}
+0474: on the recorded state
+0475: and intervening commands:
+0476: Y
+0477: ^
+0478: t
+0479: +
+0480: τ
+0481: \displaystyle\widehat{Y}_{t+\tau}
+0482: =
+0483: P
+0484: ψ
+0485: (
+0486: H
+0487: t
+0488: ,
+0489: z
+0490: t
+0491: ,
+0492: s
+0493: t
+0494: ,
+0495: a
+0496: t
+0497: :
+0498: t
+0499: +
+0500: τ
+0501: ,
+0502: τ
+0503: )
+0504: ,
+0505: \displaystyle=P_{\psi}(H_{t},z_{t},s_{t},a_{t:t+\tau},\tau),
+0506: (3)
+0507: Y
+0508: t
+0509: +
+0510: τ
+0511: \displaystyle Y_{t+\tau}
+0512: =
+0513: E
+0514: 0
+0515: ​
+0516: (
+0517: o
+0518: t
+0519: +
+0520: τ
+0521: )
+0522: .
+0523: \displaystyle=E_{0}(o_{t+\tau}).
+0524: Prediction queries specify the camera and spatial location of each target
+0525: token. Robot state and commands enter only the predictor, not
+0526: E
+0527: θ
+0528: E_{\theta}
+0529: or
+0530: C
+0531: ϕ
+0532: C_{\phi}
+0533: . The context features can therefore be computed from camera
+0534: observations alone during monitoring.
+0535: For corresponding predicted and target tokens
+0536: y
+0537: ^
+0538: \hat{y}
+0539: and
+0540: y
+0541: y
+0542: , we use
+0543: ℓ
+0544: feat
+0545: ​
+0546: (
+0547: y
+0548: ^
+0549: ,
+0550: y
+0551: )
+0552: =
+0553: 1
+0554: d
+0555: ​
+0556: ‖
+0557: LN
+0558: ⁡
+0559: (
+0560: y
+0561: ^
+0562: )
+0563: −
+0564: LN
+0565: ⁡
+0566: (
+0567: y
+0568: )
+0569: ‖
+0570: 1
+0571: ,
+0572: \ell_{\mathrm{feat}}(\hat{y},y)=\frac{1}{d}\left\|\operatorname{LN}(\hat{y})-\operatorname{LN}(y)\right\|_{1},
+0573: (4)
+0574: where
+0575: d
+0576: d
+0577: is the token dimension and
+0578: LN
+0579: \operatorname{LN}
+0580: denotes layer
+0581: normalization without learned affine parameters. Averaging this loss over
+0582: valid spatial tokens, target cameras, and training examples gives
+0583: ℒ
+0584: future
+0585: \mathcal{L}_{\mathrm{future}}
+0586: .
+0587: Inverse dynamics.
+0588: The forward predictor receives commands as input. We additionally train an inverse-dynamics head to predict those commands from the difference between two visual context summaries
+0589: [
+0590: 24
+0591: ,
+0592: 25
+0593: ]
+0594: .
+0595: Using the same encoders, we compute
+0596: z
+0597: t
+0598: +
+0599: τ
+0600: z_{t+\tau}
+0601: from observations at
+0602: t
+0603: +
+0604: τ
+0605: −
+0606: δ
+0607: t+\tau-\delta
+0608: and
+0609: t
+0610: +
+0611: τ
+0612: t+\tau
+0613: , so both contexts have duration
+0614: δ
+0615: \delta
+0616: .
+0617: The inverse prediction is
+0618: a
+0619: ^
+0620: t
+0621: :
+0622: t
+0623: +
+0624: τ
+0625: =
+0626: I
+0627: ω
+0628: (
+0629: z
+0630: t
+0631: +
+0632: τ
+0633: −
+0634: z
+0635: t
+0636: ,
+0637: τ
+0638: )
+0639: .
+0640: \widehat{a}_{t:t+\tau}=I_{\omega}\!\left(z_{t+\tau}-z_{t},\tau\right).
+0641: (5)
+0642: Unlike the forward predictor, the inverse head receives neither the recorded
+0643: state nor commands. We minimize a Huber loss over valid command entries,
+0644: ℒ
+0645: inv
+0646: \mathcal{L}_{\mathrm{inv}}
+0647: , giving the summary difference an explicit
+0648: action-prediction target. The later observations used for this objective are
+0649: not inputs to the forward predictor.
+0650: Masked-present prediction.
+0651: The future objective predicts features at
+0652: t
+0653: +
+0654: τ
+0655: t+\tau
+0656: . We also introduce a
+0657: prediction target at the present timestep
+0658: t
+0659: t
+0660: . In a separate pass, contiguous
+0661: spatial regions are masked before the visual encoder’s attention layers.
+0662: An auxiliary decoder uses the remaining visual context to predict features
+0663: from
+0664: E
+0665: 0
+0666: E_{0}
+0667: applied to the unmasked present observation. We apply
+0668: Equation 4
+0669: only at the masked target locations,
+0670: obtaining
+0671: ℒ
+0672: mask
+0673: \mathcal{L}_{\mathrm{mask}}
+0674: . This decoder receives neither robot
+0675: state nor commands.
+0676: The complete pre-training objective is
+0677: ℒ
+0678: pre
+0679: =
+0680: ℒ
+0681: future
+0682: +
+0683: λ
+0684: inv
+0685: ​
+0686: ℒ
+0687: inv
+0688: +
+0689: λ
+0690: mask
+0691: ​
+0692: ℒ
+0693: mask
+0694: ,
+0695: \mathcal{L}_{\mathrm{pre}}=\mathcal{L}_{\mathrm{future}}+\lambda_{\mathrm{inv}}\mathcal{L}_{\mathrm{inv}}+\lambda_{\mathrm{mask}}\mathcal{L}_{\mathrm{mask}},
+0696: (6)
+0697: where the coefficients weight the auxiliary losses. After pre-training, we
+0698: retain
+0699: E
+0700: θ
+0701: E_{\theta}
+0702: and
+0703: C
+0704: ϕ
+0705: C_{\phi}
+0706: for execution monitoring. The target encoder,
+0707: future predictor, inverse-dynamics head, and masked-present decoder are not
+0708: used by the deployed monitor.
+0709: Fig. 3:
+0710: Causal execution monitor (stage 2).
+0711: The VLM processes the task instruction and a multi-camera observation
+0712: window, producing a causal readout at each timestep. A separate frozen
+0713: visual/context branch supplies features from the corresponding recent
+0714: observation pair. Residual adapters combine these features using
+0715: Equation 7
+0716: . Phase and completion share fusion adapters;
+0717: failure uses separate adapters. Deployment uses the predictions at
+0718: the final timestep.
+0719: IV-B
+0720: Causal Monitor Fine-Tuning
+0721: We initialize the VLM’s visual encoder with the pre-trained
+0722: E
+0723: θ
+0724: E_{\theta}
+0725: and train the execution monitor on phase, failure, and completion
+0726: annotations. We use
+0727: Temporal SFT
+0728: to denote the supervision
+0729: scheme: labeled causal readouts are trained throughout each observation
+0730: window, with additional consistency objectives within and across
+0731: overlapping windows.
+0732: Causal readouts.
+0733: The monitor receives the task instruction
+0734: g
+0735: g
+0736: and an ordered window
+0737: w
+0738: t
+0739: =
+0740: (
+0741: o
+0742: t
+0743: −
+0744: H
+0745: +
+0746: 1
+0747: ,
+0748: …
+0749: ,
+0750: o
+0751: t
+0752: )
+0753: w_{t}=(o_{t-H+1},\ldots,o_{t})
+0754: of
+0755: H
+0756: H
+0757: multi-camera observations.
+0758: After the image tokens at each timestep
+0759: j
+0760: j
+0761: , we insert a learned
+0762: <|state_reward|>
+0763: token. This
+0764: readout token
+0765: provides a dedicated position for extracting features for downstream
+0766: prediction
+0767: [
+0768: 26
+0769: ]
+0770: . We call its VLM hidden state the
+0771: readout
+0772: r
+0773: j
+0774: r_{j}
+0775: , which is used by the monitoring heads after
+0776: feature fusion. Causal attention restricts
+0777: r
+0778: j
+0779: r_{j}
+0780: to the instruction
+0781: and observations up to timestep
+0782: j
+0783: j
+0784: .
+0785: Although deployment uses only the final readout, causal attention makes every
+0786: labeled position available for supervision without access to later
+0787: observations. We therefore train on all labeled readouts in each window,
+0788: rather than only the final one. The final position receives full weight,
+0789: while earlier phase and failure predictions receive a smaller context weight.
+0790: Positive failure examples receive additional weight because they are rare.
+0791: Transferring the predictive representation.
+0792: The VLM readout combines the task instruction with the observation
+0793: history. We augment it with features from the pre-trained context
+0794: encoder
+0795: C
+0796: ϕ
+0797: C_{\phi}
+0798: . A separate frozen copy of
+0799: E
+0800: θ
+0801: E_{\theta}
+0802: supplies visual
+0803: features to the frozen
+0804: C
+0805: ϕ
+0806: C_{\phi}
+0807: , preserving this branch while the VLM’s
+0808: visual encoder is adapted through LoRA. For each supervised timestep
+0809: j
+0810: j
+0811: , the context branch processes a recent observation pair ending at
+0812: j
+0813: j
+0814: and produces the corresponding tokens
+0815: H
+0816: j
+0817: H_{j}
+0818: and summary
+0819: z
+0820: j
+0821: z_{j}
+0822: .
+0823: We form two fused features, indexed by
+0824: h
+0825: ∈
+0826: {
+0827: prog
+0828: ,
+0829: fail
+0830: }
+0831: h\in\{\mathrm{prog},\mathrm{fail}\}
+0832: :
+0833: r
+0834: ~
+0835: j
+0836: h
+0837: =
+0838: r
+0839: j
+0840: +
+0841: A
+0842: h
+0843: ​
+0844: (
+0845: z
+0846: j
+0847: )
+0848: +
+0849: R
+0850: h
+0851: ​
+0852: (
+0853: r
+0854: j
+0855: ,
+0856: H
+0857: j
+0858: )
+0859: ,
+0860: \widetilde{r}_{j}^{\,h}=r_{j}+A_{h}(z_{j})+R_{h}(r_{j},H_{j}),
+0861: (7)
+0862: where
+0863: A
+0864: h
+0865: A_{h}
+0866: projects the summary into the VLM feature space and
+0867: R
+0868: h
+0869: R_{h}
+0870: attends to the contextual tokens using
+0871: r
+0872: j
+0873: r_{j}
+0874: as the query. The residual
+0875: output projections are initialized to zero, so initially
+0876: r
+0877: ~
+0878: j
+0879: h
+0880: =
+0881: r
+0882: j
+0883: \widetilde{r}_{j}^{\,h}=r_{j}
+0884: . Phase and completion share the feature indexed
+0885: by
+0886: prog
+0887: \mathrm{prog}
+0888: ; failure uses separate adapters. The output mappings are
+0889: 𝐩
+0890: j
+0891: phase
+0892: \displaystyle\mathbf{p}_{j}^{\mathrm{phase}}
+0893: =
+0894: softmax
+0895: ⁡
+0896: (
+0897: F
+0898: phase
+0899: ​
+0900: (
+0901: r
+0902: ~
+0903: j
+0904: prog
+0905: )
+0906: )
+0907: ,
+0908: \displaystyle=\operatorname{softmax}\!\left(F_{\mathrm{phase}}(\widetilde{r}_{j}^{\,\mathrm{prog}})\right),
+0909: (8)
+0910: p
+0911: j
+0912: comp
+0913: \displaystyle p_{j}^{\mathrm{comp}}
+0914: =
+0915: sigmoid
+0916: ⁡
+0917: (
+0918: F
+0919: comp
+0920: ​
+0921: (
+0922: r
+0923: ~
+0924: j
+0925: prog
+0926: )
+0927: )
+0928: ,
+0929: \displaystyle=\operatorname{sigmoid}\!\left(F_{\mathrm{comp}}(\widetilde{r}_{j}^{\,\mathrm{prog}})\right),
+0930: p
+0931: j
+0932: fail
+0933: \displaystyle p_{j}^{\mathrm{fail}}
+0934: =
+0935: sigmoid
+0936: ⁡
+0937: (
+0938: F
+0939: fail
+0940: ​
+0941: (
+0942: r
+0943: ~
+0944: j
+0945: fail
+0946: )
+0947: )
+0948: .
+0949: \displaystyle=\operatorname{sigmoid}\!\left(F_{\mathrm{fail}}(\widetilde{r}_{j}^{\,\mathrm{fail}})\right).
+0950: The supervised objective combines phase cross-entropy with binary
+0951: cross-entropy for failure and completion:
+0952: ℒ
+0953: sup
+0954: =
+0955: \displaystyle\mathcal{L}_{\mathrm{sup}}={}
+0956: λ
+0957: phase
+0958: ​
+0959: ℒ
+0960: phase
+0961: +
+0962: λ
+0963: fail
+0964: ​
+0965: ℒ
+0966: fail
+0967: \displaystyle\lambda_{\mathrm{phase}}\mathcal{L}_{\mathrm{phase}}+\lambda_{\mathrm{fail}}\mathcal{L}_{\mathrm{fail}}
+0968: (9)
+0969: +
+0970: λ
+0971: comp
+0972: ​
+0973: ℒ
+0974: comp
+0975: .
+0976: \displaystyle+\lambda_{\mathrm{comp}}\mathcal{L}_{\mathrm{comp}}.
+0977: Each loss incorporates the position and class weighting described above.
+0978: Temporal consistency.
+0979: The supervised losses compare each prediction with its annotation, but do not
+0980: directly penalize disagreement between predictions. We add two terms to
+0981: address different forms of temporal inconsistency.
+0982: Within a window, we discourage short-lived phase changes using the
+0983: truncated log-probability smoothing loss of
+0984: MS-TCN
+0985: [
+0986: 27
+0987: ]
+0988: :
+0989: Δ
+0990: j
+0991: ,
+0992: c
+0993: \displaystyle\Delta_{j,c}
+0994: =
+0995: log
+0996: ⁡
+0997: p
+0998: j
+0999: ,
+1000: c
+1001: phase
+1002: −
+1003: log
+1004: ⁡
+1005: p
+1006: j
+1007: −
+1008: 1
+1009: ,
+1010: c
+1011: phase
+1012: ,
+1013: \displaystyle=\log p^{\mathrm{phase}}_{j,c}-\log p^{\mathrm{phase}}_{j-1,c},
+1014: (10)
+1015: ℒ
+1016: within
+1017: \displaystyle\mathcal{L}_{\mathrm{within}}
+1018: =
+1019: 1
+1020: |
+1021: 𝒜
+1022: |
+1023: ​
+1024: K
+1025: ​
+1026: ∑
+1027: j
+1028: ∈
+1029: 𝒜
+1030: ∑
+1031: c
+1032: =
+1033: 1
+1034: K
+1035: min
+1036: ⁡
+1037: (
+1038: Δ
+1039: j
+1040: ,
+1041: c
+1042: 2
+1043: ,
+1044: κ
+1045: 2
+1046: )
+1047: ,
+1048: \displaystyle=\frac{1}{|\mathcal{A}|K}\sum_{j\in\mathcal{A}}\sum_{c=1}^{K}\min\!\left(\Delta_{j,c}^{2},\kappa^{2}\right),
+1049: where
+1050: K
+1051: K
+1052: is the number of phases,
+1053: 𝒜
+1054: \mathcal{A}
+1055: contains positions for which
+1056: both adjacent timesteps have phase labels, and
+1057: κ
+1058: \kappa
+1059: is the truncation
+1060: threshold. Truncation caps the penalty on large changes rather than penalizing
+1061: them increasingly as their magnitude grows.
+1062: Overlapping windows can produce different predictions for the same
+1063: observation because they provide different preceding histories. We
+1064: penalize this disagreement at shared timestamps. For paired windows
+1065: a
+1066: a
+1067: and
+1068: b
+1069: b
+1070: from the same episode, let
+1071: 𝒪
+1072: \mathcal{O}
+1073: contain their
+1074: shared observation timestamps. Superscripts
+1075: a
+1076: a
+1077: and
+1078: b
+1079: b
+1080: identify
+1081: the window used to compute each prediction. We define
+1082: ℒ
+1083: overlap
+1084: =
+1085: 1
+1086: |
+1087: 𝒪
+1088: |
+1089: ∑
+1090: u
+1091: ∈
+1092: 𝒪
+1093: [
+1094: \displaystyle\mathcal{L}_{\mathrm{overlap}}=\frac{1}{|\mathcal{O}|}\sum_{u\in\mathcal{O}}\Big[
+1095: 1
+1096: 2
+1097: D
+1098: KL
+1099: (
+1100: 𝐩
+1101: u
+1102: a
+1103: ,
+1104: phase
+1105: ∥
+1106: 𝐩
+1107: u
+1108: b
+1109: ,
+1110: phase
+1111: )
+1112: \displaystyle\tfrac{1}{2}D_{\mathrm{KL}}\!\left(\mathbf{p}_{u}^{a,\mathrm{phase}}\|\mathbf{p}_{u}^{b,\mathrm{phase}}\right)
+1113: (11)
+1114: +
+1115: \displaystyle+{}
+1116: 1
+1117: 2
+1118: D
+1119: KL
+1120: (
+1121: 𝐩
+1122: u
+1123: b
+1124: ,
+1125: phase
+1126: ∥
+1127: 𝐩
+1128: u
+1129: a
+1130: ,
+1131: phase
+1132: )
+1133: \displaystyle\tfrac{1}{2}D_{\mathrm{KL}}\!\left(\mathbf{p}_{u}^{b,\mathrm{phase}}\|\mathbf{p}_{u}^{a,\mathrm{phase}}\right)
+1134: +
+1135: \displaystyle+{}
+1136: β
+1137: (
+1138: p
+1139: u
+1140: a
+1141: ,
+1142: fail
+1143: −
+1144: p
+1145: u
+1146: b
+1147: ,
+1148: fail
+1149: )
+1150: 2
+1151: ]
+1152: ,
+1153: \displaystyle\beta\left(p_{u}^{a,\mathrm{fail}}-p_{u}^{b,\mathrm{fail}}\right)^{2}\,\Big],
+1154: where
+1155: D
+1156: KL
+1157: D_{\mathrm{KL}}
+1158: is Kullback–Leibler divergence and
+1159: β
+1160: \beta
+1161: weights
+1162: the failure term. Symmetric KL compares the phase distributions, while
+1163: squared error compares the failure probabilities.
+1164: The complete fine-tuning objective is
+1165: ℒ
+1166: mon
+1167: =
+1168: ℒ
+1169: sup
+1170: +
+1171: λ
+1172: within
+1173: ​
+1174: ℒ
+1175: within
+1176: +
+1177: λ
+1178: overlap
+1179: ​
+1180: ℒ
+1181: overlap
+1182: .
+1183: \mathcal{L}_{\mathrm{mon}}=\mathcal{L}_{\mathrm{sup}}+\lambda_{\mathrm{within}}\mathcal{L}_{\mathrm{within}}+\lambda_{\mathrm{overlap}}\mathcal{L}_{\mathrm{overlap}}.
+1184: (12)
+1185: We update the monitoring heads, fusion modules, and visual and language LoRA
+1186: parameters; the remaining VLM parameters and the separate visual/context
+1187: encoders stay fixed. At deployment, the monitor returns the phase, failure,
+1188: and completion predictions for the final timestep, using only the instruction
+1189: and camera observations.
+1190: TABLE I:
+1191: Offline execution-monitoring performance.
+1192: All values are percentages; higher is better except spurious-switch
+1193: rate (
+1194: ↓
+1195: \downarrow
+1196: ). Fine-tuned results are mean
+1197: ±
+1198: \pm
+1199: standard
+1200: deviation over two SFT seeds. Bold denotes the best mean within
+1201: each annotation budget. Pointwise SFT is evaluated only at
+1202: 52 episodes. Gemini uses few-shot examples without parameter updates.
+1203: Phase
+1204: Completion
+1205: Failure
+1206: Spurious
+1207: SFT episodes
+1208: Method
+1209: Accuracy
+1210: Macro Recall
+1211: AP
+1212: AP
+1213: Switch Rate
+1214: ↓
+1215: \downarrow
+1216: 52
+1217: RoboMonitor-4B (Ours)
+1218: 93.09
+1219: ±
+1220: \pm
+1221: 0.29
+1222: 85.85
+1223: ±
+1224: \pm
+1225: 0.41
+1226: 87.60
+1227: ±
+1228: \pm
+1229: 0.01
+1230: 45.87
+1231: ±
+1232: \pm
+1233: 0.68
+1234: 5.58
+1235: ±
+1236: \pm
+1237: 0.22
+1238: Robometer-4B + Temporal SFT
+1239: 88.77
+1240: ±
+1241: \pm
+1242: 1.06
+1243: 81.78
+1244: ±
+1245: \pm
+1246: 0.41
+1247: 85.42
+1248: ±
+1249: \pm
+1250: 0.31
+1251: 59.39
+1252: ±
+1253: \pm
+1254: 3.11
+1255: 5.27
+1256: ±
+1257: \pm
+1258: 0.40
+1259: Qwen3-VL-4B + Temporal SFT
+1260: 86.76
+1261: ±
+1262: \pm
+1263: 2.29
+1264: 74.23
+1265: ±
+1266: \pm
+1267: 5.69
+1268: 74.01
+1269: ±
+1270: \pm
+1271: 10.85
+1272: 46.37
+1273: ±
+1274: \pm
+1275: 6.99
+1276: 4.95
+1277: ±
+1278: \pm
+1279: 0.12
+1280: Qwen3-VL-4B + Pointwise SFT
+1281: 85.42
+1282: ±
+1283: \pm
+1284: 0.58
+1285: 73.93
+1286: ±
+1287: \pm
+1288: 0.99
+1289: 70.14
+1290: ±
+1291: \pm
+1292: 2.29
+1293: 30.34
+1294: ±
+1295: \pm
+1296: 1.16
+1297: 15.23
+1298: ±
+1299: \pm
+1300: 7.30
+1301: 100
+1302: RoboMonitor-4B (Ours)
+1303: 93.63
+1304: ±
+1305: \pm
+1306: 1.04
+1307: 88.55
+1308: ±
+1309: \pm
+1310: 0.73
+1311: 92.29
+1312: ±
+1313: \pm
+1314: 1.17
+1315: 72.01
+1316: ±
+1317: \pm
+1318: 0.14
+1319: 3.17
+1320: ±
+1321: \pm
+1322: 0.04
+1323: Robometer-4B + Temporal SFT
+1324: 91.65
+1325: ±
+1326: \pm
+1327: 0.02
+1328: 86.22
+1329: ±
+1330: \pm
+1331: 0.12
+1332: 90.98
+1333: ±
+1334: \pm
+1335: 0.01
+1336: 67.68
+1337: ±
+1338: \pm
+1339: 0.43
+1340: 3.76
+1341: ±
+1342: \pm
+1343: 0.27
+1344: Qwen3-VL-4B + Temporal SFT
+1345: 91.19
+1346: ±
+1347: \pm
+1348: 0.01
+1349: 82.73
+1350: ±
+1351: \pm
+1352: 0.64
+1353: 84.81
+1354: ±
+1355: \pm
+1356: 0.27
+1357: 60.96
+1358: ±
+1359: \pm
+1360: 0.05
+1361: 3.58
+1362: ±
+1363: \pm
+1364: 0.16
+1365: –
+1366: Gemini Robotics ER 2 (few-shot)
+1367: 74.67
+1368: 61.19
+1369: 64.07
+1370: 32.53
+1371: 17.62
+1372: V
+1373: Experiments
+1374: We evaluate three questions:
+1375: Q1 (Label efficiency):
+1376: Does RoboMonitor improve execution monitoring when labeled data
+1377: are limited?
+1378: Q2 (Temporal stability):
+1379: Does Temporal SFT reduce spurious phase switching compared with
+1380: final-readout-only supervision?
+1381: Q3 (Closed-loop execution):
+1382: Can RoboMonitor support closed-loop task execution and failure recovery within a task-orchestration system?
+1383: V-A
+1384: Data and Tasks
+1385: Self-supervised corpus.
+1386: We pre-train RoboMonitor on 25 hours of multi-camera robot
+1387: trajectories collected during policy development, spanning
+1388: 12 manipulation tasks and two robot embodiments. Pre-training
+1389: uses synchronized RGB observations, recorded robot state, and
+1390: commanded actions, without phase, failure, or task-completion
+1391: annotations.
+1392: Supervised monitoring tasks.
+1393: We train a shared execution monitor on four manipulation tasks:
+1394: Reel Packing.
+1395: One arm inserts its gripper into a reel to pick it up and transfers
+1396: the reel to the other arm, which places it in a black tote.
+1397: The annotated phases are
+1398: Pick
+1399: ,
+1400: Handover
+1401: ,
+1402: and
+1403: Place
+1404: .
+1405: Electronic Component Insertion.
+1406: The robot picks up the electronic component, transports it,
+1407: and inserts it into its testing module. The annotated phases
+1408: are
+1409: Pick
+1410: ,
+1411: Transport
+1412: , and
+1413: Insert
+1414: .
+1415: Toolbox Sorting.
+1416: The robot sorts tools and small parts, including screwdrivers,
+1417: nuts, and bolts, into designated areas in Isaac Sim. The annotated
+1418: phases are
+1419: None
+1420: ,
+1421: Pick
+1422: ,
+1423: Transport
+1424: ,
+1425: and
+1426: Place
+1427: .
+1428: Humanoid Grasping.
+1429: The humanoid repositions a bin by pushing it to accommodate the
+1430: arms’ limited reach when transferring an object between them.
+1431: The annotated phases are
+1432: Push
+1433: ,
+1434: Pick
+1435: ,
+1436: and
+1437: Place
+1438: .
+1439: Reel Packing and Electronic Component Insertion are represented
+1440: in the self-supervised corpus, whereas Toolbox Sorting and
+1441: Humanoid Grasping are absent. All four tasks are included during
+1442: supervised fine-tuning. The monitor uses the union of their phase
+1443: labels as a shared seven-class vocabulary, with separate binary
+1444: outputs for failure and task completion.
+1445: V-B
+1446: Offline Evaluation
+1447: We compare supervised training budgets of 52 and 100 labeled
+1448: episodes across the four tasks. The 100-episode set contains 27 Reel Packing, 26 Humanoid
+1449: Grasping, 25 Toolbox Sorting, and 22 Electronic Component
+1450: Insertion episodes. The 52-episode set contains
+1451: 13 episodes per task and is nested within the larger set.
+1452: All methods are evaluated on the same held-out benchmark,
+1453: comprising 66 episodes and 7,022 observation windows. We
+1454: construct this benchmark to stress-test execution monitoring
+1455: across varied execution conditions. It combines nominal
+1456: executions, unsuccessful policy rollouts, and teleoperated
+1457: trajectories containing execution errors, including runs at
+1458: different controller update frequencies. This mixture tests
+1459: the models’ ability to recognize execution phases and distinguish
+1460: failures from successful behavior across variation in execution
+1461: timing and rollout quality. Each evaluation query contains
+1462: the task instruction and an eight-timestep causal observation
+1463: window from the available two or three camera streams.
+1464: For each fine-tuned configuration at each evaluated budget,
+1465: we report the mean and standard deviation over two SFT seeds.
+1466: Each run is evaluated using its validation-selected checkpoint,
+1467: and all methods use the same scoring procedure.
+1468: V-C
+1469: Baselines
+1470: We compare RoboMonitor with three fine-tuned configurations and
+1471: one few-shot embodied-reasoning baseline. Downstream SFT settings
+1472: are closely matched across the fine-tuned models, apart from the
+1473: supervision and architectural differences described below.
+1474: RoboMonitor uses a separate frozen visual/context branch and
+1475: associated fusion and readout modules, which are absent from
+1476: the Qwen3-VL and Robometer baselines.
+1477: Qwen3-VL-4B + Pointwise SFT.
+1478: We fine-tune Qwen3-VL-4B
+1479: [
+1480: 22
+1481: ]
+1482: using the same
+1483: eight-timestep causal observation windows as the Temporal SFT
+1484: variant. Only the final readout is supervised. Intermediate
+1485: readouts receive no supervision, and the within-window and
+1486: cross-window consistency objectives are omitted. We evaluate
+1487: this ablation at the 52-episode budget.
+1488: Qwen3-VL-4B + Temporal SFT.
+1489: We initialize from the same Qwen3-VL-4B foundation model and
+1490: apply Temporal SFT as defined in
+1491: subsection IV-B
+1492: .
+1493: Comparing the Pointwise and Temporal SFT variants measures
+1494: the combined contribution of dense causal supervision and
+1495: temporal consistency.
+1496: Robometer-4B + Temporal SFT.
+1497: We initialize from Robometer-4B
+1498: [
+1499: 14
+1500: ]
+1501: and apply the
+1502: same Temporal SFT objective. This provides a robot-specific
+1503: reward-model baseline under the same downstream supervision.
+1504: Gemini Robotics ER 2 (few-shot).
+1505: We evaluate Gemini Robotics ER 2
+1506: [
+1507: 28
+1508: ]
+1509: without parameter updates. The model receives labeled in-context
+1510: examples together with the task instruction and causal camera
+1511: observations and predicts the same monitoring outputs.
+1512: We report this result separately from the supervised
+1513: fine-tuning budgets.
+1514: RoboMonitor.
+1515: RoboMonitor transfers the visual and context encoders learned
+1516: during predictive pre-training and applies Temporal SFT for
+1517: downstream execution monitoring.
+1518: V-D
+1519: Closed-loop Evaluation
+1520: We deploy RoboMonitor in a graph-based task orchestrator similar to GaP
+1521: [
+1522: 5
+1523: ]
+1524: .
+1525: The orchestrator selects low-level skills and uses the monitor’s predictions to track execution progress and trigger predefined recovery behaviors. We evaluate two settings: Toolbox Sorting with a simulated bimanual UR7e system in Isaac Sim, and Reel Packing on a real bimanual UR7e workcell. We conduct 40 trials in each setting.
+1526: V-E
+1527: Implementation Details
+1528: Predictive pre-training is performed on eight NVIDIA H100 GPUs,
+1529: and supervised fine-tuning uses four GPUs. The real-world
+1530: execution monitor runs on a single NVIDIA RTX PRO 6000 Blackwell Max-Q GPU. During deployment, the monitor receives only the task instruction and camera observations; robot state and commands are not required.
+1531: V-F
+1532: Metrics
+1533: We report phase accuracy and macro recall, task-completion
+1534: average precision (AP), failure AP, and spurious-switch rate.
+1535: A spurious switch occurs when the predicted phase changes
+1536: between adjacent observations while the ground-truth phase
+1537: remains unchanged; lower is better. For closed-loop evaluation,
+1538: we report failure-detection recall, false recovery triggers,
+1539: recovery success, task-completion rate, and inference latency.
+1540: VI
+1541: Results
+1542: VI-A
+1543: Label-Efficient Monitoring (Q1)
+1544: Table I
+1545: reports monitoring performance
+1546: at the two annotation budgets. With 52 labeled episodes,
+1547: RoboMonitor achieves 93.09% mean phase accuracy and 85.85%
+1548: macro recall. These exceed Qwen3-VL with Temporal SFT by
+1549: 6.33 and 11.62 percentage points, respectively, and Robometer
+1550: with Temporal SFT by 4.32 and 4.07 points. RoboMonitor also
+1551: achieves the highest task-completion AP at this budget,
+1552: 87.60%, compared with 85.42% for Robometer and 74.01%
+1553: for Qwen3-VL.
+1554: The cross-budget comparison further supports label efficiency
+1555: for phase recognition. RoboMonitor trained with 52 episodes
+1556: exceeds the mean phase accuracy of Robometer trained with
+1557: 100 episodes (93.09% versus 91.65%), while its macro recall
+1558: is within 0.37 percentage points (85.85% versus 86.22%). RoboMonitor’s 52-episode model also exceeds Qwen3-VL trained
+1559: with 100 episodes in phase accuracy (93.09% versus 91.19%)
+1560: and macro recall (85.85% versus 82.73%).
+1561: RoboMonitor therefore achieves competitive phase recognition
+1562: with fewer labeled episodes on this benchmark.
+1563: Failure detection shows a different pattern at the smaller
+1564: budget. With 52 episodes, RoboMonitor obtains 45.87%
+1565: failure AP, below Robometer’s 59.39% and close to
+1566: Qwen3-VL’s 46.37%. With 100 episodes, RoboMonitor reaches
+1567: 93.63% phase accuracy, 88.55% macro recall, 92.29%
+1568: task-completion AP, and 72.01% failure AP. All four means exceed the corresponding Robometer and Qwen3-VL
+1569: results. Failure AP is higher by 4.33 and 11.05 percentage points,
+1570: respectively. The low-label advantage
+1571: is clearest for phase recognition and completion; stronger
+1572: failure detection is observed at the larger budget.
+1573: Gemini Robotics ER 2 achieves 74.67% phase accuracy and
+1574: 61.19% macro recall, below all fine-tuned configurations.
+1575: Its few-shot result provides a reference for monitoring with
+1576: labeled in-context examples and no parameter updates.
+1577: VI-B
+1578: Temporal Stability (Q2)
+1579: At the 52-episode budget, Qwen3-VL with Temporal SFT reduces
+1580: mean spurious-switch rate from 15.23% to 4.95% relative
+1581: to Pointwise SFT, a reduction of 10.28 percentage points.
+1582: Failure AP increases from 30.34% to 46.37%, while phase
+1583: accuracy increases more modestly, from 85.42% to 86.76%.
+1584: Thus, the reduction in switching is accompanied by improved
+1585: phase accuracy and failure AP. This ablation supports the
+1586: combined dense-supervision and temporal-consistency recipe.
+1587: Across the Temporal SFT configurations, phase accuracy and
+1588: switching rate favor different methods at the smaller budget.
+1589: RoboMonitor has the highest phase accuracy with 52 episodes,
+1590: while its spurious-switch rate is 5.58%, compared with
+1591: 5.27% for Robometer and 4.95% for Qwen3-VL.
+1592: With 100 episodes, RoboMonitor achieves the lowest mean switching rate, 3.17%, compared with 3.76% for Robometer
+1593: and 3.58% for Qwen3-VL. Switching rate should
+1594: therefore be interpreted alongside phase accuracy when
+1595: assessing execution-monitoring performance.
+1596: TABLE II:
+1597: Closed-loop deployment of RoboMonitor. Recovery success
+1598: is measured over attempted recoveries.
+1599: Metric
+1600: Reel Packing
+1601: Toolbox Sorting
+1602: Real
+1603: Sim
+1604: Trials
+1605: 40
+1606: 40
+1607: Failure events
+1608: 18
+1609: 12
+1610: Failures detected
+1611: 15/18 (83.3%)
+1612: 11/12 (91.7%)
+1613: False recovery triggers
+1614: 0
+1615: 0
+1616: Recovery success
+1617: 13/15 (86.7%)
+1618: 11/11 (100%)
+1619: Task completion
+1620: 35/40 (87.5%)
+1621: 39/40 (97.5%)
+1622: Inference latency
+1623: 180–200 ms
+1624: 180–200 ms
+1625: VI-C
+1626: Closed-loop Execution and Recovery (Q3)
+1627: Table II
+1628: summarizes deployment within the
+1629: task orchestrator. In simulated Toolbox Sorting, RoboMonitor
+1630: detects 11 of 12 failure events across 40 trials. All
+1631: 11 attempted recoveries succeed, and the integrated system
+1632: completes 39 trials (97.5%). In real-world Reel Packing,
+1633: RoboMonitor detects 15 of 18 failure events, and 13 of
+1634: the 15 attempted recoveries succeed. Thus, 13 of the
+1635: 18 encountered failures are detected and autonomously
+1636: recovered (72.2%). The system completes 35 of 40 real-world
+1637: trials (87.5%). No false recovery triggers are observed
+1638: in either setting.
+1639: Inference takes approximately 180–200 ms per observation
+1640: window. These trials demonstrate the use of RoboMonitor for
+1641: task progression and predefined recovery in simulation and
+1642: on a real robot. These deployments complement the four-task offline stress test
+1643: by measuring failure-event detection, recovery, and task completion
+1644: within the integrated monitor–orchestrator system on two tasks.
+1645: VII
+1646: Conclusion
+1647: We presented RoboMonitor, a label-efficient execution monitor that combines
+1648: predictive self-supervised pre-training with Temporal SFT. Across four
+1649: downstream manipulation tasks, RoboMonitor achieves 93.09% mean phase
+1650: accuracy and 85.85% macro recall with 52 labeled episodes, exceeding the
+1651: phase accuracy of the evaluated Qwen3-VL and Robometer baselines trained
+1652: with 100 episodes. An ablation of the supervised training objective further
+1653: shows that Temporal SFT reduces the Qwen3-VL spurious-switch rate from
+1654: 15.23% to 4.95% and increases failure AP from 30.34% to 46.37%
+1655: relative to Pointwise SFT. In closed-loop deployment, the integrated system
+1656: completes 39 of 40 simulated Toolbox Sorting trials and 35 of 40 real-world
+1657: Reel Packing trials, with no false recovery triggers observed in either
+1658: setting.
+1659: A limitation of the current formulation is that it assigns one global
+1660: execution phase to each timestep. This represents coordinated bimanual
+1661: behaviors such as handover, but cannot express asynchronous execution in
+1662: which two manipulators independently perform different subtasks at the same
+1663: time. Future work could instead use factorized or multi-label execution
+1664: states for individual manipulators, objects, or concurrent skills. We also
+1665: plan to augment the monitor’s categorical outputs with visually grounded
+1666: language reasoning
+1667: [
+1668: 29
+1669: ,
+1670: 30
+1671: ]
+1672: , allowing the planner to receive a
+1673: description of what changed in the scene in addition to a failure score.
+1674: Finally, conformal methods
+1675: [
+1676: 31
+1677: ]
+1678: could provide calibrated
+1679: uncertainty for deciding when the system should abstain, request additional
+1680: observations, or involve a human operator.
+1681: References
+1682: [1]
+1683: H. Fang
+1684: et al.
+1685: (2026)
+1686: MolmoAct2: action reasoning models for real-world deployment
+1687: .
+1688: External Links:
+1689: 2605.02881
+1690: ,
+1691: Link
+1692: Cited by:
+1693: §I
+1694: .
+1695: [2]
+1696: K. Black
+1697: et al.
+1698: (2025)
+1699: π
+1700: 0.5
+1701: \pi_{0.5}
+1702: : A vision-language-action model with open-world generalization
+1703: .
+1704: In
+1705: Proceedings of The 9th Conference on Robot Learning
+1706: ,
+1707: Proceedings of Machine Learning Research
+1708: , Vol.
+1709: 305
+1710: ,
+1711: pp. 17–40
+1712: .
+1713: External Links:
+1714: Link
+1715: Cited by:
+1716: §I
+1717: .
+1718: [3]
+1719: M. J. Kim K. Pertsch
+1720: et al.
+1721: (2025)
+1722: OpenVLA: an open-source vision-language-action model
+1723: .
+1724: In
+1725: Proceedings of The 8th Conference on Robot Learning
+1726: ,
+1727: Proceedings of Machine Learning Research
+1728: , Vol.
+1729: 270
+1730: ,
+1731: pp. 2679–2713
+1732: .
+1733: External Links:
+1734: Link
+1735: Cited by:
+1736: §I
+1737: .
+1738: [4]
+1739: B. Ichter
+1740: et al.
+1741: (2023)
+1742: Do as i can, not as i say: grounding language in robotic affordances
+1743: .
+1744: In
+1745: Proceedings of The 6th Conference on Robot Learning
+1746: ,
+1747: Proceedings of Machine Learning Research
+1748: , Vol.
+1749: 205
+1750: ,
+1751: pp. 287–318
+1752: .
+1753: External Links:
+1754: Link
+1755: Cited by:
+1756: §I
+1757: .
+1758: [5]
+1759: K. Chen
+1760: et al.
+1761: (2026)
+1762: GaP: a graph-as-policy multi-agent self-learning harness for variational automation tasks
+1763: .
+1764: External Links:
+1765: 2607.05369
+1766: ,
+1767: Link
+1768: Cited by:
+1769: §I
+1770: ,
+1771: §V-D
+1772: .
+1773: [6]
+1774: W. Xiao
+1775: et al.
+1776: (2026)
+1777: ENPIRE: agentic robot policy self-improvement in the real world
+1778: .
+1779: External Links:
+1780: 2606.19980
+1781: ,
+1782: Link
+1783: Cited by:
+1784: §I
+1785: .
+1786: [7]
+1787: J. Duan
+1788: et al.
+1789: (2024)
+1790: AHA: a vision-language-model for detecting and reasoning over failures in robotic manipulation
+1791: .
+1792: ArXiv
+1793: abs/2410.00371
+1794: .
+1795: External Links:
+1796: Link
+1797: Cited by:
+1798: §II
+1799: .
+1800: [8]
+1801: P. Pacaud, R. Garcia, S. Chen, and C. Schmid
+1802: (2026)
+1803: Guardian: detecting robotic planning and execution errors with vision-language models
+1804: .
+1805: External Links:
+1806: 2512.01946
+1807: ,
+1808: Link
+1809: Cited by:
+1810: §II
+1811: .
+1812: [9]
+1813: C. Agia
+1814: et al.
+1815: (2025)
+1816: Unpacking failure modes of generative policies: runtime monitoring of consistency and progress
+1817: .
+1818: In
+1819: Proceedings of The 8th Conference on Robot Learning
+1820: ,
+1821: Proceedings of Machine Learning Research
+1822: , Vol.
+1823: 270
+1824: ,
+1825: pp. 689–723
+1826: .
+1827: External Links:
+1828: Link
+1829: Cited by:
+1830: §II
+1831: .
+1832: [10]
+1833: R. Römer, A. Kobras, L. Worbis, and A. P. Schoellig
+1834: (2025)
+1835: Failure prediction at runtime for generative robot policies
+1836: .
+1837: Advances in Neural Information Processing Systems (NeurIPS)
+1838: .
+1839: Cited by:
+1840: §II
+1841: .
+1842: [11]
+1843: Q. Gu
+1844: et al.
+1845: (2025)
+1846: SAFE: multitask failure detection for vision-language-action models
+1847: .
+1848: In
+1849: The Thirty-ninth Annual Conference on Neural Information Processing Systems
+1850: ,
+1851: External Links:
+1852: Link
+1853: Cited by:
+1854: §II
+1855: .
+1856: [12]
+1857: F. Seligmann, E. Gospodinov, E. U. Dincer, and G. Neumann
+1858: (2026)
+1859: VLA-fail: efficient task failure detection for finetuned vision-language-action models
+1860: .
+1861: External Links:
+1862: 2606.21386
+1863: ,
+1864: Link
+1865: Cited by:
+1866: §II
+1867: .
+1868: [13]
+1869: W. Yu, J. Lv, Z. Ying, Y. Jin, C. Wen, and C. Lu
+1870: (2025)
+1871: ARMADA: autonomous online failure detection and human shared control empower scalable real-world deployment and adaptation
+1872: .
+1873: External Links:
+1874: 2510.02298
+1875: ,
+1876: Link
+1877: Cited by:
+1878: §II
+1879: .
+1880: [14]
+1881: A. Liang
+1882: et al.
+1883: (2026)
+1884: Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+1885: .
+1886: In
+1887: Robotics: Science and Systems 2026
+1888: ,
+1889: Cited by:
+1890: §II
+1891: ,
+1892: §V-C
+1893: .
+1894: [15]
+1895: Q. Chen
+1896: et al.
+1897: (2026)
+1898: SARM2: multi-task stage aware reward modeling for self improving robotic manipulation
+1899: .
+1900: arXiv preprint arXiv:2606.10305
+1901: .
+1902: Cited by:
+1903: §II
+1904: .
+1905: [16]
+1906: P. Schroeder, O. Biza, T. Weng, H. Luo, and J. Glass
+1907: (2025)
+1908: ROVER: recursive reasoning over videos with vision-language models for embodied tasks
+1909: .
+1910: External Links:
+1911: 2508.01943
+1912: ,
+1913: Link
+1914: Cited by:
+1915: §II
+1916: .
+1917: [17]
+1918: S. Nair, A. Rajeswaran, V. Kumar, C. Finn, and A. Gupta
+1919: (2022)
+1920: R3M: a universal visual representation for robot manipulation
+1921: .
+1922: In
+1923: 6th Annual Conference on Robot Learning
+1924: ,
+1925: External Links:
+1926: Link
+1927: Cited by:
+1928: §II
+1929: .
+1930: [18]
+1931: Y. J. Ma
+1932: et al.
+1933: (2023)
+1934: VIP: towards universal visual reward and representation via value-implicit pre-training
+1935: .
+1936: In
+1937: The Eleventh International Conference on Learning Representations
+1938: ,
+1939: External Links:
+1940: Link
+1941: Cited by:
+1942: §II
+1943: .
+1944: [19]
+1945: I. Radosavovic
+1946: et al.
+1947: (2023)
+1948: Robot learning with sensorimotor pre-training
+1949: .
+1950: In
+1951: Proceedings of The 7th Conference on Robot Learning
+1952: ,
+1953: Proceedings of Machine Learning Research
+1954: , Vol.
+1955: 229
+1956: ,
+1957: pp. 683–693
+1958: .
+1959: Cited by:
+1960: §II
+1961: .
+1962: [20]
+1963: M. Assran
+1964: et al.
+1965: (2023)
+1966: Self-supervised learning from images with a joint-embedding predictive architecture
+1967: .
+1968: In
+1969: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1970: ,
+1971: pp. 15619–15629
+1972: .
+1973: Cited by:
+1974: §II
+1975: ,
+1976: §IV-A
+1977: .
+1978: [21]
+1979: A. Bardes, Q. Garrido, J. Ponce, X. Chen, M. Rabbat, Y. LeCun, M. Assran, and N. Ballas
+1980: (2024)
+1981: Revisiting feature prediction for learning visual representations from video
+1982: .
+1983: Transactions on Machine Learning Research
+1984: .
+1985: External Links:
+1986: ISSN 2835-8856
+1987: ,
+1988: Link
+1989: Cited by:
+1990: §II
+1991: ,
+1992: §IV-A
+1993: .
+1994: [22]
+1995: S. Bai
+1996: et al.
+1997: (2025)
+1998: Qwen3-vl technical report
+1999: .
+2000: External Links:
+2001: 2511.21631
+2002: ,
+2003: Link
+2004: Cited by:
+2005: §IV-A
+2006: ,
+2007: §V-C
+2008: .
+2009: [23]
+2010: E. J. Hu
+2011: et al.
+2012: (2022)
+2013: LoRA: low-rank adaptation of large language models
+2014: .
+2015: In
+2016: International Conference on Learning Representations
+2017: ,
+2018: External Links:
+2019: Link
+2020: Cited by:
+2021: §IV-A
+2022: .
+2023: [24]
+2024: P. Agrawal
+2025: et al.
+2026: (2016)
+2027: Learning to poke by poking: experiential learning of intuitive physics
+2028: .
+2029: In
+2030: Advances in Neural Information Processing Systems
+2031: ,
+2032: Vol.
+2033: 29
+2034: ,
+2035: pp.
+2036: .
+2037: External Links:
+2038: Link
+2039: Cited by:
+2040: §IV-A
+2041: .
+2042: [25]
+2043: A. Ajith and C. Chamzas
+2044: (2026)
+2045: STRIPS-wm: learning grounded propositional strips-style world models from images
+2046: .
+2047: External Links:
+2048: 2606.06832
+2049: ,
+2050: Link
+2051: Cited by:
+2052: §IV-A
+2053: .
+2054: [26]
+2055: D. Ghosh
+2056: et al.
+2057: (2024)
+2058: Octo: an open-source generalist robot policy
+2059: .
+2060: In
+2061: Robotics: Science and Systems (RSS)
+2062: ,
+2063: Cited by:
+2064: §IV-B
+2065: .
+2066: [27]
+2067: Y. A. Farha and J. Gall
+2068: (2019)
+2069: MS-tcn: multi-stage temporal convolutional network for action segmentation
+2070: .
+2071: In
+2072: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2073: ,
+2074: Cited by:
+2075: §IV-B
+2076: .
+2077: [28]
+2078: Google DeepMind
+2079: (2026)
+2080: Gemini robotics ER 2 model card
+2081: .
+2082: Note:
+2083: https://deepmind.google/models/model-cards/gemini-robotics-er-2/
+2084: Published July 30, 2026; accessed September 15, 2026
+2085: Cited by:
+2086: §V-C
+2087: .
+2088: [29]
+2089: H. Liu, C. Li, Q. Wu, and Y. J. Lee
+2090: (2023)
+2091: Visual instruction tuning
+2092: .
+2093: In
+2094: NeurIPS
+2095: ,
+2096: Cited by:
+2097: §VII
+2098: .
+2099: [30]
+2100: M. Zawalski, W. Chen, K. Pertsch, O. Mees, C. Finn, and S. Levine
+2101: (2024)
+2102: Robotic control via embodied chain-of-thought reasoning
+2103: .
+2104: arXiv preprint arXiv:2407.08693
+2105: .
+2106: Cited by:
+2107: §VII
+2108: .
+2109: [31]
+2110: A. Z. Ren, A. Dixit, A. Bodrova, S. Singh, S. Tu, N. Brown, P. Xu, L. Takayama, F. Xia, J. Varley, Z. Xu, D. Sadigh, A. Zeng, and A. Majumdar
+2111: (2023)
+2112: Robots that ask for help: uncertainty alignment for large language model planners
+2113: .
+2114: In
+2115: 7th Annual Conference on Robot Learning
+2116: ,
+2117: External Links:
+2118: Link
+2119: Cited by:
+2120: §VII
+2121: .

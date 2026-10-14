@@ -1,0 +1,18 @@
+{
+  "recorded_at_utc": "2026-10-05T05:41:30Z",
+  "status": "fixed_on_old_development_before_any_new_test_v12_inference; secondary_exploratory_comparison_after_caption_slots_score_seen",
+  "model": "Qwen/Qwen3-VL-8B-Instruct",
+  "model_revision": "0c351dd01ed87e9c1b53cbc748cba10e6187ff3b",
+  "code": "experiments/prerequisite_probe/run_monitor_qwen.py",
+  "code_sha256": "720a601e504f7f0ec42faf550b054350d5dce4c3c4cf013a0b7d6fc447ed83b7",
+  "methods": ["D", "P", "F", "D2_review", "H0"],
+  "budget": "D/P/F each one 8-frame call, 512 max output tokens; D2 two calls; H0 P plus F two calls",
+  "old_development_summary": "24/24 structurally valid but B+ and H- prerequisite relations missed; P false-positive on B0 and H- in full v12 old run",
+  "protocol_deviation": "original runbook would stop new tests when old anchor/prerequisite relations are distorted; this secondary run is descriptive, not primary validation",
+  "new_input_archive_sha256": "8e557fe06f37454f2c73586468eaaf0fc5ac6cff51d1b0ae94e31bb1fd1bf593",
+  "dataset_freeze_sha256": {
+    "tray_crossbar": "9042e3db57585036d44c9adca1f1d90a82e1b91922867d2bf184280800f08ea2",
+    "source_bridge": "3fa477f0b6be5d12daa7604577ced3c51f00f3dcf32e0e2181cee9a0f844dba6"
+  },
+  "all_invalid_uncertain_runtime_failures_in_denominator": true
+}

@@ -1,0 +1,670 @@
+0001: GroundBench: A Factorized, Counterfactual Benchmarkfor Locating VLM Affordance Failures
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2609.13308v1 [cs.CV] 10 Sep 2026
+0010: GroundBench: A Factorized, Counterfactual Benchmark
+0011: for Locating VLM Affordance Failures
+0012: Sarthak Sattigeri
+0013: Affiliation:
+0014: Manipal University Jaipur
+0015: Affiliation:
+0016: https://github.com/S1rlvk/groundbench
+0017: Abstract
+0018: A companion evaluation found that naming the target part in a manipulation prompt raises action accuracy by 0.32 to 0.63 across eight vision-language models, with no model beating a constant baseline until the part is named. Naming the part, however, supplies a variable a real system must still produce; the comparison therefore cannot distinguish visual grounding, mechanical reasoning, and category-to-action association. We introduce GroundBench to separate these explanations. Its six conditions form a branch-and-merge design in which each edge adds one controlled information bundle, and a counterfactual re-ask names a real noncanonical part visible in the same image. We evaluate three OpenAI models on 1,068 predictions. Supplying the benchmark’s target region while withholding its identity leaves all three models at or below the 0.53 majority baseline (0.26, 0.26 and 0.53), despite near-exact reproduction of the supplied region. Supplying target identity without location instead yields 0.74, 0.68 and 0.68. Every above-baseline gain occurs where the supplied target-part category alone determines the action in this curated set. A no-vision control costs GPT-5 nothing on these conditions and improves two of three scores, evidence consistent with category-to-action association contributing substantially to the companion result; GPT-4o mini drops on one condition, leaving that interpretation non-universal. Adding joint type and motion axis never helps across six model-stratum comparisons. GPT-5 follows the noncanonical request on 0.86 of counterfactual pairs at a 0.07 shortcut rate, but fails every
+0019: push
+0020: to
+0021: lift-vertical
+0022: case. GroundBench thus identifies which supplied information changes affordance behavior while exposing when apparently grounded performance can be reproduced from text.
+0023: Keywords.
+0024: vision-language models; affordance prediction; part grounding; counterfactual evaluation; benchmark construction; measurement validity; articulated objects.
+0025: 1
+0026: Introduction
+0027: Asking a vision-language model what a robot should do with an object bundles at least three separable questions: which part matters, where that part is, and what happens if you act on it. A companion evaluation isolated the first two of these by comparing an open prompt, in which the model chooses which part to discuss, against a prompt that names the target part outright. The gap between them was large and consistent: across eight models from three developers, naming the part raised action accuracy by 0.32 to 0.63, and recovered the
+0028: push
+0029: action almost completely, from a single correct prediction across 64 model-object evaluations to 7 or 8 out of 8 for seven of the eight models. Under the open prompt, no model beat a constant answer that ignores the image; once the part was named, all eight did.
+0030: That comparison is informative and also incomplete by construction. Naming the part in the prompt is not a measurement of a part detector, it is a substitute for one. The result tells us what a pipeline could achieve if part identification were solved perfectly upstream of the language model. It does not tell us whether any of the eight models can solve that upstream problem themselves, whether the improvement reflects real mechanical reasoning about the named part or a simpler match between an object category and its typical action, or what happens to accuracy as the amount of supplied information is varied more finely than a single before-and-after step.
+0031: GroundBench is built to ask those remaining questions directly rather than infer them from a two-point comparison. It replaces the earlier evaluation’s open-prompt-versus-named-part design with six conditions: nothing beyond the image, the object’s category, the target part’s identity, the part’s image region with its identity withheld, that region together with its identity, and a bundled mechanics descriptor containing joint type and motion axis. Identity and region are added independently on top of the object category, not one after the other, so a model given the region without the identity is not partway down a single sequence toward the identity; it is on the other branch. Each edge changes one controlled information bundle while holding the other prompt fields fixed. A separate counterfactual construction supplies a real but noncanonical part name from the same image and object. It tests whether the model’s output follows the changed part request or defaults to the original target’s action; because the part name itself may imply an action, this is a prompt-compliance test rather than proof of visual attention.
+0032: This paper describes that construction: the six-condition factorized design, the data sources and how they are audited, the counterfactual and free-response variants, and the metrics and baselines built to score them. We built explicit safeguards against two measurement errors the companion evaluation only caught by testing its own numbers against a constant baseline after the fact, a threshold that let a baseline ignoring the image score 0.929, and an action label rule wrong on 4 of 19 objects. Every threshold and baseline in GroundBench’s evaluator is derived from the data being scored rather than fixed in advance, specifically so a result cannot look strong only because the check for a trivial explanation was never run. Section
+0033: 4
+0034: reports what the design finds when run against three OpenAI models: the condition that supplies the benchmark’s target region without a part name is worth nothing above a constant baseline, while gains occur only in conditions where the supplied target-part category already determines the answer within the curated set.
+0035: 2
+0036: Related work
+0037: GroundBench follows a diagnostic rather than leaderboard-only view of evaluation. CLEVR separates visual-reasoning abilities that aggregate VQA scores conflate
+0038: [
+0039: 1
+0040: ]
+0041: ; CheckList organizes behavioral tests around capabilities and controlled perturbations
+0042: [
+0043: 2
+0044: ]
+0045: ; and sanity checks for saliency methods demonstrate that a plausible-looking metric can remain insensitive to the model or data it is meant to explain
+0046: [
+0047: 3
+0048: ]
+0049: . These are instances of the broader shortcut-learning problem: a system can perform well by exploiting an unintended but predictive rule
+0050: [
+0051: 4
+0052: ]
+0053: . GroundBench applies the same methodological principle to part-level affordance prompts by varying supplied information and reporting trivial baselines alongside model scores.
+0054: Language priors are a particularly relevant shortcut in multimodal evaluation. VQA v2 pairs similar images with different answers to the same question so that language alone is insufficient
+0055: [
+0056: 5
+0057: ]
+0058: ; VQA-CP changes answer priors between train and test
+0059: [
+0060: 6
+0061: ]
+0062: ; and RUBi explicitly measures and suppresses question-only bias
+0063: [
+0064: 7
+0065: ]
+0066: . Winoground similarly uses controlled image-caption pairs with identical words in different arrangements to probe whether success reflects cross-modal composition
+0067: [
+0068: 8
+0069: ]
+0070: . GroundBench’s no-vision control and within-object action-contrast re-ask inherit this logic, but target the distinction between a supplied part category, its image region, and the action label.
+0071: Referring-expression benchmarks such as ReferItGame evaluate language used to identify regions in natural images
+0072: [
+0073: 9
+0074: ]
+0075: , while MDETR learns text-conditioned detection and is evaluated on phrase grounding and referring-expression comprehension
+0076: [
+0077: 10
+0078: ]
+0079: . GroundBench does not propose a new grounding architecture. Instead, it asks a downstream diagnostic question those localization benchmarks do not: once a region or its semantic identity is supplied, which one changes affordance selection, and can the resulting score be obtained without the image?
+0080: Embodied language and vision-language systems connect semantic knowledge to action at several levels. SayCan constrains language-model plans with learned robotic affordances
+0081: [
+0082: 11
+0083: ]
+0084: ; PaLM-E incorporates continuous sensor inputs into an embodied multimodal language model
+0085: [
+0086: 12
+0087: ]
+0088: ; and RT-2 maps vision-language inputs directly to tokenized robot actions
+0089: [
+0090: 13
+0091: ]
+0092: . ManipBench evaluates lower-level manipulation reasoning and reports articulated-object manipulation as its hardest category, at 0.396 mean accuracy across 33 model variants against roughly 0.99 for humans
+0093: [
+0094: 16
+0095: ]
+0096: . Work on non-humanoid robot morphologies also reports substitution of common actions for correct affordances
+0097: [
+0098: 17
+0099: ]
+0100: . GroundBench narrows the unit of analysis further, separating target identity, target region, and action choice within a single articulated-object prompt.
+0101: Prior affordance work provides complementary supervision and tasks. The UMD Part Affordance dataset supplies real tool images with part-level affordance annotations
+0102: [
+0103: 18
+0104: ]
+0105: ; Where2Act predicts localized interaction regions and trajectories for articulated objects
+0106: [
+0107: 14
+0108: ]
+0109: ; GAPartNet supplies generalizable actionable-part categories
+0110: [
+0111: 19
+0112: ]
+0113: ; and AffordanceLLM uses VLM knowledge for affordance grounding in previously unseen categories
+0114: [
+0115: 15
+0116: ]
+0117: . SAPIEN and PartNet-Mobility provide the articulated simulation substrate used by several of these lines of work
+0118: [
+0119: 20
+0120: ]
+0121: . None of these datasets was designed around a factorized prompt intervention or a within-image action-contrast re-ask. GroundBench contributes those controls rather than a replacement affordance dataset or policy.
+0122: 3
+0123: Benchmark design
+0124: 3.1
+0125: A six-condition factorized design
+0126: Each example pairs an image with one or more annotated candidate parts, one of which is the target, and asks a model to name the actionable part, the action it affords, and where it is. GroundBench evaluates every example under a subset of six conditions:
+0127: image_only
+0128: : no information beyond the image itself.
+0129: object_named
+0130: : the object’s category is given.
+0131: part_named
+0132: : the object category and target part id/category are given.
+0133: localization_only
+0134: : the object category and target region are given, as a point and bounding box, while the target part id/category are withheld.
+0135: localization_shown
+0136: : the object category, target part id/category, and target region are given.
+0137: mechanics_shown
+0138: : a bundled mechanics descriptor (joint type and motion axis) is added to
+0139: localization_shown
+0140: .
+0141: These six conditions are not one single chain: from
+0142: object_named
+0143: , they branch.
+0144: part_named
+0145: and
+0146: localization_only
+0147: independently add one different information bundle to
+0148: object_named
+0149: , target-part identity in one case and target region in the other.
+0150: localization_shown
+0151: is where the branches merge, and
+0152: mechanics_shown
+0153: adds the joint-type-and-axis descriptor. Thus the structure is
+0154: image_only
+0155: →
+0156: \to
+0157: object_named
+0158: →
+0159: \to
+0160: {
+0161: part_named
+0162: ,
+0163: localization_only
+0164: }
+0165: →
+0166: \to
+0167: localization_shown
+0168: →
+0169: \to
+0170: mechanics_shown
+0171: : nested along each edge, not end to end as a single sequence. We treat part id/category and joint type/axis as predefined bundles; the design does not identify the effects of fields within either bundle.
+0172: object_named
+0173: and
+0174: part_named
+0175: correspond respectively to the open and named-part prompts in the companion evaluation; the remaining three are new and were built to measure what that comparison could not.
+0176: For brevity, “target identity” below denotes the supplied part id/category bundle, and “target region” denotes the supplied point/bounding-box bundle. Neither term implies that its component fields have been separately identified.
+0177: localization_only
+0178: is the control this branching makes possible, and it is not simply a weaker
+0179: localization_shown
+0180: .
+0181: localization_shown
+0182: hands over a region
+0183: and
+0184: the target part’s id/category, so any gain relative to
+0185: object_named
+0186: could come from either bundle.
+0187: localization_only
+0188: withholds the target part’s id/category while keeping the region, and
+0189: part_named
+0190: does the reverse, so the pair separates knowing
+0191: where
+0192: the target part is from knowing
+0193: what it is called
+0194: . Both retain the object-category line already supplied by
+0195: object_named
+0196: ; consequently, each differs from that common predecessor by one bundle. This distinction is the one the companion evaluation’s named-part prompt could not draw at all, and Section
+0197: 4
+0198: shows the two bundles have very different measured associations with accuracy.
+0199: Neither
+0200: image_only
+0201: nor
+0202: object_named
+0203: supplies a goal, and an object can have more than one genuinely actionable part: a washing machine has both a door and buttons, each a real, correct answer to a different intended task. Scoring these two conditions against one hidden canonical part would conflate a model failing to find any part with one choosing a different, equally valid part for a task the prompt never specified, the exact ambiguity the companion evaluation’s own open prompt carried. We score them instead as task-free discovery: a prediction counts as a valid part selection if it names any real annotated part whose action is defined, and the predicted action is checked against that part’s own action rather than the hidden target’s. A model that names the door and correctly says
+0204: pull
+0205: is scored correct here, even though this benchmark’s own audit designated a button as the canonical target for that object. In conditions where the target is established explicitly by its identity or supplied region, this task-free ambiguity no longer applies and scoring uses the designated target. We separately report, for every condition, whether a prediction lands on the same specific part the audit designated, which coincides with the ordinary part-selection figure once the target identity is supplied and is a stricter, usually lower number before that. An alternative fix, adding an explicit goal that stays fixed across the whole design (for instance, “turn the camera on”) and inserting a seventh condition between
+0206: object_named
+0207: and
+0208: part_named
+0209: , would match the causal story more precisely but requires writing a real goal for every object, phrased abstractly enough not to name the part or action outright; we defer that as a larger extension rather than build it here.
+0210: 3.2
+0211: Data sources and strata
+0212: GroundBench draws on two source datasets, each split into an audited and an unaudited stratum that are never pooled into a single count without saying so. The GAPartNet stratum (1,046 raw articulated objects, automatically converted where a usable render and part annotation exist) yields 4,133 records across 600 objects; its action distribution is dominated by
+0213: push
+0214: (2,978 records, nearly all individually annotated keyboard keys and remote buttons) over
+0215: pull
+0216: (1,096) and
+0217: lift-vertical
+0218: (59), and every record in this stratum uses a target-highlighted render rather than a clean one, which makes it usable for
+0219: localization_shown
+0220: and above but not for
+0221: image_only
+0222: or
+0223: object_named
+0224: without leaking the answer. A curated stratum of 19 GAPartNet objects, the same 19 individually spot-checked in the companion evaluation, uses clean, non-highlighted renders instead; 17 of the 19 have at least one other annotated part on the same object available as a real counterfactual distractor, and the remaining two, a printer’s single button and a dishwasher’s single door, do not.
+0225: The UMD stratum contributes 58,478 records at one per video frame across roughly 105 real tool instances, and a curated stratum of the same 28 objects used in the companion evaluation’s spatial task, each reduced to one representative frame with a grasp point verified against the dataset’s own segmentation mask rather than approximated. All 28 curated UMD objects carry at least one real non-target affordance region on the same object (26 have exactly one, such as a hammer’s head alongside its handle; two mugs have two), which the bulk, per-frame stratum does not guarantee as reliably across every frame.
+0226: 3.3
+0227: Counterfactual construction
+0228: A part-selection accuracy computed only over correctly identified targets cannot distinguish a model that recognizes the part it was asked about from one that recognizes the object and answers with that object’s typical action regardless of which part was named. GroundBench’s counterfactual generator addresses this directly rather than through a different accuracy computation: for every example with two or more annotated candidate parts, it emits a derived example per non-target part, keeping the same image and candidate parts but declaring one noncanonical part as the requested target. The original benchmark target remains recorded in the derived example’s metadata, so a model that answers with the original target’s action instead of the noncanonical part’s action produces a distinguishable, reportable shortcut outcome rather than a hidden success. We call this a counterfactual re-ask throughout; it changes the requested target, not the image. Applied to the 19 curated GAPartNet objects, this construction yields 247 counterfactual examples from the 17 qualifying objects, ranging from a single swap on objects with only two annotated parts to 59 on a keyboard whose many individually annotated keys each count as a separate real distractor.
+0229: This is a prompt-level construction: the image, the object, and the set of real candidate parts are unchanged, only which part is declared the target changes. It does not composite a part from a different object into the scene, and it does not edit mesh geometry to substitute a differently-articulated part into the same location; both are real, more expensive extensions we have deliberately deferred rather than attempted here.
+0230: 3.4
+0231: Action-contrast mining
+0232: The exhaustive re-ask above only tests action compliance when the noncanonical part’s action differs from the original benchmark target’s. Scoring its 247 examples against that criterion found just 19 (7.7%) informative, because most candidate parts on one object share a single action, a keyboard’s dozens of keys all being
+0233: push
+0234: being the extreme case. Rather than re-ask exhaustively and hope some pairs turn out informative, we built a second construction that mines directly for objects containing at least two distinct, defined action labels among their annotated parts.
+0235: Applied to the bulk GAPartNet stratum (600 objects), only 8 qualify. Applied to the remaining roughly 446 raw objects that never passed the bulk converter’s render-availability filter, 49 more qualify, every one of them lacking any render at all. We rendered 47 of these with the same offscreen renderer used for the curated stratum (2 already had renders from that earlier build), excluded 8 for the same closed-pose ambiguity that build’s own methodology caught, and visually verified the projected bounding box of every remaining candidate part against its actual render, 150 candidate-part projections in total. 24 failed, the box landing off the object, on a featureless area, or on the object’s own silhouette rather than a real part boundary, and were excluded before any model evaluation.
+0236: The original 8 bulk-stratum objects turned out to be unusable for a second, independent reason: their images are inherited from that stratum’s per-target highlighted renders, which show the
+0237: original
+0238: target highlighted rather than the
+0239: swapped
+0240: one the record declares, so the visual cue and the declared target disagree. Rendering these 8 clean did not rescue them either; applying the same verification bar to their contrast parts left only one object’s pair intact. All 8 objects and their 14 derived pairs are retained in the released data as a documented record of both findings, explicitly tagged as excluded from evaluation, not used in any figure below.
+0241: The frozen action-contrast pool is 32 objects and 74 pairs, entirely clean renders with verified exact boxes. Once model predictions exist we report three figures rather than one: pair-weighted compliance (every pair counted once), object-macro compliance (every object’s own mean counted once, so an object contributing several pairs cannot outweigh one contributing a single pair), and a 95% bootstrap interval resampled by object rather than by pair, since pairs from the same object are correlated evidence, not independent trials. A transition table records compliance and shortcut rates separately for each observed (original action, counterfactual action) pair, so a low pooled figure driven by one especially hard transition direction is visible rather than hidden.
+0242: 3.5
+0243: Scoring a free-form response
+0244: The companion evaluation also asked whether a fixed label set was itself suppressing an answer a model would otherwise give, by comparing accuracy under a constrained label set against free prose describing the same named part, scored against keyword sets fixed before seeing any output. GroundBench reproduces this as a variant of
+0245: part_named
+0246: rather than as a sixth condition, since it changes the answer’s format rather than the information supplied to produce it: a prediction may carry free-form text scored against an action’s keyword set instead of a label drawn from the fixed action vocabulary. The keyword table records, in the same file that defines it, that its
+0247: push
+0248: entry is deliberately more permissive than the others, matching a bias the companion evaluation disclosed in its own scoring rather than treating that asymmetry as invisible.
+0249: 3.6
+0250: Metrics and measurement safeguards
+0251: For every scored condition, GroundBench reports part-selection accuracy, action accuracy, two conditional action accuracies, and two localization measures, evaluated against two baselines that ignore the image entirely.
+0252: The two conditional accuracies answer different questions and are reported separately rather than conflated: one restricts to predictions that named the exact designated part, the other to predictions whose point fell within a data-derived distance of the audited target regardless of what part name was given. A model can satisfy one without the other, naming the right part while pointing at the wrong spot, or pointing correctly while misnaming the part, and a single conditional accuracy would hide whichever failure mode it wasn’t built to catch.
+0253: The companion evaluation’s own reported errors motivate the localization safeguard specifically. A hand-picked distance threshold of 0.15 of the image diagonal, chosen before any model output existed, turned out to be looser than how tightly the underlying datasets center their ground truth, so a constant answer that never looks at the image scored a 0.929 hit rate under that threshold and made three real models look nearly as good as a baseline that ignores the image. GroundBench derives its localization threshold from the spread of the target centers actually being evaluated, and reports what the same constant baseline scores at that same threshold alongside every real hit-rate result, so a repeat of that error would be visible in the same row rather than requiring a separate check months later. An object-center baseline, distance from an object’s own visual center rather than the image’s center, is reported alongside the simpler image-center baseline for the same reason: an object rarely fills the frame symmetrically, and a model that does no better than pointing at wherever the object roughly is should not be mistaken for one reasoning about which part within it matters.
+0254: 4
+0255: Results
+0256: We evaluated three OpenAI models, GPT-4o mini, GPT-5 mini and GPT-5, across the two curated strata and the frozen action-contrast pool: 1,068 scored predictions for $4.17, with every requested prediction returned and no unusable responses. Section
+0257: 4.2
+0258: reports a no-vision control on the same models; Section
+0259: 4.5
+0260: reports a separate open-weight pilot whose main value is a measurement lesson rather than a result.
+0261: 4.1
+0262: A location is not a name
+0263: Condition
+0264: GPT-4o mini
+0265: GPT-5 mini
+0266: GPT-5
+0267: Answer in supplied text?
+0268: image_only
+0269: 0.05
+0270: 0.16
+0271: 0.26
+0272: no
+0273: object_named
+0274: 0.26
+0275: 0.26
+0276: 0.42
+0277: no
+0278: localization_only
+0279: 0.26
+0280: 0.26
+0281: 0.53
+0282: no
+0283: part_named
+0284: 0.74
+0285: 0.68
+0286: 0.68
+0287: yes
+0288: localization_shown
+0289: 0.84
+0290: 0.68
+0291: 0.89
+0292: yes
+0293: mechanics_shown
+0294: 0.68
+0295: 0.53
+0296: 0.79
+0297: yes
+0298: Majority-action baseline
+0299: 0.53
+0300: 0.53
+0301: 0.53
+0302: —
+0303: Table 1:
+0304: Action accuracy on the 19 audited GAPartNet objects, scored uniformly against the audited target’s action in every condition. The evaluator also reports a selection-gated variant, which credits an action only once the model has named a valid part, and we use the ungated measure here for two reasons. The row every condition is compared against is a constant answer that ignores the image and selects no part at all, so gating the models on a selection the baseline never has to make is not a like-for-like comparison. Moreover, the gate applies only to the two task-free conditions: in the other four, the prompt establishes the target through its identity, its supplied region, or both. A gated column would therefore measure one quantity for the task-free rows and another for the target-established rows. The rightmost column is the evaluator’s own leakage check, computed over the examples being scored rather than asserted: it reports whether every part sharing a category also shares an action, so that the category string handed to the model in that condition determines the answer without reference to the image. No condition in the upper block clears the constant-answer baseline for any model.
+0305: part_named
+0306: and
+0307: localization_shown
+0308: clear it for every model;
+0309: mechanics_shown
+0310: clears it for two models and ties it for GPT-5 mini. Under the gated variant
+0311: image_only
+0312: falls to 0.05, 0.05 and 0.00 and
+0313: object_named
+0314: to 0.21, 0.05 and 0.16, no other row changes, and the comparison this section rests on lies entirely among rows it does not affect. The two readings are not ordered one above the other: on the curated UMD stratum the gated figure for GPT-5 under
+0315: image_only
+0316: is 0.29 against 0.04 for the measure used here.
+0317: The upper and lower blocks of the table divide exactly where the leakage check does, and the boundary is not the boundary the design was built around.
+0318: Consider
+0319: localization_only
+0320: against
+0321: part_named
+0322: . The first supplies the benchmark’s target-region bounding box and point while withholding what the part is called; the second supplies the identity and no target region. On the same 19 objects, the same models, and the same action vocabulary, the region condition scores 0.26, 0.26 and 0.53 against a majority-action baseline of 0.53, and the identity condition scores 0.74, 0.68 and 0.68. Not one model exceeds the baseline when given the region alone, and GPT-5 lands on it exactly, 10 of 19 in both cases. Seven target boxes are verified exact projections and 12 are verified approximations, as detailed in Section
+0323: 5
+0324: , so this result concerns the benchmark-supplied region rather than a claim of perfect geometric ground truth.
+0325: This is not a failure to use the supplied region. Under
+0326: localization_only
+0327: the models reproduce it almost exactly, with localization hit rates of 1.00, 0.84 and 0.95 and mean centre distances of 0.000, 0.025 and 0.012, against 0.21 for a constant answer at the same data-derived threshold. They take the box, put their point inside it, and still do not select the correct action more often than the constant baseline. In this sample, using the supplied region and mapping the target-part category to an action are separable behaviors, and only the second is associated with the companion evaluation’s gain.
+0328: The leakage column offers a direct alternative explanation. Every above-baseline score in the lower block occurs under a condition containing a target-part category, such as
+0329: hinge_door
+0330: or
+0331: slider_button
+0332: , from which the action follows by lookup across the whole curated set. Thus a model could obtain these gains by reading the category and consulting a five-entry mapping rather than inspecting the image. Because the companion evaluation’s headline gap of 0.32 to 0.63 crosses this same boundary, the present result is evidence consistent with text association contributing substantially to that gap; it does not estimate a unique causal share from this 19-object sample.
+0333: 4.2
+0334: The no-vision control
+0335: We built a
+0336: text_only
+0337: control that reissues every prompt with the image content block omitted entirely and ran it against all three models on the same 19 objects, 342 predictions for $1.06. We scope this control to GAPartNet; the curated UMD stratum’s majority-action baseline is already 1.00, so removing the image there cannot separate a model using it from one that cannot miss. We did not run a corresponding counterfactual no-vision control. Such a control would not preserve visual grounding, but it would reveal how much counterfactual compliance is achievable from the supplied part-category text alone; its absence limits the interpretation in Section
+0338: 4.4
+0339: .
+0340: Condition (leak flag)
+0341: GPT-4o mini
+0342: GPT-5 mini
+0343: GPT-5
+0344: localization_only
+0345: (no)
+0346: 5
+0347: →
+0348: \to
+0349: 5
+0350: 5
+0351: →
+0352: \to
+0353: 9
+0354: 10
+0355: →
+0356: \to
+0357: 11
+0358: part_named
+0359: (yes)
+0360: 14
+0361: →
+0362: \to
+0363: 11
+0364: 13
+0365: →
+0366: \to
+0367: 12
+0368: 13
+0369: →
+0370: \to
+0371: 17
+0372: localization_shown
+0373: (yes)
+0374: 16
+0375: →
+0376: \to
+0377: 9
+0378: 13
+0379: →
+0380: \to
+0381: 12
+0382: 17
+0383: →
+0384: \to
+0385: 17
+0386: mechanics_shown
+0387: (yes)
+0388: 13
+0389: →
+0390: \to
+0391: 11
+0392: 10
+0393: →
+0394: \to
+0395: 10
+0396: 15
+0397: →
+0398: \to
+0399: 17
+0400: Table 2:
+0401: Correct out of 19, image-shown
+0402: →
+0403: \to
+0404: text-only, on the same objects and prompts. Baseline (majority action) is 10 of 19.
+0405: For GPT-5 the result is consistent with the leakage diagnosis. On every condition the check flags, removing the image costs nothing in this run, and the score rises from 13 to 17 on
+0406: part_named
+0407: and from 15 to 17 on
+0408: mechanics_shown
+0409: .
+0410: localization_only
+0411: , the condition the previous subsection’s headline claim rests on, moves from 10 to 11 of 19 with no image at all, with bootstrap intervals of
+0412: [
+0413: 0.32
+0414: ,
+0415: 0.74
+0416: ]
+0417: [0.32,0.74]
+0418: and
+0419: [
+0420: 0.37
+0421: ,
+0422: 0.79
+0423: ]
+0424: [0.37,0.79]
+0425: . These intervals are descriptive rather than an equivalence test, but the direction is consistent with a model relying primarily on the supplied text in the leak-flagged conditions.
+0426: GPT-5 mini’s shifts are small in both directions and its intervals overlap; we read this control as uninformative for that model rather than as evidence either way.
+0427: GPT-4o mini complicates the story rather than confirming it.
+0428: localization_shown
+0429: drops from 16 of 19 to 9 of 19 with the image removed, with bootstrap intervals of
+0430: [
+0431: 0.68
+0432: ,
+0433: 1.0
+0434: ]
+0435: [0.68,1.0]
+0436: and
+0437: [
+0438: 0.26
+0439: ,
+0440: 0.68
+0441: ]
+0442: [0.26,0.68]
+0443: . This is evidence that the image condition changes this model’s behavior even though the target-part category is sufficient within the dataset. The model also wrapped nearly every otherwise usable answer in fenced JSON rather than returning the requested bare object: 113 of 114 image-shown responses violated the strict format, as did 66 of 114 text-only responses. Of the latter, one used an action outside the benchmark vocabulary and was normalized to
+0444: none
+0445: , making it incorrect; the other 65 were semantically recoverable fenced objects. This protocol noncompliance introduces a model-specific parsing path. With one sample per prompt and API-default decoding, this run cannot distinguish visual dependence, sampling variation, and any interaction with that recovery path.
+0446: The overall result is therefore mixed. GPT-5’s result aligns with the leakage-check argument on every condition it was built to test; GPT-4o mini disagrees on one of the three. Replicated sampling or a paired test on a larger audited set is needed before treating either change as a stable model-level effect.
+0447: 4.3
+0448: More information is not monotonically better
+0449: Supplying ground-truth joint type and motion axis on top of the target region and identity lowers action accuracy for every model on GAPartNet, from 0.84 to 0.68, 0.68 to 0.53 and 0.89 to 0.79, and for two of three on the curated UMD stratum, from 1.00 to 0.93 twice. Across six model-stratum pairs, the mechanics-enriched condition never improves on its direct predecessor,
+0450: localization_shown
+0451: . Mechanics were available for every part scored under this condition, so this is not a coverage gap being reported as a decline.
+0452: We do not have a mechanism for this and will not invent one from three points per stratum. What it does establish is that this design’s information ordering, which is a claim about what a prompt supplies, does not induce the matching ordering in accuracy, so a benchmark of this shape cannot assume more grounding is monotonically better and read a drop as noise. The effect is consistent in direction across every model and both strata, which is the part that makes it worth reporting rather than the size of any single drop.
+0453: 4.4
+0454: Counterfactual compliance, and where it breaks
+0455: On the frozen 74-pair pool, all 74 pairs are informative in the sense of Section
+0456: 3.4
+0457: , spanning 32 distinct objects. Compliance with the swapped-in part is 0.66, 0.84 and 0.86 for GPT-4o mini, GPT-5 mini and GPT-5, with object-macro rates of 0.68, 0.79 and 0.83 and object-clustered 95% intervals of
+0458: [
+0459: 0.54
+0460: ,
+0461: 0.79
+0462: ]
+0463: [0.54,0.79]
+0464: ,
+0465: [
+0466: 0.72
+0467: ,
+0468: 0.94
+0469: ]
+0470: [0.72,0.94]
+0471: and
+0472: [
+0473: 0.75
+0474: ,
+0475: 0.96
+0476: ]
+0477: [0.75,0.96]
+0478: . Shortcut rates, where a model answers with the original target’s action instead of the one it was asked about, are 0.08, 0.00 and 0.07. Read alone, these show that outputs usually follow the changed named-part request rather than defaulting to the original target’s action. They do not establish visual attention to the named part, because the supplied target-part category may itself imply the requested action and no counterfactual no-vision control was run.
+0479: The transition table qualifies this sharply. Compliance is 0.66 or better on every observed transition for every model except one:
+0480: push
+0481: to
+0482: lift-vertical
+0483: , where the three models score 0.33, 0.22 and 0.00 across 9 pairs. GPT-5 fails all nine.
+0484: Both available readings are partly right and we report both. GPT-5 emitted
+0485: lift-vertical
+0486: twice in 356 predictions across the entire run, and never once on this pool, so the failure is confounded with a label these models are simply reluctant to produce, and a compliance rate cannot cleanly be read as a reasoning measurement on a transition whose target label is nearly absent from the model’s output distribution. At the same time, five of GPT-5’s nine failures returned specifically the original part’s action, which is the shortcut signature rather than an arbitrary miss. The pooled 0.86 would have hidden both facts, which is the argument for the transition table rather than a footnote about it.
+0487: 4.5
+0488: An open-weight pilot, and a metric with no measurable value
+0489: Under
+0490: localization_shown
+0491: , we ran the open-weight Qwen3-VL-8B against 50 frame-level examples from the unaudited bulk UMD stratum, spanning 43 source tool instances. This is not the curated 28-object OpenAI split: the two runs share no exact image paths and overlap on 11 tool instances, so their scores are not a direct model comparison. Qwen’s action accuracy was 0.98 against a majority baseline of 0.32. Mean localization distance was 0.0 at an IoU of 1.0 against a constant-baseline distance of 0.085, and both figures are exact rather than rounded, because the model returned the supplied point verbatim on all 50 examples. Scoring how precisely a model locates a region the prompt already handed it measures whether it can copy a number, which is the same caution Section
+0492: 4.1
+0493: draws from the frontier models under this condition and the reason we do not read a localization figure from it.
+0494: Part-selection accuracy here is not measurable in either direction, and three successive versions of this evaluation reported it as though it were. The first gave 1.00, an artifact of the harness supplying the target’s identity whenever the condition already contained it and the model’s own output omitted it; the raw responses show the model never populated that field on any of the 50. Requiring a genuine selection replaced that with 0.00. The current evaluator, which credits an exact bounding box as real geometric evidence of a selection, and which Section
+0495: 4.1
+0496: ’s results depend on doing, replays the same stored predictions to 1.00 again. All three are wrong in the same way: under this condition the only geometric evidence available is the box the prompt supplied, so crediting it scores an echo and withholding credit scores a field the model had no reason to fill. We report this condition’s action accuracy and no part-selection figure for it.
+0497: A separate audit of this run’s coordinate convention, released with the benchmark, found the stored localization distances for
+0498: image_only
+0499: ,
+0500: object_named
+0501: and
+0502: part_named
+0503: , all near 0.54, to be a mismatch between the model’s documented output convention and the harness’s assumption rather than a measurement of anything; they replay to near 0.07. That error and the two the companion evaluation disclosed were each caught by checking a number against something trivial, never by rereading the code that produced it, which is the practice this benchmark is built to make routine rather than occasional.
+0504: 5
+0505: Limitations
+0506: Two of the safeguards above are themselves incomplete in ways worth stating rather than leaving implicit. The curated GAPartNet stratum’s target-part bounding boxes were, at an earlier stage of this benchmark, an approximate box centered on a previously verified grasp point rather than an exact reprojection of the part’s real three-dimensional bounding box, because the camera pose used to render these objects was computed at render time and not persisted. Recovering that pose and projecting the real box was a straightforward fix and revealed a second, more interesting problem: for most
+0507: slider_button
+0508: targets, and one
+0509: slider_drawer
+0510: , GAPartNet’s own per-part three-dimensional bounding box is not expressed in the same coordinate frame as the rendered mesh, so the projected box lands nowhere near the part. A per-link joint-origin correction was tested as the obvious explanation and ruled out, since some of the affected links have a zero joint origin.
+0511: hinge_door
+0512: targets are mostly unaffected. Of the 19 curated objects, 7 (six doors and one drawer) now use a verified exact projection; the other 12 keep the approximate box, labelled as such per object rather than asserted to be solved across the stratum. Whichever measurement error a benchmark catches first depends on which safeguard it builds first, and this one was caught by literally drawing the projected box on the image and looking, the same low-technology check that caught both of the companion evaluation’s own errors.
+0513: Five caveats bound Section
+0514: 4
+0515: specifically. First, GPT-4o mini violated the requested bare-JSON format on 113 of 114 GAPartNet predictions, 166 of 168 UMD predictions and 73 of 74 counterfactual predictions, against zero violations for both GPT-5 models. These image-shown violations were fenced JSON responses rather than unusable answers, and the lenient parser recovered a complete semantic response every time; nevertheless, that model’s numbers use a recovery path the other two never touched, so its lower counterfactual compliance should not be read as a capability gap until format is controlled. In the separate text-only control, 66 of its 114 outputs violated the strict format; 65 were recoverable fenced objects and one contained an out-of-vocabulary action that was normalized to
+0516: none
+0517: and scored incorrect. Second, the curated UMD stratum has
+0518: grasp
+0519: as the target action for all 28 objects, so its majority-action baseline is 1.00 and its
+0520: part_named
+0521: scores of 1.00 are exactly that baseline; UMD constrains nothing about action discrimination here and we draw no conclusion from it, reporting it only for the localization and mechanics comparisons. Third, every prompt supplies the same eleven-action vocabulary across both strata, so under the three under-informed conditions models on GAPartNet objects sometimes answer with tool affordances such as
+0522: grasp
+0523: or
+0524: wrap-grasp
+0525: that the stratum never uses, which depresses
+0526: image_only
+0527: in particular;
+0528: localization_only
+0529: , where GPT-5 kept 15 of 19 answers inside the push and pull family and still only matched the baseline, is much less exposed to this. Fourth, each API condition was sampled once using provider-default decoding. The bootstrap intervals quantify variation across objects, not stochastic variation across repeated model responses, and overlapping intervals are not equivalence tests. Finally, 19 objects, 28 objects and 74 pairs are small, the intervals in Section
+0530: 4.4
+0531: are correspondingly wide, and the non-monotonicity in Section
+0532: 4.3
+0533: rests on the effect never reversing across six model-stratum pairs, five drops and one tie, rather than on any single drop being individually significant.
+0534: The bulk, automatically converted strata (600 GAPartNet objects, roughly 105 UMD tool instances at one record per frame) are unaudited, unlike the two curated strata drawn from the companion evaluation’s spot-checked objects, and are reported as a separate count for exactly that reason. Multi-viewpoint rendering, open-configuration renders, mask-based localization, and the two more expensive counterfactual constructions, cross-object part compositing and mesh-level part substitution, are deferred rather than built into this version. None of the above changes what is reported in Sections
+0535: 3
+0536: and
+0537: 4
+0538: ; they bound what those sections can be read to establish, in the same spirit as the companion evaluation’s own caution about what naming a part in a prompt does and does not demonstrate.
+0539: 6
+0540: Reproducibility
+0541: The benchmark, its converters, its evaluator, and the exact commands used to build every count reported in Section
+0542: 3
+0543: are released at the repository above. Every dataset conversion is deterministic and auditable against its source annotation rather than inferred from geometry, and the evaluator’s manifest tool reports per-file statistics, including a check that every referenced image actually exists, for any combination of the files described here. Every rendered image the action-contrast pool depends on is additionally recorded in a checksummed manifest, object id, sha256, the exact render call, and the environment’s package versions, so its construction stays auditable independent of which machine produced the images.
+0544: 7
+0545: Conclusion
+0546: A single accuracy number, or a single before-and-after comparison against it, cannot distinguish a model that cannot find the right part from one that finds it but maps it to the wrong action, or from one that never needed the image because the supplied category already gave the answer away. GroundBench is built to keep those explanations apart: a branch-and-merge condition design that changes one controlled information bundle per edge, a counterfactual re-ask that requests a real noncanonical part, and an evaluator whose thresholds are checked against the same trivial baselines that caught two real errors in the evaluation it extends. Across three OpenAI models, the benchmark-supplied target region without the part name does not beat a constant answer, while the name condition does. Every above-baseline gain occurs where the supplied target-part category itself implies the answer in this curated set, and GPT-5’s no-vision result is consistent with category-to-action association contributing substantially to the companion evaluation’s headline effect. GPT-4o mini disagrees on one condition, so the conclusion is evidence for that explanation rather than a model-universal causal estimate. Supplying real mechanics on top of the target region and identity also failed to behave as expected: across both strata, it produced five drops and one tie rather than an improvement. These findings make the benchmark most useful as a diagnostic instrument—one that exposes which supplied information changes behavior and which apparently successful metrics can be satisfied without the capability they seem to name.
+0547: References
+0548: [1]
+0549: J. Johnson, B. Hariharan, L. van der Maaten, L. Fei-Fei, C. L. Zitnick, and R. Girshick.
+0550: CLEVR: A Diagnostic Dataset for Compositional Language and Elementary Visual Reasoning.
+0551: In
+0552: IEEE Conference on Computer Vision and Pattern Recognition (CVPR)
+0553: , 2017.
+0554: [2]
+0555: M. T. Ribeiro, T. Wu, C. Guestrin, and S. Singh.
+0556: Beyond Accuracy: Behavioral Testing of NLP Models with CheckList.
+0557: In
+0558: Annual Meeting of the Association for Computational Linguistics (ACL)
+0559: , 2020.
+0560: [3]
+0561: J. Adebayo, J. Gilmer, M. Muelly, I. Goodfellow, M. Hardt, and B. Kim.
+0562: Sanity Checks for Saliency Maps.
+0563: In
+0564: Advances in Neural Information Processing Systems (NeurIPS)
+0565: , 2018.
+0566: [4]
+0567: R. Geirhos, J.-H. Jacobsen, C. Michaelis, R. Zemel, W. Brendel, M. Bethge, and F. A. Wichmann.
+0568: Shortcut Learning in Deep Neural Networks.
+0569: Nature Machine Intelligence
+0570: , 2:665–673, 2020.
+0571: [5]
+0572: Y. Goyal, T. Khot, D. Summers-Stay, D. Batra, and D. Parikh.
+0573: Making the V in VQA Matter: Elevating the Role of Image Understanding in Visual Question Answering.
+0574: In
+0575: IEEE Conference on Computer Vision and Pattern Recognition (CVPR)
+0576: , 2017.
+0577: [6]
+0578: A. Agrawal, D. Batra, D. Parikh, and A. Kembhavi.
+0579: Don’t Just Assume; Look and Answer: Overcoming Priors for Visual Question Answering.
+0580: In
+0581: IEEE Conference on Computer Vision and Pattern Recognition (CVPR)
+0582: , 2018.
+0583: [7]
+0584: R. Cadene, C. Dancette, H. Ben-younes, M. Cord, and D. Parikh.
+0585: RUBi: Reducing Unimodal Biases for Visual Question Answering.
+0586: In
+0587: Advances in Neural Information Processing Systems (NeurIPS)
+0588: , 2019.
+0589: [8]
+0590: T. Thrush, R. Jiang, M. Bartolo, A. Singh, A. Williams, D. Kiela, and C. Ross.
+0591: Winoground: Probing Vision and Language Models for Visio-Linguistic Compositionality.
+0592: In
+0593: IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+0594: , 2022.
+0595: [9]
+0596: S. Kazemzadeh, V. Ordonez, M. Matten, and T. Berg.
+0597: ReferItGame: Referring to Objects in Photographs of Natural Scenes.
+0598: In
+0599: Conference on Empirical Methods in Natural Language Processing (EMNLP)
+0600: , 2014.
+0601: [10]
+0602: A. Kamath, M. Singh, Y. LeCun, G. Synnaeve, I. Misra, and N. Carion.
+0603: MDETR: Modulated Detection for End-to-End Multi-Modal Understanding.
+0604: In
+0605: IEEE/CVF International Conference on Computer Vision (ICCV)
+0606: , 2021.
+0607: [11]
+0608: M. Ahn et al.
+0609: Do As I Can, Not As I Say: Grounding Language in Robotic Affordances.
+0610: In
+0611: Conference on Robot Learning (CoRL)
+0612: , 2022.
+0613: [12]
+0614: D. Driess et al.
+0615: PaLM-E: An Embodied Multimodal Language Model.
+0616: In
+0617: International Conference on Machine Learning (ICML)
+0618: , 2023.
+0619: [13]
+0620: A. Brohan et al.
+0621: RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control.
+0622: In
+0623: Conference on Robot Learning (CoRL)
+0624: , 2023.
+0625: [14]
+0626: K. Mo, L. J. Guibas, M. Mukadam, A. Gupta, and S. Tulsiani.
+0627: Where2Act: From Pixels to Actions for Articulated 3D Objects.
+0628: In
+0629: IEEE/CVF International Conference on Computer Vision (ICCV)
+0630: , 2021.
+0631: [15]
+0632: S. Qian, W. Chen, M. Bai, X. Zhou, Z. Tu, and L. E. Li.
+0633: AffordanceLLM: Grounding Affordance from Vision Language Models.
+0634: In
+0635: IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)
+0636: , 2024.
+0637: [16]
+0638: E. Zhao, V. Raval, H. Zhang, J. Mao, Z. Shangguan, S. Nikolaidis, Y. Wang, and D. Seita.
+0639: ManipBench: Benchmarking Vision-Language Models for Low-Level Robot Manipulation.
+0640: In
+0641: Conference on Robot Learning (CoRL)
+0642: , 2025.
+0643: arXiv:2505.09698.
+0644: [17]
+0645: J. Jones, R. Santos-Rodriguez, and S. Hauert.
+0646: Assessing VLM-Driven Semantic-Affordance Inference for Non-Humanoid Robot Morphologies.
+0647: In
+0648: International Conference on Autonomous Agents and Multiagent Systems (AAMAS)
+0649: , 2026.
+0650: arXiv:2604.19509.
+0651: [18]
+0652: A. Myers, C. L. Teo, C. Fermüller, and Y. Aloimonos.
+0653: Affordance Detection of Tool Parts from Geometric Features.
+0654: In
+0655: IEEE International Conference on Robotics and Automation (ICRA)
+0656: , 2015.
+0657: [19]
+0658: H. Geng, H. Xu, C. Zhao, C. Xu, L. Yi, S. Huang, and H. Wang.
+0659: GAPartNet: Cross-Category Domain-Generalizable Object Perception and Manipulation via Generalizable and Actionable Parts.
+0660: In
+0661: IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+0662: , 2023.
+0663: arXiv:2211.05272.
+0664: [20]
+0665: F. Xiang, Y. Qin, K. Mo, Y. Xia, H. Zhu, F. Liu, M. Liu, H. Jiang, Y. Yuan, H. Wang, L. Yi, A. X. Chang, L. J. Guibas, and H. Su.
+0666: SAPIEN: A SimulAted Part-based Interactive ENvironment.
+0667: In
+0668: IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+0669: , 2020.
+0670: arXiv:2003.08515.

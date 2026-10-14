@@ -1,0 +1,234 @@
+{
+  "model_inference_run": false,
+  "total_test_frame_samples": 28032,
+  "sources": {
+    "droid": {
+      "frame_samples": 2524,
+      "fraction": 0.09003995433789955,
+      "filename_episode_groups": 149,
+      "reason_counts": {
+        "correct": 2349,
+        "failure": 175
+      }
+    },
+    "isaac": {
+      "frame_samples": 11114,
+      "fraction": 0.3964754566210046,
+      "filename_episode_groups": 254,
+      "reason_counts": {
+        "correct": 5169,
+        "collision": 1292,
+        "miss": 1638,
+        "not smooth": 2072,
+        "fall": 943
+      }
+    },
+    "libero": {
+      "frame_samples": 2754,
+      "fraction": 0.09824486301369863,
+      "filename_episode_groups": 91,
+      "reason_counts": {
+        "correct": 2754
+      }
+    },
+    "robosuite": {
+      "frame_samples": 11640,
+      "fraction": 0.4152397260273973,
+      "filename_episode_groups": 464,
+      "reason_counts": {
+        "correct": 9986,
+        "collision": 1540,
+        "miss": 114
+      }
+    }
+  },
+  "out_of_range_reward_labels": [
+    {
+      "source": "droid",
+      "episode": "failure_0032",
+      "frame": 180,
+      "reward": 1.009,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_0032",
+      "frame": 210,
+      "reward": 1.023,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_0214",
+      "frame": 1071,
+      "reward": 1.02,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_0214",
+      "frame": 1071,
+      "reward": 1.003,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1082",
+      "frame": 810,
+      "reward": 1.061,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1082",
+      "frame": 811,
+      "reward": 1.021,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1142",
+      "frame": 240,
+      "reward": 1.07,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1142",
+      "frame": 270,
+      "reward": 1.055,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1142",
+      "frame": 300,
+      "reward": 1.014,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1142",
+      "frame": 311,
+      "reward": 1.037,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 270,
+      "reward": 1.021,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 300,
+      "reward": 1.027,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 330,
+      "reward": 1.06,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 360,
+      "reward": 1.025,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 390,
+      "reward": 1.008,
+      "reason": "failure"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 420,
+      "reward": 1.026,
+      "reason": "correct"
+    },
+    {
+      "source": "droid",
+      "episode": "failure_1183",
+      "frame": 512,
+      "reward": 1.031,
+      "reason": "correct"
+    }
+  ],
+  "manifest_metadata": {
+    "seed": 42,
+    "val_ratio": 0.05,
+    "test_ratio": 0.05,
+    "stratified": true,
+    "n_train": 17255,
+    "n_val": 958,
+    "n_test": 958,
+    "source_stats": {
+      "droid_failure": {
+        "n_total": 1486,
+        "n_train": 1338,
+        "n_val": 74,
+        "n_test": 74
+      },
+      "droid_success": {
+        "n_total": 1500,
+        "n_train": 1350,
+        "n_val": 75,
+        "n_test": 75
+      },
+      "isaac_0108": {
+        "n_total": 1399,
+        "n_train": 1259,
+        "n_val": 70,
+        "n_test": 70
+      },
+      "isaac_0113": {
+        "n_total": 2000,
+        "n_train": 1800,
+        "n_val": 100,
+        "n_test": 100
+      },
+      "isaac_0204": {
+        "n_total": 1674,
+        "n_train": 1506,
+        "n_val": 84,
+        "n_test": 84
+      },
+      "libero": {
+        "n_total": 9287,
+        "n_train": 8359,
+        "n_val": 464,
+        "n_test": 464
+      },
+      "libero_bench": {
+        "n_total": 1825,
+        "n_train": 1643,
+        "n_val": 91,
+        "n_test": 91
+      }
+    }
+  },
+  "manifest_assignment_count": 19171,
+  "paper_total_episodes": 26579,
+  "paper_source_mae": {
+    "droid": 0.259,
+    "isaac": 0.081,
+    "robosuite": 0.051,
+    "libero": 0.044
+  },
+  "weighted_average_of_rounded_paper_mae_using_release_frame_counts": 0.08093486015981735,
+  "unweighted_source_mae_average": 0.10875,
+  "interpretation": "Arithmetic compatibility, not proof that release split/checkpoint produced Table 1. Error contributions are estimated from rounded published source MAEs, not recomputed predictions.",
+  "estimated_droid_share_of_total_absolute_error": 0.2881372517042304,
+  "release_format_issue": "Test labels contain not smooth while model prompt lists smooth. Treat as interface/data consistency issue, not a discovered scientific model failure.",
+  "verified_download_count": 37,
+  "downloaded_bytes": 18030223
+}

@@ -1,0 +1,10 @@
+import hashlib,json,pathlib,zipfile
+H=pathlib.Path(__file__).resolve().parent;S=H.parent/'gvl_order_20261009'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+t=(S/'gvl_runner.py').read_text().replace("H.parent/'author_prefix_20261009/download/run/requests.jsonl'","H.parent/'gvl_order_20261009/download/run/requests.jsonl'").replace(')!=17',')!=16').replace("'gvl_order_v1'","'gvl_order_v2'").replace("'parent_issued':372","'parent_issued':388").replace("'parent':372,'total':372+","'parent':388,'total':388+")
+t=t.replace("Do not infer hidden actions or add a task plan.'","Do not infer hidden actions or add a task plan. The first output character must be [. Do not use code fences, markdown, or prose outside the array.'")
+(H/'gvl_runner.py').write_text(t,encoding='utf-8');cfg=json.loads((S/'config.json').read_text());cfg['parent']={'path':'/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_gvl_order_20261009_v1/run/requests.jsonl','sha256':sha(S/'download/run/requests.jsonl')};cfg['revision']='v1 emitted markdown fences; one explicit boundary-only contract instruction added; visual inputs, task, percentage definition and schema unchanged; original invalid responses remain invalid'
+(H/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8');(H/'freeze.json').write_text(json.dumps({'files':{n:sha(H/n) for n in ('config.json','gvl_runner.py')},'derived_from_sha256':sha(S/'gvl_runner.py')},indent=2),encoding='utf-8');(H/'test_gvl.py').write_bytes((S/'test_gvl.py').read_bytes())
+with zipfile.ZipFile(H/'gvl_v2.zip','w') as z:
+ for n in ('config.json','freeze.json','gvl_runner.py','test_gvl.py'):z.write(H/n,n)
+t=(S/'remote_ops.py').read_text().replace('change_first_gvl_order_20261009_v1','change_first_gvl_order_20261009_v2').replace('gvl_v1.zip','gvl_v2.zip');(H/'remote_ops.py').write_text(t,encoding='utf-8');(H/'seal_remote.py').write_bytes((S/'seal_remote.py').read_bytes());t=(S/'analyze.py').read_text().replace("'prior':372,'cumulative':372+","'prior':388,'cumulative':388+");(H/'analyze.py').write_text(t,encoding='utf-8');print(json.dumps({'requests':16,'zip_sha256':sha(H/'gvl_v2.zip')}))

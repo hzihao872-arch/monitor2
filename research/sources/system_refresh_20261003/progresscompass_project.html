@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProgressCompass</title>
+  <meta name="description" content="ProgressCompass: embodied progress reward models are lost without the right context. ContextProgress-Bench, a paired diagnosis of five PRMs, and an agentic loop that supplies the right context to a frozen PRM.">
+  <link rel="icon" type="image/png" href="static/img/favicon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&display=swap">
+  <link rel="stylesheet" href="static/css/style.css?v=20261001c">
+</head>
+<body>
+
+<!-- =============================================================== header -->
+<div class="header-wrapper">
+  <div class="header-container">
+    <div class="header-content">
+      <h1><img class="title-logo" src="static/img/icon.png" alt="ProgressCompass logo">ProgressCompass:</h1>
+      <h2>Embodied Progress Reward Models<br>Are Lost Without the Right Context</h2>
+      <p>
+        A Progress Reward Model (PRM) scores how far a task has come at every step. In long
+        tasks, the current frame often cannot tell: progress depends on what happened before.
+        We study this <strong>context-dependent progress estimation</strong> through:
+      </p>
+      <div class="icon-container">
+        <div class="icon-item">
+          <div class="badge" style="background:#6633a6"><i class="fas fa-database"></i></div>
+          <div><strong>ContextProgress-Bench</strong>: 24 hand-selected manipulation tasks, 120
+          episodes and 552 annotated subtask intervals, covering State Recall, Sequence Tracking
+          and Recurrence Disambiguation.</div>
+        </div>
+        <div class="icon-item">
+          <div class="badge" style="background:#236ca6"><i class="fas fa-magnifying-glass-chart"></i></div>
+          <div><strong>A paired diagnosis</strong>: five PRMs, even those reading the whole
+          history, are far off without the right context, and each cuts its error by 77&ndash;82%
+          once the context is given. PRMs are <em>not blind but lost</em>.</div>
+        </div>
+        <div class="icon-item">
+          <div class="badge" style="background:#be5718"><i class="fas fa-compass"></i></div>
+          <div><strong>ProgressCompass</strong>: an autonomous agentic loop that supplies the
+          right context to a frozen PRM with general-purpose VLMs, with no training, cutting its
+          progress error by 63%.</div>
+        </div>
+      </div>
+      <div class="button-container">
+        <a class="button" href="https://arxiv.org/pdf/2609.36684" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i><span>Paper</span></a>
+        <a class="button disabled" aria-disabled="true" title="Code coming soon"><i class="fab fa-github"></i><span>Code (coming soon)</span></a>
+        <a class="button" href="https://huggingface.co/datasets/Sterzhang/ContextProgress-Bench" target="_blank" rel="noopener"><img class="hf-logo" src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="" width="18" height="18" style="width:18px;height:18px"><span>Dataset</span></a>
+        <a class="button" href="#video"><i class="fas fa-play"></i><span>Video</span></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================================== byline -->
+<div class="byline">
+  <p class="author-list">
+    <span><a class="author-link" href="https://sterzhang.github.io/" target="_blank">Jianshu Zhang</a><sup>1*</sup></span>
+    <span>Keliang Wu<sup>1*</sup></span>
+    <span><a class="author-link" href="https://qiancx.com/" target="_blank">Chengxuan Qian</a><sup>2</sup></span>
+    <span>Xiyuan Yang<sup>3</sup></span>
+    <span>Ce Zhang<sup>4</sup></span>
+    <span>Ariel Tian<sup>1</sup></span>
+    <span>Anbang Liu<sup>1</sup></span>
+    <span><a class="author-link" href="https://luhr2003.github.io/" target="_blank">Haoran Lu</a><sup>1</sup></span>
+    <span><a class="author-link" href="https://www.mccormick.northwestern.edu/research-faculty/directory/profiles/liu-han.html" target="_blank">Han Liu</a><sup>1</sup></span>
+  </p>
+  <div class="affiliations">
+    <span><sup>1</sup>Northwestern University</span>
+    <span><sup>2</sup>University of California, Santa Barbara</span>
+    <span><sup>3</sup>University of Illinois at Urbana-Champaign</span>
+    <span><sup>4</sup>Carnegie Mellon University</span>
+    <span><sup>*</sup>Equal contribution</span>
+  </div>
+</div>
+
+<article>
+
+  <h1 id="video" style="margin-top:34px">Video Overview</h1>
+  <figure style="margin-top:12px">
+    <video controls preload="metadata" poster="static/video/poster.jpg" style="width:100%;border-radius:10px;background:#000">
+      <source src="static/video/progresscompass_overview.mp4" type="video/mp4">
+      <track kind="captions" src="static/video/captions_en.vtt" srclang="en" label="English">
+      Your browser does not support HTML video.
+    </video>
+    <figcaption>A two-minute walk through the paper: the problem, the benchmark, the diagnosis,
+    the ProgressCompass loop and the results. Captions are drawn into the video.</figcaption>
+  </figure>
+
+  <figure>
+    <img class="zoomable" src="static/img/teaser.png" alt="Three moments of one task that need context">
+    <figcaption><strong>Figure 1: Why a Progress Reward Model (PRM) needs context.</strong>
+    Given the overall task instruction (top), the current frame alone may not suffice to estimate
+    progress. (i) <span style="color:#6633a6"><em>State Recall</em></span>: information needed for
+    progress, such as which mat the block came from, appeared earlier but is not in the current
+    frame. (ii) <span style="color:#236ca6"><em>Sequence Tracking</em></span>: steps follow a fixed
+    order, so progress needs knowing which steps are done. (iii)
+    <span style="color:#be5718"><em>Recurrence Disambiguation</em></span>: look-alike frames sit at
+    different progress.</figcaption>
+  </figure>
+
+  <p class="abstract">
+    <strong>Abstract.</strong>
+    Embodied agents now take on ever longer tasks. For long tasks, knowing only whether a task
+    finally succeeds or fails says little; the steps along the way matter. Progress Reward Models
+    (PRMs) score how far a task has come at every step, and serve as dense rewards, verifiers and
+    monitors. Yet in long tasks the current frame alone often cannot tell how far the task has
+    come, because progress depends on what happened before. We call this problem
+    <em>context-dependent progress estimation</em>. Existing benchmarks on progress estimation
+    mostly focus on short tasks whose progress can be read from the current observation, and
+    whether PRMs can estimate progress when context is needed remains underexplored. We therefore
+    build ContextProgress-Bench, with 24 manipulation tasks for 120 episodes. The benchmark covers
+    three settings: (i) <em>State Recall</em>, where information needed for progress appeared
+    earlier but is not in the current frame; (ii) <em>Sequence Tracking</em>, where steps follow a
+    fixed order, so progress requires knowing which steps are done and which comes next; and (iii)
+    <em>Recurrence Disambiguation</em>, where look-alike frames sit at very different progress. We
+    then run a paired diagnosis: each PRM keeps the same input format in both runs, and in one run
+    its instruction integrates the right context. Even PRMs that read the entire history still get
+    lost in estimating progress. With the right context, however, the same five models cut their
+    progress error by 77&ndash;82%. Embodied PRMs are thus not incapable of progress estimation,
+    but lost without the right context. We therefore propose ProgressCompass, an autonomous
+    agentic loop that reorients an existing PRM and uses current general-purpose VLMs to supply
+    the context the PRM needs. Wrapped in the loop, the same frozen PRM cuts its progress error by
+    63% and raises its rank agreement by 76%. With such a compass, PRMs estimate progress far
+    better on longer, more complex tasks.
+  </p>
+
+  <div class="highlights">
+    <div class="hl"><div class="hl-num">77&ndash;82%</div><div class="hl-txt">error cut for <b>every</b> PRM once it is given the right context</div></div>
+    <div class="hl"><div class="hl-num">&minus;63%</div><div class="hl-txt">progress error of the same frozen PRM inside ProgressCompass</div></div>
+    <div class="hl"><div class="hl-num">+76%</div><div class="hl-txt">rank agreement &rho; with the true progress, with no training</div></div>
+    <div class="hl"><div class="hl-num">&minus;65.6%</div><div class="hl-txt">wall-clock time from parallelizing the loop</div></div>
+  </div>
+
+  <nav class="jump">
+    <a href="#video">Video</a>
+    <a href="#problem">Problem</a>
+    <a href="#benchmark">Benchmark</a>
+    <a href="#diagnosis">Diagnosis</a>
+    <a href="#method">Method</a>
+    <a href="#results">Results</a>
+    <a href="#bibtex">BibTeX</a>
+  </nav>
+
+  <!-- ============================================================ problem -->
+  <h1 id="problem">Context-Dependent Progress Estimation</h1>
+  <p>
+    A PRM that reads only the current observation predicts <i>f</i>(<i>o<sub>t</sub></i> | <i>x</i>)
+    for an instruction <i>x</i>. In context-dependent tasks, this cannot work: the progress
+    <i>p<sub>t</sub></i> depends on information that <i>o<sub>t</sub></i> does not carry. We call
+    this missing piece the <em>context</em> <i>c<sub>t</sub></i>. Handing the model the whole history
+    is not the same as giving it the context: the history is a raw record of what was observed,
+    while the context is one specific fact that the record establishes, and which fact matters
+    depends on the instruction and the current frame.
+  </p>
+  <div class="forms">
+    <div class="form-card" style="border-color:#6633a6">
+      <h3 style="color:#6633a6">State Recall</h3>
+      What happened before? A state change has happened and left the frame, such as which mat a
+      block came from.
+    </div>
+    <div class="form-card" style="border-color:#236ca6">
+      <h3 style="color:#236ca6">Sequence Tracking</h3>
+      Where are we in the sequence? Steps follow a fixed order, and the frame does not show which
+      of them are already done.
+    </div>
+    <div class="form-card" style="border-color:#be5718">
+      <h3 style="color:#be5718">Recurrence Disambiguation</h3>
+      Which occurrence is this? Repeated actions produce look-alike frames at very different
+      progress.
+    </div>
+  </div>
+
+  <!-- ========================================================== benchmark -->
+  <h1 id="benchmark">ContextProgress-Bench</h1>
+  <p>
+    We build ContextProgress-Bench from robot-manipulation trajectories in RMBench, RoboDojo and
+    LIBERO-Mem. We select by hand the tasks whose progress is context-dependent, sample five
+    episodes of each task at random, and annotate by hand the subtask intervals and the context
+    each interval requires. The benchmark is released on
+    <a href="https://huggingface.co/datasets/Sterzhang/ContextProgress-Bench" target="_blank" rel="noopener">Hugging Face</a>,
+    with every full video, subtask clip, instruction and boundary.
+  </p>
+  <div class="stats">
+    <div class="stat"><div class="num">24</div><div class="lbl">tasks</div></div>
+    <div class="stat"><div class="num">120</div><div class="lbl">episodes</div></div>
+    <div class="stat"><div class="num">552</div><div class="lbl">annotated subtask intervals</div></div>
+    <div class="stat"><div class="num">71,708</div><div class="lbl">frames of execution</div></div>
+  </div>
+  <figure>
+    <img class="zoomable" src="static/img/fig_benchmark_stats.png" alt="Benchmark statistics">
+    <figcaption><strong>Figure 2: Statistics of ContextProgress-Bench.</strong> (a) Episodes grouped
+    by the context forms they require. (b) Tasks, episodes and annotated steps per form. (c) Episode
+    duration. (d) Annotated steps per episode; every episode needs context at least once.</figcaption>
+  </figure>
+
+  <!-- ========================================================== diagnosis -->
+  <h1 id="diagnosis">Where Progress Reward Models Get Lost</h1>
+  <p>
+    We evaluate five PRMs: ProgressLM, Robo-Dopamine, RoboMeter, TOPReward and VLAC. For each
+    model, both runs use the same input format: <strong>without context</strong> gives the episode
+    instruction, and <strong>with context</strong> replaces it with the instruction of the active
+    subtask, which integrates the annotated context. The two runs are paired on all 552 annotated
+    subtask intervals, so they differ in the context alone.
+  </p>
+  <div class="table-wrap">
+    <table class="results">
+      <thead>
+        <tr><th rowspan="2">Model</th><th colspan="2">w/o context</th><th colspan="2" class="grp">w/ context: oracle</th><th colspan="2">w/ context: self-chained</th></tr>
+        <tr><th>MAE &darr;</th><th>&rho; &uarr;</th><th class="grp">MAE &darr;</th><th class="grp">&rho; &uarr;</th><th>MAE &darr;</th><th>&rho; &uarr;</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ProgressLM</td><td>17.95</td><td>0.74</td><td class="grp">4.18<span class="delta-better">&minus;77%</span></td><td class="grp">0.99<span class="delta-better">+35%</span></td><td>16.70<span class="delta-better">&minus;7%</span></td><td>0.99<span class="delta-better">+34%</span></td></tr>
+        <tr><td>Robo-Dopamine</td><td>15.59</td><td>0.74</td><td class="grp">3.43<span class="delta-better">&minus;78%</span></td><td class="grp">0.98<span class="delta-better">+31%</span></td><td>4.66<span class="delta-better">&minus;70%</span></td><td>0.97<span class="delta-better">+31%</span></td></tr>
+        <tr><td>RoboMeter</td><td>25.42</td><td>0.53</td><td class="grp">4.91<span class="delta-better">&minus;81%</span></td><td class="grp">0.93<span class="delta-better">+75%</span></td><td>11.39<span class="delta-better">&minus;55%</span></td><td>0.92<span class="delta-better">+74%</span></td></tr>
+        <tr><td>TOPReward</td><td>30.95</td><td>0.56</td><td class="grp">6.70<span class="delta-better">&minus;78%</span></td><td class="grp">0.90<span class="delta-better">+62%</span></td><td>9.42<span class="delta-better">&minus;70%</span></td><td>0.89<span class="delta-better">+59%</span></td></tr>
+        <tr><td>VLAC</td><td>24.43</td><td>0.72</td><td class="grp">4.50<span class="delta-better">&minus;82%</span></td><td class="grp">0.97<span class="delta-better">+35%</span></td><td>17.13<span class="delta-better">&minus;30%</span></td><td>0.94<span class="delta-better">+30%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure style="margin-top:6px">
+    <figcaption><strong>Table 1: The Context Gap.</strong> The same frozen model with the same input
+    format, first without context, then with the correct context for each annotated subtask.
+    <em>Oracle</em> places the estimate at the true position of its subtask; <em>self-chained</em>
+    at where the model ended the previous one. Green values are the relative change from the same
+    model without context. Progress is on a 0&ndash;100 scale.</figcaption>
+  </figure>
+
+  <div class="two-col cols-diag">
+    <div>
+      <p>
+        Without context, every PRM is far from the true progress, with MAE between 15.6 and 31.0.
+        Models that read or retrieve from the entire history still get lost. With the right
+        context, every PRM cuts its error by 77&ndash;82%, and the gain holds on 93.3% of paired
+        intervals rather than on a few easy episodes.
+      </p>
+      <p class="callout">Not blind, but lost.</p>
+    </div>
+    <figure class="side-fig">
+      <img class="zoomable" src="static/img/fig_gap_scatter.png" alt="Paired MAE per subtask">
+      <figcaption>Each dot is one subtask of one model, at its MAE without (x) and with (y)
+      context; dots below the diagonal are where context helped.</figcaption>
+    </figure>
+  </div>
+
+  <figure>
+    <img class="zoomable" src="static/img/fig_cases.png" alt="Three typical errors">
+    <figcaption><strong>Figure 3: Three typical errors, one episode each.</strong> (a) State
+    amnesia: after a state change leaves the frame, the curve falls back instead of accumulating.
+    (b) Phase drift: the model reads a step as a later one than it is. (c) Occurrence confusion:
+    repeated presses give one value, a plateau where the truth is a staircase.</figcaption>
+  </figure>
+
+  <!-- ============================================================= method -->
+  <h1 id="method">ProgressCompass: Reorienting Progress Reward Models</h1>
+  <p>
+    A PRM scores a step well once it knows which step is underway, but it cannot work out that
+    step from the history. Vision-Language Models are poorly calibrated estimators of progress, but
+    they are good at understanding a task, breaking it into steps and providing context. Each does
+    well what the other does poorly, and we design an agentic loop around this split. The PRM stays
+    frozen and nothing is trained.
+  </p>
+  <div class="two-col cols-method">
+    <figure class="side-fig">
+      <img class="zoomable" src="static/img/fig_progress_compass.png" alt="The ProgressCompass loop">
+      <figcaption><strong>Figure 4: ProgressCompass.</strong> The Navigator runs the loop. The
+      Orienter gives the context to the frozen PRM and the expected transition to the Verifier; the
+      PRM proposes a completion and the Verifier checks it until the step is accepted, then the
+      Orienter reorients.</figcaption>
+    </figure>
+    <div class="components">
+      <div class="component"><b style="color:#4e2a84">Orienter</b><span class="model">Qwen3.5-27B</span><br>Reads the current frame, states the current step and the expected transition.</div>
+      <div class="component"><b style="color:#b8741f">PRM (frozen)</b><span class="model">RoboMeter-4B</span><br>Scores progress within the current step.</div>
+      <div class="component"><b style="color:#236ca6">Verifier</b><span class="model">Qwen3.5-9B</span><br>Checks the frames against the expected transition: is the step really done?</div>
+      <div class="component"><b>Navigator</b><span class="model">Qwen3.5-9B, text only</span><br>Runs the loop and carries the verified plan from step to step.</div>
+    </div>
+  </div>
+
+  <!-- ============================================================ results -->
+  <h1 id="results">Results</h1>
+  <h2>Overall performance</h2>
+  <p>
+    Wrapping the frozen RoboMeter-4B in ProgressCompass more than halves its progress error, from
+    25.4 to 9.3, and lifts its rank agreement from 0.53 to 0.93. No weight changes and the inputs
+    are the same, so the whole gain comes from the context. It is also the best method on every
+    context form, ahead of every frozen PRM and of R<sup>2</sup>VLM, and recovers 78% of the deficit
+    that oracle context would close.
+  </p>
+  <figure>
+    <img class="zoomable" src="static/img/fig_main_bars.png" alt="Main results">
+    <figcaption><strong>Figure 5: Main results.</strong> Progress MAE (top, lower is better) and
+    Spearman &rho; (bottom, higher is better) per context form; green is the change over the frozen
+    RoboMeter.</figcaption>
+  </figure>
+  <figure>
+    <img class="zoomable" src="static/img/fig_curves_main.png" alt="Progress curves on three episodes">
+    <figcaption><strong>Figure 6: Progress curves on three episodes.</strong> Ticks mark moments
+    that need context; vertical lines join ours (filled) and RoboMeter (hollow).</figcaption>
+  </figure>
+
+  <h2>When instruction and execution do not match</h2>
+  <div class="two-col">
+    <div>
+      <p>
+        We build 15 held-out negatives by breaking the correspondence between an instruction and
+        its execution in three directions, each with its own correct behaviour.
+      </p>
+      <p>
+        <strong>Early stop</strong> cuts the video short: ProgressCompass deviates by 7.3, against
+        50.3 for TOPReward and 32.7 for RoboMeter. <strong>Extra steps</strong> deletes steps from
+        the instruction: it deviates by 15.8 against 24.0 to 40.2, and alone reaches 100.
+        <strong>Mismatch</strong> substitutes an unrelated instruction: ProgressCompass never
+        exceeds zero.
+      </p>
+    </div>
+    <figure class="side-fig">
+      <img class="zoomable" src="static/img/fig_negatives_3d.png" alt="Deviation on the three negatives">
+      <figcaption><strong>Figure 7: Negatives.</strong> Mean deviation of each method from the
+      correct progress on Early stop, Extra steps and Mismatch; lower is better.</figcaption>
+    </figure>
+  </div>
+
+  <h2>What the expected transition buys</h2>
+  <div class="two-col">
+    <div>
+      <p>
+        Removing the expected transition at the Verifier doubles the error at the end of each
+        subtask, from 8.6 to 17.2, and removing it at the Orienter as well raises it to 18.8. The
+        order holds on every context form. The Orienter proposes the same number of steps in all
+        runs; what changes is verification, not planning.
+      </p>
+    </div>
+    <figure class="side-fig">
+      <img class="zoomable" src="static/img/fig_ablation_bars.png" alt="Ablating the expected transition">
+      <figcaption><strong>Figure 8: Ablating the expected transition.</strong> Error at the end of
+      each subtask; lower is better.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Parallelizing the loop</h2>
+  <p>
+    The loop is sequential within an episode, but episodes share nothing. We run up to five
+    episodes at once, and a dependency-aware scheduler sends each episode's next ready call to the
+    model it needs, so that no component within the loop sits idle. Time per episode falls from
+    114.7 s to 39.5 s (&minus;65.6%), with MAE and &rho; unchanged within paired bootstrap
+    intervals.
+  </p>
+
+  <!-- ========================================================= conclusion -->
+  <h1>Conclusion</h1>
+  <p>
+    We formulate context-dependent progress estimation and build ContextProgress-Bench to isolate
+    its three settings. A paired diagnosis shows that current PRMs are not blind but lost: without
+    the right context they stay far from the true progress, even when they read the whole history,
+    and each cuts its error by 77% to 82% once the context is given. ProgressCompass supplies that
+    context to a frozen PRM with general-purpose VLMs, without annotation or training. It more than
+    halves the error of its backbone and stays robust when the execution does less than asked, more
+    than asked, or something unrelated.
+  </p>
+
+  <h1 id="bibtex">BibTeX</h1>
+<pre class="bibtex">@article{zhang2026progresscompass,
+  title   = {ProgressCompass: Embodied Progress Reward Models Are Lost Without the Right Context},
+  author  = {Zhang, Jianshu and Wu, Keliang and Qian, Chengxuan and Yang, Xiyuan and Zhang, Ce
+             and Tian, Ariel and Liu, Anbang and Lu, Haoran and Liu, Han},
+  journal = {arXiv preprint arXiv:2609.36684},
+  year    = {2026}
+}</pre>
+
+</article>
+
+<footer>
+  The layout of this page follows the
+  <a href="https://progresslm.github.io/ProgressLM/" target="_blank">ProgressLM</a> project page,
+  which builds on the <a href="https://cambrian-mllm.github.io/" target="_blank">Cambrian</a> template.
+</footer>
+
+<div id="lightbox"><img alt=""></div>
+<script>
+  // click a figure to enlarge it, click again to close
+  const box = document.getElementById('lightbox'), big = box.querySelector('img');
+  document.querySelectorAll('img.zoomable').forEach(img => img.addEventListener('click', () => {
+    big.src = img.src; box.style.display = 'flex';
+  }));
+  box.addEventListener('click', () => { box.style.display = 'none'; });
+</script>
+</body>
+</html>

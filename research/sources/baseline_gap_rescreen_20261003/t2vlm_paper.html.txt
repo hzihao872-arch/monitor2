@@ -1,0 +1,898 @@
+Training-free Generation of Temporally Consistent Rewards from VLMs
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+2 Preliminary
+3 T2-VLM
+3.1 Prompt VLMs to Generate Subgoals and Provide Initial Estimation
+3.2 Update Subgoal Completion Status with Particle Filters
+Motion Module.
+Observation Likelihood with VLM-Coding Affordance.
+3.3 Implementation Details
+4 Experiments
+4.1 Comparison on RL Training
+4.2 Comparison of Recovery Performance
+4.3 Ablation Studies
+4.4 Investigations
+5 Related Work
+6 Conclusion
+References
+A Model Architecture and Training Details
+B Prompts for Querying VLMs
+Chain-of-thought Task Relevant Object Detection.
+Prompt for Sub-goal Generation.
+Prompt for Goal Completion Status Identification.
+C Experiments
+C.1 Environment Details
+Training Environments.
+Testing Environments.
+C.2 Action Space
+Primitive Skill Parameterization.
+License: CC BY 4.0
+arXiv:2507.04789v1 [cs.RO] 07 Jul 2025
+Training-free Generation of Temporally Consistent Rewards from VLMs
+Yinuo Zhao
+Affiliation: Beijing Institute of Technology
+Jiale Yuan
+Affiliation: Taobao & Tmall Group of Alibaba
+Zhiyuan Xu
+Affiliation: Beijing Innovation Center of Humanoid Robotics
+Xiaoshuai Hao
+Affiliation: Beijing Academy of Artificial Intelligenceyinuozhao007@gmail.com, {eric.xu,gongda.wu,z.che,jian.tang}@x-humanoid.com
+Xinyi Zhang
+Affiliation: Beijing Institute of Technology
+Kun Wu
+Affiliation: Beijing Innovation Center of Humanoid Robotics
+Zhengping Che
+Affiliation: Beijing Innovation Center of Humanoid Robotics
+Chi Harold Liu
+Affiliation: Beijing Institute of Technology
+Jian Tang
+Affiliation: Beijing Innovation Center of Humanoid Robotics
+Abstract
+Recent advances in vision-language models (VLMs) have significantly improved performance in embodied tasks such as goal decomposition and visual comprehension.
+However, providing accurate rewards for robotic manipulation without fine-tuning VLMs remains challenging due to the absence of domain-specific robotic knowledge in pre-trained datasets and high computational costs that hinder real-time applicability.
+To address this, we propose T2-VLM, a novel training-free, temporally consistent framework that generates accurate rewards through tracking the status changes in VLM-derived subgoals.
+Specifically, our method first queries the VLM to establish spatially aware subgoals and an initial completion estimate
+before each round of interaction.
+We then employ a Bayesian tracking algorithm to update the goal completion status dynamically, using subgoal hidden states to generate structured rewards for reinforcement learning (RL) agents.
+This approach enhances long-horizon decision-making and improves failure recovery capabilities with RL.
+Extensive experiments indicate that T2-VLM achieves state-of-the-art performance in two robot manipulation benchmarks, demonstrating superior reward accuracy with reduced computation consumption.
+We believe our approach not only advances reward generation techniques but also contributes to the broader field of embodied AI.
+Project website: https://t2-vlm.github.io/
+**footnotetext: † Corresponding authors: Jian Tang (jian.tang@x-humanoid.com) and Chi Harold Liu (liuchi02@gmail.com). ⋄ This work is done during Yinuo Zhao’s internship at Beijing Innovation Center of Humanoid Robotics.
+(a)
+Figure 1:
+Illustrative example of current VLM-based reward generation methods and T2-VLM.
+o represents high-dimensional observations, such as images. τ denotes the robot’s decision intervals. 𝒉 and 𝒉^ indicate the goal completion status given by VLMs and Bayesian filters, respectively. r is the final reward calculated based on changes in 𝒉. T2-VLM only requires querying the VLMs once at the beginning of an episode and efficiently generates accurate rewards using Bayesian filters.
+1 Introduction
+Pretrained foundation models, such as vision-language models (VLMs) [37, 25, 17, 12] and foundation vision models (FVMs) [14, 26], exhibit remarkable generalization capabilities across various multimodal tasks [9, 40] through large-scale pretraining. Recently, they have been widely adopted to advance the robot decision-making process in embodied tasks such as task decomposition [7], vision understanding [46, 32], and providing feedback on goal completion [5]. The feedback can be used to generate rewards for evaluating behavior during RL interactions, enabling RL training with minimal human supervision.
+Existing research on querying VLMs for reward generation can be grouped into two main categories. The first group [36] generates reward functions explicitly with VLMs before robot manipulation. Although reducing computational costs, they are limited to tasks with simple visual information.
+Other research generates reward signals by identifying goal completion status using VLMs, based directly on images and language descriptions [38, 8, 5]. They are applied to more complex robot manipulation tasks, but requires large computational costs. Moreover, it is challenging to generate accurate rewards from VLMs with only spatial observations.
+Recently, several studies have integrated temporal information of object trajectories into VLMs to develop more robust policies [16, 48, 39].
+Motivated by their success, we aim to correct VLM’s spatial reasoning outputs by incorporating temporal information, thereby improving reward accuracy while reducing the computational costs associated with frequent VLM queries.
+In this paper, we propose a novel framework, T2-VLM, a Training-free Temporal-consistent reward generation based on the goal decomposition results from VLMs.
+As shown in Fig. 1, the key intuition behind our method is to query the VLMs to initialize the subgoals as hidden state and to continuously update the goal completion status based on temporal observations.
+To achieve this, we first design an automated procedure to obtain spatial-aware subgoals with an image and a linguistic task description. Then, we propose a Bayesian tracking algorithm to update the subgoal completion status using temporal observations.
+While Bayesian filters [22, 15] are widely used in robotics to estimate environmental states from multi-modal temporal inputs, they struggle to handle high-dimensional data like images.
+To address this, we first leverage the powerful unified segmentation model SAM 2 [26] to extract object bounding box trajectories from high-dimensional inputs. Next, we design a VLM-coding affordance module to derive the observation likelihood and update the Bayesian filters according to it.
+Finally, rewards are computed by evaluating the differences in subgoal hidden states between each decision-making step.
+We tested T2-VLM on six robot manipulation tasks involving rigid and articulated objects across three domains.
+Extensive comparisons and ablation studies demonstrate that T2-VLM achieves state-of-the-art reward generation performance in long-horizon tasks.
+Furthermore, the RL agent trained with T2-VLM exhibits a higher recovery success rate and fewer recovery meta-steps compared to other off-the-shelf models when facing online failures.
+Our main contributions are summarized as follows:
+•
+We propose T2-VLM: a novel training-free temporal-consistent framework based on VLMs for generating accurate rewards in robot manipulation tasks.
+•
+To combine temporal high-dimensional observations, we propose a Bayesian tracking algorithm integrated with LLM-coding affordance to update goal completion status initialized by VLMs.
+•
+Extensive experimental results both in simulation and real-world demonstrate that T2-VLM generates accurate rewards for robot manipulation tasks. Moreover, the agent trained with T2-VLM exhibits a higher recovery success rate and fewer recovery meta-steps compared to other off-the-shelf models.
+2 Preliminary
+Bayesian filters effectively integrate multi-modal observations with dynamic priors, making them well-suited for object tracking and for estimating environment states when temporal information is involved. The environment state at time t can be inferred using Bayes’ theorem:
+|
+| p(st∣o1:t)=p(ot∣st)p(st∣o1:t−1)p(ot∣o1:t−1),
+|
+| (1)
+where s denotes the environment states (e.g., object spatial information), o represents the observations (e.g., RGB images), and t indicates the time step. Estimating the environment state involves evaluating Eq. (1) using temporal data from multiple sensors.
+The particle filter method is a classical approach within the family of Bayes filters, used to estimate the posterior distribution p⁡(st) given a history of observations. It models the posterior distribution of a stochastic process using a set of particles, typically Gaussian samples, informed by partial observations. Each particle is assigned a weight based on the likelihood of the observation given the estimated state produced by that particle. The particles are then resampled according to their weights, with higher-weight particles retained to estimate the posterior in the next time step.
+3 T2-VLM
+(a)
+Figure 2: An overview of T2-VLM .
+First, the VLM decomposes the subgoals and provides an initial estimate of the goal completion status based on an image and language task description. Then, we introduce a Bayesian tracking algorithm to update the goal completion status using the temporal data processed by SAM 2.
+Finally, the model ensures temporal consistency while accurately generating rewards by tracking the completion status of the environment’s goals.
+In this work, we introduce T2-VLM, a novel reward generation framework that ensures temporal consistency by tracking the environment’s goal completion status.
+Fig. 2 provides an overview of T2-VLM.
+Unlike previous VLM-based reward generation methods, T2-VLM queries the VLM only once per episode, then incorporates temporal information (object bounding boxes) to update the VLM-initialized goal status.
+In this section, we begin by explaining how VLMs are prompted to generate subgoals and initial estimations, then describe a particle filter method that uses VLM-coded affordances for posterior computation, and finally present T2-VLM’s implementation details.
+3.1 Prompt VLMs to Generate Subgoals and Provide Initial Estimation
+By leveraging large-scale pretraining, VLMs excel at image captioning and language reasoning, making them a natural choice for automatically decomposing subgoals in long-sequential robotic tasks. As shown in the left part of Fig. 2, the VLM receives an RGB image and a task description as inputs, then generates subgoals step by step. Assuming the initial image captures all task-relevant objects, we design a chain-of-thought image caption prompt to identify task-relevant objects. Next, using the identified objects and the task description, the VLM produces subgoals by analyzing their spatial relationships. Please refer to Fig. 10 to Fig. 11 in the Appendix for the prompt details.
+Considering large foundation models make more mistakes as the complexity of reasoning tasks increases [13, 23], we decompose tasks with multiple subgoals into simpler ones to better leverage VLMs’ zero-shot capabilities. Specifically, we simplify the visual understanding task into a stey-by-step visual question answering (VQA) format, where VLMs are prompted to output “yes” or “no” to each subgoal based on the initial RGB image. This VQA process is illustrated in Fig. 12 and Fig. 13 in the Appendix. Despite this design, as shown in the bottom-left of Fig. 2, VLM outputs may still be incorrect due to discrepancies between the large-scale pretraining data and specific robotic scenarios. Our Bayesian tracking algorithm is then designed to incorporate temporal data to correct subgoal completion status from VLM initializations and ensure accurate rewards.
+3.2 Update Subgoal Completion Status with Particle Filters
+As shown in Fig. 2, we represent the initial subgoal completion status as an N-dimensional binary vector 𝒉0. Here, 1 indicates a subgoal is marked as complete by the VLM, and 0 indicates otherwise. We call this vector the subgoal hidden state, reflecting the current spatial relationships among objects in the environment.
+Particle filters are classical Bayesian tracking algorithms that used for state estimation and multi-modal fusion. However, they struggle with high-dimensional data without a proper feature extractor. To address this, we use the advanced foundation vision model SAM 2 [26] to track task-related objects in videos and process bounding boxes with the obtained masks. We then employ a Bayesian tracking algorithm to estimate the subgoal hidden state using them.
+The particle filters in T2-VLM estimate the posterior distribution p⁡(𝒉t|ℐt) of the subgoal hidden state 𝒉t, given the bounding boxes ℐt preprocessed by SAM 2. Each particle represents a hypothesis of the subgoal hidden state. Although subgoal completion status is binary (completed or uncompleted), we constrain particle values to a continuous range between 0 and 1. This continuous representation allows a soft estimation, where higher values indicate greater confidence in subgoal completion at the current timestep.
+The tracking process proceeds as follows: First, we initialize all K particles with 𝒉0 and propagate them using a motion model detailed later. Then, the observation likelihood p⁡(𝒉t|ℐt) for each particle is computed using the observed bounding boxes, and the weights ωk are updated accordingly. Systematic resampling, as described in [43], is then employed to select the particles ht1:K. This process involves generating a uniformly distributed random number u from U[0,1) and computing the following for each particle:
+|
+| uk=k−1+uK,
+|
+| (2)
+|
+| 𝒉tk=𝒉t−1i, where ​i​ satisfies ​uk∈[∑j=1i−1ωj,∑j=1iωj].
+|
+| (3)
+Next, we describe the two primary components of our particle filters: the motion module and the observation likelihood module.
+Motion Module.
+The motion module is a fundamental component of particle filters that evolves the states of particles from timestep t−1 to t. Assuming that the latent hidden state changes smoothly with consistent robot manipulation, we adopt a constant velocity motion model following [43] to simulate the propagation of the latent state:
+|
+| p⁡(𝒉tk|𝒉t−1k,𝒉t−2k)=𝒩⁡(μ,Σ),
+|
+| (4)
+where 𝒩 is the multivariate normal distribution with mean μ=ht−1k+α⁡(ht−1k,ht−2k) and covariance matrix Σ. α is a soft update hyperparameter that controls the update velocity. A higher value of α enhances robustness in hidden state estimation, especially when facing mis-detected or undetected bounding boxes from SAM 2 due to occlusions or knowledge discrepancies. The covariance matrix Σ=β2​𝑰, where 𝑰 is an identify matrix.
+In our implementation, we set α=0.7 and β=0.04 following [43].
+Observation Likelihood with VLM-Coding Affordance.
+The likelihood p⁡(ℐt∣𝒉t) measures how likely the observed bounding box ℐt is, given the particle state 𝒉t at time t. Computing this likelihood analytically is often challenging. For example, consider the distribution p⁡(ℐt∣𝒉t=0), which gives the position distribution of a “red cube” when the first subgoal, “red cube in red block” is unsatisfied. In this case, the position distribution of the red block can be multimodal and highly complex, making an analytical solution intractable. In our method, we leverage the reasoning and coding abilities in VLMs to solve this challenge.
+(a)
+Figure 3: VLM-coding affordance in observation models.
+As shown in Fig. 3, we query VLMs for possible object positions that either satisfy or do not satisfy the goal. Rather than directly generating these positions, we query VLMs to produce coding functions, which is more efficient and requires no extra fine-tuning. Specifically, for each subgoal i, we query VLMs for a function fV​L​M1​(i) that generates all possible positions of the target object when the i-th subgoal is satisfied. The output affordance is denoted by ℐ^1​(i)={(xj,yj)} (omitting subscript t for brevity). Then, referring to fV​L​M1​(i), we query VLMs for a function fV​L​M0​(i) that outputs positions when the i-th subgoal is unsatisfied, denoted by ℐ^0​(i)={(xj,yj)}. We then compute the likelihood as the minimum mean distance between the observed positions and the affordances as:
+|
+| di0=minj∈|ℐ^0|⁡‖ℐ−ℐ^j0‖,di1=minj∈|ℐ^1|⁡‖ℐ−ℐ^j1‖,
+|
+| (5)
+where di0 is the estimation error when subgoal i is unsatisfied (hi=0), and di1 is the estimation error when subgoal i is satisfied (hi=1).
+We compute the weight ωk for each particle k by multiplying the corresponding error terms across all subgoals:
+|
+| ωk=∏i=1N(hik​di0+(1−hik)​di1),
+|
+| (6)
+where N is the number of subgoals, and hik is the hidden state of particle k for subgoal i. This formulation assigns higher weights to particles whose subgoal states match the observed positions (i.e., closer to the satisfied affordance). Finally, we normalize the weights to sum to one and use them to resample particles for the next timestep.
+(a)
+Figure 4: Experiments across three domains with six distinct tasks. In CLIPort [29], tasks are “Place-same-color” where cubes are sorted into matching color bowls, and “Stack-tower” where cubes are stacked in a predefined color order. In CALVIN [21], tasks are “Make-line” where cubes are aligned in a line following a specific color order, and “Cleanup-desk” requiring placing cubes into a closed drawer. In real-world, the tasks include “Prepare-food” where items are arranged into plate, and “Set-table” where tableware is placed appropriately.
+After estimating the subgoal hidden state, we can generate rewards based on changes in goal completion between decision intervals. Specifically, the estimated goal completion status is the weighted average of all particles, i.e., 𝒉^t=∑kωk​𝒉tk. Then, we compute the reward as rt=σ⁡(𝒉^t−𝒉^t−τ), where σ⁡(⋅) depends on the decomposed subgoals for the downstream task, and τ denotes the decision interval. The full detailed procedure of reward generation in T2-VLM can be found in Algorithm 1.
+3.3 Implementation Details
+In T2-VLM, we adopt Qwen2-VL-72B [37] as the default VLM and also experiment with other VLMs. For particle filters, we follow [43] with 100 particles, α=0.7, and β=0.04. For SAM2, the official sam2.1_hiera_tiny checkpoint provides satisfactory bounding boxes. We define σ as a weighted sum of the absolute differences between subgoal hidden states. In our reinforcement-learning setup, we use an object-centric observation and action space [20] with a transformer-based network.
+For details of the network architectures and hyper-parameters utilized in the soft-actor-critic RL agent, please refer to the Appendix.
+Algorithm 1 Particle filters in T2-VLM
+0:
+Bounding box trajectories ℐt=1:T of all objects in one episode, initial subgoal hidden state 𝒉0 from VLM, decision interval τ.
+0:
+Rewards for each decision step
+1:
+Initialize the estimated hidden state buffer ℋ = {h0}.
+2:
+for t=1 to T do
+3:
+for i=1 to N do
+4:
+Obtain estimated position ℐ^0​(i) and ℐ^1​(i) from the VLM-generated functions fV​L​M0 and fV​L​M1 given the bounding box trajectories ℐt.
+5:
+Estimate the observation likelihood through computing the distance di0 and di1 in Eq. (5).
+6:
+end for
+7:
+Compute ωk for each particle k through Eq. (6).
+8:
+ω1:K←ω1:K∑ω1:K
+9:
+𝒉^t=∑kωk​𝒉tk
+10:
+Insert 𝒉^t into ℋ
+11:
+Resample 𝒉t1:K according to Eq. (2), Eq. (3).
+12:
+if t is decision time step then
+12:
+rt=σ⁡(𝒉^t−𝒉^t−τ)
+13:
+end if
+14:
+end for
+4 Experiments
+In this section, we address four research questions:
+1) Is the reward generated by T2-VLM sufficient to support RL training?
+2) How do T2-VLM-trained policies compare with other methods in terms of recovery capabilities?
+3) How does each component contribute to T2-VLM?
+4) Which key factors influence the performance of T2-VLM?
+We investigate these questions through experiments in three domains with six manipulation tasks (see Fig. 4).
+(a)
+(b)
+(c)
+(d)
+Figure 5: Goal completion ratio during RL training under different VLM-based rewards. All methods are running with three seeds.
+4.1 Comparison on RL Training
+Experiment Setup.
+To answer Question 1, we first introduce four robot manipulation tasks from two commonly used benchmark CLIPort [29] and CALVIN [21]. They are all long-horizon tasks that involve multiple subgoals. As shown in Fig. 4, the success conditions for each task are:
+1.
+Place-same-color: The red cube is in the red bowl; The green cube is in the green bowl; The yellow cube and blue cube are on the tray.
+2.
+Stack-tower: Stack the blocks according to the sequence red, yellow, gray and green.
+3.
+Make-line: The red cube is next to the left of the green cube; The green cube is next to the left of the blue cube.
+4.
+Cleanup-desk: The drawer is open; The red cube is on the drawer; The blue cube is on the drawer.
+Compared Methods.
+To provide rewards for online RL training, we compare T2-VLM with two other state-of-the-art (SOTA) VLM-driven reward generation methods, as well as with environmental rewards. The first method, VLM-CaR [36], queries VLMs to generate code from images and task descriptions, then refines that code using a small set of expert and random-policy trajectories (five each in our experiments). The second method, RL-VLM-F [38], learns a reward model from VLM-generated preference labels on pairs of observation images and task descriptions. Finally, the Environmental Rewards are coded within the benchmark using ground truth environment states.
+Evaluation Metric.
+We measure learning performance in long-sequential tasks using the goal completion ratio, defined as the number of achieved goals in an episode divided by the total number of subgoals in the task.
+Experimental Results.
+As shown in Fig. 5, we plot the goal completion ratio during RL training over three seeds per method. We observe that rewards generated by T2-VLM effectively support RL for robot manipulation, yielding a goal completion ratio comparable to that achieved with environmental rewards and outperforming the other two SOTA methods. Furthermore, T2-VLM provides more stable training performance, contributing to its precise rewards. In contrast, RL-VLM-F shows poor performance on CLIPort and higher variance on CALVIN, likely due to the discrete action spaces complicating VLM-based preferences and the added instability of a learned reward model. In contrast, by not fully relying on VLM outputs and instead using particle filters for correction, T2-VLM produces reliable rewards in a training-free manner.
+4.2 Comparison of Recovery Performance
+To address Question 2, we compare the RL policy trained by T2-VLM against other off-the-shelf methods designed for robot manipulation recovery. We do not include the CaR- and RL-VLM-F-trained policies due to their lower training performance.
+We introduce failures during evaluation, including:
+1) Occupied failure (in Place-same-color): Other objects occupy the placement space.
+2) Closed failure (in Cleanup-desk): The drawer is randomly closed during execution.
+3) Picking failure (in Stack-tower): The robot fails to pick up the object.
+4) Placement failure (in Stack-tower): The tower falls because of excessive placement force.
+Compared Methods.
+1) SayCan [1] produces context-aware language skills. After executing initial plans, we re-prompt SayCan at a low temperature to carry out subsequent instructions until episode ends.
+2) REFLECT [19] integrates LLM reasoning with visual foundation models for failure analysis and corrective actions.
+Evaluation Metrics. We measure failure recovery with two metrics:
+1) Recovery success rate: Whether the task is successfully completed within a given time limit after a failure.
+2) Recovery meta steps: The number of steps required to achieve the final success.
+All methods can only execute at most 20 steps of primitive skills, because we empirically observe that none of them can recover beyond that point.
+Experimental Results.
+Tab. 1 shows that RL with T2-VLM achieves a higher recovery success rate compared to LLM-only approaches. For instance, in the Stack-tower task with a placement failure, our method achieves full recovery, resulting in a 75% improvement in success rate over REFLECT. This improvement stems from T2-VLM leveraging temporal information to provide accurate rewards, even under object occlusion, enabling robust RL policies. In contrast, REFLECT relies on single-image inputs for recovery decisions, often leading to incomplete information. Additionally, our method requires fewer meta steps to recover and complete the task. While REFLECT achieves high success rates under occupied failures, our approach consistently uses fewer meta steps, benefiting from the online training mechanism supported by T2-VLM rewards.
+|
+|
+| Occupied
+| Closed
+| Drop
+| Placement
+| Average
+| Recover
+| SayCan
+| 0.80
+| 0.10
+| 0.00
+| 0.00
+| 0.23
+| success
+| REFLECT
+| 0.95
+| 0.50
+| 0.40
+| 0.25
+| 0.53
+| rate ↑
+| RL w/ T2-VLM
+| 1.00
+| 0.80
+| 0.90
+| 1.00
+| 0.93
+| Recover
+| SayCan
+| 14.5
+| 19.6
+| 20.0
+| 20.0
+| 18.53
+| meta
+| REFLECT
+| 16.1
+| 16.6
+| 17.1
+| 18.3
+| 17.03
+| steps
+| RL w/ T2-VLM
+| 8.0
+| 10.4
+| 10.2
+| 10.3
+| 9.73
+| ↓
+| Optimal
+| 6.0
+| 6.0
+| 8.0
+| 10.0
+| 7.50
+Table 1: Comparison of recovery performance facing with different types of failures. We ignore the “failure” term for clarity.
+| Task
+| Place-same-color
+| Stack-tower
+|
+| Query Times
+| Reward Acc. (%)
+| Inference Time (s)
+| Query Times
+| Reward Acc. (%)
+| Inference Time (s)
+| VLM-score (Claude-3.5-sonnet)
+| 872
+| 54.77
+| 173.45
+| 1620
+| 75.05
+| 220.62
+| T2-VLM (Claude-3.5-sonnet)
+| 200
+| 90.56
+| 48.64
+| 200
+| 84.45
+| 45.10
+| Δ (%)
+| ↓ 77.06
+| ↑ 35.79
+| ↓ 71.9
+| ↓ 87.65
+| ↑ 9.40
+| ↓ 79.56
+| VLM-score (Qwen2-VL-72B)
+| 872
+| 68.83
+| 36.30
+| 1620
+| 68.12
+| 35.27
+| T2-VLM (Qwen2-VL-72B)
+| 200
+| 94.60
+| 30.81
+| 200
+| 82.68
+| 23.13
+| Δ (%)
+| ↓ 77.06
+| ↑ 25.77
+| ↓ 15.12
+| ↓ 87.65
+| ↑ 14.56
+| ↓ 34.42
+| VLM-score (Qwen2-VL-7B)
+| 872
+| 42.08
+| 14.84
+| 1620
+| 76.96
+| 22.79
+| T2-VLM (Qwen2-VL-7B)
+| 200
+| 83.25
+| 13.02
+| 200
+| 83.45
+| 20.12
+| Δ (%)
+| ↓ 77.06
+| ↑ 41.17
+| ↓ 12.26
+| ↓ 87.65
+| ↑ 6.49
+| ↓ 11.72
+Table 2: Investigations on different foundation VLM models utilized in VLM-score and T2-VLM in CLIPort. Our method is highlighted in blue. Claude 3.5 Sonnet is one of the most widely used closed-source VLMs. Qwen2-VL-72B is one of the state-of-the-art open-source VLMs, and Qwen2-VL-7B is a variant in Qwen2 with relatively small parameters.
+4.3 Ablation Studies
+To investigate how each component contributes to T2-VLM (Question 3), we conduct ablation studies on offline datasets collected from the CALVIN and CLIPort benchmarks, each containing 50 mixed expert and random trajectories per task. We measure reward accuracy, defined as the ratio of correctly identified subgoal completions.
+As shown in Fig. 6, we first compare different hidden-state initialization methods for particle filters (PF). Without VLM initialization, PF+Random (yellow bar) achieves only 81.72% reward accuracy on Place-same-color—12.88% lower than T2-VLM (green bar)—highlighting the importance of proper VLM initialization. However, relying solely on VLMs can significantly degrade performance. Removing particle filters and querying VLMs at every step (red bar) reduces reward accuracy below 70% in the first three tasks due to dynamic conditions (e.g., occlusions). This demonstrates the essential role of particle filters in accurately tracking goal completion over time. The performance of T2-VLM also depends on task difficulty. In Place-same-color, where VLMs easily identify subgoal completion from the initial image, T2-VLM achieves reward accuracy comparable to PF with ground-truth initialization (blue bar). However, in tasks like Make-line, where VLMs struggle to recognize the “next to” spatial relationship, T2-VLM still has room for improvement, suggesting the need for more advanced spatial-reasoning VLMs for initialization.
+(a)
+Figure 6: Ablation studies on VLM initialization and particle filters (PF). We compare the reward accuracy of T2-VLM under different initialization methods and without particle.
+4.4 Investigations
+For Question 4, we investigate how different foundation VLMs and PF hidden lengths (the number of images used for reward generation each time) affect the performance. We compare T2-VLM to VLM-score, which queries VLMs at every step for subgoal completions, focusing on VLM query times, reward accuracy, and inference time. In VLM-score, most inference time comes from frequent VLM queries, whereas in T2-VLM , it largely stems from bounding box processing (via SAM 2) and particle filter updates.
+Investigation of Foundation VLMs.
+We combine T2-VLM and VLM-score with three different foundation VLMs, as shown in Tab. 2, 3 and 4. We include two real-world tasks here where a topdown camera captures the UR robot workspace. Surprisingly, more powerful VLMs do not always yield better spatial reasoning in robotic scenarios. For example, in the Stack-tower of Tab. 2, with a longer chain of thought, VLM-score (Claude-3.5-sonnet) achieves around 75% reward accuracy—on par with VLM-score (Qwen2-VL-7B), while VLM-score (Qwen2-VL-72B) performs even worse despite its larger size. In contrast, T2-VLM consistently boosts reward accuracy and reduces inference time across all tested VLMs compared with VLM-score. For example, in the Place-same-color task from Tab. 2, T2-VLM outperforms VLM-score by 35.79%, 25.77%, and 41.17% in reward accuracy, demonstrating that our method can be integrated with a wide range of VLMs for strong performance. Moreover, T2-VLM significantly reduces inference time: when combined with Claude-3.5-sonnet for Make-line task in Tab. 3, it saves VLM queries by 88.37%, corresponding to a 50.54% decrease in total inference time compared with VLM-score.
+| Task
+| Make-line
+| Cleanup-desk
+|
+| Query Times
+| Reward Acc. (%)
+| Inference Time (s)
+| Query Times
+| Reward Acc. (%)
+| Inference Time (s)
+| VLM-score (Claude-3.5-sonnet)
+| 860
+| 65.43
+| 166.20
+| 1236
+| 64.36
+| 181.78
+| T2-VLM (Claude-3.5-sonnet)
+| 100
+| 89.31
+| 65.59
+| 150
+| 85.07
+| 36.44
+| Δ (%)
+| ↓ 88.37
+| ↑ 23.88
+| ↓ 50.54
+| ↓ 87.86
+| ↑ 20.71
+| ↓ 79.95
+| VLM-score (Qwen2-VL-72B)
+| 860
+| 63.63
+| 42.39
+| 1236
+| 83.33
+| 19.66
+| T2-VLM (Qwen2-VL-72B)
+| 100
+| 91.03
+| 42.10
+| 150
+| 93.03
+| 17.14
+| Δ (%)
+| ↓ 88.37
+| ↑ 27.40
+| ↓ 0.68
+| ↓ 87.86
+| ↑ 9.70
+| ↓ 12.82
+| VLM-score (Qwen2-VL-7B)
+| 860
+| 58.18
+| 39.71
+| 1236
+| 85.93
+| 38.75
+| T2-VLM (Qwen2-VL-7B)
+| 100
+| 93.40
+| 24.90
+| 150
+| 92.46
+| 20.17
+| Δ (%)
+| ↓ 88.37
+| ↑ 35.22
+| ↓ 37.30
+| ↓ 87.86
+| ↑ 6.53
+| ↓ 47.95
+Table 3: Investigations on different foundation VLM models utilized in VLM-score and T2-VLM in CALVIN.
+(a)
+Figure 7: Investigation of PF hidden length.
+Investigation of PF Hidden Length. Using fewer temporal frames in T2-VLM can reduce time spent on object tracking but may lower reward accuracy due to less accurate temporal information and insufficient updates for subgoal hidden states. As shown in Fig. 7, we vary the PF hidden length in T2-VLM for the Place-same-color task. Setting the PF hidden length to 25 achieves a good balance between accuracy and efficiency. Beyond that, inference time remains constant because of the fixed sensor frequency.
+5 Related Work
+VLM-assisted Robot Manipulation.
+The powerful language generation and generalization capabilities of VLMs have driven significant interest in robotic tasks. One research direction leverages VLMs for spatial reasoning. For example, SORNet [44] shows that a transformer architecture conditioned on object prompts can generalize zero-shot to unseen objects. SpatialVLM [3] predicts spatial relations in metric space; and RoboPoint [45] and AffordGrasp [34] extend spatial reasoning to robotic scenarios. Unlike these methods that directly generate affordance points, T2-VLM only prompts VLMs to produce functions before task execution, then uses these functions to output potential object positions, which is time-efficient and training-free.
+Other works leverage VLMs for long-horizon goal decomposition [6, 18, 31], high-level planning [11, 1, 19, 8, 47], and low-level execution [10, 30]. Our work focus on VLMs’ spatial reasoning capabilities to generate rewards, while we still leverage VLMs to generate subgoals and code to assist in reward generation.
+VLM-based Reward Generation.
+Recently, VLMs have shown significant potential in generating reward functions, simplifying RL setups. VLM-CaR [36] uses VLMs to generate reward functions to verify task completion. Similarly, IKER [24] samples key points from the scene to create Python-based reward functions using VLMs. However, the generated code often requires human formatting, and may struggle with complex scene interactions or dynamic changes, failing to capture subtle environmental effects.
+Other approaches use VLMs to generate reward values for RL training. Some studies query VLMs for preference labels based on image observations [38, 35], while others derive rewards from cosine similarity between environmental states and task descriptions or agent trajectories [27, 4]. VLMs can also output scalar rewards for goal completion given a language-based goal and image observation [2, 42].
+However, they face several challenges including:
+1) Frequent VLM queries incur high computational costs, limiting scalability;
+2) Fine-tuning VLMs requires extensive resources and data, making them impractical for robotics applications; and
+3) Inaccurate reward estimation can lead to suboptimal training outcomes. Therefore, acquiring accurate rewards for robotic tasks
+This motivates the pursuit of more reliable and time-efficient solutions.
+6 Conclusion
+| Task
+| Prepare-food
+|
+| Reward Acc. (%)
+| Inference Time (s)
+| Claude-3.5-sonnet
+| 93.35
+| 14.67
+| Qwen2-VL-72B
+| 98.56
+| 7.67
+| Qwen2-VL-7B
+| 97.12
+| 6.28
+| Task
+| Set-table
+|
+| Reward Acc. (%)
+| Inference Time (s)
+| Claude-3.5-sonnet
+| 87.61
+| 18.68
+| Qwen2-VL-72B
+| 91.82
+| 10.59
+| Qwen2-VL-7B
+| 90.36
+| 8.64
+Table 4: Investigation on different VLM models combined with T2-VLM in real world tasks. T2-VLM achieves high reward accuracy results when combined with different VLM models.
+Generating reliable and time-efficient rewards remains a major challenge in real-world robot manipulation tasks. In this paper, we propose T2-VLM, a Training-free Temporal-consistent reward generation method based on VLM-derived goal decomposition. In this work, we first introduce an automated procedure to prompt VLMs for decomposed subgoals and initial goal completion estimates before interaction, requiring only a single query per episode. Then, we encode these subgoal completion statuses into a scalar vector for particle filter initialization, allowing continuous updates based on temporal observations derived by SAM 2. Experiments across three domains with six robot manipulation tasks show that the T2-VLM can well support the training of RL algorithms, offering high reward accuracy with lower computational cost.
+Acknowledgments
+This paper was sponsored by the National Key R&D Project (No. 2023YFE0209100) and National Natural Science Foundation of China (No. U23A20310).
+References
+[1]
+Michael Ahn, Anthony Brohan, Noah Brown, Yevgen Chebotar, Omar Cortes, Byron David, Chelsea Finn, Chuyuan Fu, Keerthana Gopalakrishnan, Karol Hausman, et al.
+Do as i can, not as i say: Grounding language in robotic affordances.
+arXiv preprint arXiv:2204.01691, 2022.
+[2]
+Kate Baumli, Satinder Singh, Feryal Behbahani, Harris Chan, Gheorghe Comanici, Sebastian Flennerhag, Maxime Gazeau, Kristian Holsheimer, Dan Horgan, Michael Laskin, et al.
+Vision-language models as a source of rewards.
+In Second Agent Learning in Open-Endedness Workshop, 2023.
+[3]
+Boyuan Chen, Zhuo Xu, Sean Kirmani, Brain Ichter, Dorsa Sadigh, Leonidas Guibas, and Fei Xia.
+Spatialvlm: Endowing vision-language models with spatial reasoning capabilities.
+In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14455–14465, 2024.
+[4]
+Norman Di Palo, Arunkumar Byravan, Leonard Hasenclever, Markus Wulfmeier, Nicolas Heess, and Martin Riedmiller.
+Towards a unified agent with foundation models.
+In Workshop on Reincarnating Reinforcement Learning at ICLR 2023, 2023.
+[5]
+Yilun Du, Sherry Yang, Pete Florence, Fei Xia, Ayzaan Wahid, Pierre Sermanet, Tianhe Yu, Pieter Abbeel, Joshua B Tenenbaum, Leslie Pack Kaelbling, et al.
+Video language planning.
+In International Conference on Learning Representations, 2024.
+[6]
+Jiafei Duan, Wentao Yuan, Wilbert Pumacay, Yi Ru Wang, Kiana Ehsani, Dieter Fox, and Ranjay Krishna.
+Manipulate-anything: Automating real-world robots using vision-language models.
+In 8th Annual Conference on Robot Learning, 2024.
+[7]
+Jensen Gao, Bidipta Sarkar, Fei Xia, Ted Xiao, Jiajun Wu, Brian Ichter, Anirudha Majumdar, and Dorsa Sadigh.
+Physically grounded vision-language models for robotic manipulation.
+In IEEE International Conference on Robotics and Automation, pages 12462–12469, 2024.
+[8]
+Yanjiang Guo, Yen-Jen Wang, Lihan Zha, and Jianyu Chen.
+Doremi: Grounding language model by detecting and recovering from plan-execution misalignment.
+In IEEE/RSJ International Conference on Intelligent Robots and Systems, pages 12124–12131, 2024.
+[9]
+Xiaoshuai Hao, Yi Zhu, Srikar Appalaraju, Aston Zhang, Wanqian Zhang, Bo Li, and Mu Li.
+Mixgen: A new multi-modal data augmentation.
+In Proceedings of the IEEE/CVF winter conference on applications of computer vision, pages 379–389, 2023.
+[10]
+Wenlong Huang, Chen Wang, Ruohan Zhang, Yunzhu Li, Jiajun Wu, and Li Fei-Fei.
+Voxposer: Composable 3d value maps for robotic manipulation with language models.
+In Conference on Robot Learning, pages 540–562, 2023.
+[11]
+Yuheng Ji, Huajie Tan, Jiayu Shi, Xiaoshuai Hao, Yuan Zhang, Hengyuan Zhang, Pengwei Wang, Mengdi Zhao, Yao Mu, Pengju An, et al.
+Robobrain: A unified brain model for robotic manipulation from abstract to concrete.
+In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 1724–1734, 2025.
+[12]
+Chao Jia, Yinfei Yang, Ye Xia, Yi-Ting Chen, Zarana Parekh, Hieu Pham, Quoc Le, Yun-Hsuan Sung, Zhen Li, and Tom Duerig.
+Scaling up visual and vision-language representation learning with noisy text supervision.
+In International Conference on Machine Learning, pages 4904–4916, 2021.
+[13]
+Tushar Khot, Harsh Trivedi, Matthew Finlayson, Yao Fu, Kyle Richardson, Peter Clark, and Ashish Sabharwal.
+Decomposed prompting: A modular approach for solving complex tasks.
+In The Eleventh International Conference on Learning Representations, 2023.
+[14]
+Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C Berg, Wan-Yen Lo, et al.
+Segment anything.
+In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 4015–4026, 2023.
+[15]
+Michelle A Lee, Brent Yi, Roberto Martín-Martín, Silvio Savarese, and Jeannette Bohg.
+Multimodal sensor fusion with differentiable filters.
+In IEEE/RSJ International Conference on Intelligent Robots and Systems, pages 10444–10451, 2020.
+[16]
+Dingzhe Li, Yixiang Jin, Yuhao Sun, Hongze Yu, Jun Shi, Xiaoshuai Hao, Peng Hao, Huaping Liu, Fuchun Sun, Jianwei Zhang, et al.
+What foundation models can bring for robot learning in manipulation: A survey.
+arXiv preprint arXiv:2404.18201, 2024.
+[17]
+Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi.
+Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models.
+In International Conference on Machine Learning, pages 19730–19742, 2023.
+[18]
+Jacky Liang, Wenlong Huang, Fei Xia, Peng Xu, Karol Hausman, Brian Ichter, Pete Florence, and Andy Zeng.
+Code as policies: Language model programs for embodied control.
+In International Conference on Robotics and Automation, pages 9493–9500, 2023.
+[19]
+Zeyi Liu, Arpit Bahety, and Shuran Song.
+Reflect: Summarizing robot experiences for failure explanation and correction.
+In Conference on Robot Learning, pages 3468–3484, 2023.
+[20]
+Runyu Ma, Jelle Luijkx, Zlatan Ajanovic, and Jens Kober.
+Explorllm: Guiding exploration in reinforcement learning with large language models.
+arXiv preprint arXiv:2403.09583, 2024.
+[21]
+Oier Mees, Lukas Hermann, Erick Rosete-Beas, and Wolfram Burgard.
+Calvin: A benchmark for language-conditioned policy learning for long-horizon robot manipulation tasks.
+IEEE Robotics and Automation Letters, 7(3):7327–7334, 2022.
+[22]
+Nikolaj T Mücke, Sander M Bohté, and Cornelis W Oosterlee.
+The deep latent space particle filter for real-time data assimilation with uncertainty quantification.
+Scientific Reports, 14(1):19447, 2024.
+[23]
+Pruthvi Patel, Swaroop Mishra, Mihir Parmar, and Chitta Baral.
+Is a question decomposition unit all we need?
+In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing, pages 4553–4569, Abu Dhabi, United Arab Emirates, 2022. Association for Computational Linguistics.
+[24]
+Shivansh Patel, Xinchen Yin, Wenlong Huang, Shubham Garg, Hooshang Nayyeri, Li Fei-Fei, Svetlana Lazebnik, and Yunzhu Li.
+A real-to-sim-to-real approach to robotic manipulation with VLM-generated iterative keypoint rewards.
+In 2nd CoRL Workshop on Learning Effective Abstractions for Planning, 2024.
+[25]
+Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al.
+Learning transferable visual models from natural language supervision.
+In International Conference on Machine Learning, pages 8748–8763, 2021.
+[26]
+Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman Rädle, Chloe Rolland, Laura Gustafson, et al.
+Sam 2: Segment anything in images and videos.
+arXiv preprint arXiv:2408.00714, 2024.
+[27]
+Juan Rocamonde, Victoriano Montesinos, Elvis Nava, Ethan Perez, and David Lindner.
+Vision-language models are zero-shot reward models for reinforcement learning.
+In International Conference on Learning Representations, 2024.
+[28]
+S P Sharan, Ruihan Zhao, ufuk topcu, Zhangyang Wang, and Sandeep P. Chinchali.
+Plan diffuser: Grounding LLM planners with diffusion models for robotic manipulation.
+In Bridging the Gap between Cognitive Science and Robot Learning in the Real World: Progresses and New Directions, 2024.
+[29]
+Mohit Shridhar, Lucas Manuelli, and Dieter Fox.
+Cliport: What and where pathways for robotic manipulation.
+In Conference on robot learning, pages 894–906, 2022.
+[30]
+Mohit Shridhar, Lucas Manuelli, and Dieter Fox.
+Perceiver-actor: A multi-task transformer for robotic manipulation.
+In Conference on Robot Learning, pages 785–799, 2023.
+[31]
+Ishika Singh, Valts Blukis, Arsalan Mousavian, Ankit Goyal, Danfei Xu, Jonathan Tremblay, Dieter Fox, Jesse Thomason, and Animesh Garg.
+Progprompt: Generating situated robot task plans using large language models.
+In International Conference on Robotics and Automation, pages 11523–11530, 2023.
+[32]
+Huajie Tan, Yuheng Ji, Xiaoshuai Hao, Minglan Lin, Pengwei Wang, Zhongyuan Wang, and Shanghang Zhang.
+Reason-rft: Reinforcement fine-tuning for visual reasoning.
+arXiv preprint arXiv:2503.20752, 2025.
+[33]
+Jiajin Tang, Ge Zheng, Jingyi Yu, and Sibei Yang.
+Cotdet: Affordance knowledge prompting for task driven object detection.
+In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 3068–3078, 2023.
+[34]
+Yingbo Tang, Shuaike Zhang, Xiaoshuai Hao, Pengwei Wang, Jianlong Wu, Zhongyuan Wang, and Shanghang Zhang.
+Affordgrasp: In-context affordance reasoning for open-vocabulary task-oriented grasping in clutter.
+arXiv preprint arXiv:2503.00778, 2025.
+[35]
+Sreyas Venkataraman, Yufei Wang, Ziyu Wang, Zackory Erickson, and David Held.
+Real-world offline reinforcement learning from vision language model feedback.
+arXiv preprint arXiv:2411.05273, 2024.
+[36]
+David Venuto, Mohammad Sami Nur Islam, Martin Klissarov, Doina Precup, Sherry Yang, and Ankit Anand.
+Code as reward: Empowering reinforcement learning with vlms.
+In International Conference on Machine Learning, 2024.
+[37]
+Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al.
+Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution.
+arXiv preprint arXiv:2409.12191, 2024a.
+[38]
+Yufei Wang, Zhanyi Sun, Jesse Zhang, Zhou Xian, Erdem Biyik, David Held, and Zackory Erickson.
+Rl-vlm-f: Reinforcement learning from vision language foundation model feedback.
+In International Conference on Machine Learning, 2024b.
+[39]
+Chuan Wen, Xingyu Lin, John So, Kai Chen, Qi Dou, Yang Gao, and Pieter Abbeel.
+Any-point trajectory modeling for policy learning.
+arXiv preprint arXiv:2401.00025, 2023.
+[40]
+Kun Wu, Chengkai Hou, Jiaming Liu, Zhengping Che, Xiaozhu Ju, Zhuqin Yang, Meng Li, Yinuo Zhao, Zhiyuan Xu, Guang Yang, et al.
+Robomind: Benchmark on multi-embodiment intelligence normative data for robot manipulation.
+arXiv preprint arXiv:2412.13877, 2024.
+[41]
+Jianwei Yang, Hao Zhang, Feng Li, Xueyan Zou, Chunyuan Li, and Jianfeng Gao.
+Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v.
+arXiv preprint arXiv:2310.11441, 2023.
+[42]
+Jingyun Yang, Max Sobol Mark, Brandon Vu, Archit Sharma, Jeannette Bohg, and Chelsea Finn.
+Robot fine-tuning made easy: Pre-training rewards and policies for autonomous real-world reinforcement learning.
+In International Conference on Robotics and Automation, pages 4804–4811, 2024.
+[43]
+Yuxuan Yang, Johannes A Stork, and Todor Stoyanov.
+Particle filters in latent space for robust deformable linear object tracking.
+IEEE Robotics and Automation Letters, pages 12577–12584, 2022.
+[44]
+Wentao Yuan, Chris Paxton, Karthik Desingh, and Dieter Fox.
+Sornet: Spatial object-centric representations for sequential manipulation.
+In Conference on Robot Learning, pages 148–157, 2022.
+[45]
+Wentao Yuan, Jiafei Duan, Valts Blukis, Wilbert Pumacay, Ranjay Krishna, Adithyavairavan Murali, Arsalan Mousavian, and Dieter Fox.
+Robopoint: A vision-language model for spatial affordance prediction in robotics.
+In 8th Annual Conference on Robot Learning, 2024.
+[46]
+Junjie Zhang, Chenjia Bai, Haoran He, Zhigang Wang, Bin Zhao, Xiu Li, and Xuelong Li.
+Sam-e: Leveraging visual foundation model with sequence imitation for embodied manipulation.
+In International Conference on Machine Learning, 2024.
+[47]
+Lingfeng Zhang, Xiaoshuai Hao, Qinwen Xu, Qiang Zhang, Xinyao Zhang, Pengwei Wang, Jing Zhang, Zhongyuan Wang, Shanghang Zhang, and Renjing Xu.
+Mapnav: A novel memory representation via annotated semantic maps for vlm-based vision-and-language navigation.
+arXiv preprint arXiv:2502.13451, 2025.
+[48]
+Ruijie Zheng, Yongyuan Liang, Shuaiyi Huang, Jianfeng Gao, Hal Daumé III, Andrey Kolobov, Furong Huang, and Jianwei Yang.
+Tracevla: Visual trace prompting enhances spatial-temporal awareness for generalist robotic policies.
+arXiv preprint arXiv:2412.10345, 2024.
+This supplementary material provides additional details on the proposed method and used prompts that could not be included in the main manuscript due to page limitations.
+Specifically, this appendix is organized as follows:
+•
+Sec. A provides additional details on the model architecture and reinforcement learning training.
+•
+Sec. B presents details on the prompts used for querying VLMs.
+•
+Sec. C presents details for the experimental environment.
+Appendix A Model Architecture and Training Details
+We use an object-centric transformer-based network architecture in our RL agent, similar to the one used in ExploRLLM [20]. As illustrated in Fig. 9, the visual embeddings, end-effector 6-D positions, and object bounding boxes are concatenated for each task-related object. As we concentrate on reward generation in this work, the bounding boxes used here are obtained from the simulators for all methods, following [20]. When computing rewards, we still utilizes SAM2 to obtain the bounding boxes without any supervision. Then, these features are input into the self-attention module to extract the overall features of the current frame. During the training phase, the convolutional neural networks (CNN) and the self-attention network are updated concurrently with the policy and value networks. We set the temperature α=0, discount factor γ=0.99, critic update τ=0.01 in SAC. You can also find these details in our open-source code repository: https://github.com/nuomizai/T2VLM
+Appendix B Prompts for Querying VLMs
+Chain-of-thought Task Relevant Object Detection.
+Detecting task-relevant objects poses a significant challenge that requires domain knowledge. Leveraging the strong visual captioning and reasoning abilities of VLM, we generate these objects using chain-of-thought (CoT) prompting, building on previous work [28, 33]. Below, we provide an example in Fig. 10 illustrating how to identify task-related objects with CoT prompts.
+Figure 8: Re-check VLM initialization with Set-of-Mark (SoM) prompting in a long-horizon real-world task.
+(a)
+Figure 9: The network architecture for RL agent.
+Prompts for chain-of-thought object detection
+User input Task Description:
+Place the cube from gray tray into matching colored bowl; cubes without a matching bowl should stay in place.
+VLM Input:
+This is a task related to robot arm manipulation. Pay a comprehensive attention to the provided picture and detect all the objects in detail shown in this image.
+VLM Output:
+Let’s identify all the objects present:
+•
+Robot Arm. The black robotic arm is positioned above the gray tray, indicating it is used for picking and placing objects.
+•
+Gray Tray. The gray tray contains four cubes of different colors:
+–
+Red Cube
+–
+Blue Cube
+–
+Green Cube
+–
+Yellow Cube
+•
+Colored Bowls. There are three colored bowls on the table:
+–
+Green Bowl: Positioned to the right of the gray tray.
+–
+Red Bowl: Positioned further to the right of the green bowl.
+–
+No Blue or Yellow Bowls: These colors are missing, meaning there are no bowls for the blue and yellow cubes.
+•
+Table Surface. The objects (gray tray and bowls) are placed on a flat, dark surface which serves as the workspace for the robot arm.
+VLM Input:
+Assume you are an expert of robot arm control filed with high intelligence. Your goal is to achieve this task: Place the cube from the gray tray into the matching colored bowl; cubes without a matching bowl should stay in place.
+Refer to the previous description for the objects shown in image, If the robot arm wants to achieve this task, what task-related objects need to be considered? Please print each object name with specific color like “white cube”. Robot arm could be ignore. Your answer needs to be as detailed as possible to avoid confusion. The output format is a list string:
+[
+“XX”,
+…
+]
+VLM Output:
+[“a red cube”, “a green cube”, “a blue cube”, “a yellow cube”, “a gray tray”, “a green bowl”, “a red bowl”]
+Figure 10: Prompts for chain-of-thought object detection.
+Prompt for Sub-goal Generation.
+As shown in Fig. 11, we provide the prompts for sub-goal generation. Specifically, we input task descriptions specified by the users and task-related object names obtained from Fig. 10 into user prompts for sub-goal generation. These prompts allow the VLM to generate spatial-aware sub-goals that can be tracked with Bayesian filters.
+Typically, these prompts effectively guide the VLM to generate correct subgoals, provided the initial image captures all task-relevant objects. However, in challenging cases—such as when objects are overlapping or partially hidden—VLMs may fail to recognize key items, leading to false or incomplete subgoals. We find that a simple N-step re-check during initialization can effectively mitigate this issue. As shown in Fig. 8, in a real-world sorting task, the VLM initially merges the apple and blue bowl due to overlap, resulting in missing subgoals. A second query during random exploration—using SoM prompting [41] with numbered labels and bounding boxes from T2-VLM —successfully recovers the blue bowl and updates the subgoals. This demonstrates the potential of our method to improve robustness in scenarios where VLMs may overlook relevant objects.
+Prompt for Goal Completion Status Identification.
+The prompts for identifying the completion status of each sub-goal are shown in Fig. 12. A complete subgoal completion status identification process for the Place-same-color task is visualized in Fig. 13.
+Prompts for sub-goals generation
+User Input Task Description:
+Place the cube from gray tray into matching colored bowl; cubes without a matching bowl should stay in place.
+System Prompt:
+You are an intelligent vision-language assistant agent operating within a virtual environment. Your primary objective is to achieve specified goals by breaking down complex tasks into manageable sub-goals that describe the status of objects at various stages.
+When you receive a task description, decompose it into a set of clear and concise sub-goals that will enable you to accomplish the task. Ensure that each sub-goal is complete and accurate to prevent task failure due to missing information about the status of relevant objects.
+To describe the state of target objects accurately, use the spatial relationship terms like: inside, on top of, on the bottom of, on the left of, on the right of and so on. Additionally, use the motion terms like open, closed and so on to describe object status.
+Make sure that each description captures the essential intermediate status needed to complete the task.
+User Prompt:
+Examples:
+Task: Place the red cube inside the red bowl.
+Relevant Objects: Red cube, red bowl.
+Sub-Goals: 1. The red cube is inside the red bowl.
+Task: Stack three cubes in the order of red, black, and blue, with the red cube on top.
+Relevant Objects: Red cube, black cube, blue cube.
+Sub-Goals: 1. The black cube is on top of the blue cube.
+2. The red cube is on top of the black cube.
+Now, decompose the following task using the provided visual information:
+Task: Place the cube from the gray tray into the matching colored bowl; cubes without a matching bowl should stay in place.
+Relevant Objects: a red cube, a green cube, a blue cube, a yellow cube, a gray tray, a green bowl, a red bowl
+Sub-Goals:
+VLM Output:
+1.
+The green cube is inside the green bowl.
+2.
+The red cube is inside the red bowl.
+3.
+The blue cube is on top of the gray tray.
+4.
+The yellow cube is on top of the gray tray.
+Figure 11: Prompts for sub-goals generation in the setup stage.
+Prompts for identifying the completion status of each subgoal
+System Prompt:
+You assist in controlling a high-intelligence robotic arm that determine the spatial relationship between the objects in the image. Print Yes or No given the task description and queried subgoal.
+User Prompt:
+Task Description: Place cubes from the gray tray into the matching colored bowl, cubes without a matching bowl should stay in place.
+Subgoal: The red cube is in the red bowl.
+Please determine if the current status meets the subgoal.
+VLM output:
+No.
+Figure 12: Prompts for goal completion status queried VLMs.
+An example for completion status identification of sub-goals
+Task Description:
+Place the cube from the gray tray into the matching colored bowl; cubes without a matching
+bowl should stay in place.
+Chain-of-thought Object Detection:
+blue cube, red cube, green cube, yellow cube, red bowl, green bowl
+Sub-goal Generation:
+1.
+The blue cube remains on the gray tray.
+2.
+The red cube is inside the red bowl.
+3.
+The green cube is inside the green bowl.
+4.
+The yellow cube remains on the gray tray.
+Completion Status Identification of Sub-goals:
+System prompt: Detailed in Fig. 12.
+Task description: Place the cube from the gray tray into the matching colored bowl; cubes without a matching
+bowl should stay in place.
+Case 1. Sub-goal matching for The blue cube remains on the gray tray.
+Sub-goal: The blue cube remains on the gray tray.
+Please determine if the current status meets the sub-goal.
+VLM Output:
+Yes.
+Case 2. Sub-goal matching for: The red cube is inside the red bowl.
+Sub-goal: The red cube is inside the red bowl.
+Please determine if the current status meets the sub-goal.
+VLM Output:
+No.
+Case 3. Sub-goal matching for: The green cube is inside the green bowl.
+Sub-goal: The green cube is inside the green bowl.
+Please determine if the current status meets the sub-goal.
+VLM Output:
+No.
+Case 4. Sub-goal matching for: The yellow cube remains on the gray tray.
+Sub-goal: The yellow cube remains on the gray tray.
+Please determine if the current status meets the sub-goal.
+VLM Output:
+Yes.
+Figure 13: An example of goal completion status identification.
+Appendix C Experiments
+C.1 Environment Details
+Training Environments.
+To support online RL training, we designed four robot manipulation tasks based on the CLIPort and CALVIN benchmarks. RL algorithms are trained for 400 episodes on CLIPort tasks and 2,000 episodes on CALVIN tasks, due to CALVIN’s larger action space and longer execution steps. Training may end early due to task success or unrecoverable failures. In CLIPort, no unrecoverable failures occur. In CALVIN, an episode terminates if the object falls off the desk.
+Testing Environments.
+For testing the baselines’ recovery capability, we modified the training environments by introducing environment changes or robot execution failures. For all methods in Tab. 1, we measure the average recovery success rate and recovery meta steps over 20 trials.
+C.2 Action Space
+In the CLIPort benchmark, following the settings of SayCan [1], the RL agent needs to simultaneously determine the objects for picking and placing. Therefore, the action space in CLIPort is 𝒜=[a1,a2], where a1 is the total number of picking objects and a2 is the total number of placing objects. In the CALVIN benchmark, the action space consists of a list of finite compositions combining skills and objects. Specifically, the action space of each task is shown as follows:
+•
+Cleanup-desk task: 𝒜=[[PICK, RED], [PICK, BLUE], [PLACE, DRAWER], [PULL, HANDLE], [PUSH, HANDLE]]
+•
+Make-line task: 𝒜=[[PICK, BLUE], [PLACE2LEFT, BLUE], [PLACE2RIGHT, BLUE], [PICK, RED], [PLACE2LEFT, RED], [PLACE2RIGHT, RED],[PICK, GREEN], [PLACE2LEFT, GREEN], [PLACE2RIGHT, GREEN]]
+Primitive Skill Parameterization.
+The primitive skill considered in simulators is parameterized as SKILL[𝒑], where 𝒑=[x, y, z] specifies the 3D coordinates of the target position.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

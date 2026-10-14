@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250" viewBox="0 0 300 250">
+<style>.panel{fill:#fff;stroke:#bbb}.label{font:700 18px sans-serif;fill:#111}.small{font:13px sans-serif;fill:#333}.table{stroke:#777;stroke-width:3}.target{fill:none;stroke:#08ae37;stroke-width:5}.blue{fill:#245fe8;stroke:#1543a6;stroke-width:1}.ghost{fill:none;stroke:#245fe8;stroke-width:2;stroke-dasharray:5 4}</style>
+<rect class="panel" x="5" y="5" width="290" height="235" rx="8"/>
+<text class="label" x="19" y="29">I</text>
+<text class="small" x="18" y="135">top</text><text class="small" x="18" y="195">side</text>
+<rect class="target" x="93" y="43" width="86" height="86"/>
+<rect class="ghost" x="97" y="57" width="57" height="57"/>
+<rect class="blue" x="118" y="57" width="57" height="57"/>
+<path d="M109 143 L166 143" stroke="#333" marker-end="url(#arrow)"/>
+<text class="small" x="86" y="161">0 s → 0.5 s</text>
+<line class="table" x1="42" y1="210" x2="257" y2="210"/>
+<rect class="blue" x="121" y="164" width="57" height="46"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#333"/></marker></defs>
+</svg>

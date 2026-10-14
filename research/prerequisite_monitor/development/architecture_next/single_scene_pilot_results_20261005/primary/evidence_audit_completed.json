@@ -1,0 +1,590 @@
+[
+  {
+    "video": "0001.mp4",
+    "condition": "B0",
+    "arm": "D2",
+    "direction": "zero",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not accessible for placement"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube remains outside green square, not accessible for placement"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "relation_selection",
+      "frame_backed_reason": "Final record follows the blue cube's noncompletion; red visibly occupies the green square at both 0 and 14 seconds. Blue being outside does not show that placement access is false. Route and disconfirmation were null.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0002.mp4",
+    "condition": "H-",
+    "arm": "D2",
+    "direction": "zero",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not accessible for goal"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube remains outside green square, not accessible for goal"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "relation_selection",
+      "frame_backed_reason": "Final record follows blue outside at both endpoints and omits the red move from outside at 0 to inside at 14. Its access claim is unsupported by blue location.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0003.mp4",
+    "condition": "U0",
+    "arm": "D2",
+    "direction": "zero",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not inside"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not inside"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "relation_selection",
+      "frame_backed_reason": "Red stays outside the green square at both endpoints while moving outside to outside; record follows unchanged blue outside and never binds red.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0004.mp4",
+    "condition": "N0",
+    "arm": "D2",
+    "direction": "zero",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not inside"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not inside"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "relation_selection",
+      "frame_backed_reason": "No object moves; green square stays empty and red stays outside. Record incorrectly equates blue outside with inaccessible placement.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0005.mp4",
+    "condition": "B+",
+    "arm": "D2",
+    "direction": "zero",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube is outside green square, not accessible for placement"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube remains outside green square, not accessible for placement"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "relation_selection",
+      "frame_backed_reason": "Red occupies green square at 0 and is outside at 14; final record only says blue is outside both times and omits the clearance change.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0006.mp4",
+    "condition": "G+",
+    "arm": "D2",
+    "direction": "positive",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "true",
+      "before_satisfied": "false",
+      "after_satisfied": "true",
+      "comparison": "better",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube not inside green square"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube inside green square with one face flat against tabletop"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "correct",
+      "region_binding": "correct",
+      "relation_relevance": "correct",
+      "endpoint_0": "correct",
+      "endpoint_14": "correct",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "unknown",
+      "first_supported_error": "no_direction_error_but_incomplete_citation",
+      "frame_backed_reason": "Blue is outside at 0 and inside at 14; final positive completion matches truth. The cited pair does not separately document release or settling, which are visible in later video frames but not stated as evidence.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0001.mp4",
+    "condition": "B0",
+    "arm": "candidate",
+    "direction": "uncertain",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access/clearance",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "green square empty, blue cube not inside, no blocker"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "green square empty, blue cube not inside, no blocker"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "first_nomination_and_endpoint",
+      "frame_backed_reason": "First pass names the green square; final switches to blue. Both describe the square as empty at 0 and 14 although red occupies it at both endpoints. Pair lock abstains.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0002.mp4",
+    "condition": "H-",
+    "arm": "candidate",
+    "direction": "uncertain",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access/clearance",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "empty, no object inside"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "red cube inside, blue cube outside"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "wrong",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "first_pass_endpoint_polarity",
+      "frame_backed_reason": "First pass names red and cites empty at 0 then red inside at 14, yet marks false-to-true better instead of clear-to-blocked worse. Final switches to blue; pair lock abstains.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0003.mp4",
+    "condition": "U0",
+    "arm": "candidate",
+    "direction": "uncertain",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "inside green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "inside green square",
+          "supports": "blue cube is outside green square, not inside"
+        },
+        {
+          "second": 14,
+          "region": "inside green square",
+          "supports": "blue cube is outside green square, not inside"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "unknown",
+      "endpoint_14": "unknown",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "unknown",
+      "first_supported_error": "first_nomination_relevance",
+      "frame_backed_reason": "First pass nominates robot near red; final switches to blue. Neither records red outside at both endpoints as the relevant stable relation. Blue outside is visible but irrelevant to the red move.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0004.mp4",
+    "condition": "N0",
+    "arm": "candidate",
+    "direction": "uncertain",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "accessible",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "green square empty, no object blocking access"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "green square empty, no object blocking access"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "correct",
+      "endpoint_14": "correct",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "unknown",
+      "first_supported_error": "first_nomination_relevance",
+      "frame_backed_reason": "First pass nominates the static robot/gripper; final switches to blue. Green square being empty at both endpoints is supported, but no stable red relation is nominated and pair lock abstains.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0005.mp4",
+    "condition": "B+",
+    "arm": "candidate",
+    "direction": "uncertain",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "false",
+      "comparison": "same",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "blue cube not inside, green square empty, robot not blocking access to it"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube not inside, green square empty, robot not blocking access to it"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "wrong",
+      "endpoint_14": "correct",
+      "goal_completion": "correct",
+      "alternative_route": "unknown",
+      "cited_frame_support": "wrong",
+      "first_supported_error": "first_nomination_and_endpoint",
+      "frame_backed_reason": "First pass names green square and calls it unobstructed at 0; final switches to blue and still says empty at 0. Red is visibly inside at 0 and outside at 14. Pair lock abstains.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  },
+  {
+    "video": "0006.mp4",
+    "condition": "G+",
+    "arm": "candidate",
+    "direction": "uncertain",
+    "record": {
+      "candidate_object": "blue cube",
+      "region_kind": "destination",
+      "region": "green square",
+      "relation": "access",
+      "goal_before_complete": "false",
+      "goal_observed_complete": "false",
+      "before_satisfied": "false",
+      "after_satisfied": "true",
+      "comparison": "better",
+      "alternative_route": "not stated in model output",
+      "disconfirming_observation": "not stated in model output",
+      "uncertainty_reason": null,
+      "event_interval_s": [
+        0,
+        14
+      ],
+      "evidence": [
+        {
+          "second": 0,
+          "region": "green square",
+          "supports": "green square empty, no object inside"
+        },
+        {
+          "second": 14,
+          "region": "green square",
+          "supports": "blue cube fully inside green square, one face flat on table"
+        }
+      ]
+    },
+    "human_audit": {
+      "object_binding": "wrong",
+      "region_binding": "correct",
+      "relation_relevance": "wrong",
+      "endpoint_0": "correct",
+      "endpoint_14": "correct",
+      "goal_completion": "wrong",
+      "alternative_route": "unknown",
+      "cited_frame_support": "unknown",
+      "first_supported_error": "first_nomination_relevance",
+      "frame_backed_reason": "First pass nominates robot/blue access; final switches to blue placement and correctly notes inside at 14 but still marks the complete goal false. Pair lock abstains; release and settling are not separately cited.",
+      "valid_prerequisite_relation_evidence": false
+    }
+  }
+]

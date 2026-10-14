@@ -1,0 +1,831 @@
+{
+  "status": "complete",
+  "cells": {
+    "access_gate/topreward": {
+      "status": "complete",
+      "issues": [],
+      "result_count": 9,
+      "failure_count": 0
+    },
+    "access_gate/robometer": {
+      "status": "complete",
+      "issues": [],
+      "result_count": 9,
+      "failure_count": 0
+    },
+    "support_surface/topreward": {
+      "status": "complete",
+      "issues": [],
+      "result_count": 9,
+      "failure_count": 0
+    },
+    "support_surface/robometer": {
+      "status": "complete",
+      "issues": [],
+      "result_count": 9,
+      "failure_count": 0
+    }
+  },
+  "total_results": 36,
+  "total_failures": 0,
+  "scope": "fresh_dev_v2_p0_native",
+  "expected_count_per_cell": 9,
+  "sealed_utc": "2026-10-07T11:15:51.855091+00:00",
+  "files": [
+    {
+      "path": "access_gate/robometer/0001.npy",
+      "sha256": "38c46f027d637ffd8952cc7d82b840d12c13dfbeea6bf7eaa53df93a6bd63186",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0001.stderr.txt",
+      "sha256": "3ec79a9139b89976a8266489c83ead87c3ccf58b345a39f62e5eeca7a304e43e",
+      "size_bytes": 126897
+    },
+    {
+      "path": "access_gate/robometer/0001.stdout.txt",
+      "sha256": "2c16733dcb36fd97eded6c9e70816419f7b91b103c49b4833baaf69bd6b750f8",
+      "size_bytes": 1593
+    },
+    {
+      "path": "access_gate/robometer/0001_progress_success.png",
+      "sha256": "7c7bbf400c80d30535eafc75301383f921945ee68fa3579fac4f5386f6c9ce50",
+      "size_bytes": 78210
+    },
+    {
+      "path": "access_gate/robometer/0001_success_probs.npy",
+      "sha256": "e54a51734da8bc3c01b261f6697370bb79b9c4e135405e75404aad1341f0eb9e",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0002.npy",
+      "sha256": "da4ab78d10a176580b35b499e95f561a7e49e55544d6e6e0468099262594f349",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0002.stderr.txt",
+      "sha256": "3fda72e0fda3707867943ec7a7a791bca77dd64d25ce72303e1889305d4f0456",
+      "size_bytes": 126899
+    },
+    {
+      "path": "access_gate/robometer/0002.stdout.txt",
+      "sha256": "c70b800cb5f3413743996dc3945a3b322175a038ca5d20d91d82573ba4b360a4",
+      "size_bytes": 1589
+    },
+    {
+      "path": "access_gate/robometer/0002_progress_success.png",
+      "sha256": "7d80e7ecacf42287941dab5121852e01faab3941b1b83a88c968e9c7d1f126b0",
+      "size_bytes": 94062
+    },
+    {
+      "path": "access_gate/robometer/0002_success_probs.npy",
+      "sha256": "b77fe9495ce1c9b120152dfc6c3358f7388a501e6ef84cc16d43ea8967cb9e4d",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0003.npy",
+      "sha256": "cfc9f0079db08973d4cf66d5e605d18d74eecf633f02fa77ee4d9927371f69b4",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0003.stderr.txt",
+      "sha256": "726863f0702fc6780ef2053ee5aa156c1e4ca12e5792f065c12ae9115bfd605e",
+      "size_bytes": 126897
+    },
+    {
+      "path": "access_gate/robometer/0003.stdout.txt",
+      "sha256": "51a26b1682d7cc9a66af24758dc28debe1ff2128b7e4afb1031d6831e69fa9d1",
+      "size_bytes": 1592
+    },
+    {
+      "path": "access_gate/robometer/0003_progress_success.png",
+      "sha256": "e1f685481145f25b29a199e74c07b24fa50ebdd7a8d12f799c95ce79ea4a6bf2",
+      "size_bytes": 80646
+    },
+    {
+      "path": "access_gate/robometer/0003_success_probs.npy",
+      "sha256": "7b2caed15a9e139ad7ea5c77238d1562ac2ad41642241ef18f1c37774ae3dbf6",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0004.npy",
+      "sha256": "8b49cf1497eab18ec77ba6baeb63cfc2994d5ad4c11e2e3779adaa067b7d76fb",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0004.stderr.txt",
+      "sha256": "7cb926396ff48077bd3f584c79dd980cf9884e0c1aa7f932255abf2437de2efc",
+      "size_bytes": 126900
+    },
+    {
+      "path": "access_gate/robometer/0004.stdout.txt",
+      "sha256": "f6b0f3c782dd2facf8aa95521f7395643d27f8fab6fa0911fd540484c62a9f47",
+      "size_bytes": 1593
+    },
+    {
+      "path": "access_gate/robometer/0004_progress_success.png",
+      "sha256": "cc45a7a5c1bf818d265e2a43ca2f399d6c37f5e37aef20abc8399b4d5b0c8e06",
+      "size_bytes": 82963
+    },
+    {
+      "path": "access_gate/robometer/0004_success_probs.npy",
+      "sha256": "5282e23d04560f1823585b6118a177139c0885ef2116cc1032cbd71b1f5c11d4",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0005.npy",
+      "sha256": "769102b89519675fee2593dfce52ef3af8917af78ea87b47878af45999084a12",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0005.stderr.txt",
+      "sha256": "efa56de0378f35b512135053f34eeb823004b442c0615df77107c2c453049fe4",
+      "size_bytes": 126900
+    },
+    {
+      "path": "access_gate/robometer/0005.stdout.txt",
+      "sha256": "c5714684d8abf2177b67a4c3d013d33dcfc25bbb4a77a35b2c5a27ceb055dc82",
+      "size_bytes": 1592
+    },
+    {
+      "path": "access_gate/robometer/0005_progress_success.png",
+      "sha256": "77dae76259ce711eb9f9ed918cc0fa67b14befaa903656b672e3707a2ac4ae54",
+      "size_bytes": 79878
+    },
+    {
+      "path": "access_gate/robometer/0005_success_probs.npy",
+      "sha256": "b0cfd58b3d9a0626602e46c4e0c68526fec69b71ffadb9ee75ba6787407d6e0a",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0006.npy",
+      "sha256": "65450caa34c62e09144bfb98c31b61d12fdcbc265d940e5156009c91671280a0",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0006.stderr.txt",
+      "sha256": "c61c0885b70e28f315557d68f65b5ca0da80a1274a80efc63f65c7cc0fffa49e",
+      "size_bytes": 126900
+    },
+    {
+      "path": "access_gate/robometer/0006.stdout.txt",
+      "sha256": "a371550b2a76e0b6460cbf70cd393db3df8bab5269e71c5bb84d17c541ac6531",
+      "size_bytes": 1590
+    },
+    {
+      "path": "access_gate/robometer/0006_progress_success.png",
+      "sha256": "c9c666ae20e9690fc5ae15c09ba382d380b0d14f8bbb8109738ee3c4be0b7ca9",
+      "size_bytes": 82029
+    },
+    {
+      "path": "access_gate/robometer/0006_success_probs.npy",
+      "sha256": "05146fa91b4d164a91e9d841e50d8faf6c734e470cca4d85fe0ce7011b6914c9",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0007.npy",
+      "sha256": "8fe64a79e16909eb623500132153294719072147ecc68d2719b4d79d2098c161",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0007.stderr.txt",
+      "sha256": "10907d31cc357a9ef9be4b82ad6750d4ceb63f04ae66806cbd50671330aa6e3c",
+      "size_bytes": 126898
+    },
+    {
+      "path": "access_gate/robometer/0007.stdout.txt",
+      "sha256": "34778f9b23a7f2a0ba9e2eb5b03d6fddb3ce1642f5cf6f170e40b59f2521ea51",
+      "size_bytes": 1591
+    },
+    {
+      "path": "access_gate/robometer/0007_progress_success.png",
+      "sha256": "f6fc88bdeadb462ce4782996aad5a16a5061dc775c4f714a54f8f095b8fb86ec",
+      "size_bytes": 81931
+    },
+    {
+      "path": "access_gate/robometer/0007_success_probs.npy",
+      "sha256": "59f1e6aa453fb64a08da79d93b24588e20a31946f0785334cef7c26197c7771b",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0008.npy",
+      "sha256": "6c55b59c56c64c4e3713c59b04cb89dc86707372e6391858f968a7c13a92cf1c",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0008.stderr.txt",
+      "sha256": "c02725c95a6eb3e4bf64eea796c4b990ec6c32bc5cadcd2202da9aafced09ebc",
+      "size_bytes": 126900
+    },
+    {
+      "path": "access_gate/robometer/0008.stdout.txt",
+      "sha256": "5a101fff232fe5241699c4d8713655fe80295608269ec6b2a0be6c6f1656adf4",
+      "size_bytes": 1593
+    },
+    {
+      "path": "access_gate/robometer/0008_progress_success.png",
+      "sha256": "a536a606e720adc52edad8cef65bdd9eb4c62e2f12255131edfb0ea57b7669b1",
+      "size_bytes": 80060
+    },
+    {
+      "path": "access_gate/robometer/0008_success_probs.npy",
+      "sha256": "f9e6b141e119334e63e103b871373368606cbdd3e4f7d32ade13b2103b486b97",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0009.npy",
+      "sha256": "d37468e65f9d6d3d5e16267f8c26375951b008a01fdc454fcaf5df0da1c887b2",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/0009.stderr.txt",
+      "sha256": "9df0c71b7a3b7f49bddcc18ecd00456c0539bb379cda48c54b839c062bea641b",
+      "size_bytes": 126900
+    },
+    {
+      "path": "access_gate/robometer/0009.stdout.txt",
+      "sha256": "7bb242f592ff2917aafa331de685107c680c43540a0f05a5f833ea78b615bb45",
+      "size_bytes": 1592
+    },
+    {
+      "path": "access_gate/robometer/0009_progress_success.png",
+      "sha256": "88c6807eb6bd20cfdf6fc5129e15939855924b11550d8de5a98265446bd8a6fb",
+      "size_bytes": 79010
+    },
+    {
+      "path": "access_gate/robometer/0009_success_probs.npy",
+      "sha256": "6cc5c097e1e2c36679f0fc65345f92a27f7874dcf2b48c09d502f50c37b3ba07",
+      "size_bytes": 188
+    },
+    {
+      "path": "access_gate/robometer/native_calls.jsonl",
+      "sha256": "a0e09b644a481c6b11316ba5d54cc84987351ea0a3c33bc19c50bb25fc1ea90e",
+      "size_bytes": 42320
+    },
+    {
+      "path": "access_gate/robometer.completed_utc.txt",
+      "sha256": "e12a1a585968f6daaa523b0d1129d7a20af36ba67ad724e560835ac150fd2982",
+      "size_bytes": 21
+    },
+    {
+      "path": "access_gate/robometer.exitcode.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "size_bytes": 2
+    },
+    {
+      "path": "access_gate/robometer.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "access_gate/robometer.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "access_gate/topreward/0001.json",
+      "sha256": "4d9d8108d9c14a844ce0d766f4adf4fd52d25cb27ca878ad0645161162f4fd8f",
+      "size_bytes": 1386
+    },
+    {
+      "path": "access_gate/topreward/0002.json",
+      "sha256": "46f4ec16ca1bbfd373492dd653baf8b78bc1a6bdf4255bf8dfd7c125b64ebf8a",
+      "size_bytes": 1452
+    },
+    {
+      "path": "access_gate/topreward/0003.json",
+      "sha256": "242a6bd8c17c1f8f16d368235ef34a59aa8a13a0cf46ac20b73452df500cdae1",
+      "size_bytes": 1397
+    },
+    {
+      "path": "access_gate/topreward/0004.json",
+      "sha256": "894e76a299749f91e92dc6ceb26b5abc9e25762a1a612b74ca9e969f16ed273e",
+      "size_bytes": 1458
+    },
+    {
+      "path": "access_gate/topreward/0005.json",
+      "sha256": "d593c0f7bb7278553426f8d10ffedf091b3d8b8c7bbf82acb9f9386afeb16a4d",
+      "size_bytes": 1438
+    },
+    {
+      "path": "access_gate/topreward/0006.json",
+      "sha256": "57173cd30652d9d01f97ac3a601db900712744bd313e1f8431f8509146f6456f",
+      "size_bytes": 1435
+    },
+    {
+      "path": "access_gate/topreward/0007.json",
+      "sha256": "1af747480ba9a4de5587dd1785e4ab01511a62db75bbdc31f9432a35fbb1eedc",
+      "size_bytes": 1281
+    },
+    {
+      "path": "access_gate/topreward/0008.json",
+      "sha256": "f91067ea1d40e3e4615564fcbd35cc666e817be83f884e3a2aa2c488e7964633",
+      "size_bytes": 1435
+    },
+    {
+      "path": "access_gate/topreward/0009.json",
+      "sha256": "86aad5d41772e7405833e360e5d8ede67d69a0de5c3ac1b565a879df7299db38",
+      "size_bytes": 1385
+    },
+    {
+      "path": "access_gate/topreward/native_calls.jsonl",
+      "sha256": "0289b0287ebf58e4aada92130b7f97378387eb749915751524da7a5b07c886b0",
+      "size_bytes": 22145
+    },
+    {
+      "path": "access_gate/topreward.completed_utc.txt",
+      "sha256": "1a607832d8c922b2bc2856aa5c25d1022571a50a2736650e5ebfe6332f43e657",
+      "size_bytes": 21
+    },
+    {
+      "path": "access_gate/topreward.exitcode.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "size_bytes": 2
+    },
+    {
+      "path": "access_gate/topreward.stderr.txt",
+      "sha256": "9a293edc1398795f674a6723a5c7d1452309eefd63c79a4c0c355449c0226960",
+      "size_bytes": 21678
+    },
+    {
+      "path": "access_gate/topreward.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "completed_utc.txt",
+      "sha256": "e40b320c751b7e3cef59a60e9ab229e57fb6fd2b9177311b9044156c48328110",
+      "size_bytes": 21
+    },
+    {
+      "path": "dry/access_gate/robometer/native_calls.jsonl",
+      "sha256": "7111c3c5cac618f1a790d8d18591de38b0c611580efe9c621e64de10cc2a3b67",
+      "size_bytes": 11889
+    },
+    {
+      "path": "dry/access_gate/robometer.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/access_gate/robometer.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/access_gate/topreward/native_calls.jsonl",
+      "sha256": "26cfe19c28391b97dba39739cce1216e0172cdd33f9784654c35be64e4db0b64",
+      "size_bytes": 11880
+    },
+    {
+      "path": "dry/access_gate/topreward.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/access_gate/topreward.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/support_surface/robometer/native_calls.jsonl",
+      "sha256": "f9446f0def293568184475bf33bdbcd331e029fec0d219f95064aeae0a2194af",
+      "size_bytes": 11893
+    },
+    {
+      "path": "dry/support_surface/robometer.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/support_surface/robometer.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/support_surface/topreward/native_calls.jsonl",
+      "sha256": "a6a7639014e1be949b1390550ae4823a1aa384a9561d1fa1bc2aae21edc35317",
+      "size_bytes": 11884
+    },
+    {
+      "path": "dry/support_surface/topreward.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "dry/support_surface/topreward.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "native_decoder_precheck.json",
+      "sha256": "693aacb0ba6dee436d54ae11a649c8bb7852d971f63a706ea69cb7c9ea7e3cb6",
+      "size_bytes": 24964
+    },
+    {
+      "path": "native_decoder_precheck.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "run_identity.json",
+      "sha256": "8e8508b1077a5c75c68c7690fff252817a787b1eb69645a9ae649afa26e0f5b6",
+      "size_bytes": 189
+    },
+    {
+      "path": "server_preflight.json",
+      "sha256": "9aa0cfbb9585ed43a3dfe19771238caafa7503b7a9a0625eb25ef6916a37a260",
+      "size_bytes": 5246
+    },
+    {
+      "path": "server_preflight.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "smoke/robometer/0001.npy",
+      "sha256": "94fc788e475ca3aa649ef3c3a1395143d37ad413dad6c41d6b3b222fcb2c82be",
+      "size_bytes": 188
+    },
+    {
+      "path": "smoke/robometer/0001.stderr.txt",
+      "sha256": "291787e5edabec274ff0f5d62bfd337dc3708637babef8fd5b2f5b1bd041ac9b",
+      "size_bytes": 126901
+    },
+    {
+      "path": "smoke/robometer/0001.stdout.txt",
+      "sha256": "5090967fd44c5429cd0b09f112d6d0a08a056fe5f87de0c4d970603264d304fe",
+      "size_bytes": 1552
+    },
+    {
+      "path": "smoke/robometer/0001_progress_success.png",
+      "sha256": "8076f04bf5db6466a2ebca2342491da4359987692a0c18118c4e2942571338d3",
+      "size_bytes": 86219
+    },
+    {
+      "path": "smoke/robometer/0001_success_probs.npy",
+      "sha256": "bf6b49274121a45bac8f02468078ac1ec752398039d8707508b38538d10fce2f",
+      "size_bytes": 188
+    },
+    {
+      "path": "smoke/robometer/native_calls.jsonl",
+      "sha256": "6ed62e6e4a2e87bc214835e8e8aa7fc9aae55c728f3b67da432bb0d8f7bdc2f1",
+      "size_bytes": 5029
+    },
+    {
+      "path": "smoke/topreward/0001.json",
+      "sha256": "035accf68dc7dc28442ac05be847c56cf69577bdb32731d8abd00a619103245e",
+      "size_bytes": 1331
+    },
+    {
+      "path": "smoke/topreward/native_calls.jsonl",
+      "sha256": "9552ec6648815ad2ce542216bf67af3707845fcbb8018a73ca82cfb78674ecd5",
+      "size_bytes": 2648
+    },
+    {
+      "path": "smoke_robometer.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "smoke_robometer.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "smoke_topreward.stderr.txt",
+      "sha256": "7fd6f3c3465d4180703837bc30b3df0cefcd06b1082b9a4a31c0c8e994dfdcf8",
+      "size_bytes": 3318
+    },
+    {
+      "path": "smoke_topreward.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "support_surface/robometer/0001.npy",
+      "sha256": "989a8fd535df80034fed3d34112c8ca9dbf87e6d7581f08348fbdd945dc9f692",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0001.stderr.txt",
+      "sha256": "ae20b6f53518824df68618669646eaaa7b88f5c07c7640f8e9bec91adf7b68b4",
+      "size_bytes": 126900
+    },
+    {
+      "path": "support_surface/robometer/0001.stdout.txt",
+      "sha256": "0e3cdceedfb90b74b96989f093a18e944b0008b247679cd3c9667acc79776a41",
+      "size_bytes": 1607
+    },
+    {
+      "path": "support_surface/robometer/0001_progress_success.png",
+      "sha256": "fd9899f5197bbcb3893eeb36055e3794202a5ee410ddc20b9cfb5ae41fe4e07a",
+      "size_bytes": 92451
+    },
+    {
+      "path": "support_surface/robometer/0001_success_probs.npy",
+      "sha256": "387a6a91ffe97845414c5ef9b5b79d3a16706e71917e32b915a7269bb3ca716e",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0002.npy",
+      "sha256": "2f8e55a120369ed3a6d4028153153f89c6ae6c820ce9e10d15993054ff2f88d0",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0002.stderr.txt",
+      "sha256": "1c7e56ddcbf6ffeb3374676e1ae437d49a099ca822bb99f1c2c1b07b44a1ac66",
+      "size_bytes": 126901
+    },
+    {
+      "path": "support_surface/robometer/0002.stdout.txt",
+      "sha256": "2987a475a2a3833e1eea050b159af4c8f23d0f8bd7307c597778c1b48eaca44a",
+      "size_bytes": 1608
+    },
+    {
+      "path": "support_surface/robometer/0002_progress_success.png",
+      "sha256": "4ffff916e69655f7d289c9a8716e984b4970749b151db07297b594a4c1789a5d",
+      "size_bytes": 84208
+    },
+    {
+      "path": "support_surface/robometer/0002_success_probs.npy",
+      "sha256": "f455fb9d7d9e9ecdbf27bfd179b67752a7cea06ee1fcfb9720c16fc7d253dc2c",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0003.npy",
+      "sha256": "73a8d38fa7bdad9aa4a553edd613209e85cdd132c8d6dd998800696313b7a0f9",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0003.stderr.txt",
+      "sha256": "e110abeab05fe2cc4f6133e2b8153b87945b585671ef8f4f6ffa12a2eb7de733",
+      "size_bytes": 126899
+    },
+    {
+      "path": "support_surface/robometer/0003.stdout.txt",
+      "sha256": "adfde45c2a0028193e3472146e6cead9702cb1cb0d085a32f5ddb4c2e904095a",
+      "size_bytes": 1609
+    },
+    {
+      "path": "support_surface/robometer/0003_progress_success.png",
+      "sha256": "8d5afe75fe4448ff9837086da9a970c8ba22637fa60d5c773c386e530bb73c9d",
+      "size_bytes": 79494
+    },
+    {
+      "path": "support_surface/robometer/0003_success_probs.npy",
+      "sha256": "f7abce2e0bd37255a75799da2c0ce817055a62e60364896393a966b3ba2cc588",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0004.npy",
+      "sha256": "a2eb6b16942190269f1ab0cee7276ffc71cae13ca5b465e680a7783ef92637b1",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0004.stderr.txt",
+      "sha256": "38eeedd325e378a47472b9d830000127427864fb05f6737907525919fedac154",
+      "size_bytes": 126900
+    },
+    {
+      "path": "support_surface/robometer/0004.stdout.txt",
+      "sha256": "92a0d1e8e0ccc5f228c8b28707a6c84385edf37291f5343b68b4e4d94e967a42",
+      "size_bytes": 1606
+    },
+    {
+      "path": "support_surface/robometer/0004_progress_success.png",
+      "sha256": "37086fb5969253a5f521386514a6904f81e3557717a198c1f329da4baa10d9e1",
+      "size_bytes": 83120
+    },
+    {
+      "path": "support_surface/robometer/0004_success_probs.npy",
+      "sha256": "b681e637ff5f2933b93f8fa1a12789080222617a29bcef6d2ee07997e897d8fa",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0005.npy",
+      "sha256": "e55edd6e3b0a8dfe8220b450f45f3963b09632a76c703999fb14b294f5f3592a",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0005.stderr.txt",
+      "sha256": "1ed14487dfa54786af6578e8d4da014fef658ebd055cacc589c97f407cdb7e3b",
+      "size_bytes": 126900
+    },
+    {
+      "path": "support_surface/robometer/0005.stdout.txt",
+      "sha256": "31037c3a6304bbc43ca63cd1e14254b43b98894b41d2e941bc546312e2dd70fa",
+      "size_bytes": 1606
+    },
+    {
+      "path": "support_surface/robometer/0005_progress_success.png",
+      "sha256": "59ffb99d210128f396626a2baf3a43c42de043cb42927d35d43a97ad0549ccda",
+      "size_bytes": 87566
+    },
+    {
+      "path": "support_surface/robometer/0005_success_probs.npy",
+      "sha256": "38795877a25c8af6b9eea7365723e0c249f660c579ae9774d825e820e76eb509",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0006.npy",
+      "sha256": "c65e144d731d66c52d733a33a2678c0ea26d17da55aaa1762e9a76aafdf3d472",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0006.stderr.txt",
+      "sha256": "4a8842b42c3996b0028bfd783e0e920a4fa8b1ed6509386c11bd600dfa43cc66",
+      "size_bytes": 126898
+    },
+    {
+      "path": "support_surface/robometer/0006.stdout.txt",
+      "sha256": "30efcbc6e62934a6dfa3c46cea2ab5b0325a3aad8129a2856e635c9b66c8ea51",
+      "size_bytes": 1608
+    },
+    {
+      "path": "support_surface/robometer/0006_progress_success.png",
+      "sha256": "2a3dfe602ccbedaca5fb7bc14c4ffd4c8dda22d52cc1e1a2ef54c7464e1a85c9",
+      "size_bytes": 87157
+    },
+    {
+      "path": "support_surface/robometer/0006_success_probs.npy",
+      "sha256": "a51f915fe48681a1c3416da37ce1e2414657971573f94ac1187a71c6105735b5",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0007.npy",
+      "sha256": "8b3127d66c39eb4d62a3cf735208cc9a276d00e0379cc8c453491905ca8201d0",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0007.stderr.txt",
+      "sha256": "c40e6505ed79c431dab656377526cf0c78ce6ecea7f5a47316590f368896735c",
+      "size_bytes": 126897
+    },
+    {
+      "path": "support_surface/robometer/0007.stdout.txt",
+      "sha256": "7829ee37e1dd7edbf243a5b1e523ac6dec0107e549ad27aa8e53bc6a3334060c",
+      "size_bytes": 1607
+    },
+    {
+      "path": "support_surface/robometer/0007_progress_success.png",
+      "sha256": "4348bbddbf28d701a27f9e70292f64be6b11f7461cce7361754fdd49f0ab52b1",
+      "size_bytes": 79656
+    },
+    {
+      "path": "support_surface/robometer/0007_success_probs.npy",
+      "sha256": "23c9fce87f28c4deaf7103c4968140341278d5dceec95dd270fb02c2c6162a8e",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0008.npy",
+      "sha256": "41b348000c5c1e7584ba99f2b5ac1dde0d66b815fe8e5e731cbe0819bb531537",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0008.stderr.txt",
+      "sha256": "c38dbe33a26af50b534301d33afad85e6310acdfa2a5d127e8e4f2c3ab96b31e",
+      "size_bytes": 126899
+    },
+    {
+      "path": "support_surface/robometer/0008.stdout.txt",
+      "sha256": "da8e06b50a15976874456d6ec3cff7f6c556ca53aef587f35f690121b1cd97c7",
+      "size_bytes": 1608
+    },
+    {
+      "path": "support_surface/robometer/0008_progress_success.png",
+      "sha256": "375ceb0f5c527bd1d09945b33079816c6b4155bc094503a6c043e6de80f5fce9",
+      "size_bytes": 86036
+    },
+    {
+      "path": "support_surface/robometer/0008_success_probs.npy",
+      "sha256": "6a9cc1e6b7072d31165f70b11534dabecc0f57087df2b2df6370674696b4b0f0",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0009.npy",
+      "sha256": "797f9f8e13982ddb86f353880806670c41af188a9c2ae102cc3008ae65cfc8cf",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/0009.stderr.txt",
+      "sha256": "d9b13712bec09d4e94d9cd28ca6c4d5dc57c612bdfb60dcc1755ef39076c3170",
+      "size_bytes": 126898
+    },
+    {
+      "path": "support_surface/robometer/0009.stdout.txt",
+      "sha256": "f79169dcaf8d43e2bbe3ca66b647b0b653c38f5d2e26c3a49ca46c78f1f5bc10",
+      "size_bytes": 1607
+    },
+    {
+      "path": "support_surface/robometer/0009_progress_success.png",
+      "sha256": "c4b14ae6be152225c1fece41667c02acddff19e7ffb61587e27b0025ee67c6eb",
+      "size_bytes": 91036
+    },
+    {
+      "path": "support_surface/robometer/0009_success_probs.npy",
+      "sha256": "0597065456819e515f576ed3461f7211c692804efd26884f7467ca510398d27d",
+      "size_bytes": 188
+    },
+    {
+      "path": "support_surface/robometer/native_calls.jsonl",
+      "sha256": "c534b31571291f919f40908d43d34c4119717fa0bdc18271142339d18e01a1dc",
+      "size_bytes": 41951
+    },
+    {
+      "path": "support_surface/robometer.completed_utc.txt",
+      "sha256": "e40b320c751b7e3cef59a60e9ab229e57fb6fd2b9177311b9044156c48328110",
+      "size_bytes": 21
+    },
+    {
+      "path": "support_surface/robometer.exitcode.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "size_bytes": 2
+    },
+    {
+      "path": "support_surface/robometer.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "support_surface/robometer.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "support_surface/topreward/0001.json",
+      "sha256": "60a3a3a2b5f27cf786f5c88d32293735d28e0ded05a81315d44f33bc405390ad",
+      "size_bytes": 1409
+    },
+    {
+      "path": "support_surface/topreward/0002.json",
+      "sha256": "b85b5a640f4f806030d9da027189177bb39a6b3408bc70b895ad1668b081ee76",
+      "size_bytes": 1423
+    },
+    {
+      "path": "support_surface/topreward/0003.json",
+      "sha256": "e7c6b5dff2118cc9c5b0547b68710bc6269bd453cece35f67dc1ca2742741e2c",
+      "size_bytes": 1393
+    },
+    {
+      "path": "support_surface/topreward/0004.json",
+      "sha256": "0c8f9e69e920f98e245339d755487c889f70874c14d7e74bf1727cb7738182ca",
+      "size_bytes": 1409
+    },
+    {
+      "path": "support_surface/topreward/0005.json",
+      "sha256": "4f97a4127dc77103d1e09f4a17b7b331c3306733e29c1c73a1506f46d3352422",
+      "size_bytes": 1322
+    },
+    {
+      "path": "support_surface/topreward/0006.json",
+      "sha256": "6caa4a9b35666c43551258a7944746c84d0e98b7cd047fb8fb9ad5a5b5ebc639",
+      "size_bytes": 1381
+    },
+    {
+      "path": "support_surface/topreward/0007.json",
+      "sha256": "36f6cbdd809c646b1aa4a757b923b820a83f171c467add4ba80fe1dd9629088d",
+      "size_bytes": 1252
+    },
+    {
+      "path": "support_surface/topreward/0008.json",
+      "sha256": "ac9dea7f2979dc81e07d4dce809eb14b074aec499b79d17e557c47dc019252b8",
+      "size_bytes": 1429
+    },
+    {
+      "path": "support_surface/topreward/0009.json",
+      "sha256": "031324e7c64a47323bdafe1b01ddeb5013a8d153fb1bdc0bf2e716e0a124666a",
+      "size_bytes": 1407
+    },
+    {
+      "path": "support_surface/topreward/native_calls.jsonl",
+      "sha256": "fe97b64f6b585f4e569416575932cb78bd211e6b466b7643e4757ea92114930c",
+      "size_bytes": 21907
+    },
+    {
+      "path": "support_surface/topreward.completed_utc.txt",
+      "sha256": "1fc950d59c4900f25a0e04bd9319624655e4a391014fccc0cbf9e08d7917aa02",
+      "size_bytes": 21
+    },
+    {
+      "path": "support_surface/topreward.exitcode.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "size_bytes": 2
+    },
+    {
+      "path": "support_surface/topreward.stderr.txt",
+      "sha256": "2f5b9fd4bca10d42f5d65df5805b67bf2a14d63e9d19ce933d193ceec6e9dcae",
+      "size_bytes": 21678
+    },
+    {
+      "path": "support_surface/topreward.stdout.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "path": "time_checks.log",
+      "sha256": "23c3e6c4b36955f2346235b51f8d036457b475dc6534c04ce6b9c1645ab8dfe9",
+      "size_bytes": 868
+    }
+  ]
+}

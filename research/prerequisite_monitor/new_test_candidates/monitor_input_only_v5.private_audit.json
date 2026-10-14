@@ -1,0 +1,36 @@
+{
+  "archive": "D:\\monitor2\\research\\prerequisite_monitor\\new_test_candidates\\monitor_input_only_v5.zip",
+  "archive_sha256": "1510072c76081c30a19512361fb3d83202b689df17a6428acc162cd786b5ea9a",
+  "video_count": 12,
+  "private_mapping": {
+    "s01": {
+      "local_root": "D:\\monitor2\\research\\prerequisite_monitor\\new_test_candidates\\tray_crossbar",
+      "frozen_test_sha256": "9042e3db57585036d44c9adca1f1d90a82e1b91922867d2bf184280800f08ea2"
+    },
+    "s02": {
+      "local_root": "D:\\monitor2\\research\\prerequisite_monitor\\new_test_candidates\\source_bridge",
+      "frozen_test_sha256": "3fa477f0b6be5d12daa7604577ced3c51f00f3dcf32e0e2181cee9a0f844dba6"
+    }
+  },
+  "allowed_members": [
+    "experiments/prerequisite_probe/monitor_contract.py",
+    "experiments/prerequisite_probe/run_monitor_qwen.py",
+    "experiments/prerequisite_probe/cloud_preflight_new_monitor.sh",
+    "experiments/prerequisite_probe/cloud_run_new_monitor.sh",
+    "new_tests/s01/model_input/manifest.jsonl",
+    "new_tests/s01/model_input/0001.mp4",
+    "new_tests/s01/model_input/0002.mp4",
+    "new_tests/s01/model_input/0003.mp4",
+    "new_tests/s01/model_input/0004.mp4",
+    "new_tests/s01/model_input/0005.mp4",
+    "new_tests/s01/model_input/0006.mp4",
+    "new_tests/s02/model_input/manifest.jsonl",
+    "new_tests/s02/model_input/0001.mp4",
+    "new_tests/s02/model_input/0002.mp4",
+    "new_tests/s02/model_input/0003.mp4",
+    "new_tests/s02/model_input/0004.mp4",
+    "new_tests/s02/model_input/0005.mp4",
+    "new_tests/s02/model_input/0006.mp4",
+    "new_tests/bundle_manifest.json"
+  ]
+}

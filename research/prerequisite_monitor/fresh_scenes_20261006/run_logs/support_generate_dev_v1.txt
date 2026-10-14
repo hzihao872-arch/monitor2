@@ -1,0 +1,29 @@
+D:\monitor2\.venv\Lib\site-packages\sapien\wrapper\pinocchio_model.py:299: UserWarning: pinnochio package is not installed, robotics functionalities will not be available
+  warnings.warn(
+RECORDED support_surface E 0008.mp4 3e889f5d6ecb
+RECORDED support_surface S 0006.mp4 424c3cb33b30
+RECORDED support_surface I_b 0004.mp4 bc3fa9d899a1
+RECORDED support_surface N_b 0007.mp4 d5176e3bdd4d
+RECORDED support_surface R 0009.mp4 84a2318d2411
+RECORDED support_surface H 0005.mp4 0df666307dc5
+RECORDED support_surface I_o 0002.mp4 94f4d6424cbb
+RECORDED support_surface N_o 0003.mp4 869c899f9295
+RECORDED support_surface G 0001.mp4 de51bd2d003e
+{
+  "mechanism": "support_surface",
+  "status": "generated",
+  "checks": {
+    "nine_conditions": true,
+    "all_blocked_same_snapshot": true,
+    "all_open_same_snapshot": true,
+    "goal_only_G": true,
+    "E_open": true,
+    "S_blocked": true,
+    "R_reopened_then_blocked": true,
+    "H_blocked": true,
+    "G_actual_grasp": true,
+    "blocked_challenge_no_success": true,
+    "open_challenge_no_failure": true
+  },
+  "zip_sha256": "535181efca8fc1454d3f12c3a6d6ed1eb183695f237b6c9d29d267abb4b4bfc6"
+}

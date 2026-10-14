@@ -1,0 +1,348 @@
+{
+  "scene": "tray_crossbar",
+  "source_jsonl_sha256": "9a532664de24802a46378873bdbfde21a6e70176e1a60228ab14d6d75c3f157f",
+  "freeze_sha256": "9042e3db57585036d44c9adca1f1d90a82e1b91922867d2bf184280800f08ea2",
+  "methods": {
+    "D": {
+      "method": "D",
+      "total": 6,
+      "correct": 4,
+      "wrong": 2,
+      "uncertain": 0,
+      "invalid": 0,
+      "missing": 0,
+      "pairwise": {
+        "B+>B0": false,
+        "B+>U0": false,
+        "H-<N0": false,
+        "G+>N0": true
+      },
+      "per_case": {
+        "B+": {
+          "video": "0001.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "positive",
+          "errors": []
+        },
+        "B0": {
+          "video": "0002.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        },
+        "U0": {
+          "video": "0003.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        },
+        "H-": {
+          "video": "0004.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "negative",
+          "errors": []
+        },
+        "G+": {
+          "video": "0005.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "positive",
+          "errors": []
+        },
+        "N0": {
+          "video": "0006.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        }
+      },
+      "budget": {
+        "calls": 6,
+        "input_tokens": 13836,
+        "output_tokens": 634,
+        "elapsed_ms": 19449,
+        "peak_vram_bytes_max": 18217852928,
+        "missing_usage_calls": 0
+      },
+      "evidence_audit": "pending"
+    },
+    "P": {
+      "method": "P",
+      "total": 6,
+      "correct": 2,
+      "wrong": 4,
+      "uncertain": 0,
+      "invalid": 0,
+      "missing": 0,
+      "pairwise": {
+        "B+>B0": false,
+        "B+>U0": false,
+        "H-<N0": false,
+        "G+>N0": true
+      },
+      "per_case": {
+        "B+": {
+          "video": "0001.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "positive",
+          "errors": []
+        },
+        "B0": {
+          "video": "0002.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "zero",
+          "errors": []
+        },
+        "U0": {
+          "video": "0003.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "zero",
+          "errors": []
+        },
+        "H-": {
+          "video": "0004.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "negative",
+          "errors": []
+        },
+        "G+": {
+          "video": "0005.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "positive",
+          "errors": []
+        },
+        "N0": {
+          "video": "0006.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        }
+      },
+      "budget": {
+        "calls": 6,
+        "input_tokens": 14388,
+        "output_tokens": 672,
+        "elapsed_ms": 19885,
+        "peak_vram_bytes_max": 18241267712,
+        "missing_usage_calls": 0
+      },
+      "evidence_audit": "pending"
+    },
+    "F": {
+      "method": "F",
+      "total": 6,
+      "correct": 4,
+      "wrong": 2,
+      "uncertain": 0,
+      "invalid": 0,
+      "missing": 0,
+      "pairwise": {
+        "B+>B0": false,
+        "B+>U0": false,
+        "H-<N0": false,
+        "G+>N0": true
+      },
+      "per_case": {
+        "B+": {
+          "video": "0001.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "positive",
+          "errors": []
+        },
+        "B0": {
+          "video": "0002.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        },
+        "U0": {
+          "video": "0003.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        },
+        "H-": {
+          "video": "0004.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "negative",
+          "errors": []
+        },
+        "G+": {
+          "video": "0005.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "positive",
+          "errors": []
+        },
+        "N0": {
+          "video": "0006.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        }
+      },
+      "budget": {
+        "calls": 6,
+        "input_tokens": 14322,
+        "output_tokens": 635,
+        "elapsed_ms": 18795,
+        "peak_vram_bytes_max": 18238468608,
+        "missing_usage_calls": 0
+      },
+      "evidence_audit": "pending"
+    },
+    "D2_review": {
+      "method": "D2_review",
+      "total": 6,
+      "correct": 4,
+      "wrong": 2,
+      "uncertain": 0,
+      "invalid": 0,
+      "missing": 0,
+      "pairwise": {
+        "B+>B0": false,
+        "B+>U0": false,
+        "H-<N0": false,
+        "G+>N0": true
+      },
+      "per_case": {
+        "B+": {
+          "video": "0001.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "positive",
+          "errors": []
+        },
+        "B0": {
+          "video": "0002.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        },
+        "U0": {
+          "video": "0003.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        },
+        "H-": {
+          "video": "0004.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "negative",
+          "errors": []
+        },
+        "G+": {
+          "video": "0005.mp4",
+          "direction": "positive",
+          "status": "positive",
+          "expected": "positive",
+          "errors": []
+        },
+        "N0": {
+          "video": "0006.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        }
+      },
+      "budget": {
+        "calls": 12,
+        "input_tokens": 28348,
+        "output_tokens": 1266,
+        "elapsed_ms": 38421,
+        "peak_vram_bytes_max": 18246866432,
+        "missing_usage_calls": 0
+      },
+      "evidence_audit": "pending"
+    },
+    "H0": {
+      "method": "H0",
+      "total": 6,
+      "correct": 1,
+      "wrong": 1,
+      "uncertain": 4,
+      "invalid": 0,
+      "missing": 0,
+      "pairwise": {
+        "B+>B0": null,
+        "B+>U0": null,
+        "H-<N0": null,
+        "G+>N0": null
+      },
+      "per_case": {
+        "B+": {
+          "video": "0001.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "positive",
+          "errors": []
+        },
+        "B0": {
+          "video": "0002.mp4",
+          "direction": "uncertain",
+          "status": "uncertain",
+          "expected": "zero",
+          "errors": []
+        },
+        "U0": {
+          "video": "0003.mp4",
+          "direction": "uncertain",
+          "status": "uncertain",
+          "expected": "zero",
+          "errors": []
+        },
+        "H-": {
+          "video": "0004.mp4",
+          "direction": "uncertain",
+          "status": "uncertain",
+          "expected": "negative",
+          "errors": []
+        },
+        "G+": {
+          "video": "0005.mp4",
+          "direction": "uncertain",
+          "status": "uncertain",
+          "expected": "positive",
+          "errors": []
+        },
+        "N0": {
+          "video": "0006.mp4",
+          "direction": "zero",
+          "status": "zero",
+          "expected": "zero",
+          "errors": []
+        }
+      },
+      "budget": {
+        "calls": 12,
+        "input_tokens": 28710,
+        "output_tokens": 1307,
+        "elapsed_ms": 38680,
+        "peak_vram_bytes_max": 18241267712,
+        "missing_usage_calls": 0
+      },
+      "evidence_audit": "pending"
+    }
+  },
+  "caveat": "Visual evidence validity requires separate frame audit; no score here proves causal understanding."
+}

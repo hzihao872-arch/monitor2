@@ -1,0 +1,56 @@
+{
+  "instructions": "Fill only missing condition evidence fields. Do not consult relation_labels_draft.json, model output, or this project report before independent review. Use separate reference and online reviewers/sessions; an online reviewer must not first see the full future. Keep disagreements.",
+  "protocol": "S6-draft-4",
+  "reviewer_id": null,
+  "independent_of_first_reviewer_and_model": null,
+  "reference_review": [
+    {
+      "candidate_id": "A",
+      "task": "Use the left arm to stack the green cube on top of the blue cube. Subsequently, use the right arm to place the red cube on top of the green one to complete the three-layer structure.",
+      "media": "stack_three_color_cubes_ep1_58_cam_high.mp4",
+      "optional_reference_only_wrist": null,
+      "object": "green_on_blue",
+      "object_binding_notes": null,
+      "historical_achievement_evidence_frames": null,
+      "current_relation_changes_and_evidence": null,
+      "occlusion_intervals": null,
+      "repair_within_record": null,
+      "uncertainties": null
+    },
+    {
+      "candidate_id": "B",
+      "task": "Use the left arm to stack the green cube on top of the blue cube. Subsequently, use the right arm to place the red cube on top of the green one to complete the three-layer structure.",
+      "media": "stack_three_color_cubes_ep2_36_cam_high.mp4",
+      "optional_reference_only_wrist": "lerobot_5197_right.mp4",
+      "object": "green_on_blue",
+      "object_binding_notes": null,
+      "historical_achievement_evidence_frames": null,
+      "current_relation_changes_and_evidence": null,
+      "occlusion_intervals": null,
+      "repair_within_record": null,
+      "uncertainties": null
+    }
+  ],
+  "online_review": [
+    {
+      "candidate_id": "A",
+      "frame_packet_manifest": "p0/ep618/packet_manifest.json",
+      "track": "p0/ep618/online_track.json",
+      "instruction": "Unlock packets sequentially from q=0; no later packets, source video, wrist view, reference annotations or model output; return H/C/+/-/? and brief evidence by tick",
+      "responses": null
+    },
+    {
+      "candidate_id": "B",
+      "frame_packet_manifest": "p0/ep621/packet_manifest.json",
+      "track": "p0/ep621/online_track.json",
+      "instruction": "Unlock packets sequentially from q=0; no later packets, source video, wrist view, reference annotations or model output; return H/C/+/-/? and brief evidence by tick",
+      "responses": null
+    }
+  ],
+  "do_not_relabel": [
+    "author whole-episode outcome",
+    "author failure category/subtask",
+    "source avoid/correct frame numbers",
+    "all 700 RoboPulse records"
+  ]
+}

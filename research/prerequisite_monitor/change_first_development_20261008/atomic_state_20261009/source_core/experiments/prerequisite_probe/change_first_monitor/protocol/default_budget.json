@@ -1,0 +1,14 @@
+{
+  "version": "change-first-v1",
+  "max_real_requests_s1": 96,
+  "expected_real_requests_if_complete": 80,
+  "nominal_slots": 96,
+  "max_server_wall_minutes_including_preflight": 120,
+  "seal_buffer_minutes": 15,
+  "per_stage": {
+    "V1": {"input_tokens": 5000, "output_tokens": 768, "max_full": 8, "max_crop": 4},
+    "L2": {"input_tokens": 2200, "output_tokens": 640, "max_full": 0, "max_crop": 0},
+    "V3": {"input_tokens": 7500, "output_tokens": 1024, "max_full": 8, "max_crop": 4},
+    "L4": {"input_tokens": 2800, "output_tokens": 512, "max_full": 0, "max_crop": 0}
+  }
+}

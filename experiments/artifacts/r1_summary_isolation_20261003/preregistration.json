@@ -1,0 +1,259 @@
+{
+  "id": "r1-summary-isolation-20261003",
+  "created_utc": "2026-10-03T08:02:42.764680+00:00",
+  "protocol": "S6-draft-4",
+  "data_manifest_version": "S7-screening-4",
+  "max_model_calls": 80,
+  "fixed_prompts": {
+    "common_summary": "Write a visual history summary in at most 35 English words. Mention observed changes, the current cube arrangement, and uncertainty or occlusion. Preserve earlier clearly observed achievements, but correct unsupported earlier claims. The prior summary is fallible, not ground truth.",
+    "output_contracts": {
+      "text": "Return only the summary as plain text, without a heading or formatting.",
+      "json": "Return exactly one JSON object containing only memory, a string with the summary. Start with { and end with }. No markdown or code fences.",
+      "joint": "Return exactly one JSON object with memory (the summary string) and judgments (an array containing one object). The judgment object has object_id=\"green_on_blue\", H, C, P, G, and evidence_time (a number no later than the current time). Each H/C/P/G value must be exactly \"+\", \"-\", or \"?\". Start with { and end with }. No markdown or code fences."
+    },
+    "script_is_authoritative": true
+  },
+  "phase1": {
+    "calls": 9,
+    "episode": 618,
+    "ticks": [
+      0,
+      2,
+      6
+    ],
+    "modes_in_order": [
+      "text",
+      "json",
+      "joint"
+    ],
+    "memory": "empty each cell; independent diagnostic, not online full-prefix baseline",
+    "factor": "Same model, frames, semantic context, summary instruction; change output contract only. JSON vs joint also adds judgment output burden. Compact prompt differs from D052, so no unique attribution relative to D052."
+  },
+  "phase2": {
+    "calls": 9,
+    "episode": 618,
+    "ticks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "mode": "joint S1",
+    "gate_before": "All three joint outputs strictly valid, <=35 words, below cap, nonrepetitive and single-reviewer summary check grounded in supplied actual P0 frames. No selection among candidate prompts; only one fixed joint prompt. Stop if quality is unclear.",
+    "gate_after": "All nine outputs strictly valid; nonempty exact summary handoff after q0; within budgets; summaries describe observed changes, preserve earlier clear achievement, retain uncertainty, no persistent obvious object/color/relationship hallucination. Single-reviewer development judgment, no H1 scoring."
+  },
+  "phase3": {
+    "calls": 62,
+    "run_order": [
+      "ep618 S0",
+      "ep618 S1",
+      "ep621 S0",
+      "ep621 S1"
+    ],
+    "iteration_count": 1,
+    "gate_before": "Both phase1 and phase2 pass syntax and manual summary-content gates; same frozen joint prompt, no further prompt modifications"
+  },
+  "per_call_limits": {
+    "frames": 4,
+    "input_tokens": 4096,
+    "output_tokens": 256,
+    "persistent_memory_tokens": 512,
+    "calls_per_tick_per_arm": 1
+  },
+  "model": {
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+    "dtype": "BF16",
+    "decoding": "unchanged greedy, no new repetition penalty or output repair",
+    "weights_downloaded_again": false
+  },
+  "stop": [
+    "runtime failure",
+    "joint syntax/content gate failure",
+    "chain syntax/content gate failure",
+    "one full diagnostic completes"
+  ],
+  "forbidden": [
+    "posthoc output repair",
+    "C1",
+    "H1 effects/BCY/significance/sample size",
+    "paid API",
+    "new source or model downloads",
+    "stage8"
+  ],
+  "frozen_files": [
+    {
+      "path": "experiments/summary_isolation_20261003.py",
+      "sha256": "dbff87e98b41354f0ce49a483e11b2bc14672e457c8127adf13e6fc5d0c75957"
+    },
+    {
+      "path": "experiments/tests/test_summary_isolation.py",
+      "sha256": "7698a2fbe1e37ab81bae476da61fb4c70caecbe8170ecfbd292bd66eecfa0b06"
+    },
+    {
+      "path": "experiments/qwen_backend.py",
+      "sha256": "a22b05cb60da132107a8e460422ae7e0d7f0aab99dc7d8179848380a6e12cb09"
+    },
+    {
+      "path": "experiments/monitor_eval.py",
+      "sha256": "a43370c42dd7ef34e87bc20bb9b39287fbbef7a2f2452e5bbe413a568da8651e"
+    },
+    {
+      "path": "experiments/run_online.py",
+      "sha256": "938890dffce7f428d54189ba42c55d5d0e1d84ec49cecc5bacbc9ee623fb4ed1"
+    },
+    {
+      "path": "experiments/config_stage7.json",
+      "sha256": "3508b9ba7e250a2d0a8e0895586ee1af5325021049074d987d7997c7d489efb7"
+    },
+    {
+      "path": ".models/qwen3-vl-2b-instruct/generation_config.json",
+      "sha256": "1e241830b48b397cb0900101421df5450baddc7adf01e5fc86b5615865f3bae4"
+    },
+    {
+      "path": ".models/qwen3-vl-2b-instruct/preprocessor_config.json",
+      "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"
+    },
+    {
+      "path": "experiments/artifacts/r1_summary_isolation_20261003/chain_track.json",
+      "sha256": "ba84052f8732373136524916c34e1714439ac645067566b7cbf8cdafef910587"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/online_track.json",
+      "sha256": "96e71e706e039812205abfcc53c66a993ce40c5db04cd84c379abb41e513de87"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_00.png",
+      "sha256": "683aef2cc842dc64e3f2fdc8fa2c14d7653202908a97860448346419928d1eac"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_01.png",
+      "sha256": "7ea37d6d5a65986123865273c7feded45a9f531fa257dadb13bbfbb30102aae9"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_02.png",
+      "sha256": "4c3a345f8b3394ae809b5e6796cfc4a99195aa3556cd774c492f7859a52e7f01"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_03.png",
+      "sha256": "0220d375ffd6fc397279e338bf4d8a12f0efb19980708f72277ab41c545d6251"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_04.png",
+      "sha256": "e9b3e93c33d0451776a4e4c2749645b15ce8ea7e169c31a1c226cc078334ae7f"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_05.png",
+      "sha256": "4930ecbed37aa27d3faf936c6ad8c5ce25200204d9d1516f23ce1a3b04c1cef2"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_06.png",
+      "sha256": "75cb6ead3b8f103cd99b00eaa247dd4e370a56046fb5259e365494657d15e8dc"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_07.png",
+      "sha256": "3a7e60e39e906799e21b4afee98dbe50c7b4e4b6b3129c1b765af35631f66fad"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_08.png",
+      "sha256": "afdc074fb64bbec1fad9469bc14df2028069d0b1071dc02bf96ef80926ccc479"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_09.png",
+      "sha256": "8dc898d38417e96d1ceb973ebd4e13c3186561d8ff3f86a2edd747cc8368750b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_10.png",
+      "sha256": "8cd7f54f743fa686b2b233dc7b4fb60a308522c062b241238e3561f9f2be51d8"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_11.png",
+      "sha256": "33a9a2cc49d18cccafa495698c2f10d350d9e1ea7c1a0a6d534e38f2fc2e792f"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_12.png",
+      "sha256": "648a470e627f9bcc18443582e04a8e96985ee600b53b0dc9f78cb4c87346eb9b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_13.png",
+      "sha256": "d86cbfac0f8e6fba3f21113e6ab3f4fa97f4e87a54875c97861340fa89b73e97"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_14.png",
+      "sha256": "5df188fa2ebd0a2c8733e7f258bb2446e901d8036c35c7838d7535d7fc79ee4e"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_15.png",
+      "sha256": "cd1d5e57e3ccffab7b3b13f5bda6da96a5a0fe1969f5783fa534f82f8970d03b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/online_track.json",
+      "sha256": "70150f2c7c7433dddd946b50f7c15d78cccf1d8af95a90912bea7c1189778bd9"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_00.png",
+      "sha256": "59502c1bc7b9a21076c610fba19a2edddfd1db92f429a69d2f037c2acb5cbe42"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_01.png",
+      "sha256": "60063b9e5cc795d76a1da862342c572fe3230780f978f66da87780b92a6dec97"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_02.png",
+      "sha256": "7b47575bd9bc04d5e2a355dbae02674bfdabbd6ed468a70bcf5c243f98cd73f0"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_03.png",
+      "sha256": "aa993145d9b112ffb650a5d4d08a526b7e01203d5478dd009226ce0f1cfca1ce"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_04.png",
+      "sha256": "2752a3fb0faab3b44a539bd2a382e67cffdf728b83ea6ae73cfea31a8614e382"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_05.png",
+      "sha256": "7d5182ff2966e409567f4d33e00ae2fbc31f05c71b7b57efcb22436a69846133"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_06.png",
+      "sha256": "2e55559edd12e86d0802565152a7192d71464d65e8a5e57bba6959217eca4ae6"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_07.png",
+      "sha256": "f212432a902fe7704ca646dc84efa7cde35c095cb39ebc22a4d15b6ee0c48e91"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_08.png",
+      "sha256": "9ae69e0b72d969e9f2cc31cd95b2c5ad10ff7dcc1e70e4e74638ee2e18c47d9c"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_09.png",
+      "sha256": "4ab7cd32ed592637d2e42fad77109ba83a80939cce0f05498ccd9fff20c3deb4"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_10.png",
+      "sha256": "ad1173488f29cff6aed3f3fb39170a9e657c2879f86a8d355b86a1ee642a9882"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_11.png",
+      "sha256": "b8e447c507a2f7a95fb5ab4602b6e72844860b25d4ce613d38585c4f34e9c18c"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_12.png",
+      "sha256": "ac39c832aea7224f1509099e709afab51f03af19702d1252b677a1e500360839"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_13.png",
+      "sha256": "98038467e1c731591bea19c96c142d0dae1dbf011333b6e98b83d85b07d1bf0d"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_14.png",
+      "sha256": "6d1df494cf7a55e93b2f3d238a2779100e0e1c4b6268919b444d0e7298cba975"
+    }
+  ],
+  "reference_draft_sha256": "94ae92c5aabe9c6581d987b25b807782d471324747737ddea95ea20a0ea60358"
+}

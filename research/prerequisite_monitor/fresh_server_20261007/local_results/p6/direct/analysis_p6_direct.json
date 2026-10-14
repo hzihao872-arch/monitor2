@@ -1,0 +1,296 @@
+{
+  "scope": "P6_direct_Qwen3VL8B_development_only_not_G2",
+  "raw_seal_sha256": "b8b5561ca5ecece96ee80d2e04833caf7d41d3afa655e3c79b1c31e775acd3ba",
+  "truth_map_sha256": {
+    "access_gate": "4bba2aed407c1da6eb851a8a9a4bb741cdc030b3d35bad771542eef556e9f22e",
+    "support_surface": "74986882252275d22192291916da900f9915f84fab344b7bcd3b03b4bd4ece90"
+  },
+  "cases": {
+    "access_gate": {
+      "N_o": {
+        "video": "0001.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible changes enable or block the goal. The scene is static.",
+        "uncertainty": "None",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible changes enable or block the goal. The scene is static.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"None\"\n}",
+        "failure": null
+      },
+      "G": {
+        "video": "0002.mp4",
+        "expected": "completed",
+        "observed": "completed",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube is fully inside the transparent box and resting on the floor by second 10, and remains there at second 14, satisfying the final goal.",
+        "uncertainty": "None",
+        "evidence_seconds": [
+          10,
+          14
+        ],
+        "raw": "{\n  \"label\": \"completed\",\n  \"reason\": \"The blue cube is fully inside the transparent box and resting on the floor by second 10, and remains there at second 14, satisfying the final goal.\",\n  \"evidence_seconds\": [10, 14],\n  \"uncertainty\": \"None\"\n}",
+        "failure": null
+      },
+      "S": {
+        "video": "0003.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change in the scene enables or blocks the goal. The robot's actions do not affect the cube's position.",
+        "uncertainty": "Unknown",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change in the scene enables or blocks the goal. The robot's actions do not affect the cube's position.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"Unknown\"\n}",
+        "failure": null
+      },
+      "I_o": {
+        "video": "0004.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change makes it possible to place it inside. The robot's actions do not affect the cube's position or the box's state in a way that enables the goal.",
+        "uncertainty": "None",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change makes it possible to place it inside. The robot's actions do not affect the cube's position or the box's state in a way that enables the goal.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"None\"\n}",
+        "failure": null
+      },
+      "R": {
+        "video": "0005.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change in the scene enables or blocks the goal. The robot's actions on the box top do not affect the cube's position or accessibility.",
+        "uncertainty": "None",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change in the scene enables or blocks the goal. The robot's actions on the box top do not affect the cube's position or accessibility.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"None\"\n}",
+        "failure": null
+      },
+      "I_b": {
+        "video": "0006.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change makes it possible to place it inside. The robot's actions do not affect the cube's position or the box's accessibility.",
+        "uncertainty": "Unknown",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change makes it possible to place it inside. The robot's actions do not affect the cube's position or the box's accessibility.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"Unknown\"\n}",
+        "failure": null
+      },
+      "E": {
+        "video": "0007.mp4",
+        "expected": "beneficial",
+        "observed": "unchanged",
+        "matches_label": false,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change makes it possible to place it inside. The robot's actions on the box top do not affect the cube's position or accessibility.",
+        "uncertainty": "None",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change makes it possible to place it inside. The robot's actions on the box top do not affect the cube's position or accessibility.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"None\"\n}",
+        "failure": null
+      },
+      "H": {
+        "video": "0008.mp4",
+        "expected": "harmful",
+        "observed": "unchanged",
+        "matches_label": false,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change in the scene enables or blocks the goal. The robot's actions are focused on the brown cube on the box lid, not the blue cube.",
+        "uncertainty": "Unknown",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible change in the scene enables or blocks the goal. The robot's actions are focused on the brown cube on the box lid, not the blue cube.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"Unknown\"\n}",
+        "failure": null
+      },
+      "N_b": {
+        "video": "0009.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains outside the transparent box at both second 0 and second 14, and no visible changes enable or block the goal. The robot and box setup are unchanged, leaving the goal still possible but not completed.",
+        "uncertainty": "No visible action or change occurs during the video to affect the goal's feasibility.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains outside the transparent box at both second 0 and second 14, and no visible changes enable or block the goal. The robot and box setup are unchanged, leaving the goal still possible but not completed.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"No visible action or change occurs during the video to affect the goal's feasibility.\"\n}",
+        "failure": null
+      }
+    },
+    "support_surface": {
+      "G": {
+        "video": "0001.mp4",
+        "expected": "completed",
+        "observed": "completed",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube is placed on the marked elevated landing and remains stable at second 14, fulfilling the final goal.",
+        "uncertainty": "None",
+        "evidence_seconds": [
+          14
+        ],
+        "raw": "{\n  \"label\": \"completed\",\n  \"reason\": \"The blue cube is placed on the marked elevated landing and remains stable at second 14, fulfilling the final goal.\",\n  \"evidence_seconds\": [14],\n  \"uncertainty\": \"None\"\n}",
+        "failure": null
+      },
+      "I_o": {
+        "video": "0002.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains on the floor at both second 0 and second 14, and the elevated landing is still unoccupied. No visible change enables or blocks the goal.",
+        "uncertainty": "Unknown",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains on the floor at both second 0 and second 14, and the elevated landing is still unoccupied. No visible change enables or blocks the goal.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"Unknown\"\n}",
+        "failure": null
+      },
+      "N_o": {
+        "video": "0003.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains on the floor and has not been moved toward the elevated landing at second 14. No visible changes in the scene enable or block the goal.",
+        "uncertainty": "No action taken in the video; goal not yet attempted.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains on the floor and has not been moved toward the elevated landing at second 14. No visible changes in the scene enable or block the goal.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"No action taken in the video; goal not yet attempted.\"\n}",
+        "failure": null
+      },
+      "I_b": {
+        "video": "0004.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains unplaced on the elevated landing at second 14, and no visible changes enable or block its placement. The robot's position and the scene layout are consistent with second 0, leaving the goal unachieved and unchanged.",
+        "uncertainty": "The video does not show the robot attempting to move the blue cube, so its potential for future placement is unknown.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains unplaced on the elevated landing at second 14, and no visible changes enable or block its placement. The robot's position and the scene layout are consistent with second 0, leaving the goal unachieved and unchanged.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"The video does not show the robot attempting to move the blue cube, so its potential for future placement is unknown.\"\n}",
+        "failure": null
+      },
+      "H": {
+        "video": "0005.mp4",
+        "expected": "harmful",
+        "observed": "unchanged",
+        "matches_label": false,
+        "parse_status": "valid",
+        "reason": "The blue cube remains on the floor at both second 0 and second 14, and no visible change in the scene enables or blocks its placement on the elevated landing. The robot's actions do not alter the accessibility of the goal.",
+        "uncertainty": "The video does not show the robot attempting to move the blue cube, so its future possibility is unknown, but the visible state at 14 does not change the possibility.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains on the floor at both second 0 and second 14, and no visible change in the scene enables or blocks its placement on the elevated landing. The robot's actions do not alter the accessibility of the goal.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"The video does not show the robot attempting to move the blue cube, so its future possibility is unknown, but the visible state at 14 does not change the possibility.\"\n}",
+        "failure": null
+      },
+      "S": {
+        "video": "0006.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains unplaced and the elevated landing is still empty at second 14, so the goal is not completed and no visible change made it possible or blocked it.",
+        "uncertainty": "Unknown",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains unplaced and the elevated landing is still empty at second 14, so the goal is not completed and no visible change made it possible or blocked it.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"Unknown\"\n}",
+        "failure": null
+      },
+      "N_b": {
+        "video": "0007.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains in the same position at both second 0 and second 14, and no visible changes to the scene enable or block its placement on the elevated landing. The goal is not completed and remains blocked by the current scene configuration.",
+        "uncertainty": "Unknown if any unseen actions or future steps could change the situation.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains in the same position at both second 0 and second 14, and no visible changes to the scene enable or block its placement on the elevated landing. The goal is not completed and remains blocked by the current scene configuration.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"Unknown if any unseen actions or future steps could change the situation.\"\n}",
+        "failure": null
+      },
+      "E": {
+        "video": "0008.mp4",
+        "expected": "beneficial",
+        "observed": "unchanged",
+        "matches_label": false,
+        "parse_status": "valid",
+        "reason": "The blue cube remains unplaced and unaltered at second 14, and no visible change in the scene enables or blocks its placement on the elevated landing. The robot's actions do not affect the blue cube's position or the accessibility of the landing.",
+        "uncertainty": "The video does not show the robot attempting to move the blue cube or the landing being made accessible.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains unplaced and unaltered at second 14, and no visible change in the scene enables or blocks its placement on the elevated landing. The robot's actions do not affect the blue cube's position or the accessibility of the landing.\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"The video does not show the robot attempting to move the blue cube or the landing being made accessible.\"\n}",
+        "failure": null
+      },
+      "R": {
+        "video": "0009.mp4",
+        "expected": "unchanged",
+        "observed": "unchanged",
+        "matches_label": true,
+        "parse_status": "valid",
+        "reason": "The blue cube remains unplaced on the elevated landing at second 14, and no visible change in the scene enables or blocks its placement. The robot's actions do not alter the fundamental obstacle (the cube is not on the landing).",
+        "uncertainty": "The video does not show the robot attempting to place the blue cube, so we cannot confirm if it was blocked or if an alternative route exists.",
+        "evidence_seconds": [
+          0,
+          14
+        ],
+        "raw": "{\n  \"label\": \"unchanged\",\n  \"reason\": \"The blue cube remains unplaced on the elevated landing at second 14, and no visible change in the scene enables or blocks its placement. The robot's actions do not alter the fundamental obstacle (the cube is not on the landing).\",\n  \"evidence_seconds\": [0, 14],\n  \"uncertainty\": \"The video does not show the robot attempting to place the blue cube, so we cannot confirm if it was blocked or if an alternative route exists.\"\n}",
+        "failure": null
+      }
+    }
+  },
+  "counts": {
+    "access_gate": {
+      "label_match": 7,
+      "valid": 9,
+      "unknown": 0
+    },
+    "support_surface": {
+      "label_match": 7,
+      "valid": 9,
+      "unknown": 0
+    }
+  },
+  "limits": "Net t0-to-t14 label only; reasons and cited frames require manual review. Repeated development geometries are not independent G2 samples."
+}

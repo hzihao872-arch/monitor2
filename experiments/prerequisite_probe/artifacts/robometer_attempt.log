@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "D:\monitor2\research\sources\robometer\scripts\example_inference_local.py", line 26, in <module>
+    from robometer.evals.eval_server import compute_batch_outputs
+  File "D:\monitor2\research\sources\robometer\robometer\evals\eval_server.py", line 54, in <module>
+    from robometer.utils.setup_utils import setup_model_and_processor, setup_batch_collator
+  File "D:\monitor2\research\sources\robometer\robometer\utils\setup_utils.py", line 7, in <module>
+    from unsloth import FastVisionModel
+ModuleNotFoundError: No module named 'unsloth'

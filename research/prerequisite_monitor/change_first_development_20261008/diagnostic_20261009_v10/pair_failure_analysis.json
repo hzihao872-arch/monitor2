@@ -1,0 +1,1460 @@
+{
+  "scope": "all requests; transitions use AI development pre-audit only",
+  "issued": 31,
+  "completed": 31,
+  "failed": 0,
+  "ambiguous": 0,
+  "wall_seconds": 212.78291389765218,
+  "adapter_seconds": 170.8905951110646,
+  "p50_seconds": 6.372047532815486,
+  "p95_seconds": 16.413920948281884,
+  "cost_by_arm_stage": {
+    "compact1:V1": {
+      "requests": 2,
+      "wall_seconds": 23.330400627106428,
+      "adapter_seconds": 14.890856826677918,
+      "input_tokens": 4760,
+      "output_tokens": 478,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18266779136
+    },
+    "compact2:V1": {
+      "requests": 8,
+      "wall_seconds": 61.88471335358918,
+      "adapter_seconds": 45.42240741942078,
+      "input_tokens": 19664,
+      "output_tokens": 1458,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18287639040
+    },
+    "D_RGB:FINAL": {
+      "requests": 8,
+      "wall_seconds": 37.01273834472522,
+      "adapter_seconds": 28.341802068986,
+      "input_tokens": 20600,
+      "output_tokens": 894,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18318987776
+    },
+    "D_predicted:DRAFT": {
+      "requests": 4,
+      "wall_seconds": 38.265840066596866,
+      "adapter_seconds": 30.154587655328214,
+      "input_tokens": 2993,
+      "output_tokens": 1059,
+      "hit_caps": 0,
+      "peak_vram_bytes": 17789051392
+    },
+    "D_predicted:VERIFY": {
+      "requests": 3,
+      "wall_seconds": 12.266705126035959,
+      "adapter_seconds": 12.139776648022234,
+      "input_tokens": 7598,
+      "output_tokens": 397,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18310021632
+    },
+    "C_predicted:DRAFT": {
+      "requests": 4,
+      "wall_seconds": 32.00754486443475,
+      "adapter_seconds": 32.00693759974092,
+      "input_tokens": 3109,
+      "output_tokens": 1150,
+      "hit_caps": 0,
+      "peak_vram_bytes": 17792272896
+    },
+    "C_predicted:VERIFY": {
+      "requests": 2,
+      "wall_seconds": 8.01497151516378,
+      "adapter_seconds": 7.934226892888546,
+      "input_tokens": 5059,
+      "output_tokens": 263,
+      "hit_caps": 0,
+      "peak_vram_bytes": 18311082496
+    }
+  },
+  "summary": [
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "mode": "compact1",
+      "valid": false,
+      "errors": [
+        "ValueError:exact_keys:context,changes,coverage"
+      ],
+      "payload": {
+        "changes": [
+          {
+            "a": "c0a",
+            "after": "robot arm mostly occluded by table edge",
+            "b": "c0b",
+            "before": "robot arm visible, partially occluding table",
+            "coverage": "occluded",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0008",
+            "after": "box top removed, revealing empty interior",
+            "b": "f0005",
+            "before": "box top intact, robot arm holding brown block",
+            "coverage": "complete",
+            "object": "box"
+          },
+          {
+            "a": "f0012",
+            "after": "robot arm retracted, brown block back on orange pad",
+            "b": "f0011",
+            "before": "robot arm holding brown block over box",
+            "coverage": "complete",
+            "object": "robot arm"
+          }
+        ],
+        "context": "A white robot arm is positioned near a wooden table with a blue cube and a box containing an orange pad and small brown block."
+      }
+    },
+    {
+      "qid": "qcde827bb66b99fd4",
+      "mode": "compact1",
+      "valid": false,
+      "errors": [
+        "ValueError:exact_keys:context,changes,coverage"
+      ],
+      "payload": {
+        "changes": [
+          {
+            "a": "c0a",
+            "after": "arm lowered, gripper closed around gray block on platform",
+            "b": "c0b",
+            "before": "arm positioned above yellow platform, gripper open",
+            "coverage": "complete",
+            "object": "robot arm"
+          },
+          {
+            "a": "c1a",
+            "after": "platform fully visible as arm retracts slightly",
+            "b": "c1b",
+            "before": "platform partially obscured by robot arm",
+            "coverage": "complete",
+            "object": "yellow platform"
+          },
+          {
+            "a": "f0014",
+            "after": "pink block moved to rest on yellow platform",
+            "b": "f0000",
+            "before": "pink block visible on wooden surface",
+            "coverage": "complete",
+            "object": "pink block"
+          }
+        ],
+        "context": "A robotic arm hovers over a wooden surface with scattered colored blocks and a yellow platform."
+      }
+    },
+    {
+      "qid": "q07108c1875aa88b5",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0008",
+            "after": "robot arm has removed brown cube, box top is open and empty",
+            "b": "f0005",
+            "before": "robot arm above box, orange top with brown cube visible",
+            "object": "robot arm and box"
+          },
+          {
+            "a": "f0010",
+            "after": "robot arm has placed brown cube back on orange top",
+            "b": "f0008",
+            "before": "robot arm above open box, orange top visible",
+            "object": "robot arm and box"
+          },
+          {
+            "a": "f0011",
+            "after": "robot arm has retracted, box top is closed",
+            "b": "f0010",
+            "before": "robot arm above box with brown cube on orange top",
+            "object": "robot arm and box"
+          }
+        ],
+        "context": "A robot manipulates a box on a wooden surface with a blue cube nearby.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q07e7773ad34d85f6",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0005",
+            "after": "arm lowered, gripper closed, grasping the pink object",
+            "b": "f0002",
+            "before": "arm extended, gripper open, positioned above pink and yellow objects",
+            "object": "robotic arm"
+          },
+          {
+            "a": "f0008",
+            "after": "arm holding pink object, gripper closed, slightly repositioned over yellow platform",
+            "b": "f0007",
+            "before": "arm holding pink object, gripper closed, positioned over yellow platform",
+            "object": "robotic arm"
+          },
+          {
+            "a": "f0011",
+            "after": "released onto wooden surface, now separate from arm",
+            "b": "f0010",
+            "before": "held by robotic arm, positioned above yellow platform",
+            "object": "pink object"
+          }
+        ],
+        "context": "A robotic arm is positioned over a wooden surface with scattered blocks and a yellow platform.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q0d6f6ef3062d4d34",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0005",
+            "after": "extended toward box",
+            "b": "f0003",
+            "before": "retracted",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0011",
+            "after": "releasing orange top",
+            "b": "f0008",
+            "before": "holding orange top",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0014",
+            "after": "extended toward box",
+            "b": "f0011",
+            "before": "retracted",
+            "object": "robot arm"
+          }
+        ],
+        "context": "A robotic arm and a blue cube are on a wooden surface near a transparent box with an orange top.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "c1a",
+            "after": "arm fully visible, gripping an object on the box",
+            "b": "c0a",
+            "before": "arm partially visible, positioned above the box",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0008",
+            "after": "box top surface is removed, revealing an empty interior",
+            "b": "f0005",
+            "before": "box has a solid top surface with an object on it",
+            "object": "box"
+          },
+          {
+            "a": "f0014",
+            "after": "arm has released the object, now stationary",
+            "b": "f0011",
+            "before": "arm holding an object over the box",
+            "object": "robot arm"
+          }
+        ],
+        "context": "A robot arm interacts with a box on a wooden surface, with a blue cube nearby.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q675f22bca6b91b54",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0007",
+            "after": "placed on yellow platform",
+            "b": "f0005",
+            "before": "held by robot arm",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0008",
+            "after": "placed on yellow platform",
+            "b": "f0006",
+            "before": "held by robot arm",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0014",
+            "after": "on yellow platform",
+            "b": "f0011",
+            "before": "on yellow platform",
+            "object": "blue cube"
+          }
+        ],
+        "context": "A robot arm manipulates blocks on a wooden surface near a yellow platform with other blocks.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "qbb0dbd57d63ce6a9",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "c1a",
+            "after": "arm retracted, gray block still on yellow platform",
+            "b": "c0a",
+            "before": "arm extended over yellow platform with gray block on it",
+            "object": "robotic arm"
+          },
+          {
+            "a": "c1a",
+            "after": "moved onto yellow platform by robotic arm",
+            "b": "c1b",
+            "before": "visible on wooden surface near yellow platform",
+            "object": "pink block"
+          },
+          {
+            "a": "f0014",
+            "after": "arm retracted to initial position",
+            "b": "f0000",
+            "before": "arm extended over yellow platform",
+            "object": "robotic arm"
+          }
+        ],
+        "context": "A robotic arm is positioned over a wooden surface with scattered blocks and a yellow platform.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "qcde827bb66b99fd4",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0005",
+            "after": "extended over yellow platform",
+            "b": "f0000",
+            "before": "retracted",
+            "object": "robot arm"
+          },
+          {
+            "a": "f0011",
+            "after": "moved to side of platform",
+            "b": "f0005",
+            "before": "on platform",
+            "object": "pink block"
+          },
+          {
+            "a": "f0014",
+            "after": "on platform with pink block",
+            "b": "f0008",
+            "before": "on platform",
+            "object": "green bar"
+          }
+        ],
+        "context": "Robot arm and blocks on wooden surface with grid floor in background.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "qf2bed1caaecc37a0",
+      "mode": "compact2",
+      "valid": true,
+      "errors": [],
+      "payload": {
+        "changes": [
+          {
+            "a": "f0007",
+            "after": "placed into transparent box",
+            "b": "f0005",
+            "before": "held by robot",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0008",
+            "after": "placed into transparent box",
+            "b": "f0006",
+            "before": "held by robot",
+            "object": "blue cube"
+          },
+          {
+            "a": "f0014",
+            "after": "inside transparent box",
+            "b": "f0011",
+            "before": "inside transparent box",
+            "object": "blue cube"
+          }
+        ],
+        "context": "A robot manipulates a blue cube on a wooden surface near a transparent box with an orange lid.",
+        "coverage": "complete"
+      }
+    },
+    {
+      "qid": "q07108c1875aa88b5",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 2,
+            "effect": "irrelevant"
+          }
+        ],
+        "net_effect": "unchanged",
+        "reason": "No visible change to blue cube or box floor; arm manipulates top cover, not the cube or box interior.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "q07e7773ad34d85f6",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 2,
+            "effect": "irrelevant"
+          }
+        ],
+        "net_effect": "unchanged",
+        "reason": "No visible change to blue cube or landing platform; no evidence of placement, release, or stability.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "q0d6f6ef3062d4d34",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 2,
+            "effect": "irrelevant"
+          }
+        ],
+        "net_effect": "unchanged",
+        "reason": "The blue cube remains outside the transparent box throughout, no preparation or placement occurs.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 2,
+            "effect": "irrelevant"
+          }
+        ],
+        "net_effect": "unchanged",
+        "reason": "The blue cube remains outside the transparent box throughout the evidence, and no action places it inside or prepares for it.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "q675f22bca6b91b54",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "beneficial"
+          },
+          {
+            "change": 2,
+            "effect": "beneficial"
+          }
+        ],
+        "net_effect": "unknown",
+        "reason": "The blue cube is grasped and moved toward the elevated landing but not released or confirmed stable at any point.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "qbb0dbd57d63ce6a9",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 2,
+            "effect": "irrelevant"
+          }
+        ],
+        "net_effect": "unchanged",
+        "reason": "No visible change to blue cube or landing platform; no evidence of placement, release, or stability.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "qcde827bb66b99fd4",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 2,
+            "effect": "irrelevant"
+          }
+        ],
+        "net_effect": "unchanged",
+        "reason": "No visible change to blue cube or landing platform at any time; no evidence of placement, release, or stability.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    },
+    {
+      "qid": "qf2bed1caaecc37a0",
+      "mode": "directpixel",
+      "errors": [],
+      "payload": {
+        "impacts": [
+          {
+            "change": 0,
+            "effect": "irrelevant"
+          },
+          {
+            "change": 1,
+            "effect": "beneficial"
+          },
+          {
+            "change": 2,
+            "effect": "beneficial"
+          }
+        ],
+        "net_effect": "beneficial",
+        "reason": "The arm grasps the blue cube and moves it into the transparent box, achieving the goal state.",
+        "reversal": "false",
+        "state": {
+          "direct_ready": "false",
+          "goal_done": "false",
+          "partial_preparation": "false"
+        }
+      },
+      "valid": true
+    }
+  ],
+  "pairs": [
+    {
+      "qid": "q07e7773ad34d85f6",
+      "input_type": "predicted",
+      "arm": "C",
+      "first_failure": "draft",
+      "draft": {
+        "errors": [
+          "ValueError:index"
+        ],
+        "payload": {
+          "judgment": {
+            "impacts": [
+              {
+                "change": 11,
+                "effect": "harmful"
+              }
+            ],
+            "net_effect": "harmful",
+            "reason": "The blue cube is not mentioned in any change; the pink object was released but not the blue cube, so goal not completed.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "false",
+              "goal_done": "false",
+              "partial_preparation": "false"
+            }
+          },
+          "tests": [
+            {
+              "change": -1,
+              "predicate": "The pink object is now separate from the arm on the wooden surface.",
+              "ref": "f0011"
+            },
+            {
+              "change": -1,
+              "predicate": "The robotic arm is grasping the pink object.",
+              "ref": "f0005"
+            },
+            {
+              "change": -1,
+              "predicate": "The robotic arm is positioned over a wooden surface with scattered blocks and a yellow platform.",
+              "ref": "f0000"
+            },
+            {
+              "change": -1,
+              "predicate": "The robotic arm is not holding any object at 14000ms.",
+              "ref": "f0014"
+            }
+          ]
+        },
+        "valid": false
+      },
+      "verify": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "direct_ready": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "partial_preparation": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "net_effect": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "harmful",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        }
+      }
+    },
+    {
+      "qid": "q07e7773ad34d85f6",
+      "input_type": "predicted",
+      "arm": "D",
+      "first_failure": "verify",
+      "draft": {
+        "errors": [],
+        "payload": {
+          "judgment": {
+            "impacts": [],
+            "net_effect": "unknown",
+            "reason": "No evidence of blue cube placement or stability on marked elevated landing.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "false",
+              "goal_done": "false",
+              "partial_preparation": "false"
+            }
+          },
+          "tests": [
+            {
+              "change": -1,
+              "predicate": "pink object released onto wooden surface",
+              "ref": "f0011"
+            },
+            {
+              "change": -1,
+              "predicate": "arm grasping pink object",
+              "ref": "f0005"
+            },
+            {
+              "change": -1,
+              "predicate": "robotic arm positioned over wooden surface",
+              "ref": "f0000"
+            },
+            {
+              "change": -1,
+              "predicate": "no blue cube visible on marked elevated landing",
+              "ref": "f0014"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "verify": {
+        "errors": [
+          "JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ],
+        "payload": null,
+        "valid": false
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "direct_ready": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "partial_preparation": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "net_effect": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "harmful",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        }
+      }
+    },
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "input_type": "predicted",
+      "arm": "C",
+      "first_failure": "verify",
+      "draft": {
+        "errors": [],
+        "payload": {
+          "judgment": {
+            "impacts": [
+              {
+                "change": 0,
+                "effect": "irrelevant"
+              },
+              {
+                "change": 1,
+                "effect": "harmful"
+              },
+              {
+                "change": 2,
+                "effect": "unknown"
+              }
+            ],
+            "net_effect": "harmful",
+            "reason": "The box top was removed (f0008) before the blue cube was placed inside, making it impossible to satisfy the goal as stated.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "false",
+              "goal_done": "false",
+              "partial_preparation": "unknown"
+            }
+          },
+          "tests": [
+            {
+              "change": -1,
+              "predicate": "box top surface is removed, revealing an empty interior",
+              "ref": "f0008"
+            },
+            {
+              "change": -1,
+              "predicate": "arm fully visible, gripping an object on the box",
+              "ref": "c1a"
+            },
+            {
+              "change": -1,
+              "predicate": "arm has released the object, now stationary",
+              "ref": "f0014"
+            },
+            {
+              "change": -1,
+              "predicate": "box has a solid top surface with an object on it",
+              "ref": "f0005"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "verify": {
+        "errors": [
+          "JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ],
+        "payload": null,
+        "valid": false
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "direct_ready": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "true",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "partial_preparation": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "net_effect": {
+          "before": "harmful",
+          "after": "invalid_or_unexecuted",
+          "reference": "beneficial",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        }
+      }
+    },
+    {
+      "qid": "q613a0d8ddf5acc68",
+      "input_type": "predicted",
+      "arm": "D",
+      "first_failure": "verify",
+      "draft": {
+        "errors": [],
+        "payload": {
+          "judgment": {
+            "impacts": [
+              {
+                "change": 0,
+                "effect": "irrelevant"
+              },
+              {
+                "change": 1,
+                "effect": "harmful"
+              },
+              {
+                "change": 2,
+                "effect": "unknown"
+              }
+            ],
+            "net_effect": "unknown",
+            "reason": "No evidence shows blue cube inside transparent box resting on floor; box top removed but cube not placed or confirmed inside.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "false",
+              "goal_done": "false",
+              "partial_preparation": "unknown"
+            }
+          },
+          "tests": [
+            {
+              "change": -1,
+              "predicate": "blue cube is stationary inside transparent box resting on floor",
+              "ref": "f0014"
+            },
+            {
+              "change": 1,
+              "predicate": "box top surface is removed",
+              "ref": "f0008"
+            },
+            {
+              "change": 0,
+              "predicate": "arm is gripping an object on the box",
+              "ref": "c1a"
+            },
+            {
+              "change": 2,
+              "predicate": "arm has released the object, now stationary",
+              "ref": "f0014"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "verify": {
+        "errors": [
+          "JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ],
+        "payload": null,
+        "valid": false
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "direct_ready": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "true",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "partial_preparation": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "net_effect": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "beneficial",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        }
+      }
+    },
+    {
+      "qid": "qbb0dbd57d63ce6a9",
+      "input_type": "predicted",
+      "arm": "C",
+      "first_failure": "verify",
+      "draft": {
+        "errors": [],
+        "payload": {
+          "judgment": {
+            "impacts": [],
+            "net_effect": "unknown",
+            "reason": "No evidence shows blue cube moved to marked elevated landing or released and stabilized.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "false",
+              "goal_done": "false",
+              "partial_preparation": "false"
+            }
+          },
+          "tests": [
+            {
+              "change": -1,
+              "predicate": "robotic arm retracted to initial position",
+              "ref": "f0014"
+            },
+            {
+              "change": 0,
+              "predicate": "arm extended over yellow platform with gray block on it",
+              "ref": "c0a"
+            },
+            {
+              "change": 1,
+              "predicate": "moved onto yellow platform by robotic arm",
+              "ref": "c1a"
+            },
+            {
+              "change": 2,
+              "predicate": "arm retracted to initial position",
+              "ref": "f0014"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "verify": {
+        "errors": [
+          "JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ],
+        "payload": null,
+        "valid": false
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "direct_ready": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "partial_preparation": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "net_effect": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "unchanged",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "true",
+          "transition": "still_wrong_or_unanswered"
+        }
+      }
+    },
+    {
+      "qid": "qbb0dbd57d63ce6a9",
+      "input_type": "predicted",
+      "arm": "D",
+      "first_failure": "verify",
+      "draft": {
+        "errors": [],
+        "payload": {
+          "judgment": {
+            "impacts": [],
+            "net_effect": "unknown",
+            "reason": "No evidence shows blue cube placed on marked elevated landing and left stable.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "false",
+              "goal_done": "false",
+              "partial_preparation": "unknown"
+            }
+          },
+          "tests": [
+            {
+              "change": -1,
+              "predicate": "robotic arm retracted to initial position",
+              "ref": "f0014"
+            },
+            {
+              "change": -1,
+              "predicate": "blue cube visible on wooden surface",
+              "ref": "f0010"
+            },
+            {
+              "change": -1,
+              "predicate": "robotic arm extended over yellow platform",
+              "ref": "f0000"
+            },
+            {
+              "change": -1,
+              "predicate": "pink block moved onto yellow platform",
+              "ref": "f0002"
+            }
+          ]
+        },
+        "valid": true
+      },
+      "verify": {
+        "errors": [
+          "JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+        ],
+        "payload": null,
+        "valid": false
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "direct_ready": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "destroyed"
+        },
+        "partial_preparation": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "net_effect": {
+          "before": "unknown",
+          "after": "invalid_or_unexecuted",
+          "reference": "unchanged",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "false",
+          "after": "invalid_or_unexecuted",
+          "reference": "true",
+          "transition": "still_wrong_or_unanswered"
+        }
+      }
+    },
+    {
+      "qid": "qf2bed1caaecc37a0",
+      "input_type": "predicted",
+      "arm": "C",
+      "first_failure": "draft",
+      "draft": {
+        "errors": [
+          "ValueError:completed_preparation_state"
+        ],
+        "payload": {
+          "judgment": {
+            "impacts": [
+              {
+                "change": 0,
+                "effect": "beneficial"
+              },
+              {
+                "change": 1,
+                "effect": "beneficial"
+              },
+              {
+                "change": 2,
+                "effect": "irrelevant"
+              }
+            ],
+            "net_effect": "beneficial",
+            "reason": "The blue cube is placed inside the transparent box and remains still, fulfilling the goal with no evidence of reversal or harm.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "true",
+              "goal_done": "true",
+              "partial_preparation": "not_applicable"
+            }
+          },
+          "tests": [
+            {
+              "change": 0,
+              "predicate": "blue cube is placed into transparent box",
+              "ref": "f0007"
+            },
+            {
+              "change": 1,
+              "predicate": "blue cube is placed into transparent box",
+              "ref": "f0008"
+            },
+            {
+              "change": 2,
+              "predicate": "blue cube is inside transparent box",
+              "ref": "f0014"
+            },
+            {
+              "change": -1,
+              "predicate": "blue cube rests on box floor and is still",
+              "ref": "f0014"
+            }
+          ]
+        },
+        "valid": false
+      },
+      "verify": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "true",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "direct_ready": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "not_applicable",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "partial_preparation": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "not_applicable",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "net_effect": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "beneficial",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        }
+      }
+    },
+    {
+      "qid": "qf2bed1caaecc37a0",
+      "input_type": "predicted",
+      "arm": "D",
+      "first_failure": "draft",
+      "draft": {
+        "errors": [
+          "ValueError:completed_preparation_state"
+        ],
+        "payload": {
+          "judgment": {
+            "impacts": [
+              {
+                "change": 0,
+                "effect": "beneficial"
+              },
+              {
+                "change": 1,
+                "effect": "beneficial"
+              },
+              {
+                "change": 2,
+                "effect": "irrelevant"
+              }
+            ],
+            "net_effect": "beneficial",
+            "reason": "Blue cube placed inside transparent box and remains still, meeting goal with no evidence of reversal or harm.",
+            "reversal": "false",
+            "state": {
+              "direct_ready": "true",
+              "goal_done": "true",
+              "partial_preparation": "not_applicable"
+            }
+          },
+          "tests": [
+            {
+              "change": 0,
+              "predicate": "blue cube placed into transparent box",
+              "ref": "f0007"
+            },
+            {
+              "change": 1,
+              "predicate": "blue cube placed into transparent box",
+              "ref": "f0008"
+            },
+            {
+              "change": 2,
+              "predicate": "blue cube inside transparent box",
+              "ref": "f0014"
+            },
+            {
+              "change": -1,
+              "predicate": "blue cube rests on box floor and remains still",
+              "ref": "f0014"
+            }
+          ]
+        },
+        "valid": false
+      },
+      "verify": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "final": {
+        "valid": false,
+        "errors": [
+          "unexecuted"
+        ],
+        "payload": null
+      },
+      "agreement": {
+        "goal_done": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "true",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "direct_ready": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "not_applicable",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "partial_preparation": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "not_applicable",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "net_effect": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "beneficial",
+          "transition": "still_wrong_or_unanswered"
+        },
+        "reversal": {
+          "before": "invalid_or_unexecuted",
+          "after": "invalid_or_unexecuted",
+          "reference": "false",
+          "transition": "still_wrong_or_unanswered"
+        }
+      }
+    }
+  ],
+  "transition_counts": {
+    "predicted:C": {
+      "still_wrong_or_unanswered": 15,
+      "destroyed": 5
+    },
+    "predicted:D": {
+      "destroyed": 8,
+      "still_wrong_or_unanswered": 12
+    }
+  },
+  "unexecuted_query_records": []
+}

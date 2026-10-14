@@ -1,0 +1,40 @@
+[
+  {
+    "candidate": "offset_cell_initial_U0_destination",
+    "status": "excluded_before_freeze_or_scoring",
+    "reason": "IK target (.245,-.19,.03) error 0.028 m exceeded 0.025 m gate; complete family regenerated with reachable U0 destination (.015,-.17).",
+    "model_scores": null
+  },
+  {
+    "candidate": "pickup_gate_v1",
+    "status": "excluded_before_freeze_or_scoring",
+    "reason": "B0 did not preserve blocked outcome (C=+1) and preparation displaced blue beyond 0.005 m gate in B+, B0 and H-.",
+    "audit": {
+      "B+": {
+        "C": 1.0,
+        "blue_motion_metres": 0.0073591742416702546
+      },
+      "B0": {
+        "C": 1.0,
+        "blue_motion_metres": 0.016468927324920092
+      },
+      "U0": {
+        "C": 0.0,
+        "blue_motion_metres": 5.506377284795605e-07
+      },
+      "H-": {
+        "C": -1.0,
+        "blue_motion_metres": 0.009195314560100604
+      }
+    },
+    "video_dir": "experiments\\prerequisite_probe\\artifacts\\unseen_pickup_gate\\model_input",
+    "model_scores": null
+  },
+  {
+    "candidate": "pickup_gate_opposite_pilot",
+    "status": "excluded_before_freeze_or_scoring",
+    "reason": "Opposite-side grasp gate failed physical validity: preparation moved the blue cube 0.0088-0.0136 m in B+, B0 and H-, beyond the 0.005 m gate; B0 also changed continuation success from false to true.",
+    "audit_file": "experiments/prerequisite_probe/artifacts/pickup_gate_opposite_pilot.json",
+    "model_scores": null
+  }
+]

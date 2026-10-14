@@ -1,0 +1,41 @@
+{
+  "models_run": 0,
+  "paid_api_calls": 0,
+  "new_weights": 0,
+  "hardware_reassessment_for_inference": false,
+  "robometer": {
+    "code_revision": "352d160389daa964788de1ec933d1925f3a6de4f",
+    "weight_revision": "beef63bc914c5c189329d49c6d712d96d632aa34",
+    "status": "prior checked cache lacks exact checkpoint; no new weights; C.4 scorer and Table 8 subset unknown",
+    "input": "task plus causal prefix sampled at four linspace indices in fixed server; exact paper configurations remain distinct"
+  },
+  "r2vlm": {
+    "code_revision": "3b5c09ff1baea40301a790a0c15048df3fc81a5b",
+    "weight_revision": "6c84c9bffe680e310ad7fcaaf7016134e0a0608f",
+    "status": "official single-sample runner now audited; exact weights and ALFRED source images not available locally in prior audit",
+    "runner": "code/script/Alfred/infer_vllm_single.py",
+    "fields": [
+      "question",
+      "turns[].images",
+      "optional task/item_id"
+    ],
+    "output": [
+      "raw_output",
+      "history_cot",
+      "model_answer"
+    ],
+    "server": "local OpenAI-compatible endpoint; not executed",
+    "paper_exactness": "sample runner does not establish complete Table 1 scoring configuration"
+  },
+  "progresscompass": {
+    "status": "same-day project snapshot code coming soon; benchmark explicitly no baseline predictions; live web open failed this turn; eight-frame paper runner not available"
+  },
+  "dopamine": {
+    "code_revision": "2c714abca66329f8e2113587226bc9556726f6c2",
+    "preview_revision": "980f3d1819c870f62c36169a9486e971049bb09a",
+    "status": "no exact local paper weights established; preview not silently equated with August 2.0 or PRM paper checkpoint"
+  },
+  "robomonitor": {
+    "status": "no verified released task-trained weights/runner; task-supervised setup incompatible with no-training recreation"
+  }
+}

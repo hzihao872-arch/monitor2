@@ -1,0 +1,661 @@
+{
+  "version": "change-first-v1",
+  "schemas": {
+    "V1": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "initial_context": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "entity_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "region_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "visible_relation": {
+                "type": "string",
+                "maxLength": 320
+              }
+            },
+            "required": [
+              "description",
+              "entity_id",
+              "region_id",
+              "visible_relation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "changes": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "after": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "after_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "before": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "before_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "change_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "entity_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "observation": {
+                "type": "string",
+                "enum": [
+                  "observed",
+                  "uncertain"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "closed_event",
+                  "open_event"
+                ]
+              }
+            },
+            "required": [
+              "after",
+              "after_refs",
+              "before",
+              "before_refs",
+              "change_id",
+              "entity_ids",
+              "observation",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "coverage": {
+          "type": "string",
+          "enum": [
+            "complete",
+            "overflow",
+            "occluded",
+            "no_observable_change"
+          ]
+        },
+        "uncertainty": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "detail": {
+                "type": "string",
+                "maxLength": 320
+              }
+            },
+            "required": [
+              "code",
+              "detail"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "changes",
+        "coverage",
+        "initial_context",
+        "uncertainty"
+      ],
+      "additionalProperties": false
+    },
+    "L2": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "claims": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "change_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "claim_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "falsifier": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "goal_binding": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "possible_effect": {
+                "type": "string",
+                "enum": [
+                  "beneficial",
+                  "harmful",
+                  "irrelevant",
+                  "unknown"
+                ]
+              },
+              "relation_hypothesis": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "test_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              }
+            },
+            "required": [
+              "change_ids",
+              "claim_id",
+              "falsifier",
+              "goal_binding",
+              "possible_effect",
+              "relation_hypothesis",
+              "test_ids"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "tests": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "entity_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "neutral_question": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "requested_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "test_id": {
+                "type": "string",
+                "maxLength": 320
+              }
+            },
+            "required": [
+              "entity_ids",
+              "neutral_question",
+              "requested_refs",
+              "test_id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "claims",
+        "tests"
+      ],
+      "additionalProperties": false
+    },
+    "V3": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "facts": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string",
+                "enum": [
+                  "before",
+                  "after",
+                  "current"
+                ]
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "test_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "value": {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false",
+                  "unknown"
+                ]
+              },
+              "visible_statement": {
+                "type": "string",
+                "maxLength": 320
+              }
+            },
+            "required": [
+              "at",
+              "evidence_refs",
+              "test_id",
+              "value",
+              "visible_statement"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "change_checks": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "change_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "exists": {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "change_id",
+              "evidence_refs",
+              "exists"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "goal_facts": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterion_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "value": {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "criterion_id",
+              "evidence_refs",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "new_unverified_changes": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              }
+            },
+            "required": [
+              "description",
+              "evidence_refs"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "missing": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "occlusion",
+                  "identity",
+                  "geometry",
+                  "stability",
+                  "budget",
+                  "out_of_prefix",
+                  "not_observable"
+                ]
+              },
+              "test_id": {
+                "type": "string",
+                "maxLength": 320
+              }
+            },
+            "required": [
+              "reason",
+              "test_id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "change_checks",
+        "facts",
+        "goal_facts",
+        "missing",
+        "new_unverified_changes"
+      ],
+      "additionalProperties": false
+    },
+    "L4": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "claim_results": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "short_reason": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "supported",
+                  "refuted",
+                  "unknown"
+                ]
+              },
+              "used_test_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              }
+            },
+            "required": [
+              "claim_id",
+              "short_reason",
+              "status",
+              "used_test_ids"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "events": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "observed",
+                  "inference"
+                ]
+              },
+              "change_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "fact_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              },
+              "impact": {
+                "type": "string",
+                "enum": [
+                  "beneficial",
+                  "harmful",
+                  "irrelevant",
+                  "mixed",
+                  "unknown"
+                ]
+              },
+              "reversed_event_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 12
+              }
+            },
+            "required": [
+              "basis",
+              "change_ids",
+              "fact_ids",
+              "impact",
+              "reversed_event_ids"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "state": {
+          "type": "object",
+          "properties": {
+            "goal_done": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false",
+                "unknown",
+                "not_applicable"
+              ]
+            },
+            "direct_ready": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false",
+                "unknown",
+                "not_applicable"
+              ]
+            },
+            "partial_preparation": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false",
+                "unknown",
+                "not_applicable"
+              ]
+            }
+          },
+          "required": [
+            "goal_done",
+            "direct_ready",
+            "partial_preparation"
+          ],
+          "additionalProperties": false
+        },
+        "state_fact_ids": {
+          "type": "object",
+          "properties": {
+            "goal_done": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "direct_ready": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "partial_preparation": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 80
+              }
+            }
+          },
+          "required": [
+            "goal_done",
+            "direct_ready",
+            "partial_preparation"
+          ],
+          "additionalProperties": false
+        },
+        "net_effect": {
+          "type": "string",
+          "enum": [
+            "beneficial",
+            "harmful",
+            "unchanged",
+            "mixed",
+            "unknown"
+          ]
+        },
+        "reversal": {
+          "type": "string",
+          "enum": [
+            "true",
+            "false",
+            "unknown"
+          ]
+        },
+        "unresolved": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        }
+      },
+      "required": [
+        "claim_results",
+        "events",
+        "net_effect",
+        "reversal",
+        "state",
+        "state_fact_ids",
+        "unresolved"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

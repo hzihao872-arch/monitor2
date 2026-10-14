@@ -1,0 +1,86 @@
+{
+  "dataset": "RMBench",
+  "task": "cover_blocks",
+  "primary_setting": "state_recall",
+  "episode": "episode1",
+  "original_episode": "episode6",
+  "main_instruction": "Cover each block with a lid, working from left to right. Then remove the lids one at a time so the blocks are uncovered in colour order: red first, then green, then blue.",
+  "source_video": "full_video.mp4",
+  "source_frame_count": 1011,
+  "fps": 30.0,
+  "boundary_source": "language_annotation.json cumulative frame lengths",
+  "subtasks": [
+    {
+      "subtask_id": "subtask00",
+      "raw_segment_indices": [
+        0
+      ],
+      "raw_labels": [
+        "Cover the left block with the left cover."
+      ],
+      "start_frame": 0,
+      "end_frame_exclusive": 149,
+      "instruction": "Cover the leftmost block with the leftmost lid"
+    },
+    {
+      "subtask_id": "subtask01",
+      "raw_segment_indices": [
+        1
+      ],
+      "raw_labels": [
+        "Cover the middle block with the middle cover."
+      ],
+      "start_frame": 149,
+      "end_frame_exclusive": 331,
+      "instruction": "Cover the middle block with the middle lid"
+    },
+    {
+      "subtask_id": "subtask02",
+      "raw_segment_indices": [
+        2
+      ],
+      "raw_labels": [
+        "Cover the right block with the right cover."
+      ],
+      "start_frame": 331,
+      "end_frame_exclusive": 513,
+      "instruction": "Cover the rightmost block with the rightmost lid"
+    },
+    {
+      "subtask_id": "subtask03",
+      "raw_segment_indices": [
+        3
+      ],
+      "raw_labels": [
+        "Open the right cover to uncover the blocks in the order of red, green, and blue."
+      ],
+      "start_frame": 513,
+      "end_frame_exclusive": 688,
+      "instruction": "Uncover the rightmost block by removing the rightmost lid"
+    },
+    {
+      "subtask_id": "subtask04",
+      "raw_segment_indices": [
+        4
+      ],
+      "raw_labels": [
+        "Open the middle cover to uncover the blocks in the order of red, green, and blue."
+      ],
+      "start_frame": 688,
+      "end_frame_exclusive": 836,
+      "instruction": "Uncover the middle block by removing the middle lid"
+    },
+    {
+      "subtask_id": "subtask05",
+      "raw_segment_indices": [
+        5
+      ],
+      "raw_labels": [
+        "Open the left cover to uncover the blocks in the order of red, green, and blue."
+      ],
+      "start_frame": 836,
+      "end_frame_exclusive": 1011,
+      "instruction": "Uncover the leftmost block by removing the leftmost lid"
+    }
+  ]
+}

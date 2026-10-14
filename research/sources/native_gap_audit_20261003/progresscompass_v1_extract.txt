@@ -1,0 +1,101 @@
+S2
+2 Context-Dependent Progress Estimation 2.1 Task Formulation Let x x be a task instruction. Let O = ( o 1 , … , o T ) O=(o_{1},\ldots,o_{T}) be one execution of the task, where T T is the number of observations and o t o_{t} is the observation at time t t . The ground-truth progress at that time is p t ∈ [ 0 , 1 ] p_{t}\in[0,1] , and the model predicts p ^ t \hat{p}_{t} . We study progress annotation. The model assigns a progress value to every observation of an execution. At time t t , let H t = o 1 : t − 1 H_{t}=o_{1:t-1} denote the observation history before o t o_{t} , with H 1 = ∅ H_{1}=\varnothing . What the context has to supply at t t comes from x x , H t H_{t} , and o t o_{t} ; later observations do not change it. Of these inputs, the simplest Progress Reward Model (PRM) uses only the current observation, p ^ t = f ⁡ ( o t ∣ x ) \hat{p}_{t}=f(o_{t}\mid x) . We study tasks where this cannot work, because progress depends on information that o t o_{t} does not carry. We call such progress estimation context-dependent . The right context makes progress estimable from o t o_{t} . If the current observation lacks a piece of information, the natural fix is to supply it. We call this missing piece the context c t c_{t} . Without it, no estimator can recover p t p_{t} ; with it, the current observation is enough again: f ⁡ ( o t ∣ x ) ⏟ without context ≠ p t , f ⁡ ( o t ∣ x , c t ) ⏟ with context = p t . \underbrace{f(o_{t}\mid x)}_{\text{without context}}\;\neq\;p_{t},\qquad\qquad\underbrace{f(o_{t}\mid x,\,c_{t})}_{\text{with context}}\;=\;p_{t}. (1) The two sides differ only by c t c_{t} , and the gap between them is what a context-dependent task costs a model that ignores its history. Theorem 1 in Section 4 turns this gap into a floor on the error of every estimator that reads only x x and o t o_{t} , whatever its capacity. Having the history is not having the context. At time t t , only the history H t H_{t} can supply c t c_{t} , and the obvious choice is to hand the model the history itself, as if c t c_{t} were H t H_{t} . But Equation 1 asks for one specific piece of information, whereas H t H_{t} is a raw stream of past observations that contains it somewhere. The history helps only after it has been turned into the context. Context is history interpreted for the task and the moment. H t H_{t} records what was observed. c t c_{t} is what that record means given the instruction x x and the observation o t o_{t} in front of the model: which outcomes hold, how far the task has come, which occurrence is underway. Nothing in H t H_{t} states these directly, and the same history yields a different c t c_{t} at a different moment, so this is an interpretation rather than a retrieval: c t = ϕ ⁡ ( H t ∣ x , o t ) , c_{t}=\phi(H_{t}\mid x,\,o_{t}), (2) where ϕ \phi is conditioned on the instruction x x and the current observation o t o_{t} , because x x says what to look for and o t o_{t} says what is already visible, and together they decide which reading of the history is the one the estimator needs. Context-dependent progress estimation thus comes down to ϕ \phi : Section 2.2 names the three kinds of fact that ϕ \phi must recover, Section 3 shows that current PRMs, even when handed the entire history, do not carry out ϕ \phi on their own, and Section 4 assigns ϕ \phi to general-purpose VLMs around a frozen f f . 2.2 Three Forms of Context Dependence The mapping ϕ \phi in Equation 2 turns the history into the context that instruction x x and the current observation o t o_{t} need. Its three inputs play fixed roles: x x says what to look for, o t o_{t} says what is already visible, and H t H_{t} is where the rest has to be found. We distinguish three forms by what o t o_{t} is missing; Figure ProgressCompass : Embodied Progress Reward Models Are Lost Without the Right Context shows all three arising from a single instruction. In each form, ϕ \phi reads something different from the history, and the context takes a different shape. Each form also contributes its own term to the error floor of Theorem 1 , so that the cost of each can be stated separately. State Recall: What happened before? Some task-relevant facts are visible only for a while. A state change happens, and later frames no longer show whether it happened or what the state was before. Here x x fixes which facts matter, o t o_{t} tells which of them are currently hidden, and ϕ \phi has to recall those from the history. The context is the set of task-relevant facts visible earlier but not in o t o_{t} . Sequence Tracking: Where are we in the sequence? Some tasks consist of K K steps that must be completed in order. The current frame shows a step being performed, but not whether the steps before it have actually been done. Here x x fixes the order, H t H_{t} tells which steps have been completed, and ϕ \phi has to judge whether the step shown in o t o_{t} is the one that comes next. Because the steps are ordered, the completed ones form a prefix of the sequence, and the first step not yet completed is the one that should be in progress; we call its index the active position a t a_{t} , which runs from 1 1 (nothing done) to K + 1 K+1 (all done). The context is this position together with the judgment that o t o_{t} indeed shows step a t a_{t} , which holds exactly when every step before the one in o t o_{t} is done. Recurrence Disambiguation: Which occurrence is this? Some tasks repeat the same event several times. Frames from different repetitions are visually indistinguishable, written o u ≈ o v o_{u}\approx o_{v} , but sit at different progress values ( p u ≠ p v p_{u}\neq p_{v} ); so can frames from different stages of one repetition, such as just before and just after the event takes place. Here the repeated event is tied to x x , o t o_{t} shows one such look-alike moment, and ϕ \phi has to place it against what the history has recorded. The context is how many occurrences of the event have been completed so far, which gives the occurrence index r t r_{t} of the current one, together with whether that occurrence is already underway. The index separates look-alike frames from different repetitions; the second part separates look-alike frames within one. 2.3 Controlled Benchmark Construction Source trajectories. ContextProgress-Bench is built from robot-manipulation trajectories in RMBench ( Chen et al., 2026d ) , RoboDojo ( Chen et al., 2026c ) , and LIBERO-Mem ( Chung et al., 2026 ) , itself built on LIBERO ( Liu et al., 2023 ) . From these sources we select by hand the tasks whose progress is context-dependent in the sense of Section 2.1 , that is, tasks in which the current observation alone does not determine progress and at least one form of Section 2.2 is needed. For every episode we then annotate by hand the subtask intervals and, for each interval, the context that estimating its progress requires: the earlier outcome it depends on, its position in the ordered plan, or the occurrence of a repeated event it belongs to. Figure 2: Statistics of ContextProgress-Bench . (a) Episodes
+grouped by the context forms they require. (b) Tasks, episodes and annotated
+steps per form. (c) Episode duration. (d) Annotated steps per episode; every
+episode needs context at least once. Benchmark scope. The benchmark contains 24 tasks, and for each task we sample five episodes at random. The resulting 120 videos contain 71,708 frames of execution. Figure 2 summarizes its context forms, coverage, episode length, and decomposition depth.
+
+S3
+3 Where Progress Reward Models Get Lost Evaluation setting. We evaluate five Progress Reward Models (PRMs): ProgressLM-3B-RL ( Zhang et al., 2026b ) ,
+Robo-Dopamine-GRM-3B ( Tan et al., 2026 ) ,
+RoboMeter-4B ( Liang et al., 2026 ) , TOPReward with
+Molmo2-4B ( Chen et al., 2026b ; Clark et al., 2026 ) and
+VLAC-8B ( Zhang et al., 2026d ) . For each model, both runs use the same input
+format: without context gives the episode instruction, and with
+context replaces it with the instruction of the active subtask, which integrates
+the annotated context, on the interval that subtask occupies. This context is
+given by hand: we write it from the annotation and set every subtask boundary
+ourselves, so the model never decides where a subtask begins or ends. The two
+runs are paired on all 552 552 annotated subtask intervals, so they differ in c t c_{t} alone. We report two metrics: (i) MAE is
+the mean absolute error of the predicted progress, so it
+asks how accurate each individual estimate is; (ii) Spearman’s ρ \rho is the
+rank correlation between the predicted curve and time, so it asks whether the
+estimates are ordered correctly, whatever their absolute level. A model can be
+right about the ordering and wrong about the values, or the reverse, and without
+context these models are often wrong about both. Table 1: The Context Gap. Left: the same frozen model with the
+same input format, first without context, then with the correct context for each
+annotated subtask. The two with-context settings differ in where that context
+puts the estimate: oracle at the true position of its subtask, self-chained at where the model ended the previous one.
+( Green values ) are the relative change
+from the same model w/o context. Right: each dot is one
+subtask of one model, at its MAE without context ( x x ) and with context ( y y ),
+coloured as on the left; dots below the diagonal are where context helped. Model w/o context w/ context: oracle w/ context: self-chained MAE ↓ \downarrow ρ \rho ↑ \uparrow MAE ↓ \downarrow ρ \rho ↑ \uparrow MAE ↓ \downarrow ρ \rho ↑ \uparrow ProgressLM 17.95 0.74 4.18 ( − 𝟕𝟕 % -77\% ) 0.99 ( + 𝟑𝟓 % +35\% ) 16.70 ( − 𝟕 % -7\% ) 0.99 ( + 𝟑𝟒 % +34\% ) Robo-Dopamine 15.59 0.74 3.43 ( − 𝟕𝟖 % -78\% ) 0.98 ( + 𝟑𝟏 % +31\% ) 4.66 ( − 𝟕𝟎 % -70\% ) 0.97 ( + 𝟑𝟏 % +31\% ) RoboMeter 25.42 0.53 4.91 ( − 𝟖𝟏 % -81\% ) 0.93 ( + 𝟕𝟓 % +75\% ) 11.39 ( − 𝟓𝟓 % -55\% ) 0.92 ( + 𝟕𝟒 % +74\% ) TOPReward 30.95 0.56 6.70 ( − 𝟕𝟖 % -78\% ) 0.90 ( + 𝟔𝟐 % +62\% ) 9.42 ( − 𝟕𝟎 % -70\% ) 0.89 ( + 𝟓𝟗 % +59\% ) VLAC 24.43 0.72 4.50 ( − 𝟖𝟐 % -82\% ) 0.97 ( + 𝟑𝟓 % +35\% ) 17.13 ( − 𝟑𝟎 % -30\% ) 0.94 ( + 𝟑𝟎 % +30\% ) Figure 3: Three typical errors, one episode each. The task each panel
+runs on is (a) move each red block onto the green mat and back to where it came
+from, from left to right; (b) insert three tubes into a rack in a prescribed
+order; (c) press the same button eight times. 3.1 Do Progress Reward Models Lose the Task Without Context? They do, and by a wide margin. Without context, as
+Table 1 shows, every one of the five is far from the
+true progress and orders the episode unreliably. Supplying the context
+turns both around on every model at once, cutting the error by about four
+fifths and bringing the ordering near perfect. The gain is not an average over
+easy episodes: the right-hand panel of
+Table 1 pairs the two runs interval by interval, and
+almost every pair lies below the diagonal: whether a PRM is right
+turns on whether it is told where in the task it is, not on what it can see.
+The oracle column is the error left once the step is known, the local term of
+Theorem 1 .
+Anchored on its own endpoints instead of the oracle, every model still improves,
+but far less, in the order of how firmly each closes a subtask. 3.2 How the Three Forms Fail Figure 3 shows what being lost looks like in each form. (a) State amnesia. Once a state change has happened and left the frame,
+everything after it is read against a scene that no longer records it. The blocks
+are interchangeable and a block leaving the green mat gives no sign of where it
+belongs, so from the first return onwards the curve falls back instead of
+accumulating. (b) Phase drift. The order of the steps is not visible in a
+frame, so the model reads a step as a later one than it is, or credits an early
+step as though a later one were already underway; the first insertion is complete
+and the curve already sits where the second should be. (c) Occurrence
+confusion. Repeated actions produce near-identical frames and the model
+returns near-identical values for all of them, so it cannot say which repetition
+is underway: eight presses give one value, a plateau where the truth is a
+staircase. In all three the model perceives the event and has nowhere to put it.
+
+S5
+5 Results Experimental setup. We implement ProgressCompass with
+Qwen3.5-27B ( Qwen Team, 2026 ) as the Orienter, Qwen3.5-9B as the Verifier and, without frames, as the Navigator, and
+RoboMeter-4B, lightweight and not reliant on careful prompting, as the frozen Progress Reward Model (PRM), decoding at temperature 0 0 . We
+compare against the five PRMs of Section 3 , each
+reading the full episode and instruction, and against
+R 2 VLM ( Zhang et al., 2026e ) , which conditions on retrieved context and is the
+closest existing method. RoboMeter-4B is both a baseline and our backbone, so
+every gain uses the same frozen weights. 5.1 Overall Performance As shown in Figure 5 , wrapping the frozen RoboMeter-4B in ProgressCompass more than halves its progress error, from 25.4 25.4 to 9.3 9.3 , and lifts its rank agreement from 0.53 0.53 to 0.93 0.93 . No weight changes and the inputs are the same, so the whole gain
+comes from the context. It is also the best method on every
+context form, ahead of every frozen model and of R 2 VLM, and recovers 78 % 78\% of the deficit that oracle context would close. Transition timing improves with it: boundary
+error falls by two thirds, and the share of annotated boundaries matched within 5 % 5\% of episode duration roughly triples. Figure 6 shows the same gap on single episodes. 5.2 When Instruction and Execution Do Not Match Figure 7: Negatives. Mean deviation of each method from the correct
+progress on Early stop, Extra steps and Mismatch; lower is better. We build 15 15 held-out negatives by breaking the correspondence between an
+instruction and its execution in three directions: the execution does less than
+asked, more than asked, or something unrelated. Each has its own correct
+behaviour, and we score the whole curve against it (Figure 7 ). Early stop keeps the instruction and cuts the video short, so the
+correct value is the progress performed. Every action shown is correct, so a
+model that reads the scene sees a finished task: TOPReward
+deviates by 50.3 50.3 and RoboMeter by 32.7 32.7 , against 7.3 7.3 for ProgressCompass . Extra steps keeps the video and deletes steps from the instruction, so the video does more than was asked and the correct terminal value
+is 100 100 . ProgressCompass deviates by 15.8 15.8 against 24.0 24.0 to 40.2 40.2 ,
+and alone reaches 100 100 . Mismatch substitutes a structurally valid instruction from
+an unrelated domain, so the correct curve is zero everywhere. ProgressCompass never exceeds zero. VLAC also scores 0.0 0.0 ,
+but not by rejecting: with the correct instruction it ends at − 63.8 -63.8 . ProgressLM, Robo-Dopamine and TOPReward deviate by 25.4 25.4 , 49.1 49.1 and 32.5 32.5 . 5.3 What the Expected Transition Buys Figure 8: Ablating τ t \tau_{t} . Error at the end of each subtask;
+lower is better. We remove the expected transition two ways: w/o τ t \tau_{t} at 𝒱 \mathcal{V} keeps it everywhere else ( 𝒪 \mathcal{O} emits it and 𝒫 \mathcal{P} receives it)
+but 𝒱 \mathcal{V} sees only the frames and the subtask sentence, and w/o τ t \tau_{t} at 𝒪 \mathcal{O} and 𝒱 \mathcal{V} drops it from 𝒪 \mathcal{O} ’s output altogether. We score the error at the end of each
+annotated subtask k k , where a correct curve reads k / K ⋅ 100 k/K\cdot 100 and 𝒱 \mathcal{V} uses τ t \tau_{t} to accept a completion. Removing τ t \tau_{t} at 𝒱 \mathcal{V} doubles this error from 8.6 8.6 to 17.2 17.2 , and removing it at 𝒪 \mathcal{O} as well raises it to 18.8 18.8 (Figure 8 ). The order
+holds on every form: the error more than doubles on State, triples on
+Recurrence, and rises least on Sequence, whose steps end in a visible action.
+Progress MAE rises from 9.3 9.3 to 17.5 17.5 and 18.3 18.3 . Verification changes, not
+planning: 𝒪 \mathcal{O} proposes the same number of steps in
+all three runs, while episodes that stall with a subtask unverified rise from 7 7 to 40 40 and 45 45 . Removing τ t \tau_{t} thus keeps the plan and enlarges the position
+term of Theorem 1 . 5.4 Parallelizing the Loop Across Episodes The loop is sequential within an episode, since 𝒪 \mathcal{O} proposes the next
+step only after 𝒱 \mathcal{V} has checked the current one, but episodes share
+nothing. We therefore run up to five episodes at once, and a dependency-aware scheduler sends each episode’s next
+ready call to the model it needs, so that a model idle for one episode serves
+another. The order within every episode is
+unchanged: time per episode falls from 114.7 114.7 to 39.5 39.5 s, with MAE and ρ \rho unchanged within paired bootstrap intervals.
+
+A3
+Appendix C Inference Details of the Compared Models We run every compared model with its own input format and inference procedure, and map its output to a 0 0 to 100 100 progress
+scale. Without context, a model scores the whole episode under the episode
+instruction; with context, it scores each annotated subtask clip under the
+instruction of that subtask. The settings of each model are as follows. ProgressLM. We run ProgressLM ( Zhang et al., 2026b ) with n_demo=5 . Without context, we set max_frames=0 and sample RMBench at 7.5 FPS and RoboDojo and LIBERO-Mem at 2.5 FPS; with context, we sample RMBench at 7.5 FPS and RoboDojo and LIBERO-Mem at 3.0 FPS. We parse the value enclosed by <score> , clip it to [ 0 , 1 ] [0,1] , and multiply it by 100. Robo-Dopamine. We run Robo-Dopamine ( Tan et al., 2026 ) . The last frame of the input video serves as the required goal image. We use frame_interval=5 without context and frame_interval=10 with context, both with batch_size=10 . We run the released incremental, forward, and backward modes separately, apply the mode-specific official post-processing, and average the three resulting curves. RoboMeter. We run RoboMeter ( Liang et al., 2026 ) in frame_steps mode with prefix_sample_frames=8 . Without context, RMBench is evaluated at every original frame and RoboDojo and LIBERO-Mem at 2.5 FPS; with context, all three sources are sampled at 3.0 FPS. The predicted reward at each sampled prefix is stored on a 0 to 100 progress scale. TOPReward. We run TOPReward ( Chen et al., 2026b ) with Molmo2-4B as its backend ( Clark et al., 2026 ) , with num_samples=48 and long_side=0 , and max_frames=96 without context and max_frames=48 with context. Both use mean token-log-probability reduction, with video-description generation and the chat template disabled. For each video, the raw instruction rewards over sampled prefixes are min-max normalized and multiplied by 100. VLAC. We run VLAC ( Zhang et al., 2026d ) in critic mode with compress_fps=5 , batch_num=5 , pair_skip=5 , temperature=0.5 , top_k=1 , and think=false ; with context, we additionally set in_context_done=false and done_threshold=0.9 . The released preprocessing resizes input images to 448 × 448 448\times 448 . When sampling omits the original terminal frame, the runner appends that frame and its terminal prediction to the saved curve.

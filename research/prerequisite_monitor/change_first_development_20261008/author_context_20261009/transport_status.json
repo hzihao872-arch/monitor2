@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_author_context_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_author_context_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 15:06:51 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\": 24, \"last\": \"qbb0dbd57d63ce6a9_augmented\", \"parent\": 331, \"total\": 355}{\"query\": \"qcde827bb66b99fd4\", \"arm\": \"direct\", \"issued\": 20}\n{\"query\": \"qcde827bb66b99fd4\", \"arm\": \"augmented\", \"issued\": 21}\n{\"query\": \"qbb0dbd57d63ce6a9\", \"arm\": \"description\", \"issued\": 22}\n{\"query\": \"qbb0dbd57d63ce6a9\", \"arm\": \"direct\", \"issued\": 23}\n{\"query\": \"qbb0dbd57d63ce6a9\", \"arm\": \"augmented\", \"issued\": 24}\n",
+  "stderr": "",
+  "exit_code": 0
+}

@@ -1,0 +1,30 @@
+{
+  "status": "prepared_not_executed",
+  "use": "Development-only cases; pass only selected task field and video pixels to evaluator. Do not expose source metadata or filename-derived outcomes.",
+  "cases": [
+    {
+      "case_id": "case_01",
+      "video_path": "D:\\monitor2\\research\\sources\\vlac_ars_coverage_20261003\\early_example01_video.mp4",
+      "task_instruction": "抓取紫色方块使其从方形洞口落入积木桶中",
+      "task_description_with_rubric": "抓取紫色方块使其从方形洞口落入积木桶中：\n爪夹开始移动：0%\n爪夹接近紫色方块：20%\n爪夹抓紧紫色方块：40%\n爪夹抓紧紫色方块接近方形洞口：60%\n爪夹将紫色方块对准方形洞口：80%\n紫色方块从方形洞口落入积木桶中，爪夹移开：100%",
+      "fps": 30.0,
+      "num_frames": 258
+    },
+    {
+      "case_id": "case_02",
+      "video_path": "D:\\monitor2\\research\\sources\\vlac_ars_coverage_20261003\\early_example02_video.mp4",
+      "task_instruction": "把洋葱放进快递箱里。",
+      "task_description_with_rubric": "把洋葱放进快递箱里。\n开始移动:0%\n爪夹靠近洋葱:20%\n爪夹抓取洋葱:40%\n爪夹抓住洋葱接近快递箱:60%\n爪夹将洋葱放入快递箱:80%\n爪夹松开,洋葱落入快递箱:100%",
+      "fps": 30.0,
+      "num_frames": 289
+    },
+    {
+      "case_id": "case_03",
+      "video_path": "D:\\monitor2\\research\\sources\\vlac_ars_coverage_20261003\\early_example03_video.mp4",
+      "task_instruction": "将三角烧杯放在三脚架上。",
+      "task_description_with_rubric": "将三角烧杯放在三脚架上。\n爪夹准备移动：0%\n爪夹开始移动：10%\n爪夹靠近三角烧杯：20%\n爪夹抓取三角烧杯：40%\n爪夹合拢并靠近三脚架：60%\n爪夹移动到三脚架的正上方：80%\n爪夹松开，三角烧杯落在三脚架上：100%",
+      "fps": 30.0,
+      "num_frames": 172
+    }
+  ]
+}

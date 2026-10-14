@@ -1,0 +1,365 @@
+{
+  "planned_conditions": 48,
+  "result_conditions": 48,
+  "issued": 47,
+  "completed": 47,
+  "failed": 0,
+  "ambiguous": 0,
+  "cached_result_conditions": 1,
+  "cumulative": 283,
+  "value_counts": {
+    "True": 35,
+    "False": 13
+  },
+  "change_counts": {
+    "both_supported": 12,
+    "contradicted": 12
+  },
+  "same_text_count": 4,
+  "candidate_retained": 10,
+  "changes": [
+    {
+      "query_id": "q07108c1875aa88b5",
+      "change": 0,
+      "object": "robot arm",
+      "before": "retracted, positioned above the box",
+      "after": "extended downward, grasping the brown block",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "change": 1,
+      "object": "box top",
+      "before": "intact with orange surface and brown block on it",
+      "after": "partially lifted, revealing the box's dark interior",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "change": 2,
+      "object": "robot arm",
+      "before": "retracted, positioned above the box",
+      "after": "extended downward, grasping the brown block",
+      "values": [
+        "True",
+        "False"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "change": 0,
+      "object": "robotic arm",
+      "before": "arm extended toward pink block and yellow platform",
+      "after": "arm grasping the gray block on the yellow platform",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "change": 1,
+      "object": "pink block",
+      "before": "resting on the yellow platform",
+      "after": "moved off the platform and lying on the wooden surface",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "change": 2,
+      "object": "robotic arm",
+      "before": "releasing the gray block onto the yellow platform",
+      "after": "retracted and positioned above the pink block",
+      "values": [
+        "True",
+        "False"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "change": 0,
+      "object": "robot arm",
+      "before": "reaching toward orange top",
+      "after": "grasping object on orange top",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "change": 1,
+      "object": "robot arm",
+      "before": "holding object on orange top",
+      "after": "retracting from orange top",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "change": 2,
+      "object": "orange top",
+      "before": "object resting on it",
+      "after": "object resting on it",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": true,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "change": 0,
+      "object": "robot arm",
+      "before": "retracted, above the box",
+      "after": "extended, grasping the brown block",
+      "values": [
+        "True",
+        "False"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "change": 1,
+      "object": "box top",
+      "before": "intact with brown block on it",
+      "after": "partially removed, revealing the box interior",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "change": 2,
+      "object": "robot arm",
+      "before": "holding the brown block",
+      "after": "releasing the block onto the box top",
+      "values": [
+        "False",
+        "False"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "change": 0,
+      "object": "blue cube",
+      "before": "on the wooden surface, away from the robotic arm",
+      "after": "held by the robotic arm",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "change": 1,
+      "object": "blue cube",
+      "before": "held by the robotic arm",
+      "after": "placed on the yellow platform",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "change": 2,
+      "object": "robotic arm",
+      "before": "stationary, positioned above the blue cube",
+      "after": "stationary, positioned above the yellow platform",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "change": 0,
+      "object": "robotic arm",
+      "before": "arm extended toward the yellow platform",
+      "after": "arm retracted to initial position",
+      "values": [
+        "True",
+        "False"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "change": 1,
+      "object": "gray cube",
+      "before": "on yellow platform",
+      "after": "on yellow platform",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": true,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "change": 2,
+      "object": "pink cube",
+      "before": "on green bar",
+      "after": "on green bar",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": true,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "change": 0,
+      "object": "robotic arm",
+      "before": "arm extended toward yellow platform",
+      "after": "arm grasping gray block on yellow platform",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "change": 1,
+      "object": "gray block",
+      "before": "on yellow platform",
+      "after": "lifted by robotic arm",
+      "values": [
+        "False",
+        "True"
+      ],
+      "verification_status": "contradicted",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": false
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "change": 2,
+      "object": "pink block",
+      "before": "partially occluded by robotic arm",
+      "after": "visible on wooden surface near yellow platform",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "change": 0,
+      "object": "blue cube",
+      "before": "on wooden surface",
+      "after": "inside transparent box",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "change": 1,
+      "object": "blue cube",
+      "before": "on wooden surface",
+      "after": "inside transparent box",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": false,
+      "candidate_retained_without_semantic_claim": true
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "change": 2,
+      "object": "robot arm",
+      "before": "stationary",
+      "after": "stationary",
+      "values": [
+        "True",
+        "True"
+      ],
+      "verification_status": "both_supported",
+      "textually_unchanged": true,
+      "candidate_retained_without_semantic_claim": false
+    }
+  ],
+  "audit_errors": [],
+  "wall_seconds": 21.144039460923523,
+  "adapter_seconds": 12.863329657819122,
+  "input_tokens": 66472,
+  "output_tokens": 0,
+  "peak_vram_gib": 16.869730472564697,
+  "status": "model-generated clause verification only; supported is not accuracy, omitted events cannot be recovered, same model is not independent truth"
+}

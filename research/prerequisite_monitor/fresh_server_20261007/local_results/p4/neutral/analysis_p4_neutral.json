@@ -1,0 +1,1232 @@
+{
+  "scope": "P4_TOPReward_instruction_intervention_exploratory_not_G2",
+  "variant": "neutral",
+  "raw_seal_sha256": "e48cb6efdbcaafc270fb77bd231433ff03cd27297d8f228c3f53b5435e473b64",
+  "P0_analysis_sha256": "e5136d9cdd8f024792e2443f30739b0e95740a3a6de730f452803c77bd2fa7b6",
+  "truth_map_sha256": {
+    "access_gate": "4bba2aed407c1da6eb851a8a9a4bb741cdc030b3d35bad771542eef556e9f22e",
+    "support_surface": "74986882252275d22192291916da900f9915f84fab344b7bcd3b03b4bd4ece90"
+  },
+  "rule": "median(t12,t13,t14)-median(t0,t1,t2); exact-zero tie; all pairs reported",
+  "cells": {
+    "access_gate": {
+      "native_scale": "raw within-method only",
+      "by_condition": {
+        "N_o": {
+          "status": "valid",
+          "video": "0001.mp4",
+          "points_t0_t14": [
+            -18.875,
+            -19.0,
+            -21.25,
+            -21.125,
+            -21.25,
+            -21.125,
+            -21.125,
+            -21.125,
+            -21.5,
+            -21.5,
+            -21.625,
+            -21.625,
+            -21.375,
+            -21.375,
+            -21.75
+          ],
+          "start_median_t0_t2": -19.0,
+          "end_median_t12_t14": -21.375,
+          "delta_window": -2.375,
+          "t7_t8": [
+            -21.125,
+            -21.5
+          ],
+          "last_minus_mid_peak": -0.25,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 2542,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "G": {
+          "status": "valid",
+          "video": "0002.mp4",
+          "points_t0_t14": [
+            -19.0,
+            -19.125,
+            -21.25,
+            -21.0,
+            -20.875,
+            -20.375,
+            -18.25,
+            -18.875,
+            -17.125,
+            -17.75,
+            -19.375,
+            -20.375,
+            -18.375,
+            -18.25,
+            -17.5
+          ],
+          "start_median_t0_t2": -19.125,
+          "end_median_t12_t14": -18.25,
+          "delta_window": 0.875,
+          "t7_t8": [
+            -18.875,
+            -17.125
+          ],
+          "last_minus_mid_peak": -1.125,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1836,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "S": {
+          "status": "valid",
+          "video": "0003.mp4",
+          "points_t0_t14": [
+            -18.875,
+            -18.875,
+            -21.0,
+            -20.625,
+            -21.375,
+            -21.375,
+            -20.5,
+            -20.875,
+            -21.5,
+            -22.0,
+            -21.875,
+            -22.25,
+            -22.25,
+            -22.0,
+            -21.375
+          ],
+          "start_median_t0_t2": -18.875,
+          "end_median_t12_t14": -22.0,
+          "delta_window": -3.125,
+          "t7_t8": [
+            -20.875,
+            -21.5
+          ],
+          "last_minus_mid_peak": -1.125,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1773,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "I_o": {
+          "status": "valid",
+          "video": "0004.mp4",
+          "points_t0_t14": [
+            -19.0,
+            -18.875,
+            -21.25,
+            -21.0,
+            -20.625,
+            -20.625,
+            -20.625,
+            -19.625,
+            -20.875,
+            -20.625,
+            -20.75,
+            -20.75,
+            -20.25,
+            -20.75,
+            -20.5
+          ],
+          "start_median_t0_t2": -19.0,
+          "end_median_t12_t14": -20.5,
+          "delta_window": -1.5,
+          "t7_t8": [
+            -19.625,
+            -20.875
+          ],
+          "last_minus_mid_peak": -0.875,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1782,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "R": {
+          "status": "valid",
+          "video": "0005.mp4",
+          "points_t0_t14": [
+            -19.0,
+            -19.125,
+            -21.125,
+            -20.75,
+            -20.75,
+            -21.125,
+            -21.375,
+            -20.875,
+            -21.625,
+            -21.75,
+            -21.25,
+            -21.5,
+            -22.25,
+            -22.125,
+            -22.375
+          ],
+          "start_median_t0_t2": -19.125,
+          "end_median_t12_t14": -22.25,
+          "delta_window": -3.125,
+          "t7_t8": [
+            -20.875,
+            -21.625
+          ],
+          "last_minus_mid_peak": -1.375,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1783,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "I_b": {
+          "status": "valid",
+          "video": "0006.mp4",
+          "points_t0_t14": [
+            -19.0,
+            -19.0,
+            -20.875,
+            -21.25,
+            -20.625,
+            -20.625,
+            -20.5,
+            -20.25,
+            -21.25,
+            -21.125,
+            -21.125,
+            -21.125,
+            -21.125,
+            -21.125,
+            -21.25
+          ],
+          "start_median_t0_t2": -19.0,
+          "end_median_t12_t14": -21.125,
+          "delta_window": -2.125,
+          "t7_t8": [
+            -20.25,
+            -21.25
+          ],
+          "last_minus_mid_peak": -0.875,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1857,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "E": {
+          "status": "valid",
+          "video": "0007.mp4",
+          "points_t0_t14": [
+            -19.0,
+            -18.875,
+            -21.0,
+            -20.75,
+            -21.25,
+            -21.375,
+            -21.25,
+            -21.25,
+            -21.625,
+            -22.0,
+            -21.875,
+            -21.75,
+            -22.375,
+            -22.25,
+            -21.875
+          ],
+          "start_median_t0_t2": -19.0,
+          "end_median_t12_t14": -22.25,
+          "delta_window": -3.25,
+          "t7_t8": [
+            -21.25,
+            -21.625
+          ],
+          "last_minus_mid_peak": -1.0,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1845,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "H": {
+          "status": "valid",
+          "video": "0008.mp4",
+          "points_t0_t14": [
+            -18.75,
+            -19.125,
+            -21.125,
+            -21.25,
+            -21.625,
+            -21.375,
+            -21.0,
+            -20.875,
+            -20.75,
+            -20.25,
+            -22.0,
+            -22.0,
+            -22.5,
+            -22.625,
+            -21.625
+          ],
+          "start_median_t0_t2": -19.125,
+          "end_median_t12_t14": -22.5,
+          "delta_window": -3.375,
+          "t7_t8": [
+            -20.875,
+            -20.75
+          ],
+          "last_minus_mid_peak": -1.75,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1854,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "N_b": {
+          "status": "valid",
+          "video": "0009.mp4",
+          "points_t0_t14": [
+            -18.875,
+            -19.0,
+            -21.375,
+            -21.0,
+            -21.25,
+            -21.25,
+            -21.0,
+            -21.0,
+            -21.5,
+            -21.5,
+            -21.375,
+            -21.375,
+            -21.25,
+            -21.25,
+            -21.5
+          ],
+          "start_median_t0_t2": -19.0,
+          "end_median_t12_t14": -21.25,
+          "delta_window": -2.25,
+          "t7_t8": [
+            -21.0,
+            -21.5
+          ],
+          "last_minus_mid_peak": -0.25,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1829,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "pairs": {
+        "E>S": {
+          "outcome": "loss",
+          "difference": -0.125,
+          "left_delta": -3.25,
+          "right_delta": -3.125
+        },
+        "E>I_b": {
+          "outcome": "loss",
+          "difference": -1.125,
+          "left_delta": -3.25,
+          "right_delta": -2.125
+        },
+        "E>N_b": {
+          "outcome": "loss",
+          "difference": -1.0,
+          "left_delta": -3.25,
+          "right_delta": -2.25
+        },
+        "H<I_o": {
+          "outcome": "win",
+          "difference": -1.875,
+          "left_delta": -3.375,
+          "right_delta": -1.5
+        },
+        "H<N_o": {
+          "outcome": "win",
+          "difference": -1.0,
+          "left_delta": -3.375,
+          "right_delta": -2.375
+        },
+        "G>N_o": {
+          "outcome": "win",
+          "difference": 3.25,
+          "left_delta": 0.875,
+          "right_delta": -2.375
+        }
+      },
+      "counts": {
+        "win": 3,
+        "loss": 3,
+        "tie": 0,
+        "unavailable": 0
+      },
+      "reversal_R": {
+        "status": "valid",
+        "video": "0005.mp4",
+        "points_t0_t14": [
+          -19.0,
+          -19.125,
+          -21.125,
+          -20.75,
+          -20.75,
+          -21.125,
+          -21.375,
+          -20.875,
+          -21.625,
+          -21.75,
+          -21.25,
+          -21.5,
+          -22.25,
+          -22.125,
+          -22.375
+        ],
+        "start_median_t0_t2": -19.125,
+        "end_median_t12_t14": -22.25,
+        "delta_window": -3.125,
+        "t7_t8": [
+          -20.875,
+          -21.625
+        ],
+        "last_minus_mid_peak": -1.375,
+        "native_field": "prefix_rewards",
+        "elapsed_ms": 1783,
+        "prefix_token_counts": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "terminal_G": {
+        "status": "valid",
+        "video": "0002.mp4",
+        "points_t0_t14": [
+          -19.0,
+          -19.125,
+          -21.25,
+          -21.0,
+          -20.875,
+          -20.375,
+          -18.25,
+          -18.875,
+          -17.125,
+          -17.75,
+          -19.375,
+          -20.375,
+          -18.375,
+          -18.25,
+          -17.5
+        ],
+        "start_median_t0_t2": -19.125,
+        "end_median_t12_t14": -18.25,
+        "delta_window": 0.875,
+        "t7_t8": [
+          -18.875,
+          -17.125
+        ],
+        "last_minus_mid_peak": -1.125,
+        "native_field": "prefix_rewards",
+        "elapsed_ms": 1836,
+        "prefix_token_counts": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "pair_change_from_P0": {
+        "E>S": {
+          "P0_outcome": "loss",
+          "P4_outcome": "loss",
+          "difference_change": 0.5
+        },
+        "E>I_b": {
+          "P0_outcome": "loss",
+          "P4_outcome": "loss",
+          "difference_change": -0.75
+        },
+        "E>N_b": {
+          "P0_outcome": "loss",
+          "P4_outcome": "loss",
+          "difference_change": -0.125
+        },
+        "H<I_o": {
+          "P0_outcome": "win",
+          "P4_outcome": "win",
+          "difference_change": -0.75
+        },
+        "H<N_o": {
+          "P0_outcome": "win",
+          "P4_outcome": "win",
+          "difference_change": 1.0
+        },
+        "G>N_o": {
+          "P0_outcome": "win",
+          "P4_outcome": "win",
+          "difference_change": -1.25
+        }
+      }
+    },
+    "support_surface": {
+      "native_scale": "raw within-method only",
+      "by_condition": {
+        "G": {
+          "status": "valid",
+          "video": "0001.mp4",
+          "points_t0_t14": [
+            -19.875,
+            -19.75,
+            -20.625,
+            -20.625,
+            -20.625,
+            -20.375,
+            -19.5,
+            -19.625,
+            -18.75,
+            -18.625,
+            -19.125,
+            -19.75,
+            -18.0,
+            -18.75,
+            -17.875
+          ],
+          "start_median_t0_t2": -19.875,
+          "end_median_t12_t14": -18.0,
+          "delta_window": 1.875,
+          "t7_t8": [
+            -19.625,
+            -18.75
+          ],
+          "last_minus_mid_peak": 0.75,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 2585,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "I_o": {
+          "status": "valid",
+          "video": "0002.mp4",
+          "points_t0_t14": [
+            -20.0,
+            -20.0,
+            -20.875,
+            -20.375,
+            -21.125,
+            -21.0,
+            -21.125,
+            -21.25,
+            -20.875,
+            -21.125,
+            -21.25,
+            -20.875,
+            -20.75,
+            -20.625,
+            -20.5
+          ],
+          "start_median_t0_t2": -20.0,
+          "end_median_t12_t14": -20.625,
+          "delta_window": -0.625,
+          "t7_t8": [
+            -21.25,
+            -20.875
+          ],
+          "last_minus_mid_peak": 0.25,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1820,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "N_o": {
+          "status": "valid",
+          "video": "0003.mp4",
+          "points_t0_t14": [
+            -19.875,
+            -19.875,
+            -20.625,
+            -20.75,
+            -20.75,
+            -20.875,
+            -20.75,
+            -20.75,
+            -21.0,
+            -21.0,
+            -20.875,
+            -20.875,
+            -21.0,
+            -21.0,
+            -21.125
+          ],
+          "start_median_t0_t2": -19.875,
+          "end_median_t12_t14": -21.0,
+          "delta_window": -1.125,
+          "t7_t8": [
+            -20.75,
+            -21.0
+          ],
+          "last_minus_mid_peak": -0.25,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1822,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "I_b": {
+          "status": "valid",
+          "video": "0004.mp4",
+          "points_t0_t14": [
+            -19.25,
+            -19.25,
+            -20.25,
+            -20.375,
+            -20.875,
+            -20.625,
+            -20.625,
+            -20.5,
+            -20.75,
+            -20.5,
+            -21.125,
+            -20.75,
+            -20.625,
+            -20.625,
+            -20.25
+          ],
+          "start_median_t0_t2": -19.25,
+          "end_median_t12_t14": -20.625,
+          "delta_window": -1.375,
+          "t7_t8": [
+            -20.5,
+            -20.75
+          ],
+          "last_minus_mid_peak": -0.125,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1823,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "H": {
+          "status": "valid",
+          "video": "0005.mp4",
+          "points_t0_t14": [
+            -19.875,
+            -19.875,
+            -20.625,
+            -20.625,
+            -20.625,
+            -21.25,
+            -20.25,
+            -20.375,
+            -20.375,
+            -19.625,
+            -20.875,
+            -20.75,
+            -20.75,
+            -20.75,
+            -20.5
+          ],
+          "start_median_t0_t2": -19.875,
+          "end_median_t12_t14": -20.75,
+          "delta_window": -0.875,
+          "t7_t8": [
+            -20.375,
+            -20.375
+          ],
+          "last_minus_mid_peak": -0.375,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1845,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "S": {
+          "status": "valid",
+          "video": "0006.mp4",
+          "points_t0_t14": [
+            -19.25,
+            -19.0,
+            -20.0,
+            -19.75,
+            -19.625,
+            -20.375,
+            -20.5,
+            -20.25,
+            -19.625,
+            -19.875,
+            -19.75,
+            -19.875,
+            -19.75,
+            -19.5,
+            -20.375
+          ],
+          "start_median_t0_t2": -19.25,
+          "end_median_t12_t14": -19.75,
+          "delta_window": -0.5,
+          "t7_t8": [
+            -20.25,
+            -19.625
+          ],
+          "last_minus_mid_peak": -0.125,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1837,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "N_b": {
+          "status": "valid",
+          "video": "0007.mp4",
+          "points_t0_t14": [
+            -19.125,
+            -19.5,
+            -20.25,
+            -20.375,
+            -20.125,
+            -20.25,
+            -20.75,
+            -20.75,
+            -20.125,
+            -20.125,
+            -20.25,
+            -20.25,
+            -20.5,
+            -20.5,
+            -20.5
+          ],
+          "start_median_t0_t2": -19.5,
+          "end_median_t12_t14": -20.5,
+          "delta_window": -1.0,
+          "t7_t8": [
+            -20.75,
+            -20.125
+          ],
+          "last_minus_mid_peak": -0.375,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1803,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "E": {
+          "status": "valid",
+          "video": "0008.mp4",
+          "points_t0_t14": [
+            -19.25,
+            -19.375,
+            -19.875,
+            -19.875,
+            -19.75,
+            -20.25,
+            -20.0,
+            -19.625,
+            -19.625,
+            -19.5,
+            -19.75,
+            -19.625,
+            -20.375,
+            -20.625,
+            -20.875
+          ],
+          "start_median_t0_t2": -19.375,
+          "end_median_t12_t14": -20.625,
+          "delta_window": -1.25,
+          "t7_t8": [
+            -19.625,
+            -19.625
+          ],
+          "last_minus_mid_peak": -1.0,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1795,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "R": {
+          "status": "valid",
+          "video": "0009.mp4",
+          "points_t0_t14": [
+            -19.25,
+            -19.25,
+            -20.25,
+            -19.75,
+            -19.75,
+            -20.125,
+            -20.0,
+            -19.125,
+            -21.0,
+            -19.5,
+            -19.125,
+            -19.5,
+            -19.75,
+            -20.0,
+            -20.0
+          ],
+          "start_median_t0_t2": -19.25,
+          "end_median_t12_t14": -20.0,
+          "delta_window": -0.75,
+          "t7_t8": [
+            -19.125,
+            -21.0
+          ],
+          "last_minus_mid_peak": -0.875,
+          "native_field": "prefix_rewards",
+          "elapsed_ms": 1830,
+          "prefix_token_counts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "pairs": {
+        "E>S": {
+          "outcome": "loss",
+          "difference": -0.75,
+          "left_delta": -1.25,
+          "right_delta": -0.5
+        },
+        "E>I_b": {
+          "outcome": "win",
+          "difference": 0.125,
+          "left_delta": -1.25,
+          "right_delta": -1.375
+        },
+        "E>N_b": {
+          "outcome": "loss",
+          "difference": -0.25,
+          "left_delta": -1.25,
+          "right_delta": -1.0
+        },
+        "H<I_o": {
+          "outcome": "win",
+          "difference": -0.25,
+          "left_delta": -0.875,
+          "right_delta": -0.625
+        },
+        "H<N_o": {
+          "outcome": "loss",
+          "difference": 0.25,
+          "left_delta": -0.875,
+          "right_delta": -1.125
+        },
+        "G>N_o": {
+          "outcome": "win",
+          "difference": 3.0,
+          "left_delta": 1.875,
+          "right_delta": -1.125
+        }
+      },
+      "counts": {
+        "win": 3,
+        "loss": 3,
+        "tie": 0,
+        "unavailable": 0
+      },
+      "reversal_R": {
+        "status": "valid",
+        "video": "0009.mp4",
+        "points_t0_t14": [
+          -19.25,
+          -19.25,
+          -20.25,
+          -19.75,
+          -19.75,
+          -20.125,
+          -20.0,
+          -19.125,
+          -21.0,
+          -19.5,
+          -19.125,
+          -19.5,
+          -19.75,
+          -20.0,
+          -20.0
+        ],
+        "start_median_t0_t2": -19.25,
+        "end_median_t12_t14": -20.0,
+        "delta_window": -0.75,
+        "t7_t8": [
+          -19.125,
+          -21.0
+        ],
+        "last_minus_mid_peak": -0.875,
+        "native_field": "prefix_rewards",
+        "elapsed_ms": 1830,
+        "prefix_token_counts": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "terminal_G": {
+        "status": "valid",
+        "video": "0001.mp4",
+        "points_t0_t14": [
+          -19.875,
+          -19.75,
+          -20.625,
+          -20.625,
+          -20.625,
+          -20.375,
+          -19.5,
+          -19.625,
+          -18.75,
+          -18.625,
+          -19.125,
+          -19.75,
+          -18.0,
+          -18.75,
+          -17.875
+        ],
+        "start_median_t0_t2": -19.875,
+        "end_median_t12_t14": -18.0,
+        "delta_window": 1.875,
+        "t7_t8": [
+          -19.625,
+          -18.75
+        ],
+        "last_minus_mid_peak": 0.75,
+        "native_field": "prefix_rewards",
+        "elapsed_ms": 2585,
+        "prefix_token_counts": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "pair_change_from_P0": {
+        "E>S": {
+          "P0_outcome": "loss",
+          "P4_outcome": "loss",
+          "difference_change": 0.5
+        },
+        "E>I_b": {
+          "P0_outcome": "loss",
+          "P4_outcome": "win",
+          "difference_change": 0.375
+        },
+        "E>N_b": {
+          "P0_outcome": "loss",
+          "P4_outcome": "loss",
+          "difference_change": -0.125
+        },
+        "H<I_o": {
+          "P0_outcome": "loss",
+          "P4_outcome": "win",
+          "difference_change": -0.375
+        },
+        "H<N_o": {
+          "P0_outcome": "win",
+          "P4_outcome": "loss",
+          "difference_change": 0.5
+        },
+        "G>N_o": {
+          "P0_outcome": "win",
+          "P4_outcome": "win",
+          "difference_change": -1.5
+        }
+      }
+    }
+  },
+  "limits": "Changed goal text; cannot be counted as original final-goal-only protocol or G2"
+}

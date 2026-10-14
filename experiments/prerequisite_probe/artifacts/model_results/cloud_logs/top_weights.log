@@ -1,0 +1,18 @@
+Pinned Qwen/Qwen3-VL-8B-Instruct@0c351dd01ed87e9c1b53cbc748cba10e6187ff3b; weights=['model-00001-of-00004.safetensors', 'model-00002-of-00004.safetensors', 'model-00003-of-00004.safetensors', 'model-00004-of-00004.safetensors']
+PROGRESS model-00004-of-00004.safetensors: 268435456/2716270024
+PROGRESS model-00004-of-00004.safetensors: 536870912/2716270024
+PROGRESS model-00002-of-00004.safetensors: 268435456/4915962496
+PROGRESS model-00002-of-00004.safetensors: 536870912/4915962496
+PROGRESS model-00004-of-00004.safetensors: 805306368/2716270024
+RETRY model-00004-of-00004.safetensors 872415232/2716270024: HTTPSConnectionPool(host='hf-mirror.com', port=443): Max retries exceeded with url: /Qwen/Qwen3-VL-8B-Instruct/resolve/0c351dd01ed87e9c1b53cbc748cba10e6187ff3b/model-00004-of-00004.safetensors (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7fe20291fa70>, 'Connection to hf-mirror.com timed out. (connect timeout=40)'))
+RETRY model-00001-of-00004.safetensors 67108864/4902275944: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+RETRY model-00001-of-00004.safetensors 67108864/4902275944: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Max retries exceeded with url: /xet-bridge-us/68ea05fb43df37d95ad2491d/f43fe9499002ea3e53be00514099a55c71fe5ee7bd0a5a4675a00e58093a31fd?Expires=1791121329&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jYXMtYnJpZGdlLnhldGh1Yi5oZi5jby94ZXQtYnJpZGdlLXVzLzY4ZWEwNWZiNDNkZjM3ZDk1YWQyNDkxZC9mNDNmZTk0OTkwMDJlYTNlNTNiZTAwNTE0MDk5YTU1YzcxZmU1ZWU3YmQwYTVhNDY3NWEwMGU1ODA5M2EzMWZkKiIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5MTEyMTMyOX19fV19&Signature=MEYCIQC5hL0AIv6NcYBCtNhA1kUdQ1uJfF8uKKk2yWBefguisAIhANKxYCgOWzVRW0UqDQ4~dtiVTafrGkwm5wJggpJdgpFW&Key-Pair-Id=K3EPXBYC3CKDRZ&xip=HZvI9CPsq9g&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model-00001-of-00004.safetensors%3B+filename%3D%22model-00001-of-00004.safetensors%22%3B&X-Xet-Cas-Uid=62171e3b6a99db28e0b3159d&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=cas%2F20261004%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261004T124209Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f90861bdc27a3b715cde76c74b8794ebd2828e023e6d35a28dbb85bb9a291138 (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+RETRY model-00003-of-00004.safetensors 67108864/4999831048: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+RETRY model-00002-of-00004.safetensors 771751936/4915962496: HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=90)
+PROGRESS model-00002-of-00004.safetensors: 805306368/4915962496
+RETRY model-00001-of-00004.safetensors 167772160/4902275944: HTTPSConnectionPool(host='cas-bridge.xethub.hf.co', port=443): Read timed out.
+PROGRESS model-00003-of-00004.safetensors: 268435456/4999831048
+PROGRESS model-00003-of-00004.safetensors: 536870912/4999831048
+RETRY model-00004-of-00004.safetensors 1006632960/2716270024: ('Connection broken: IncompleteRead(5155936 bytes read, 28398496 more expected)', IncompleteRead(5155936 bytes read, 28398496 more expected))
+PROGRESS model-00004-of-00004.safetensors: 1073741824/2716270024
+PROGRESS model-00003-of-00004.safetensors: 805306368/4999831048

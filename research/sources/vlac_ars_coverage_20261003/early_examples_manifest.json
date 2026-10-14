@@ -1,0 +1,25 @@
+{
+  "examples": [
+    {
+      "example_id": "example_01",
+      "bucket": "test_nonexpert_seen",
+      "task_instruction": "抓取紫色方块使其从方形洞口落入积木桶中",
+      "video_path": "examples/example_01/episode.mp4",
+      "metadata_path": "examples/example_01/metadata.json"
+    },
+    {
+      "example_id": "example_02",
+      "bucket": "test_nonexpert_unseen",
+      "task_instruction": "把洋葱放进快递箱里。",
+      "video_path": "examples/example_02/episode.mp4",
+      "metadata_path": "examples/example_02/metadata.json"
+    },
+    {
+      "example_id": "example_03",
+      "bucket": "test_expert_seen",
+      "task_instruction": "将三角烧杯放在三脚架上。",
+      "video_path": "examples/example_03/episode.mp4",
+      "metadata_path": "examples/example_03/metadata.json"
+    }
+  ]
+}

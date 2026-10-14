@@ -1,0 +1,129 @@
+{
+  "frozen_at_utc": "2026-10-05T04:19:37.979779+00:00",
+  "status": "before_unseen_model_scores",
+  "scene_family": "source_bridge",
+  "instruction": "Put the blue cube in the green tray.",
+  "event_windows_seconds": {
+    "pre": [
+      0,
+      2
+    ],
+    "action": [
+      2,
+      12
+    ],
+    "post": [
+      12,
+      14
+    ]
+  },
+  "statistic": "native scale, median(post)-median(pre), no per-video normalization",
+  "label_gates": {
+    "effective_C_min": 0.3,
+    "ineffective_abs_C_max": 0.1,
+    "hindering_C_max": -0.3
+  },
+  "exclusions": [
+    "wrong frame count or dimensions",
+    "target/obstacle/action result not visible in model-decoded main frames",
+    "failed physical label gate",
+    "IK error over 0.025 m",
+    "controller instability"
+  ],
+  "noise_threshold": null,
+  "noise_threshold_reason": "Only one development N0 clip; no thresholded error rate",
+  "continuation_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "input_frames_sha256": "8836093a502a80aca0e7aa287071650e72ba6ac2d8c9257c73292d5fb3f40088",
+  "oracle_file_sha256": "ddc0923f5cd369b63f69ac8fe6a2a5203b57d3743e996c4171127b3f094d3aae",
+  "code_sha256": {
+    "probe.py": "4723422d05775b0733b0902dd9533d67828e31e7946ca0c9e74be7a5fa12037d",
+    "produce.py": "a21cc9f64edb63e3de91da47b3cb9e07da8a5e163d542770726beb58b93aee5c",
+    "audit_inputs.py": "402517b3a21d19dc177712fbc9c786980b4191a8d9d5c1b40b21b1c56088720b",
+    "validate.py": "d4c27fc6af788b5f0a661fc957a434ee4d2274c492051a600708e28fdc2105ff",
+    "freeze_unseen.py": "c769f4d190bf5a093db659aa0f68b9fbb35e23b33ea79edefab0f75ad75c4347"
+  },
+  "protocol_sha256": "0a00b1c193670d20dbf9cd160215fe607677b2f741f56649fd2e90d78881d443",
+  "cases": {
+    "0001": {
+      "condition": "B+",
+      "video_sha256": "05356041891a2cc054fa64d6fe211769ce6659c83a234a50d84096ebce7024b9",
+      "raw_sha256": "18ae529e4e68896a2f160cd2d2d9bebb3cbb691dc9547e36b2c2d1b579dafff2",
+      "pre_state_sha256": "301e103d8ef7ff4abf373e0785369b7cb5873caf3c1c8c8329a336507ab17fdf",
+      "success_in_video": false,
+      "q_control": 0.0,
+      "q_action": 1.0,
+      "C": 1.0
+    },
+    "0002": {
+      "condition": "B0",
+      "video_sha256": "8db4b8180e6b7c9f2edb61fd9b0dcade92b37ac6b1d225e3df219197cf4182e6",
+      "raw_sha256": "82fe9f2767ff3fb66764ed6bc3fe7e6fddd9ef8ccc035940cb755dc0db2fb818",
+      "pre_state_sha256": "301e103d8ef7ff4abf373e0785369b7cb5873caf3c1c8c8329a336507ab17fdf",
+      "success_in_video": false,
+      "q_control": 0.0,
+      "q_action": 0.0,
+      "C": 0.0
+    },
+    "0003": {
+      "condition": "U0",
+      "video_sha256": "b49b7149afe52268a810acde87cd2d45b47fbd85231005ee4b0365b35e7946da",
+      "raw_sha256": "cbba765f54d0fe3414c37a992baac88e6441ac91bcbfd04ce4a1a98724814138",
+      "pre_state_sha256": "12a00dca8ed6536e7765cd36c1e7021dd71936d5421883168829fcff46d6b283",
+      "success_in_video": false,
+      "q_control": 1.0,
+      "q_action": 1.0,
+      "C": 0.0
+    },
+    "0004": {
+      "condition": "H-",
+      "video_sha256": "9b47bfe0de65a7e470cf8606957f14a3052e8925b5f29680d1da6f069ff65e7b",
+      "raw_sha256": "5c5f40780bbc42c0a4ddf6a94604cb4b22dae1d883055260845b462eee8bea88",
+      "pre_state_sha256": "12a00dca8ed6536e7765cd36c1e7021dd71936d5421883168829fcff46d6b283",
+      "success_in_video": false,
+      "q_control": 1.0,
+      "q_action": 0.0,
+      "C": -1.0
+    },
+    "0005": {
+      "condition": "G+",
+      "video_sha256": "e89edb2651ed1a7a9327d9e82c4df249bcad5797b4ca380bf6e166c294fe2cdd",
+      "raw_sha256": "18c3bb0d45b27b2c6843e53a4bbeb3dc5857749df4b27b0700c6b756b64e3a25",
+      "pre_state_sha256": "12a00dca8ed6536e7765cd36c1e7021dd71936d5421883168829fcff46d6b283",
+      "success_in_video": true,
+      "q_control": null,
+      "q_action": null,
+      "C": null
+    },
+    "0006": {
+      "condition": "N0",
+      "video_sha256": "b075ca3896ea34b430512f19ca65a510035bcecbde95065de826aedd573d89ff",
+      "raw_sha256": "4be5a039cc8fa460c009b040a209625a585c9b4663a1f3a0cb7fee0397acd85c",
+      "pre_state_sha256": "12a00dca8ed6536e7765cd36c1e7021dd71936d5421883168829fcff46d6b283",
+      "success_in_video": false,
+      "q_control": null,
+      "q_action": null,
+      "C": null
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "source_run": "/root/autodl-tmp/monitor2/single_scene_pilot/flat_red_v1",
+  "source_raw_seal_sha256": "8ce686e1515b9eba6e445c5945e716db7d8cb414db03bff925dd5c3522a45116",
+  "reused_files": {
+    "env_py4_versions.json": "abbdfbefbf32f2b42885cc40dc7975ff462c1155a857ed42c087a3ac3f95ada5",
+    "env_py8_versions.json": "fe4f1816ddd50caef3548bdc1d935da5b7c624d953a887f039eb2d828caf4715",
+    "paired.jsonl": "e4e28f486a32da9d6a4418c3a21586cdb15503b586ca3af4947d1ee082ca05ca",
+    "paired.stderr.txt": "04ffd4ae7656873364689ef277f389ab4e8042d4e6c69b9060899573909a0d63",
+    "paired.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "robometer_decoder_precheck.json": "ad241fab0b3eec0b0f69595267827ae29ebeda3a704af7ea03342a9576056ab6",
+    "topreward.stderr.txt": "aa45f185125ae28ecba1227614cdab648a99739f8ee66625f053e78299d041bb",
+    "topreward.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "topreward/0001.json": "cd6dcd2c6efc0ad9bf252cc705c3fdc2f581296d297867aaab2d4f33d4970138",
+    "topreward/0002.json": "41f354323d9550e8599acc28e0dedc792c7596cd45b363f536cc53c28715648c",
+    "topreward/0003.json": "c1c5662c4ae203f183e1515c0b44b743ed9ac0f6e927574d982daca83144bc7e",
+    "topreward/0004.json": "6494ec18d02a66c4dd3de1b98f4a6514f14b16250f7ed5b518288ba2ac8732f2",
+    "topreward/0005.json": "e13366adedbdeaea85a6ddb877a71461de88c34de15545cc895de3de72920d4f",
+    "topreward/0006.json": "5ffe23fa327b20634d854d62d9e3f5b752a0a0b79f14a7c719225df45692ead8",
+    "topreward/native_calls.jsonl": "4f9e1e0b14d90e0a514623e45cc0bfce222f715de1dbb953d861eefd434f7c2c",
+    "weight_hashes.txt": "44d36472f3d8409f855add86e11685f8e1cf3dacbfb19a1e72a831bbce4cc34e"
+  },
+  "repair": "Set HF_HOME=/root/autodl-tmp/hf, matching the existing Robometer cloud runner; no code, model, prompt, frame, or budget change. Previous six native failures remain sealed under source_run."
+}

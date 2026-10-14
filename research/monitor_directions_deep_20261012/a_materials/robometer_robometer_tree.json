@@ -1,0 +1,2251 @@
+{
+  "sha": "352d160389daa964788de1ec933d1925f3a6de4f",
+  "url": "https://api.github.com/repos/robometer/robometer/git/trees/352d160389daa964788de1ec933d1925f3a6de4f",
+  "tree": [
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4bbf2adcd8b4e28f0fdf36b379f2d86f2cb784ff",
+      "size": 124,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4bbf2adcd8b4e28f0fdf36b379f2d86f2cb784ff"
+    },
+    {
+      "path": "FINETUNE_ROBOMETER.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6445f187c518f6c96addeaea46f657b3ef7fb907",
+      "size": 9181,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6445f187c518f6c96addeaea46f657b3ef7fb907"
+    },
+    {
+      "path": "README.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "b6f316921fdb299478fe9995a74107ec349447f9",
+      "size": 11421,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b6f316921fdb299478fe9995a74107ec349447f9"
+    },
+    {
+      "path": "assets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "03f6bbc2af3299097acfb2f35ab47065a7c76047",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/03f6bbc2af3299097acfb2f35ab47065a7c76047"
+    },
+    {
+      "path": "assets/robometer.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "87b2c6d08ef485253888ee3cc5ba3b9ee9af8026",
+      "size": 6490314,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/87b2c6d08ef485253888ee3cc5ba3b9ee9af8026"
+    },
+    {
+      "path": "dataset_upload",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "78d4481fda539551699c9046279fd602fe209021",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/78d4481fda539551699c9046279fd602fe209021"
+    },
+    {
+      "path": "dataset_upload/README.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "88acf8ba74d32f17d5370408c2867a0b44c58b97",
+      "size": 7922,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/88acf8ba74d32f17d5370408c2867a0b44c58b97"
+    },
+    {
+      "path": "dataset_upload/__init__.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "size": 1,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8b137891791fe96927ad78e64b0aad7bded08bdc"
+    },
+    {
+      "path": "dataset_upload/configs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "77a79045d7aab7567f5594bbcd3f7033df8794a8",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/77a79045d7aab7567f5594bbcd3f7033df8794a8"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "cb366b820e15446bada770509c79eb85d61acd80",
+      "size": 360,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/cb366b820e15446bada770509c79eb85d61acd80"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7561abf46733693167839806958eb06ea85366f8",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/7561abf46733693167839806958eb06ea85366f8"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/agibot_world.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "bfdb2dea8bad7d1cea284ff34530269217f8737a",
+      "size": 425,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bfdb2dea8bad7d1cea284ff34530269217f8737a"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/autoeval.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "de3bff239825d1e40f92ee31863ffc81c1bf6c71",
+      "size": 365,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/de3bff239825d1e40f92ee31863ffc81c1bf6c71"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/egocot.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b2817c8e867c7ea96eb629356dcb1b60340d971",
+      "size": 576,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2b2817c8e867c7ea96eb629356dcb1b60340d971"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/egodex.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "a6d7e322f6cfeb1c516b16794ec571d91be86b6c",
+      "size": 372,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a6d7e322f6cfeb1c516b16794ec571d91be86b6c"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/epic.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f4a11d122b932bfdbbd989ef98a64ab67cec7eec",
+      "size": 376,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f4a11d122b932bfdbbd989ef98a64ab67cec7eec"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/failsafe.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "169425a6a99347a85ab87a00ae8b055398fe4a70",
+      "size": 414,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/169425a6a99347a85ab87a00ae8b055398fe4a70"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/fino_net.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6386a3736b14e06e5bcaca5439c41632069ad93f",
+      "size": 477,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6386a3736b14e06e5bcaca5439c41632069ad93f"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/galaxea.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9aa86d59b71373ced101cf9c65c5c01065077c64",
+      "size": 364,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/9aa86d59b71373ced101cf9c65c5c01065077c64"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/h2r.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "bad779fe14bbf1da3f8708512ee3681190a9fca1",
+      "size": 333,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bad779fe14bbf1da3f8708512ee3681190a9fca1"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/hand_paired.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b987bb7a9646a60715ce2dfac52d4fb98f216657",
+      "size": 344,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b987bb7a9646a60715ce2dfac52d4fb98f216657"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/humanoid_everyday.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d8da36bb42ea7b4812ea1d93fd67771f9e839b2f",
+      "size": 457,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d8da36bb42ea7b4812ea1d93fd67771f9e839b2f"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/libero.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8051a6a29bd2d4f72cf8da9defc16c516358341b",
+      "size": 366,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8051a6a29bd2d4f72cf8da9defc16c516358341b"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/metaworld.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c4f78cfe09d78569d96439e0c9f6c0d4d4d49da",
+      "size": 502,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/5c4f78cfe09d78569d96439e0c9f6c0d4d4d49da"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/mit_franka_prank.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "84cda7955912f8b8d372b00b3b118fa6e4d6678d",
+      "size": 475,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/84cda7955912f8b8d372b00b3b118fa6e4d6678d"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/molmoact.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d897dfd1b94063cc74911febbf4c27985babe6df",
+      "size": 380,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d897dfd1b94063cc74911febbf4c27985babe6df"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/motif.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8886e745a89ea2d1bf26845eb23eba5c67e9b04c",
+      "size": 384,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8886e745a89ea2d1bf26845eb23eba5c67e9b04c"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/new_mit_franka.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e4cb225d50a0d15abd959a1b1e0d9596a79d5f21",
+      "size": 572,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e4cb225d50a0d15abd959a1b1e0d9596a79d5f21"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/oxe.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "db7a61882f1591f407cc23ecb2b8b98e2e41423c",
+      "size": 428,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/db7a61882f1591f407cc23ecb2b8b98e2e41423c"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/ph2d.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "05ba30df7aeef7f2f96a8aaff048cfc89a29ef7e",
+      "size": 381,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/05ba30df7aeef7f2f96a8aaff048cfc89a29ef7e"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/racer_train.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b6948f17fa0a7cb815218fdb213f167ad9f5986",
+      "size": 304,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8b6948f17fa0a7cb815218fdb213f167ad9f5986"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/racer_val.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "437488c867471709c0e40243b02eb68689d5e43d",
+      "size": 302,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/437488c867471709c0e40243b02eb68689d5e43d"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/roboarena.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f705b2fecf9da14daf0fa3cf8bd64e64935239c5",
+      "size": 424,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f705b2fecf9da14daf0fa3cf8bd64e64935239c5"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/robofac.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "103ee972788f5d7442e91d3f5cd65ad0acd43b62",
+      "size": 461,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/103ee972788f5d7442e91d3f5cd65ad0acd43b62"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/robofail.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "2dfa427bd398b6a896331f39805afedf6ab4ce8a",
+      "size": 359,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2dfa427bd398b6a896331f39805afedf6ab4ce8a"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/roboreward.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2aeb78a0a34feebabeb6c9a03c6ed7e471ebe50e",
+      "size": 389,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2aeb78a0a34feebabeb6c9a03c6ed7e471ebe50e"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/soar.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "77b420e53aa44bcfb3c556e9ddbc3b09f5859470",
+      "size": 363,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/77b420e53aa44bcfb3c556e9ddbc3b09f5859470"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/usc_franka_policy_ranking.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "204b679d2e6a447907a48a105ea4fe21bef935f4",
+      "size": 400,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/204b679d2e6a447907a48a105ea4fe21bef935f4"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/usc_koch_human_robot_paired.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "545ea7252ef60a249fa56350c30f1311cdc16686",
+      "size": 654,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/545ea7252ef60a249fa56350c30f1311cdc16686"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/usc_koch_p_ranking.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "decb0f8c9d4865e4aacb536ad623f939c54ac1a5",
+      "size": 786,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/decb0f8c9d4865e4aacb536ad623f939c54ac1a5"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/usc_xarm_policy_ranking.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "16d0d38aca2938fbe2a93ef6727d6082a44294cd",
+      "size": 394,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/16d0d38aca2938fbe2a93ef6727d6082a44294cd"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/utd_so101_clean_policy_ranking_top.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae0060da00d0140d589e8f520f1ceb729e6f7b17",
+      "size": 496,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ae0060da00d0140d589e8f520f1ceb729e6f7b17"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/utd_so101_clean_policy_ranking_wrist.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e50b0a0c24a1b2922adf309db5de5a24b25b8f81",
+      "size": 504,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e50b0a0c24a1b2922adf309db5de5a24b25b8f81"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/utd_so101_eval.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7979cd4683b2d0450a71d9c58414fe391fc775dd",
+      "size": 400,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/7979cd4683b2d0450a71d9c58414fe391fc775dd"
+    },
+    {
+      "path": "dataset_upload/configs/data_gen_configs/utd_so101_human.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c8bbc8bd5d93a15365b697c639bc19310bdf6d1",
+      "size": 369,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/5c8bbc8bd5d93a15365b697c639bc19310bdf6d1"
+    },
+    {
+      "path": "dataset_upload/data_scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2c8af0245df10289b3ef44e223c8a4bc539245c3",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/2c8af0245df10289b3ef44e223c8a4bc539245c3"
+    },
+    {
+      "path": "dataset_upload/data_scripts/__init__.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "5a1496f2b8b243c1e86c4413fe80e913f58ae3fc",
+      "size": 68,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/5a1496f2b8b243c1e86c4413fe80e913f58ae3fc"
+    },
+    {
+      "path": "dataset_upload/data_scripts/agibot",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "55bacda6aeb30c43f9f68c67c8364e6a023c29d8",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/55bacda6aeb30c43f9f68c67c8364e6a023c29d8"
+    },
+    {
+      "path": "dataset_upload/data_scripts/agibot/__init__.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "613c33158eb4f3f215edb3e041db5b373c31baa8",
+      "size": 510,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/613c33158eb4f3f215edb3e041db5b373c31baa8"
+    },
+    {
+      "path": "dataset_upload/data_scripts/agibot/agibot_helper.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "723360348d60899d01c249fa6cdbb6b2ac23d4cc",
+      "size": 6051,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/723360348d60899d01c249fa6cdbb6b2ac23d4cc"
+    },
+    {
+      "path": "dataset_upload/data_scripts/agibot/download_task_jsons.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "f4e6f69467bc8cf34329be2195132713b9d46dfd",
+      "size": 1358,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f4e6f69467bc8cf34329be2195132713b9d46dfd"
+    },
+    {
+      "path": "dataset_upload/data_scripts/egodex",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "85e6bdd26e1ae3c4981486f074b4805a299de886",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/85e6bdd26e1ae3c4981486f074b4805a299de886"
+    },
+    {
+      "path": "dataset_upload/data_scripts/egodex/download_and_convert.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "411f2124c666a3bc24cc56ef3304366f43eb79d4",
+      "size": 1228,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/411f2124c666a3bc24cc56ef3304366f43eb79d4"
+    },
+    {
+      "path": "dataset_upload/data_scripts/galaxea",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f188c4499b44956e94e5567bd7a0104bbb958d85",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/f188c4499b44956e94e5567bd7a0104bbb958d85"
+    },
+    {
+      "path": "dataset_upload/data_scripts/galaxea/gen_all_galaxea.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "7a5819aec5dc25649aacbd1f9bfa8149308d6539",
+      "size": 595,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/7a5819aec5dc25649aacbd1f9bfa8149308d6539"
+    },
+    {
+      "path": "dataset_upload/data_scripts/humanoid_everyday",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "954662a8a9d0c22abebd62bf29189b80a75b10f8",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/954662a8a9d0c22abebd62bf29189b80a75b10f8"
+    },
+    {
+      "path": "dataset_upload/data_scripts/humanoid_everyday/download_humanoid_everyday.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a408bcc5d6aea0d9f65ae76e5a92d1a22498d88d",
+      "size": 3187,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a408bcc5d6aea0d9f65ae76e5a92d1a22498d88d"
+    },
+    {
+      "path": "dataset_upload/data_scripts/libero",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ae37965dd17a2a42193022e8e06f6ebba57ffbed",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/ae37965dd17a2a42193022e8e06f6ebba57ffbed"
+    },
+    {
+      "path": "dataset_upload/data_scripts/libero/gen_all_libero.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "f8ae23eacfbdabbabd3af389cb072e3b1f767343",
+      "size": 1244,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f8ae23eacfbdabbabd3af389cb072e3b1f767343"
+    },
+    {
+      "path": "dataset_upload/data_scripts/libero/rerender_all.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7a579e437e5cd38217e3bd6a2538c9f60436eae3",
+      "size": 1701,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/7a579e437e5cd38217e3bd6a2538c9f60436eae3"
+    },
+    {
+      "path": "dataset_upload/data_scripts/libero/rerender_libero.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7ad8b6d6480a27be6325d9077cc6fc9f710f354e",
+      "size": 13621,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/7ad8b6d6480a27be6325d9077cc6fc9f710f354e"
+    },
+    {
+      "path": "dataset_upload/data_scripts/molmoact",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "690f3efa16e9263345fb2698f9d72c60a6cf061b",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/690f3efa16e9263345fb2698f9d72c60a6cf061b"
+    },
+    {
+      "path": "dataset_upload/data_scripts/molmoact/gen_all_molmoact.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8845db93e18c2ddd39a145d543cd6fdddf5906af",
+      "size": 338,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8845db93e18c2ddd39a145d543cd6fdddf5906af"
+    },
+    {
+      "path": "dataset_upload/data_scripts/oxe",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "65fab8d0fc8c99d5362949f0df29c818398cf2b4",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/65fab8d0fc8c99d5362949f0df29c818398cf2b4"
+    },
+    {
+      "path": "dataset_upload/data_scripts/oxe/gen_all_oxe.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "1b8436544d67f96f44352f55e7f3c6661e1509d3",
+      "size": 1582,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/1b8436544d67f96f44352f55e7f3c6661e1509d3"
+    },
+    {
+      "path": "dataset_upload/data_scripts/oxe/gen_all_oxe_eval.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8978efb6de44991bb80890f272d40e1ae51f50df",
+      "size": 1188,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8978efb6de44991bb80890f272d40e1ae51f50df"
+    },
+    {
+      "path": "dataset_upload/data_scripts/usc_koch_human_robot_paired",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c9f5113d4308aea472aa822c8bc6694861da1af6",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/c9f5113d4308aea472aa822c8bc6694861da1af6"
+    },
+    {
+      "path": "dataset_upload/data_scripts/usc_koch_human_robot_paired/download_datasets.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a7a0a264c47c775212bfc5e620f430a27975f8df",
+      "size": 2278,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a7a0a264c47c775212bfc5e620f430a27975f8df"
+    },
+    {
+      "path": "dataset_upload/dataset_guides",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "cacdcf22bc91fcdf2bbaa7f81e77c80dd5f44fcd",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/cacdcf22bc91fcdf2bbaa7f81e77c80dd5f44fcd"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/AgiBotWorld.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "ad03344e382b60876df273800d43ad7b0f21f59c",
+      "size": 6385,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ad03344e382b60876df273800d43ad7b0f21f59c"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/ArmnetBench.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "65ce8eeb676f8d7119751d26e3f0b67b323522e1",
+      "size": 2731,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/65ce8eeb676f8d7119751d26e3f0b67b323522e1"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/AutoEval.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "74802d6b94938ae62fd0c3b1c795addf9a8322bc",
+      "size": 2003,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/74802d6b94938ae62fd0c3b1c795addf9a8322bc"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/CustomDataset.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "c2bdb0bb34763f53415fa305d818bdad1cd6d5c1",
+      "size": 7699,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c2bdb0bb34763f53415fa305d818bdad1cd6d5c1"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/EPIC-KITCHENS.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8454a79c432fb69bed73f30d206f859027d8d361",
+      "size": 2875,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8454a79c432fb69bed73f30d206f859027d8d361"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/EgoCoT.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ee54db91a5f33931240767664d24ad56a7ad8a3",
+      "size": 7639,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6ee54db91a5f33931240767664d24ad56a7ad8a3"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/EgoDex.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "6c037977f7ad4d231933c33ebf3e3c3c5998453d",
+      "size": 10572,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6c037977f7ad4d231933c33ebf3e3c3c5998453d"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/FailSafe.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "72727a70ff8b19cdba22edeab4362f27f36005c8",
+      "size": 2786,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/72727a70ff8b19cdba22edeab4362f27f36005c8"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/FinoNet.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "78c7ed9b131bd78956b90f8631b46c0286ebfa41",
+      "size": 4256,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/78c7ed9b131bd78956b90f8631b46c0286ebfa41"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/Galaxea.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc8378b1efb44083ef154e4a623b812d07324778",
+      "size": 2876,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bc8378b1efb44083ef154e4a623b812d07324778"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/H2R.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "79ca1868b1e0786fec546b7656c070e87e4dfdcf",
+      "size": 2672,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/79ca1868b1e0786fec546b7656c070e87e4dfdcf"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/HAND_paired.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe297e3b75b8689f9cd70cd71bb164a2b8c04731",
+      "size": 3026,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fe297e3b75b8689f9cd70cd71bb164a2b8c04731"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/HumanoidEveryday.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c0970c6578ccdb4bb383388054fde2f4e0ef7858",
+      "size": 7051,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c0970c6578ccdb4bb383388054fde2f4e0ef7858"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/LIBERO.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "ac0a5813f8627a0fd87da09d5230a9ca2b2a268d",
+      "size": 5169,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ac0a5813f8627a0fd87da09d5230a9ca2b2a268d"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/MIT_ROBOT_PRANK.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1117f7d98bc26e809e9537350a64ce0f75fa649c",
+      "size": 4276,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/1117f7d98bc26e809e9537350a64ce0f75fa649c"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/MoTiF.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a579aae787a4c955022cc60548ea04ca054325b8",
+      "size": 2928,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a579aae787a4c955022cc60548ea04ca054325b8"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/MolmoAct.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8964b441865b2b8560002ccba53301128de0b39",
+      "size": 1720,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a8964b441865b2b8560002ccba53301128de0b39"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/NewMITFranka.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bd73033516be52af405405e2bab6910eb57c4a34",
+      "size": 8474,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bd73033516be52af405405e2bab6910eb57c4a34"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/OXE.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "aa91fdf90be95cb6f8421eb97f615c292be24fc0",
+      "size": 5881,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/aa91fdf90be95cb6f8421eb97f615c292be24fc0"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/Ph2d.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3b575851b4be7fd8c3de6eee09dd1ac76409e640",
+      "size": 2422,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3b575851b4be7fd8c3de6eee09dd1ac76409e640"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/RACER.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "54a382408163c59d44d8530e6d6574b3e6c6571d",
+      "size": 2214,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/54a382408163c59d44d8530e6d6574b3e6c6571d"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/README.md",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "983aacc0ddd9d621288e5ec1d111c720c081b8f1",
+      "size": 3435,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/983aacc0ddd9d621288e5ec1d111c720c081b8f1"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/RoboArena.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1bcfb049f674094221595573ea9ee38dafdf2e10",
+      "size": 4572,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/1bcfb049f674094221595573ea9ee38dafdf2e10"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/RoboReward.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "48e8cf63f8e80718be3f8a33aad51715106169f0",
+      "size": 4073,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/48e8cf63f8e80718be3f8a33aad51715106169f0"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/SOAR.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ad62401749892b47c90ac861a6be2ec59fc576a2",
+      "size": 7828,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ad62401749892b47c90ac861a6be2ec59fc576a2"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/USC_KOCH_HUMAN_ROBOT_PAIRED.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30cb419d19dd100eae9be5e6b6ad6bcd15728c37",
+      "size": 10270,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/30cb419d19dd100eae9be5e6b6ad6bcd15728c37"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/USC_KOCH_P_RANKING.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ce4778c6f0647f138be242314930eb0038bdad0b",
+      "size": 1737,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ce4778c6f0647f138be242314930eb0038bdad0b"
+    },
+    {
+      "path": "dataset_upload/dataset_guides/UTD_SO101_CLEAN_POLICY_RANKING.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f7defce5069d5871a7d22c096af9e36746fc489f",
+      "size": 7942,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f7defce5069d5871a7d22c096af9e36746fc489f"
+    },
+    {
+      "path": "dataset_upload/dataset_helpers",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "79613c442e78826a94028c7d287209425bdc6843",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/79613c442e78826a94028c7d287209425bdc6843"
+    },
+    {
+      "path": "dataset_upload/dataset_helpers/generate_soar_labels_vlm.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91381120543a6cd995991d908b5986753e04bf84",
+      "size": 22192,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/91381120543a6cd995991d908b5986753e04bf84"
+    },
+    {
+      "path": "dataset_upload/dataset_helpers/oxe_helper.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "9de37c4d735ef7f6541510ab324ac455a3fe5131",
+      "size": 35939,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/9de37c4d735ef7f6541510ab324ac455a3fe5131"
+    },
+    {
+      "path": "dataset_upload/dataset_helpers/soar_label_corrections_full.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2315788a423944d861f48c585db5ba90fe96b590",
+      "size": 756126,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2315788a423944d861f48c585db5ba90fe96b590"
+    },
+    {
+      "path": "dataset_upload/dataset_helpers/soar_vlm_labeling_reqs.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b284cc25e32976ad1c6358ef4eb7882e2cf03049",
+      "size": 374,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b284cc25e32976ad1c6358ef4eb7882e2cf03049"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2d6036ed7b7fc5b5ad2dfdb2825de467dd521998",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/2d6036ed7b7fc5b5ad2dfdb2825de467dd521998"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/agibotworld_loader.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "c189b0170c5eefeb0e0c220c97bab0b0f45773a1",
+      "size": 22373,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c189b0170c5eefeb0e0c220c97bab0b0f45773a1"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/autoeval_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "44dddb6499e0d64926fffb82a2fc5b3d04e0333d",
+      "size": 2890,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/44dddb6499e0d64926fffb82a2fc5b3d04e0333d"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/egocot_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "846d324c6d28bd82ec628df24f9cc66ba28c0e54",
+      "size": 7305,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/846d324c6d28bd82ec628df24f9cc66ba28c0e54"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/egodex_loader.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "a88c562306acbab7191b4c5f6a410802f86fd3a4",
+      "size": 5527,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a88c562306acbab7191b4c5f6a410802f86fd3a4"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/epic_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b7873b6737d93216212864efefb5d0c7bed5375",
+      "size": 7965,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2b7873b6737d93216212864efefb5d0c7bed5375"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/failsafe_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cd8ab48d4ee57d9ca04a417a636d18e3cfe1599b",
+      "size": 7853,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/cd8ab48d4ee57d9ca04a417a636d18e3cfe1599b"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/fino_net_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "52d6e53f9eb99168fb865fdad6b2467e9f0427e0",
+      "size": 13640,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/52d6e53f9eb99168fb865fdad6b2467e9f0427e0"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/galaxea_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b6e22eb930168a6b1c46ea71cda68a94556fa3a4",
+      "size": 10646,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b6e22eb930168a6b1c46ea71cda68a94556fa3a4"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/h2r_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ad7b963ba7d44abaccb6175d46303a4c8327c7b3",
+      "size": 13029,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ad7b963ba7d44abaccb6175d46303a4c8327c7b3"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/hand_paired_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4d3276c9e1beadeb1b014bb2b959d2364c1c880d",
+      "size": 5556,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4d3276c9e1beadeb1b014bb2b959d2364c1c880d"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/humanoid_everyday_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fde874e6bfd80081547e0415bc61e35a3ef7ce4e",
+      "size": 11769,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fde874e6bfd80081547e0415bc61e35a3ef7ce4e"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/libero_loader.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "d3474c83023eef8197621fb557f208120d926cfd",
+      "size": 6078,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d3474c83023eef8197621fb557f208120d926cfd"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/mit_franka_prank_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4fa1a33a14cc28f19bfd2516f68549aa06c47a96",
+      "size": 6800,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4fa1a33a14cc28f19bfd2516f68549aa06c47a96"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/molmoact_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4c1e0e80a003e3bc08be75e65f80e7a1c638fc44",
+      "size": 8413,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4c1e0e80a003e3bc08be75e65f80e7a1c638fc44"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/motif_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b3ef423288bd8aa068fbcf52fbe500115c4ff5e0",
+      "size": 4677,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b3ef423288bd8aa068fbcf52fbe500115c4ff5e0"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/mw_collected_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ad021d5884f7e9d2e7b14aeb3a1fdf5e122850a",
+      "size": 5864,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6ad021d5884f7e9d2e7b14aeb3a1fdf5e122850a"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/mw_task_annotations.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "44b1523bbd0a7be6c6834e7c9edd6040387f2f32",
+      "size": 8693,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/44b1523bbd0a7be6c6834e7c9edd6040387f2f32"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/new_mit_franka_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3929138442da2442aa3b622cc1262f44f8bbd4d2",
+      "size": 8633,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3929138442da2442aa3b622cc1262f44f8bbd4d2"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/oxe_loader.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "f4e23687b97ec4435bcf3eb8094dc01d5d11d4f1",
+      "size": 16119,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f4e23687b97ec4435bcf3eb8094dc01d5d11d4f1"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/ph2d_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b243d6c83f44e033a805d772b89759a8d94f962",
+      "size": 3808,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8b243d6c83f44e033a805d772b89759a8d94f962"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/racer_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2d7d06e885700d9db74a422a0f362d4113e93885",
+      "size": 7061,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2d7d06e885700d9db74a422a0f362d4113e93885"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/roboarena_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "23bdb834eed8a440cb314f5664f945d03d4585fb",
+      "size": 4668,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/23bdb834eed8a440cb314f5664f945d03d4585fb"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/robofac_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dc543be8553e7c40c4e91f6874f14ef97e803ba2",
+      "size": 20183,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/dc543be8553e7c40c4e91f6874f14ef97e803ba2"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/robofail_loader.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "633a62712615f923030b21bfa4589827f49feb1c",
+      "size": 6595,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/633a62712615f923030b21bfa4589827f49feb1c"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/roboreward_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dca111bd82b323786b6e764bee82811d0385eadc",
+      "size": 5579,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/dca111bd82b323786b6e764bee82811d0385eadc"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/soar_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "564aced863030bc15dc249844b7c4d4c1938d7b3",
+      "size": 8328,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/564aced863030bc15dc249844b7c4d4c1938d7b3"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/usc_franka_policy_ranking_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "23cc2ebf0bad74a3c39a5a4c96684c9e4c536999",
+      "size": 5521,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/23cc2ebf0bad74a3c39a5a4c96684c9e4c536999"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/usc_koch_human_robot_paired_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "43d2d913da522af8c39fdeb49f89119a3682b23d",
+      "size": 15738,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/43d2d913da522af8c39fdeb49f89119a3682b23d"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/usc_koch_p_ranking_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e7ca7baba6e964a48512ee6ea6f38857c59e2de",
+      "size": 9805,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2e7ca7baba6e964a48512ee6ea6f38857c59e2de"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/usc_xarm_policy_ranking_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d16b5047fa993d4a6134020f7d23efce430597cd",
+      "size": 5718,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d16b5047fa993d4a6134020f7d23efce430597cd"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/utd_so101_clean_policy_ranking_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8308acd8171aa75a055421fd1cadd83bc523d4d3",
+      "size": 9005,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8308acd8171aa75a055421fd1cadd83bc523d4d3"
+    },
+    {
+      "path": "dataset_upload/dataset_loaders/utd_so101_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae7a724e1fdfb3fecb308e58f1cab537561d5793",
+      "size": 5547,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ae7a724e1fdfb3fecb308e58f1cab537561d5793"
+    },
+    {
+      "path": "dataset_upload/generate_hf_dataset.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "50446be784cacfbb48aaa2d678841a9ef25de836",
+      "size": 49220,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/50446be784cacfbb48aaa2d678841a9ef25de836"
+    },
+    {
+      "path": "dataset_upload/helpers.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "94b9103863d6cd4c3ce8fb2ee2f043caa332dd11",
+      "size": 13587,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/94b9103863d6cd4c3ce8fb2ee2f043caa332dd11"
+    },
+    {
+      "path": "dataset_upload/validate_dataset.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "b3a1c5cc46ae76e93a183400c2985a20c03465da",
+      "size": 7538,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b3a1c5cc46ae76e93a183400c2985a20c03465da"
+    },
+    {
+      "path": "dataset_upload/video_helpers.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "e090b4ddbbd1d40327de3163297a30d72e9e046c",
+      "size": 8347,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e090b4ddbbd1d40327de3163297a30d72e9e046c"
+    },
+    {
+      "path": "dataset_upload/visualize_dataset.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "ea5ed5b2c83a34fb10b2db7b0b0aece59c671a11",
+      "size": 10386,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ea5ed5b2c83a34fb10b2db7b0b0aece59c671a11"
+    },
+    {
+      "path": "eval_commands",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1cea1724c9982b4d901ecc94a824e8d19567e2d6",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/1cea1724c9982b4d901ecc94a824e8d19567e2d6"
+    },
+    {
+      "path": "eval_commands/confusion_matrix.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fa44669800d88d0bf987e28dcb167280355c67d1",
+      "size": 5545,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fa44669800d88d0bf987e28dcb167280355c67d1"
+    },
+    {
+      "path": "eval_commands/policy_ranking.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5907017be553ffc802c3f17ec31e9819233e0a16",
+      "size": 3369,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/5907017be553ffc802c3f17ec31e9819233e0a16"
+    },
+    {
+      "path": "eval_commands/reward_alignment.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "905b034834de69acda802cf5ee6ba4439c8b222b",
+      "size": 3520,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/905b034834de69acda802cf5ee6ba4439c8b222b"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "3e33244e7636df0f5ac4522b0971c172788e259d",
+      "size": 6207,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3e33244e7636df0f5ac4522b0971c172788e259d"
+    },
+    {
+      "path": "requirements-robodopamine.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76799d041fbcdb05e005799568aedb0d3418881d",
+      "size": 997,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/76799d041fbcdb05e005799568aedb0d3418881d"
+    },
+    {
+      "path": "robometer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6e060b09d811660b1d8f210d4da0b3bf11512faa",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/6e060b09d811660b1d8f210d4da0b3bf11512faa"
+    },
+    {
+      "path": "robometer/__init__.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "size": 1,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8b137891791fe96927ad78e64b0aad7bded08bdc"
+    },
+    {
+      "path": "robometer/configs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "93d690380cc35b9e94395e7b730e6080b27bd695",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/93d690380cc35b9e94395e7b730e6080b27bd695"
+    },
+    {
+      "path": "robometer/configs/baseline_eval_config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ba0a7d67bc7b7df55467e980b1594d1a311dad15",
+      "size": 2780,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ba0a7d67bc7b7df55467e980b1594d1a311dad15"
+    },
+    {
+      "path": "robometer/configs/config.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "4699c0f135c179e16963f08bc95ead6568d99f30",
+      "size": 12852,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4699c0f135c179e16963f08bc95ead6568d99f30"
+    },
+    {
+      "path": "robometer/configs/distributed",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "06a8228fa44f0c550eb51d25dba84a06bbc35cfe",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/06a8228fa44f0c550eb51d25dba84a06bbc35cfe"
+    },
+    {
+      "path": "robometer/configs/distributed/ddp.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5ff9f3fc71134eaab82807e5d023b731ba3eb89b",
+      "size": 383,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/5ff9f3fc71134eaab82807e5d023b731ba3eb89b"
+    },
+    {
+      "path": "robometer/configs/distributed/fsdp.yaml",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "91ff4120cbae54e603ec92a92e3c7388fc925fe5",
+      "size": 1380,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/91ff4120cbae54e603ec92a92e3c7388fc925fe5"
+    },
+    {
+      "path": "robometer/configs/eval_config_server.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a5ee37f0b077670403a86e50e1cc30c1266b4d95",
+      "size": 537,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a5ee37f0b077670403a86e50e1cc30c1266b4d95"
+    },
+    {
+      "path": "robometer/configs/eval_configs.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc82c893ce9e2bc86d31b1e5a21d7b257476e5d8",
+      "size": 10308,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bc82c893ce9e2bc86d31b1e5a21d7b257476e5d8"
+    },
+    {
+      "path": "robometer/configs/experiment_configs.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "d90c03bdebd647583532b32f0a531120ccb08895",
+      "size": 24576,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d90c03bdebd647583532b32f0a531120ccb08895"
+    },
+    {
+      "path": "robometer/configs/preprocess.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d05476ae3561c3b3fedc90c426737f9fdab157d8",
+      "size": 4204,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d05476ae3561c3b3fedc90c426737f9fdab157d8"
+    },
+    {
+      "path": "robometer/configs/preprocess_finetune.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1d806bf840042caf99d36adcfbe200a5b8dd7f51",
+      "size": 1510,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/1d806bf840042caf99d36adcfbe200a5b8dd7f51"
+    },
+    {
+      "path": "robometer/configs/reward_model",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3fdc97595756a860f6b6b5ba324eaddea6891645",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/3fdc97595756a860f6b6b5ba324eaddea6891645"
+    },
+    {
+      "path": "robometer/configs/reward_model/gvl.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c62129939c182a5681fa040dca0cce66ffd80ad",
+      "size": 577,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6c62129939c182a5681fa040dca0cce66ffd80ad"
+    },
+    {
+      "path": "robometer/configs/reward_model/rbm.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "50ebd63ef5e02bd3f2f7fd6f839c150cef5f77a1",
+      "size": 195,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/50ebd63ef5e02bd3f2f7fd6f839c150cef5f77a1"
+    },
+    {
+      "path": "robometer/configs/reward_model/rewind.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3696716060b00c396eca9d4eb9c0f715cabc2d0",
+      "size": 205,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a3696716060b00c396eca9d4eb9c0f715cabc2d0"
+    },
+    {
+      "path": "robometer/configs/reward_model/rfm.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a918e5dbad79d47b91de91661f029f836a94f74",
+      "size": 232,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/9a918e5dbad79d47b91de91661f029f836a94f74"
+    },
+    {
+      "path": "robometer/configs/reward_model/rlvlmf.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf96408e7f64aa6e7528c9f29c0580362329d3a0",
+      "size": 166,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bf96408e7f64aa6e7528c9f29c0580362329d3a0"
+    },
+    {
+      "path": "robometer/configs/reward_model/robodopamine.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3ef8a7d7e09fde97a1d1e21bc0002d0d46d13a9e",
+      "size": 378,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3ef8a7d7e09fde97a1d1e21bc0002d0d46d13a9e"
+    },
+    {
+      "path": "robometer/configs/reward_model/robodopamine_8b.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fc8b33dd0d36d6387c68d8fda556a70482fa8d28",
+      "size": 323,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fc8b33dd0d36d6387c68d8fda556a70482fa8d28"
+    },
+    {
+      "path": "robometer/configs/reward_model/roboreward.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf32c9e94ebba4e85718f5072c9ddfd0580facba",
+      "size": 264,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bf32c9e94ebba4e85718f5072c9ddfd0580facba"
+    },
+    {
+      "path": "robometer/configs/reward_model/topreward.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76cf781a2b7ab0db4818f8c95ce09bb2afce3aaa",
+      "size": 308,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/76cf781a2b7ab0db4818f8c95ce09bb2afce3aaa"
+    },
+    {
+      "path": "robometer/configs/reward_model/vlac.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "252b2f062c28a008c4469a5275426efeac635955",
+      "size": 386,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/252b2f062c28a008c4469a5275426efeac635955"
+    },
+    {
+      "path": "robometer/configs/rewind_transformer.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "59c76bf7c4fc8f43c964673449fea6b3146c9aa6",
+      "size": 1106,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/59c76bf7c4fc8f43c964673449fea6b3146c9aa6"
+    },
+    {
+      "path": "robometer/configs/rewind_transformer_scaled.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2f9edbd3c93d05c3d3e1b60cc1eefc7a1c30e7be",
+      "size": 1114,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2f9edbd3c93d05c3d3e1b60cc1eefc7a1c30e7be"
+    },
+    {
+      "path": "robometer/data",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ecc7414a6c40d69ce4d97e1a83bb193df76590ae",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/ecc7414a6c40d69ce4d97e1a83bb193df76590ae"
+    },
+    {
+      "path": "robometer/data/collators",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "edfcda31eb6cf32d5edff496fdde1b6cabb16ada",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/edfcda31eb6cf32d5edff496fdde1b6cabb16ada"
+    },
+    {
+      "path": "robometer/data/collators/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90167b195d356b39bafd5deea1f89d7cffdf57cc",
+      "size": 247,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/90167b195d356b39bafd5deea1f89d7cffdf57cc"
+    },
+    {
+      "path": "robometer/data/collators/base.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "13c9d3569f582bd7a8867888a18c10e63376d961",
+      "size": 3549,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/13c9d3569f582bd7a8867888a18c10e63376d961"
+    },
+    {
+      "path": "robometer/data/collators/rbm_heads.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "cadf0c2a2095c307c93229b1c1d1a07766b95ffa",
+      "size": 32898,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/cadf0c2a2095c307c93229b1c1d1a07766b95ffa"
+    },
+    {
+      "path": "robometer/data/collators/rewind.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "de29b2e592398377c3068169b2e4ab12cd62b332",
+      "size": 8419,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/de29b2e592398377c3068169b2e4ab12cd62b332"
+    },
+    {
+      "path": "robometer/data/collators/utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1350cb967b51e9bec168a3069d3e8c412a222c56",
+      "size": 7181,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/1350cb967b51e9bec168a3069d3e8c412a222c56"
+    },
+    {
+      "path": "robometer/data/dataset_category.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83e0d2c8f41a13ab87662b754c649fc9b757c168",
+      "size": 23256,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/83e0d2c8f41a13ab87662b754c649fc9b757c168"
+    },
+    {
+      "path": "robometer/data/dataset_success_cutoff.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "052fa38fa5206231f760f90356cb4eca299d350a",
+      "size": 2509,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/052fa38fa5206231f760f90356cb4eca299d350a"
+    },
+    {
+      "path": "robometer/data/dataset_types.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "79f7c897e821dc25dfcb7bf8bb06615a45f15f74",
+      "size": 2384,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/79f7c897e821dc25dfcb7bf8bb06615a45f15f74"
+    },
+    {
+      "path": "robometer/data/datasets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1e1439933022587a7369689fa2caea291bff471a",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/1e1439933022587a7369689fa2caea291bff471a"
+    },
+    {
+      "path": "robometer/data/datasets/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c59bbc16a9a2f03d2e2eeaf247366fe995d9b678",
+      "size": 8846,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c59bbc16a9a2f03d2e2eeaf247366fe995d9b678"
+    },
+    {
+      "path": "robometer/data/datasets/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f12caaab9b28bbb2c73072bc12371e0f3b65ac5a",
+      "size": 452,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f12caaab9b28bbb2c73072bc12371e0f3b65ac5a"
+    },
+    {
+      "path": "robometer/data/datasets/base.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "87180545d88991d92eec44031a883e855300d493",
+      "size": 35784,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/87180545d88991d92eec44031a883e855300d493"
+    },
+    {
+      "path": "robometer/data/datasets/custom_eval.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "444edf2963e9352e90b5fba818cf5cee485129e2",
+      "size": 2434,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/444edf2963e9352e90b5fba818cf5cee485129e2"
+    },
+    {
+      "path": "robometer/data/datasets/helpers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "085794239406d3b8c23c588dd560f1182a5a4a07",
+      "size": 26906,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/085794239406d3b8c23c588dd560f1182a5a4a07"
+    },
+    {
+      "path": "robometer/data/datasets/name_mapping.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "865d0fea2465583e45ac9335f900a23b7e8cb6ee",
+      "size": 5791,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/865d0fea2465583e45ac9335f900a23b7e8cb6ee"
+    },
+    {
+      "path": "robometer/data/datasets/name_mapping_final.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ee832291370d5e055aaa361d68d95891a78f9379",
+      "size": 6050,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ee832291370d5e055aaa361d68d95891a78f9379"
+    },
+    {
+      "path": "robometer/data/datasets/rbm_data.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7b62bc18d7d9998be143c84e37d2557b4ca57d1d",
+      "size": 11165,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/7b62bc18d7d9998be143c84e37d2557b4ca57d1d"
+    },
+    {
+      "path": "robometer/data/datasets/repeated_dataset.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95a2725288d96f92367469aae71c72a95d1a086e",
+      "size": 857,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/95a2725288d96f92367469aae71c72a95d1a086e"
+    },
+    {
+      "path": "robometer/data/datasets/strategy_first_dataset.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e74c277e179aa8744e844df246321e059fa5d59b",
+      "size": 29529,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e74c277e179aa8744e844df246321e059fa5d59b"
+    },
+    {
+      "path": "robometer/data/samplers",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ebfbba084c4ef72562ba4a59ef334d863a968397",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/ebfbba084c4ef72562ba4a59ef334d863a968397"
+    },
+    {
+      "path": "robometer/data/samplers/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "931e3726fca692ebe8c80603e602547ce29f2d3c",
+      "size": 6642,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/931e3726fca692ebe8c80603e602547ce29f2d3c"
+    },
+    {
+      "path": "robometer/data/samplers/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3df21bb034284c945610217af457bbc6e0863d33",
+      "size": 863,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3df21bb034284c945610217af457bbc6e0863d33"
+    },
+    {
+      "path": "robometer/data/samplers/base.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b193396a7f29059560280d86137982fafcd60419",
+      "size": 34681,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b193396a7f29059560280d86137982fafcd60419"
+    },
+    {
+      "path": "robometer/data/samplers/eval",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8697d07da9729c432bf7b71ab9f1e3447eabe456",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/8697d07da9729c432bf7b71ab9f1e3447eabe456"
+    },
+    {
+      "path": "robometer/data/samplers/eval/base_pref.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4b8e66ac16c1a62c5e9a4ffa0eb92c2ec5d82fa2",
+      "size": 2659,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4b8e66ac16c1a62c5e9a4ffa0eb92c2ec5d82fa2"
+    },
+    {
+      "path": "robometer/data/samplers/eval/confusion_matrix.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "c139bfd12f0b6aa4206b1ab95fb666698ce75005",
+      "size": 13040,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c139bfd12f0b6aa4206b1ab95fb666698ce75005"
+    },
+    {
+      "path": "robometer/data/samplers/eval/progress_policy_ranking.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c0e5fc8a38c770b100e8e873aeac0ebc2ea038ed",
+      "size": 10492,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c0e5fc8a38c770b100e8e873aeac0ebc2ea038ed"
+    },
+    {
+      "path": "robometer/data/samplers/eval/quality_preference.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d8d96048a551bac50f20700d6fbee6dbf6659dbb",
+      "size": 9932,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d8d96048a551bac50f20700d6fbee6dbf6659dbb"
+    },
+    {
+      "path": "robometer/data/samplers/eval/reward_alignment.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e7c4877d3058922072f3a1678476035e38c01e37",
+      "size": 6671,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e7c4877d3058922072f3a1678476035e38c01e37"
+    },
+    {
+      "path": "robometer/data/samplers/eval/roboarena_quality_preference.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d2cc5a396dd09bb283ebe0b311d187e56dd8234",
+      "size": 4852,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/9d2cc5a396dd09bb283ebe0b311d187e56dd8234"
+    },
+    {
+      "path": "robometer/data/samplers/pref.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "41d7021db8df64b9db0d2502cf6552c4a036c748",
+      "size": 17333,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/41d7021db8df64b9db0d2502cf6552c4a036c748"
+    },
+    {
+      "path": "robometer/data/samplers/progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f543b117d39c5bf5ed7556800789a543874d29c8",
+      "size": 7986,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f543b117d39c5bf5ed7556800789a543874d29c8"
+    },
+    {
+      "path": "robometer/data/scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "014f9779eeaa7cd8725af8de576d025acd5945db",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/014f9779eeaa7cd8725af8de576d025acd5945db"
+    },
+    {
+      "path": "robometer/data/scripts/preprocess_datasets.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "ab6fea6a26284e1cd6b9c3a25fb3a5afd0e42419",
+      "size": 48029,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ab6fea6a26284e1cd6b9c3a25fb3a5afd0e42419"
+    },
+    {
+      "path": "robometer/evals",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "22b81885315731dc48fcc65aa3ea284e3c73813d",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/22b81885315731dc48fcc65aa3ea284e3c73813d"
+    },
+    {
+      "path": "robometer/evals/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af20b3ba8080f014c4e1f23c2b710d56c8ffe39a",
+      "size": 6492,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/af20b3ba8080f014c4e1f23c2b710d56c8ffe39a"
+    },
+    {
+      "path": "robometer/evals/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "robometer/evals/baseline_eval_server.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a743c3e712163156afb42a2d908c3a7697b9e84f",
+      "size": 18898,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a743c3e712163156afb42a2d908c3a7697b9e84f"
+    },
+    {
+      "path": "robometer/evals/baselines",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3d91bcf5791164a8585b57a5cc167b06cc73891c",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/3d91bcf5791164a8585b57a5cc167b06cc73891c"
+    },
+    {
+      "path": "robometer/evals/baselines/gvl.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67b10831e5122a4a507686774c4d3abfa2cdfd9b",
+      "size": 19128,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/67b10831e5122a4a507686774c4d3abfa2cdfd9b"
+    },
+    {
+      "path": "robometer/evals/baselines/rbd_inference.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7a029bb5c4751fc58a10f226c9c4227a9b53237a",
+      "size": 26976,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/7a029bb5c4751fc58a10f226c9c4227a9b53237a"
+    },
+    {
+      "path": "robometer/evals/baselines/rbm_model.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4505c191f78720d5ee73f6d989e846372d2f0ab8",
+      "size": 14401,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4505c191f78720d5ee73f6d989e846372d2f0ab8"
+    },
+    {
+      "path": "robometer/evals/baselines/rlvlmf.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f747a0279b6d4378f82db578ad2b16e1516ca94a",
+      "size": 9705,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f747a0279b6d4378f82db578ad2b16e1516ca94a"
+    },
+    {
+      "path": "robometer/evals/baselines/robodopamine.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "56d44ddf0690d90b6f798d8d4bb5fa56ce9e246c",
+      "size": 5551,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/56d44ddf0690d90b6f798d8d4bb5fa56ce9e246c"
+    },
+    {
+      "path": "robometer/evals/baselines/roboreward.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4b33afe30fb09e75063c863e7fc9692b7ea44e9",
+      "size": 16937,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/c4b33afe30fb09e75063c863e7fc9692b7ea44e9"
+    },
+    {
+      "path": "robometer/evals/baselines/topreward.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "977c744bdf018ab21675780d9f659c55a288b227",
+      "size": 10536,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/977c744bdf018ab21675780d9f659c55a288b227"
+    },
+    {
+      "path": "robometer/evals/baselines/vlac.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc458e716af24e50cb4ec938738702abddabbc44",
+      "size": 14562,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bc458e716af24e50cb4ec938738702abddabbc44"
+    },
+    {
+      "path": "robometer/evals/compile_results.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aeb2aab8aa74bb07c0df4f78b9cbd120fa8ca42a",
+      "size": 53968,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/aeb2aab8aa74bb07c0df4f78b9cbd120fa8ca42a"
+    },
+    {
+      "path": "robometer/evals/eval_metrics_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ce97e5e319da09218c052ddf459705c8322b59ee",
+      "size": 3899,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ce97e5e319da09218c052ddf459705c8322b59ee"
+    },
+    {
+      "path": "robometer/evals/eval_server.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "cfca1b7eebd5a505da0bb660d0f145f5d26547e0",
+      "size": 32318,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/cfca1b7eebd5a505da0bb660d0f145f5d26547e0"
+    },
+    {
+      "path": "robometer/evals/eval_utils.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8bd5f5398c9f6ea29c1e9ac1012044abf0fa93fc",
+      "size": 17498,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8bd5f5398c9f6ea29c1e9ac1012044abf0fa93fc"
+    },
+    {
+      "path": "robometer/evals/eval_viz_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "801a106054e8cdf723054bb4575655056fd92aa0",
+      "size": 7662,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/801a106054e8cdf723054bb4575655056fd92aa0"
+    },
+    {
+      "path": "robometer/evals/run_baseline_eval.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "28ef8cb1d1889b6700fccc57647981e9990002af",
+      "size": 39046,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/28ef8cb1d1889b6700fccc57647981e9990002af"
+    },
+    {
+      "path": "robometer/models",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8515ac00c266efa6dc1cee06fffaf854e5b139e8",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/8515ac00c266efa6dc1cee06fffaf854e5b139e8"
+    },
+    {
+      "path": "robometer/models/__init__.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "66bd49f0c62fc9c3bd7489d5f6627775c107284c",
+      "size": 178,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/66bd49f0c62fc9c3bd7489d5f6627775c107284c"
+    },
+    {
+      "path": "robometer/models/heads.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "68f7c7ab511907d60656e62df4d2927adb504a1c",
+      "size": 4091,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/68f7c7ab511907d60656e62df4d2927adb504a1c"
+    },
+    {
+      "path": "robometer/models/rbm.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "a931426dcc88d96eb98cfd39bb84966f2d91c49f",
+      "size": 43803,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a931426dcc88d96eb98cfd39bb84966f2d91c49f"
+    },
+    {
+      "path": "robometer/models/rewind_transformer.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "60f4fc1a7c5916290f2d7bacea4d942dd545265f",
+      "size": 18923,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/60f4fc1a7c5916290f2d7bacea4d942dd545265f"
+    },
+    {
+      "path": "robometer/models/utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9e38c6f8118d164946208f1c64ed4aef4ba5f3e3",
+      "size": 2701,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/9e38c6f8118d164946208f1c64ed4aef4ba5f3e3"
+    },
+    {
+      "path": "robometer/trainers",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c8f3604608f8bd79110c92bf0865e4aba34421cf",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/c8f3604608f8bd79110c92bf0865e4aba34421cf"
+    },
+    {
+      "path": "robometer/trainers/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d92c4ea2d8a775a3e40ef0fe7d56b985a5a58bf0",
+      "size": 137,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d92c4ea2d8a775a3e40ef0fe7d56b985a5a58bf0"
+    },
+    {
+      "path": "robometer/trainers/rbm_heads_trainer.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "d51af82c74e8a96f51406af8275f7b807582a603",
+      "size": 123272,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d51af82c74e8a96f51406af8275f7b807582a603"
+    },
+    {
+      "path": "robometer/trainers/rewind_trainer.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "53a5f3c5db9328d5dc74b40a49c11e78367d4501",
+      "size": 763,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/53a5f3c5db9328d5dc74b40a49c11e78367d4501"
+    },
+    {
+      "path": "robometer/utils",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "79a0316d95c0735edff00c460ddec6dee380fa82",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/79a0316d95c0735edff00c460ddec6dee380fa82"
+    },
+    {
+      "path": "robometer/utils/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "robometer/utils/config_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d866d031f9a8d5b6726b6778278d7df884f020f5",
+      "size": 1200,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d866d031f9a8d5b6726b6778278d7df884f020f5"
+    },
+    {
+      "path": "robometer/utils/distributed.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8fbd5cea5787bd1a927a8cd79fda968ef8e0357a",
+      "size": 10380,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8fbd5cea5787bd1a927a8cd79fda968ef8e0357a"
+    },
+    {
+      "path": "robometer/utils/embedding_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b420eba656b2c541418f1c45b2296263df02fdde",
+      "size": 3445,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/b420eba656b2c541418f1c45b2296263df02fdde"
+    },
+    {
+      "path": "robometer/utils/fsdp",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8e2278e5b24c07effe84c9ee04dfaf93690f515d",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/8e2278e5b24c07effe84c9ee04dfaf93690f515d"
+    },
+    {
+      "path": "robometer/utils/fsdp/base.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "d7415892a5cd7e7a5164a487cec48530b20dae9f",
+      "size": 981,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d7415892a5cd7e7a5164a487cec48530b20dae9f"
+    },
+    {
+      "path": "robometer/utils/fsdp/device.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "ee9e279d212a94d54c8c31a375022bda1416e06b",
+      "size": 1552,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/ee9e279d212a94d54c8c31a375022bda1416e06b"
+    },
+    {
+      "path": "robometer/utils/fsdp/distributed.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "a7e97f9d3ceed143cdf8a63b374ccf980f75f90d",
+      "size": 1769,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a7e97f9d3ceed143cdf8a63b374ccf980f75f90d"
+    },
+    {
+      "path": "robometer/utils/fsdp/fsdp_ulysses.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "6e5d1b7ac3c49c915f9687ef77eb27b30002ff11",
+      "size": 2806,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6e5d1b7ac3c49c915f9687ef77eb27b30002ff11"
+    },
+    {
+      "path": "robometer/utils/fsdp/fsdp_utils.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "e32a7726cbc5d274b407adad914ca11f0b891adf",
+      "size": 20875,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/e32a7726cbc5d274b407adad914ca11f0b891adf"
+    },
+    {
+      "path": "robometer/utils/fsdp/protocol.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "5cc7b42e106dfe5a2f92574a80f73306b19e2305",
+      "size": 36402,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/5cc7b42e106dfe5a2f92574a80f73306b19e2305"
+    },
+    {
+      "path": "robometer/utils/fsdp/ulysses.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "906dc35ab1312cad4fd23703a6f228749891276c",
+      "size": 11724,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/906dc35ab1312cad4fd23703a6f228749891276c"
+    },
+    {
+      "path": "robometer/utils/logger.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf3a4186e25c85161620c2c7d6aa1a7f830730f0",
+      "size": 17271,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bf3a4186e25c85161620c2c7d6aa1a7f830730f0"
+    },
+    {
+      "path": "robometer/utils/metrics.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "3b911b1d684d1534f0e002d61bfbf0344a591a86",
+      "size": 6228,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3b911b1d684d1534f0e002d61bfbf0344a591a86"
+    },
+    {
+      "path": "robometer/utils/save.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a713857b3fba770ba43f8c2578870acc586540a",
+      "size": 42925,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6a713857b3fba770ba43f8c2578870acc586540a"
+    },
+    {
+      "path": "robometer/utils/setup_utils.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "fad875d24b8e1a10d0c484c2472bed38b5b7a753",
+      "size": 63028,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fad875d24b8e1a10d0c484c2472bed38b5b7a753"
+    },
+    {
+      "path": "robometer/utils/tensor_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fb25cdfc161a39e4be0afe4527320fd678bd722e",
+      "size": 619,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fb25cdfc161a39e4be0afe4527320fd678bd722e"
+    },
+    {
+      "path": "robometer/utils/timer.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0b9df0b76ad36b586340b37b9533011513f3cf44",
+      "size": 1164,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/0b9df0b76ad36b586340b37b9533011513f3cf44"
+    },
+    {
+      "path": "robometer/utils/upload_to_hub.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "905939112139ee19afd93d7742a6371cc84e6827",
+      "size": 7742,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/905939112139ee19afd93d7742a6371cc84e6827"
+    },
+    {
+      "path": "robometer/utils/video_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4d0c43e586c0fc9895a9a195d1eb31d5967ea785",
+      "size": 22808,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4d0c43e586c0fc9895a9a195d1eb31d5967ea785"
+    },
+    {
+      "path": "run_scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c71ac8a5481266afdc05bf47b5af17ca18b2f2fb",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/c71ac8a5481266afdc05bf47b5af17ca18b2f2fb"
+    },
+    {
+      "path": "run_scripts/run_robometer.sbatch",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ba78a8fb8abd0b3cfd76532f0433a3cd4df0a7b",
+      "size": 2027,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6ba78a8fb8abd0b3cfd76532f0433a3cd4df0a7b"
+    },
+    {
+      "path": "run_scripts/run_robometer_part2.sbatch",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9943934722e2566183c75fc4c0ff36a099426849",
+      "size": 2033,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/9943934722e2566183c75fc4c0ff36a099426849"
+    },
+    {
+      "path": "scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5ce026c05fe6a07fd214d46e6368c49e32798acd",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/5ce026c05fe6a07fd214d46e6368c49e32798acd"
+    },
+    {
+      "path": "scripts/count_trajectories.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "6554a8003aafd10a9547698a04d21886ffaae13d",
+      "size": 14827,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6554a8003aafd10a9547698a04d21886ffaae13d"
+    },
+    {
+      "path": "scripts/download_data.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "4f736eb1e7dbb08153da0b775d14067cc23e6a7e",
+      "size": 4795,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4f736eb1e7dbb08153da0b775d14067cc23e6a7e"
+    },
+    {
+      "path": "scripts/download_processed_datasets.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "030e564a5d496272087c07f3ebf8527c70b29ebb",
+      "size": 509,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/030e564a5d496272087c07f3ebf8527c70b29ebb"
+    },
+    {
+      "path": "scripts/example_inference.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4bc94ec2e6442b3aef59a602c849f29cda336ea8",
+      "size": 17680,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/4bc94ec2e6442b3aef59a602c849f29cda336ea8"
+    },
+    {
+      "path": "scripts/example_inference_local.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "013170b53677314ec7a51aef511ec075203386b7",
+      "size": 7667,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/013170b53677314ec7a51aef511ec075203386b7"
+    },
+    {
+      "path": "scripts/example_libero_robometer_wrapper.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3f5891f071b1ee970ac0630691d4524ebddf721",
+      "size": 32278,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/a3f5891f071b1ee970ac0630691d4524ebddf721"
+    },
+    {
+      "path": "scripts/example_videos",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c23ff8bb56b4a4cdde02f7bd8193e47c22a35597",
+      "url": "https://api.github.com/repos/robometer/robometer/git/trees/c23ff8bb56b4a4cdde02f7bd8193e47c22a35597"
+    },
+    {
+      "path": "scripts/example_videos/berkeley_rpt_stack_cup.mp4",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "06f8bfbd105c7580c6f9d8ef3f99a0cb90763348",
+      "size": 72511,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/06f8bfbd105c7580c6f9d8ef3f99a0cb90763348"
+    },
+    {
+      "path": "scripts/example_videos/berkeley_rpt_stack_cup_rewards.npy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fb9c57f4201f39c6b1284efc8c6506ceefe27da5",
+      "size": 168,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/fb9c57f4201f39c6b1284efc8c6506ceefe27da5"
+    },
+    {
+      "path": "scripts/example_videos/berkeley_rpt_stack_cup_rewards_progress_success.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "408d09f8c25028ebec0912a67e0f38dc2e943fdc",
+      "size": 95340,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/408d09f8c25028ebec0912a67e0f38dc2e943fdc"
+    },
+    {
+      "path": "scripts/example_videos/berkeley_rpt_stack_cup_rewards_success_probs.npy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "547b61518b4878958e95789c6385798a0d90a320",
+      "size": 168,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/547b61518b4878958e95789c6385798a0d90a320"
+    },
+    {
+      "path": "scripts/example_videos/jaco_play_pick_up_green_cup.mp4",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6d868447bab668b51dee4c7311c85872b7572d28",
+      "size": 38706,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/6d868447bab668b51dee4c7311c85872b7572d28"
+    },
+    {
+      "path": "scripts/example_videos/pick_up_green_cup_rewards.npy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e8446ed6f70fb5c4bd8e0ba943c791b4ccc34fe",
+      "size": 180,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2e8446ed6f70fb5c4bd8e0ba943c791b4ccc34fe"
+    },
+    {
+      "path": "scripts/example_videos/pick_up_green_cup_rewards_progress_success.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "701843485e613f2c6c4c2f5356b5cfaebcfae783",
+      "size": 92382,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/701843485e613f2c6c4c2f5356b5cfaebcfae783"
+    },
+    {
+      "path": "scripts/example_videos/pick_up_green_cup_rewards_success_probs.npy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f8d5c2dc97fc5e949db799b7095b264499017dc6",
+      "size": 180,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/f8d5c2dc97fc5e949db799b7095b264499017dc6"
+    },
+    {
+      "path": "scripts/example_videos/soar_put_green_stick_in_brown_bowl.mp4",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc2762a68ea42bd7e67a5925ad16c80955d2db6e",
+      "size": 54806,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/bc2762a68ea42bd7e67a5925ad16c80955d2db6e"
+    },
+    {
+      "path": "scripts/example_videos/soar_put_green_stick_in_brown_bowl_rewards.npy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d15a78907ccc6a55795fd8a66dbdd765c83364dd",
+      "size": 168,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d15a78907ccc6a55795fd8a66dbdd765c83364dd"
+    },
+    {
+      "path": "scripts/example_videos/soar_put_green_stick_in_brown_bowl_rewards_progress_success.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d3ac4c8a3a9c89fab581aba7f59c812e239dc02e",
+      "size": 101670,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/d3ac4c8a3a9c89fab581aba7f59c812e239dc02e"
+    },
+    {
+      "path": "scripts/example_videos/soar_put_green_stick_in_brown_bowl_rewards_success_probs.npy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fbc756f7da6ceef28c7f8f68749b5ba43f4c525",
+      "size": 168,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8fbc756f7da6ceef28c7f8f68749b5ba43f4c525"
+    },
+    {
+      "path": "scripts/robotics_demo_video_scraper.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3dc455d2073a3bcb5a97faa0449bfdf8a4f7cb34",
+      "size": 43313,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/3dc455d2073a3bcb5a97faa0449bfdf8a4f7cb34"
+    },
+    {
+      "path": "scripts/untar_processed_datasets.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "8dbcca2af573a4a7a32c875995912d6d1b63eaf7",
+      "size": 3281,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/8dbcca2af573a4a7a32c875995912d6d1b63eaf7"
+    },
+    {
+      "path": "setup.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "2c7e264446bedc28ab117f106997f5e27dc74b18",
+      "size": 1346,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/2c7e264446bedc28ab117f106997f5e27dc74b18"
+    },
+    {
+      "path": "train.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "0b80037014a7211fd326a7db4119d5e9a7c1bf07",
+      "size": 14764,
+      "url": "https://api.github.com/repos/robometer/robometer/git/blobs/0b80037014a7211fd326a7db4119d5e9a7c1bf07"
+    }
+  ],
+  "truncated": false
+}

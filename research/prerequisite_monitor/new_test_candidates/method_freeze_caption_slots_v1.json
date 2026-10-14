@@ -1,0 +1,38 @@
+{
+  "frozen_before_new_test_inference_utc": "2026-10-05T05:34:00Z",
+  "status": "frozen_before_any_new_test_call_for_this_method",
+  "name": "action-caption endpoint-slot candidate v1",
+  "model": "Qwen/Qwen3-VL-8B-Instruct",
+  "model_revision": "0c351dd01ed87e9c1b53cbc748cba10e6187ff3b",
+  "code": "experiments/prerequisite_probe/run_caption_slots.py",
+  "code_sha256": "1797bf4a43f075ff157b276c3b0a2e605a14631bae7dd4375d332c42e2f1ccdd",
+  "inputs": "final goal instruction and same preparation video only; no truth, continuation, prior scores, or condition mapping",
+  "calls_per_video": 2,
+  "first_call": "8 frames at seconds 0,2,4,6,8,10,12,14; 512x384; goal-blind visible-action caption; 192 maximum output tokens",
+  "second_call": "text-only canonicalization of first caption plus final goal; six endpoint tri-state facts; 192 maximum output tokens",
+  "comparison": "fixed source/destination non-goal object transitions; goal-completion override; unknowns and runtime failures retained",
+  "progress": "15-point endpoint evidence index; seconds 1 through 13 unknown; provisional 25 for clear prerequisite slot, 100 only for observed goal completion",
+  "evidence_status": "caption-derived, requires frame audit; a clear slot is only a plausible prerequisite, not a proof of causal necessity",
+  "same_budget_direct_baseline": "D2_review from v12: two 8-frame calls at 512 maximum output tokens each; this candidate uses fewer visual and output tokens",
+  "old_development_results": {
+    "B+": "positive",
+    "B0": "zero",
+    "U0": "uncertain",
+    "H-": "negative",
+    "G+": "positive",
+    "N0": "zero"
+  },
+  "old_development_limit": "canonicalizer misstates B0 destination occupancy as false at both endpoints; U0 abstains; N0 zero relies on caption's explicit no-movement claim",
+  "primary_new_test_predictions": [
+    "B+>B0",
+    "B+>U0",
+    "H-<N0",
+    "G+>N0"
+  ],
+  "dataset_freeze_sha256": {
+    "tray_crossbar": "9042e3db57585036d44c9adca1f1d90a82e1b91922867d2bf184280800f08ea2",
+    "source_bridge": "3fa477f0b6be5d12daa7604577ced3c51f00f3dcf32e0e2181cee9a0f844dba6"
+  },
+  "input_archive_sha256": "8e557fe06f37454f2c73586468eaaf0fc5ac6cff51d1b0ae94e31bb1fd1bf593",
+  "prior_one_step_candidate": "v12 D/P/F/H old-development results retained; P/F failed prerequisite discrimination, no new-test calls"
+}

@@ -1,0 +1,20 @@
+{
+  "example_id": "example_03",
+  "bucket": "test_expert_seen",
+  "global_episode_id": "ARX-data/human-data-0114/20260112-yuanshuaijun/20260111-204118-put-triangular-beaker-onto-tripod-good2/videos/chunk-000/observation.images.front/episode_000002",
+  "main_path": "ARX-data/human-data-0114/20260112-yuanshuaijun/20260111-204118-put-triangular-beaker-onto-tripod-good2/videos/chunk-000/observation.images.front/episode_000002",
+  "task_instruction": "将三角烧杯放在三脚架上。",
+  "task_description": "将三角烧杯放在三脚架上。\n爪夹准备移动：0%\n爪夹开始移动：10%\n爪夹靠近三角烧杯：20%\n爪夹抓取三角烧杯：40%\n爪夹合拢并靠近三脚架：60%\n爪夹移动到三脚架的正上方：80%\n爪夹松开，三角烧杯落在三脚架上：100%",
+  "fps": 30.0,
+  "is_expert": true,
+  "num_frames": 172,
+  "final_gt_progress": 100.0,
+  "video_path": "examples/example_03/episode.mp4",
+  "benchmark_progress_type": "dense_kinematic_progress",
+  "benchmark_dense_progress": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.2, 2.5, 3.8, 5.0, 6.2, 7.5, 8.8, 10.0, 10.7, 11.4, 12.1, 12.9, 13.6, 14.3, 15.0, 15.7, 16.4, 17.1, 17.9, 18.6, 19.3, 20.0, 20.5, 21.0, 21.5, 22.0, 22.5, 23.0, 23.5, 24.0, 24.5, 25.0, 25.5, 26.0, 26.5, 27.0, 27.5, 28.0, 28.5, 29.0, 29.5, 30.0, 30.6, 31.1, 31.7, 32.2, 32.8, 33.3, 33.9, 34.4, 35.0, 35.6, 36.1, 36.7, 37.2, 37.8, 38.3, 38.9, 39.4, 40.0, 40.5, 41.0, 41.4, 41.9, 42.4, 42.9, 43.3, 43.8, 44.3, 44.8, 45.2, 45.7, 46.2, 46.7, 47.1, 47.6, 48.1, 48.6, 49.0, 49.5, 50.0, 50.4, 50.8, 51.2, 51.7, 52.1, 52.5, 52.9, 53.3, 53.8, 54.2, 54.6, 55.0, 55.4, 55.8, 56.2, 56.7, 57.1, 57.5, 57.9, 58.3, 58.8, 59.2, 59.6, 60.0, 61.1, 62.1, 63.2, 64.2, 65.3, 66.3, 67.4, 68.4, 69.5, 70.5, 71.6, 72.6, 73.7, 74.7, 75.8, 76.8, 77.9, 78.9, 80.0, 80.7, 81.5, 82.2, 83.0, 83.7, 84.4, 85.2, 85.9, 86.7, 87.4, 88.1, 88.9, 89.6, 90.4, 91.1, 91.9, 92.6, 93.3, 94.1, 94.8, 95.6, 96.3, 97.0, 97.8, 98.5, 99.3, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0],
+  "benchmark_semantic_anchors": [{"frame": 8, "progress": 0.0}, {"frame": 16, "progress": 10.0}, {"frame": 30, "progress": 20.0}, {"frame": 50, "progress": 30.0}, {"frame": 68, "progress": 40.0}, {"frame": 89, "progress": 50.0}, {"frame": 113, "progress": 60.0}, {"frame": 132, "progress": 80.0}, {"frame": 159, "progress": 100.0}],
+  "benchmark_progress_source": {
+    "bucket": "test_expert_seen",
+    "global_episode_id": "ARX-data/human-data-0114/20260112-yuanshuaijun/20260111-204118-put-triangular-beaker-onto-tripod-good2/videos/chunk-000/observation.images.front/episode_000002"
+  }
+}

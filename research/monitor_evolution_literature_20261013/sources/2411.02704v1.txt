@@ -1,0 +1,1301 @@
+RT-Affordance: Affordances are Versatile Intermediate Representations for Robot Manipulation
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+I
+INTRODUCTION
+II
+RELATED WORK
+III
+RT-A: Affordance-Based Policy Learning
+III-A
+Affordance-conditioned policies
+III-B
+Learning to predict affordances
+III-C
+Model Inference
+IV
+EXPERIMENTS
+IV-A
+Experiment implementation
+IV-B
+Learning to grasp novel objects efficiently
+IV-C
+Beyond object picking
+IV-D
+Robustness to out of distribution factors
+IV-E
+Ablation study
+V
+CONCLUSION
+References
+License: arXiv.org perpetual non-exclusive license
+arXiv:2411.02704v1 [cs.RO] 05 Nov 2024
+RT-Affordance: Affordances are Versatile
+Intermediate Representations for Robot Manipulation
+Soroush Nasiriany
+Affiliation:
+Google DeepMind
+Affiliation:
+The University of Austin at Texas
+Sean Kirmani
+Affiliation:
+Google DeepMind
+Tianli Ding
+Affiliation:
+Google DeepMind
+Laura Smith
+Affiliation:
+Google DeepMind
+Yuke Zhu
+Affiliation:
+The University of Austin at Texas
+Danny Driess
+Affiliation:
+Google DeepMind
+Dorsa Sadigh
+Affiliation:
+Google DeepMind
+Ted Xiao
+†
+†
+thanks:
+*This work was done while the first author was a student researcher at Google DeepMind. Correspondence
+soroush@cs.utexas.edu
+Affiliation:
+Google DeepMind
+Abstract
+We explore how intermediate policy representations can facilitate generalization by providing guidance on how to perform manipulation tasks.
+Existing representations such as language, goal images, and trajectory sketches have been shown to be helpful, but these representations either do not provide enough context or provide over-specified context that yields less robust policies.
+We propose conditioning policies on affordances, which capture the pose of the robot at key stages of the task.
+Affordances offer expressive yet lightweight abstractions, are easy for users to specify, and facilitate efficient learning by transferring knowledge from large internet datasets.
+Our method, RT-Affordance, is a hierarchical model that first proposes an affordance plan given the task language, and then conditions the policy on this affordance plan to perform manipulation.
+Our model can flexibly bridge heterogeneous sources of supervision including large web datasets and robot trajectories.
+We additionally train our model on cheap-to-collect in-domain affordance images, allowing us to learn new tasks without collecting any additional costly robot trajectories.
+We show on a diverse set of novel tasks how RT-Affordance exceeds the performance of existing methods by over 50%, and we empirically demonstrate that affordances are robust to novel settings.
+Videos available at
+https://snasiriany.me/rt-affordance
+I
+INTRODUCTION
+In recent years, we have seen the rise of large pretrained models for learning robot policies. Vision-language-action (VLA) models
+[
+8
+,
+32
+]
+, pretrained with large-scale robot data on top of vision-language models (VLMs)
+[
+48
+]
+come with the promise of generalization to new objects, scenes, and tasks.
+However, VLAs are not yet reliable enough to be deployed outside of the narrow lab settings on which they are trained.
+While these shortcomings can be mitigated by expanding the scope and diversity of robot datasets, this is highly resource intensive and challenging to scale.
+Alternatively, there are various ways of interfacing with the policy that can potentially facilitate generalization by providing useful guidance on how to perform manipulation tasks.
+Examples of these
+policy representations
+include language specifications
+[
+53
+,
+4
+]
+, goal images
+[
+6
+]
+, goal sketches
+[
+45
+]
+, and trajectory sketches
+[
+22
+]
+.
+These interfaces introduce mid-level abstractions that shield the policy from reasoning in a higher dimensional input space — leading to policies that can generalize over these intermediate representations.
+While one of the most common policy representations is conditioning on language, in practice most robot datasets are labeled with underspecified descriptions of the task and language conditioning does not reveal enough guidance on how to perform the task.
+Alternatively, goal image-conditioned policies provide detailed spatial context about the final goal configuration of the scene.
+However, goal-images are high-dimensional, which presents learning challenges due to over-specification issues
+[
+45
+,
+40
+]
+.
+Furthermore, providing goal images at evaluation time is cumbersome for human users.
+This has lead to exploration of other intermediate representations — trajectory or goal sketches
+[
+22
+,
+45
+]
+, or keypoints
+[
+52
+,
+19
+]
+— that attempt to provide spatial plans for the policy.
+While these spatial plans are informative, they still lack sufficient information for the policy on
+how
+to manipulate — e.g. what pose of the gripper should take when picking up a clothes hanger.
+Fig. 1
+:
+Bridging robot and internet data via affordances.
+Prior work has shown the utility of co-training on robot and web datasets. However, robot actions and web content are still disjoint in their structure. We propose using affordances as a means to bridge this gap. Reasoning about affordances requires semantic and spatial reasoning, which is readily needed in VQA and spatial reasoning tasks such as object detection.
+By incorporating affordance reasoning explicitly in robot control tasks, we can better transfer knowledge from these web datasets to robot control tasks.
+Fig. 2
+:
+Comparison of policy interfaces.
+Conditioning on language is intuitive, yet language typically does not provide enough guidance on how to perform the task. Goal images and trajectory sketches are typically over-specified and present learning challenges. We propose conditioning policies on intermediate affordance representations, which are expressive yet compact representations of tasks, making them easy to specify and to learn.
+In this work, we seek a policy representation that provides expressive yet lightweight abstractions for learning robust manipulation polices. We propose RT-Affordance, which is a policy conditioned on both language specifications and
+visual affordances
+.
+The visual affordances show the pose of the robot end effector at key stages of the task, visually projected onto the image input of the policy.
+By conditioning on affordances, the robot will have access to precise yet concise guidance on how to manipulate objects.
+To allow a seamless experience for the human user, we employ a hierarchical model that only requires task language from the user.
+The model first predicts the affordances given a task specification in language, and then leverages the affordances as an intermediate representation to steer the policy.
+The initial affordance prediction module can be trained on existing robot trajectories and web-scale datasets labeled with spatial information and affordances
+[
+21
+]
+(see Figure
+1
+).
+We further enhance capabilities by training on a modest dataset of cheap-to-collect in-domain images annotated with affordances. This allows us to bypass costly robot teleoperation and learn novel tasks more scalably.
+We perform extensive experiments, where we show that RT-Affordance is effective across a broad range of real world tasks, achieving 69% overall success rate compared to 15% success rate for language-conditioned policies.
+We show how incorporating both web data and cheap-to-collect affordance images allows us to learn novel tasks
+without collecting any additional robot demonstrations
+.
+Additionally, we demonstrate that the resulting affordance prediction model is robust to distribution shifts, with overall performance on out of distribution settings within 10% of in-distribution evaluations.
+II
+RELATED WORK
+Affordances for robot manipulation.
+Affordances
+[
+2
+]
+and grasp pose predictions have been heavily leveraged in robotics research for motion planning, grasping, and hierarchical control.
+Modern data-driven methods
+[
+35
+,
+46
+]
+build upon prior works which leverage optimization-based approaches, and achieve performant grasp pose prediction capabilities given large-scale grasping datasets
+[
+18
+]
+and point-cloud
+[
+34
+]
+or geometry based inductive biases
+[
+17
+]
+.
+More recently, robot manipulation systems propose combining vision-language models (VLMs) with affordance or grasp prediction models and downstream control policies
+[
+25
+,
+47
+,
+16
+,
+24
+]
+.
+In contrast, our method RT-Affordance does not rely on large-scale offline grasp pose specific datasets, 3D point clouds at training or test time, or simulation-based geometric planning.
+Learning pre-trained representations from non-action data
+.
+Similar to trends seen in scaling up VLMs
+[
+49
+]
+, there has also been exploration in robotics on adapting large-scale internet data for improving perception and reasoning capabilities
+[
+15
+]
+which are important for downstream robot policy learning, particularly with the usage of vision-language-action (VLA) models
+[
+8
+]
+.
+Non-robotics interaction datasets have been particularly of interest, due to the substantial cost of real-world robotics action data such as teleoperated expert demonstrations
+[
+50
+,
+31
+]
+;
+representation learning methods which learn affordance prediction from internet data and human videos
+[
+13
+,
+21
+]
+have been proposed
+[
+3
+,
+41
+,
+5
+]
+.
+Most similar to our method is RoboPoint
+[
+52
+]
+, which proposes fine-tuning a VLM to predict points which represent spatial affordances by leveraging procedural 3D scene generation in simulation.
+Our method RT-Affordance also studies predicting spatial affordances, but proposes a more descriptive affordance representation beyond a single point, and also does not require large-scale simulated scene generation.
+Intermediate representations for policy conditioning
+.
+Prior works have studied how multi-task robot manipulation policies can be conditioned on various types of representations and interfaces to perform different manipulation skills.
+Popular interfaces have included one-hot task vectors
+[
+30
+]
+, latent skill or task embeddings
+[
+23
+,
+27
+,
+39
+]
+, templated or natural language
+[
+28
+,
+9
+,
+42
+,
+53
+,
+36
+]
+, object-centric representations
+[
+29
+,
+43
+,
+44
+,
+19
+]
+, trajectories
+[
+22
+,
+51
+]
+, goal images or sketches
+[
+7
+,
+10
+,
+45
+,
+37
+,
+6
+,
+12
+,
+11
+]
+, and videos
+[
+20
+,
+14
+,
+26
+]
+.
+Our method leverages affordances represented visually or textually as an interface, which strikes a balance between flexibility, expressivity, and data efficiency (see Figure
+2
+).
+Fig. 3
+:
+Model overview.
+Our hierarchical model first predicts the affordance plan given the task language and initial image of the task.
+We overlay the affordance (pixel xy values in raw text form) onto the image, and subsequently condition the policy on images overlaid with the affordance plan.
+We co-train the model on web datasets (largest data source), robot trajectories, and a modest number of cheap-to-collect images labeled with affordances.
+III
+RT-A: Affordance-Based Policy Learning
+Our goal is to implement an intermediate policy interface that (1) is an expressive yet compact representation for a broad set of manipulation tasks,
+(2) can effectively bridge knowledge from external datasets and facilitate generalization,
+and (3) enables learning novel tasks through cheap, in-domain data collection.
+We propose RT-Affordance (RT-A), a hierarchical policy which first proposes an affordance plan via an affordance generator, and then generates actions via an affordance-conditioned policy.
+We will first introduce the affordance-conditioned policy and subsequently introduce the affordance generator.
+III-A
+Affordance-conditioned policies
+We are given a dataset of robot trajectories
+𝒟
+=
+{
+l
+,
+{
+(
+o
+i
+,
+e
+i
+,
+g
+i
+,
+a
+i
+)
+}
+i
+=
+0
+T
+}
+\mathcal{D}=\{l,\{(o_{i},e_{i},g_{i},a_{i})\}_{i=0}^{T}\}
+;
+each trajectory consists of a language instruction
+l
+l
+and a sequence of images
+o
+i
+o_{i}
+, actions
+a
+i
+a_{i}
+, end-effector poses
+e
+i
+e_{i}
+and gripper states
+g
+i
+g_{i}
+.
+We learn an affordance-conditioned policy
+π
+⁡
+(
+a
+|
+l
+,
+o
+,
+q
+)
+\pi(a|l,o,q)
+that generates actions given the language instruction
+l
+l
+, current image
+o
+o
+, and additionally the
+affordance plan
+q
+q
+.
+We define the affordance plan as the sequence of robot end effector poses corresponding to key timesteps in the trajectory,
+q
+=
+(
+e
+t
+1
+,
+e
+t
+2
+,
+…
+,
+e
+t
+n
+)
+q=(e_{t_{1}},e_{t_{2}},...,e_{t_{n}})
+.
+These timesteps capture critical stages in the task execution, for example when the robot is about to come in contact with objects or encounters bottleneck states.
+We can employ a variety of approaches to extract these timesteps.
+In practice we adopt a simple and scalable solution: we automatically extract from proprioception data timesteps when the gripper state changes from open to close (
+g
+i
+−
+1
+>
+α
+g_{i-1}>\alpha
+and
+g
+i
+<
+α
+g_{i}<\alpha
+for some constant
+α
+\alpha
+) or vice versa from close to open, or the final timestep of the trajectory.
+This implicitly captures object-centric interactions corresponding to the stages in the task when the robot contacts, grasps, pushes, or lets go of objects.
+Compared to conditioning on language as in prior work
+[
+8
+]
+, the affordance plans in RT-A policies reveal precise spatial information about how to manipulate objects.
+These affordance plans not only reveal the position of the robot end effector but also orientation, which is critical for fine-grained manipulation.
+However, solely conditioning on affordance plans may not reveal full context about the task, and we thus opt to condition the policy on both affordance plans and language.
+This ensures that we retain the full expressiveness of language-conditioned policies, while benefiting from the additional context provided by affordance plans.
+We train the affordance-conditioned policy via behavioral cloning and additionally co-train on web datasets, in a similar manner as in RT-2.
+We can represent these affordances either as tokenized text values passed as input to the policy, or by overlaying them onto the image using a visual operator
+ψ
+⁡
+(
+o
+,
+q
+)
+\psi(o,q)
+, following similar techniques in prior work
+[
+38
+,
+22
+]
+.
+In our implementation we visually project the outline of the robot hand at the poses
+e
+i
+e_{i}
+onto the image.
+Specifically given
+e
+i
+e_{i}
+we compute the 3D positions of the leftmost end effector tip, rightmost finger tip, top of end effector, and arm, and project these points onto the 2D image.
+We connect these points to make an outline. See Figure
+3
+for an illustration.
+We designate unique colors to each of the affordances overlaid onto the image to capture temporal ordering.
+Note that this projection step assumes knowledge of the robot camera intrinsics and extrinsics which is readily available for many robot platforms.
+If this information is not available, we can opt to condition the policy on the affordance plan directly as tokenized text values.
+III-B
+Learning to predict affordances
+We can deploy the affordance-conditioned policy by asking the human user to provide affordance plans and language goals to the policy at inference time.
+The affordance plans can be provided easily by marking them visually onto the image using a UI interface, without moving the robot of changing the scene.
+Compared to prior approaches such as conditioning on goal images or trajectory sketches, affordance plans are lower dimensional, making them easier to provide.
+We can also learn models to predict affordance plans automatically, sidestepping the need for humans to provide affordances at all at test time.
+We learn an affordance prediction model
+ϕ
+⁡
+(
+q
+|
+l
+,
+o
+)
+\phi(q|l,o)
+which predicts the affordance plan given the language task instruction
+l
+l
+and initial image of the scene
+o
+o
+.
+To train the model we extract
+(
+o
+,
+l
+,
+q
+)
+(o,l,q)
+tuples from the same robot dataset
+𝒟
+\mathcal{D}
+used to train
+π
+\pi
+and we also co-train the model with web datasets.
+In applications where we have access to camera information we predict the
+xy pixel locations
+of the end effector points, allowing us to better transfer knowledge with other existing web datasets such as object detection.
+In some applications, training on these datasets may not yield adequate performance and we may seek additional training data to further improve the capabilities of the model.
+Instead of collecting additional demonstrations through expensive robot teleoperation, we can collect a set of images with corresponding task labels, ie.
+𝒟
+aug
+=
+{
+(
+o
+i
+,
+l
+i
+)
+}
+i
+=
+0
+n
+\mathcal{D}_{\text{aug}}=\{(o_{i},l_{i})\}_{i=0}^{n}
+.
+We can collect hundreds or thousands of these images at a fraction of the cost compared to costly teleoperation.
+After this data collection process we can annotate each image with the affordance plan through a posthoc lableing procedure, either manually through a UI interface or with the aid of tools such as VLMs and grasp planners, as shown in previous work
+[
+22
+]
+.
+This annotation process can be performed efficiently offline and can be crowdsourced without the need for expensive robot hardware or teleoperation.
+This additional data collection process enables us to improve performance on the downstream robot task with minimal additional effort and allows us to bypass costly robot teleoperation, which we will demonstrate in our experiments.
+III-C
+Model Inference
+We are given the initial image of the scene
+o
+init
+o_{\text{init}}
+and a natural language task instruction
+l
+l
+.
+We can either prompt a human or the affordance prediction model
+ϕ
+⁡
+(
+q
+|
+l
+,
+o
+init
+)
+\phi(q|l,o_{\text{init}})
+to obtain the affordance plan
+q
+q
+.
+The affordance plan is projected onto the image, i.e.,
+ψ
+⁡
+(
+o
+,
+q
+)
+\psi(o,q)
+and we prompt the policy
+π
+⁡
+(
+a
+|
+l
+,
+ψ
+⁡
+(
+o
+,
+q
+)
+)
+\pi(a|l,\psi(o,q))
+with the language instruction and annotated image to execute the task.
+We can optionally replan updated affordance plans at fixed or adaptive intervals to handle novel scenarios that arise during the execution of the policy.
+IV
+EXPERIMENTS
+In our experiments we are interested in exploring the following questions:
+•
+Are affordance-conditioned polices broadly useful for performing diverse manipulation tasks?
+•
+Can affordances enable efficiently learning novel tasks, without costly additional robot teleoperation?
+•
+How well do affordance prediction models generalize to novel objects, camera views, and backgrounds?
+IV-A
+Experiment implementation
+We use the robot manipulator from RT-1
+[
+9
+]
+. The arm is controlled via Cartesian end-effector control.
+The robot observes the environment from a single head-mounted camera.
+Our robot demonstration datasets comprise three phases of data collection: (1) the RT-1 dataset
+[
+9
+]
+which focuses on basic manipulation skills, (2) the MOO dataset
+[
+43
+]
+which focuses on picking diverse objects, and (3) an additional set of trajectories targeting more dexterous tasks.
+We use the same web datasets from RT-2 for co-training.
+We adopt PaLM-E 2
+[
+1
+,
+15
+]
+as the underlying model and use the 1-billion parameter variant, unless otherwise noted.
+We train and evaluate vision-language-action models (VLAs) which share the same underlying model but adopt different policy input interfaces.
+All methods are trained on the same number of robot trajectories and same web datasets.
+We train the affordance prediction model with the hindsight affordance labels from the robot trajectory datasets, in addition to a set of
+∼
+\sim
+750 cheap-to-collect images manually annotated with affordance labels.
+We collect these images by placing diverse objects on the table in front of the robot and taking snapshots of the scene.
+These images include the tasks and objects from our grasping tasks and additional tasks beyond grasping which we will outline the tasks in the following sections.
+We collect all of these images in approximately one hour and dedicate an additional two hours annotating them with affordance labels afterwards.
+This data collection process is significantly faster and more scalable than collecting robot trajectories.
+We train a dedicated VLA for affordance prediction, trained on web data, affordances extracted from robot trajectories, and in-domain affordance images.
+IV-B
+Learning to grasp novel objects efficiently
+In our first experiment we investigate how affordances facilitate learning to grasp novel objects.
+Grasping is a ubiquitous skill demanded across a wide range of tasks, and it is important that robots can grasp diverse objects in a robust manner.
+We design a benchmark of picking diverse household objects, including dustpans, kettles, pots, boxes, and headphones.
+In contrast to simple objects with rigid convex shapes, we selected these objects as they encompass complex shapes and require fine-grained part-level reasoning in order to successfully grasp them.
+Note that our benchmark focuses on unseen object categories, meaning that they are not present in any of our robot trajectory datasets.
+We place the object on a tabletop in addition to two or three distractor objects coming from a wide range of object categories.
+We run comprehensive evaluations comparing our method to prior state-of-the-art approaches.
+We evaluate each method across five rollouts per object category and record the task success rates in Table
+I
+.
+RT-2
+GC-RT-2
+RT-A
+RT-A
+(Oracle Aff)
+(Ours)
+Pick dustpan
+1/5
+1/5
+3/5
+4/5
+Pick kettle
+1/5
+1/5
+4/5
+4/5
+Pick pot
+0/5
+1/5
+4/5
+1/5
+Pick box
+4/5
+1/5
+4/5
+4/5
+Pick headphones
+1/5
+2/5
+4/5
+4/5
+Average
+28%
+24%
+76%
+68%
+TABLE I:
+Experimental results on grasping.
+We compare our model to state-of-the-art VLAs, including language-conditioned and goal-conditioned policies. These methods fail to grasp objects precisely achieving success rates of under 30%. In contrast our affordance-conditioned policy paired with oracle human-provided affordances achieves 76% performance, and when employing an affordance prediction model to infer affordance automatically we observe a 68% success rate.
+First we compare to
+RT-2
+[
+8
+]
+, a state-of-the-art language-conditioned robot policy learning model notable for its impressive capabilities in understanding novel semantic concepts and objects.
+Despite these capabilities, we find that it struggles on our suite of evaluations, achieving an average success rate of just 28%.
+We observe that the policy is generally capable in identifying the correct object on the table and reaching the vicinity of the object but is unable to grasp the object at the appropriate location.
+For example, the robot attempts to grasp at the center of the dustpan rather than the handle, resulting in an unsuccessful grasp.
+Similarly with picking the pot the robot tries to grasp around the base of the pot rather than handle.
+However, it is generally capable of picking boxes.
+We also tried to prompt the policy with specific language instructions indicating how to grasp the object (e.g. “pick the dustpan by the handle”) but the policy failed to follow these instructions effectively.
+We also evaluate a goal-conditioned variant of RT-2 (
+GC-RT-2
+), which replaces language-conditioning for image goal-conditioning. We use the larger 24-billion variant PaLM 2 backbone to accommodate the additional goal-image passed into the policy.
+We run evaluations on the same objects, and for each episode we manually take a snapshot of the robot having grasped and lifted the object in the air at the final goal configuration.
+We observe an average success rate of just 24%.
+While the goal image conveys the precise pose at which to grasp the object, the policy is unable to precisely grasp the object at this pose.
+One common failure mode is that the robot fails to rotate its end effector sufficiently in order to achieve the correct pregrasp orientation.
+Next we compare our hindsight affordance model RT-A.
+We condition the policy with the language instruction and visual affordances overlaid on top of the current image.
+We first evaluate the model with oracle affordances, ie. for each trial we manually provide the pregrasp and goal affordance poses of the robot.
+We call this self-baseline of our method
+RT-A (Oracle Aff)
+.
+We observe a significant improvement in policy performance, achieving 76% average success.
+The policy is faithful in executing the human provided affordance poses, and failures are only due to small imperfections from the robot policy in following the given affordance poses.
+Again, we highlight that none of these object categories are present in the robot trajectory datasets, making this a effective method for grasping a broad set of objects.
+RT-2
+RT-A
+RT-A
+(Oracle Aff)
+(Ours)
+Place apple into pot
+0/5
+4/5
+3/5
+Place peach onto plate
+1/5
+4/5
+4/5
+Place bell pepper into basket
+0/5
+3/5
+4/5
+Place eggplant into box
+0/5
+2/5
+3/5
+Close the cubby
+0/5
+4/5
+4/5
+Turn sink faucet
+0/5
+4/5
+3/5
+Average
+3%
+70%
+70%
+TABLE II:
+Beyond grasping.
+RT-A is applicable to a broad set of tasks, including placing objects into various receptacles and manipulating articulated objects. RT-Affordance with a successs rate of 70% performs significantly better than RT-2 (only 3% success) on these tasks.
+Finally we compare to the full hierarchical variant of our method in which we predict affordance plans before conditioning the policy on these plans (
+RT-A
+).
+We see an average performance of 68%, which is close to the performance of the policy conditioned on oracle affordances.
+Compared to the oracle affordance self-baseline we see similar performance across all object categories except picking the pot.
+Here we observe that while the predicted affordances are reasonably placed around the handle, there are some edge cases, for example the robot freezing or picking the objects but not lifting them sufficiently in the air.
+Such errors may be mitigated by perturbing or re-planning the affordances in an adaptive manner, and we leave this for future work.
+IV-C
+Beyond object picking
+We demonstrate that these findings are not exclusive to grasping tasks but can be extended to a range of manipulation tasks.
+We compare RT-A to the next best baseline from the previous experiments, the language-conditioned RT-2 model, on an additional set of manipulation tasks.
+We consider tasks involving placing objects into receptacles (eg. “place apple into pot”, “place bell pepper into basket”), and articulated manipulation (“close the cubby”).
+Again, we highlight that these tasks are
+unseen
+in the robot trajectory datasets and demand precise spatial reasoning and execution.
+See Table
+II
+for results.
+Surprisingly, the RT-2 baseline performs quite poorly in this setting achieving only 3% success rate.
+We observe a range of failures, including unreliable grasping of objects, freezing after grasping the object, placing the object next to the receptacle rather than into the receptacle.
+Using the same underlying VLA architecture but additionally conditioning on affordances, and we employ the affordance conditioned model trained to predict affordances on a handful of images annotated with affordance labels.
+We see a significant improvement of performance, with 70% success rate using our affordance prediction model.
+These results show that affordances are a flexible form of task specification that can describe a broad set of tasks.
+In cases where the user provides oracle affordances at evaluation, we can solve novel tasks without any additional data, and training our affordance prediction model to infer affordances automatically only incurs a small budget to collect and annotate images.
+In contrast, improving the capabilities of language-conditioned or goal-conditioned policies would require fine-tuning on dozens or hundreds of additional robot demonstrations collected through teleoperation
+[
+4
+,
+33
+]
+, which is significantly more expensive and less scalable.
+Fig. 4
+:
+Evaluation of the affordance prediction model on out of distribution scenarios.
+We perform a comprehensive evaluation of the affordance prediction model on in-distribution and out-of-distribution (OOD) and observe a graceful degradation of performance in OOD settings.
+Fig. 5
+:
+Robustness to out of distribution factors
+We show examples of successful and incorrect predictions of our affordance prediction model across in-distribution and out-of-distribution settings. Successful predictions are highlighted in green and incorrect predictions are highlighted in red.
+IV-D
+Robustness to out of distribution factors
+Next, we perform an analysis of the affordance prediction model.
+In order for the affordance prediction model to be useful it needs to be robust to a wide range of out-of-distribution (OOD) settings.
+To better understand this, we perform a comprehensive evaluation on the grasping tasks from Table
+I
+comparing the following settings:
+•
+In-distribution
+: evaluating the model under the same distribution it was trained on. ie. same object instances, same camera view, and same environment background.
+•
+OOD: novel objects
+: evaluating the model with novel object instances on which it was not trained on.
+•
+OOD: novel camera view
+: evaluating the model with images taken with significant camera shift.
+•
+OOD: novel background
+: evaluating the model with novel object textures.
+Ours
+No aug data
+No web data
+Pick dustpan
+74%
+20%
+3%
+Pick kettle
+75%
+30%
+10%
+Pick pot
+90%
+10%
+14%
+Pick box
+89%
+33%
+11%
+Pick headphones
+55%
+28%
+16%
+Average
+77%
+24%
+11%
+TABLE III:
+Ablation study.
+We perform an ablation study of our affordance prediction model the same in-distribution evaluations as Figure
+4
+. We find that removing the augmented dataset of affordance images significantly diminishes performance, and removing web datasets for co-training diminishes performance even further.
+We perform a comprehensive offline human evaluation over hundreds of test images, where for each image we assess whether the model’s predicted affordance would result in a successful grasp, assuming that the policy can follow the given affordances perfectly.
+We report the results in Figure
+4
+.
+First, we see that the affordance prediction model is general capable in in-distribution settings, with 77% of trials classified as success.
+Across the OOD settings model performance degrades gracefully, falling no more than 10% compared to the in-distribution setting.
+Some factors affect model performance more than others.
+With novel camera views the performance is nearly identical at 77%, and with novel backgrounds performance only falls at 3% on average.
+However with novel object instances the performance drops the most, especially for grasping novel instances of kettles and boxes.
+We provide illustrative examples in Figure
+5
+.
+IV-E
+Ablation study
+We perform an ablation study on our affordance prediction model, where we study the impact of different data sources on the model. Our model is trained on the full data mixture including (1) robot trajectories, (2) web datasets, and (3) the  750 additional augmented affordance images we collected.
+We perform ablations where we (a) exclude the augmented data (
+No aug data)
+and (b) exclude web datasets (
+No web data
+).
+We compare these settings on the same in-distribution evaluation suite outlined in Section
+IV-D
+, and we report results in Table
+III
+.
+We see that removing these sources of data leads to a large drop in performance.
+We hypothesize that large web datasets play an important role for training robust models, and that our augmented data is needed to train performant models for specific downstream tasks.
+V
+CONCLUSION
+We have presented RT-Affordance, a hierarchical method that uses affordances as an intermediate representation for policies.
+Affordances provide precise spatial guidance on how to preform a manipulation task, and they are easy for humans to specify.
+We have shown empirically that affordance-conditioned policies can perform a wide range of novel tasks without requiring additional human demonstrations.
+Additionally, we have shown how we can learn models to predict affordances during deployment using cheap-to-collect images, and that these models are robust.
+One limitation that we observed is that our policy did not exhibit generalization to completely novel motions or skills.
+This has been noted in other VLA works
+[
+8
+]
+as well, and we are interested in exploring this in future work.
+In addition we are interested in exploring the complementary strengths of different policy representations and combining their capabilities into a single model that can share knowledge across representations.
+ACKNOWLEDGMENTS
+We thank Fei Xia for fruitful discussions and Dhruv Shah for providing feedback on writing.
+We also thank Justice Carjabal, Tomas Jackson, and other robot operators at Google DeepMind for assisting us in data collection and evaluation.
+References
+[1]
+Rohan Anil et al.
+“PaLM 2 Technical Report”, 2023
+arXiv:
+https://arxiv.org/abs/2305.10403
+[2]
+Paola Ardon et al.
+“Affordances in Robotic Tasks – A Survey”, 2020
+arXiv:
+https://arxiv.org/abs/2004.07400
+[3]
+Shikhar Bahl et al.
+“Affordances from Human Videos as a Versatile Representation for Robotics”
+In
+CVPR
+, 2023
+[4]
+Suneel Belkhale et al.
+“RT-H: Action Hierarchies Using Language”
+In
+Robotics: Science and Systems (RSS)
+, 2024
+[5]
+Homanga Bharadhwaj, Roozbeh Mottaghi, Abhinav Gupta and Shubham Tulsiani
+“Track2Act: Predicting Point Tracks from Internet Videos enables Diverse Zero-shot Robot Manipulation”, 2024
+arXiv:
+2405.01527 [cs.RO]
+[6]
+Kevin Black et al.
+“Zero-Shot Robotic Manipulation with Pre-Trained Image-Editing Diffusion Models”
+In
+The Twelfth International Conference on Learning Representations
+[7]
+Konstantinos Bousmalis et al.
+“Robocat: A self-improving generalist agent for robotic manipulation”
+In
+Transactions on Machine Learning Research
+, 2023
+[8]
+Anthony Brohan et al.
+“RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control”
+In
+7th Annual Conference on Robot Learning
+, 2023
+[9]
+Anthony Brohan et al.
+“RT-1: Robotics Transformer for Real-World Control at Scale”
+In
+arXiv preprint arXiv:2212.06817
+, 2022
+[10]
+Yevgen Chebotar et al.
+“Actionable Models: Unsupervised Offline Reinforcement Learning of Robotic Skills”
+In
+International Conference on Machine Learning
+, 2021, pp. 1518–1528
+PMLR
+[11]
+Yuchen Cui et al.
+“Can Foundation Models Perform Zero-Shot Task Specification For Robot Manipulation?”
+In
+Proceedings of The 4th Annual Learning for Dynamics and Control Conference
+168
+, Proceedings of Machine Learning Research
+PMLR, 2022, pp. 893–905
+URL:
+https://proceedings.mlr.press/v168/cui22a.html
+[12]
+Zichen Cui, Yibin Wang, Nur Shafiullah and Lerrel Pinto
+“From Play to Policy: Conditional Behavior Generation from Uncurated Robot Data”
+In
+The Eleventh International Conference on Learning Representations
+[13]
+Dima Damen et al.
+“Scaling Egocentric Vision: The EPIC-KITCHENS Dataset”
+In
+European Conference on Computer Vision (ECCV)
+, 2018
+[14]
+Sudeep Dasari and Abhinav Gupta
+“Transformers for one-shot visual imitation”
+In
+Conference on Robot Learning
+, 2021, pp. 2071–2084
+PMLR
+[15]
+Danny Driess et al.
+“PaLM-E: An Embodied Multimodal Language Model”
+In
+International Conference on Machine Learning
+, 2023, pp. 8469–8488
+PMLR
+[16]
+Jiafei Duan et al.
+“Manipulate-Anything: Automating Real-World Robots using Vision-Language Models”
+In
+arXiv preprint arXiv:2406.18915
+, 2024
+[17]
+Hao-Shu Fang et al.
+“AnyGrasp: Robust and Efficient Grasp Perception in Spatial and Temporal Domains”
+In
+IEEE Transactions on Robotics (T-RO)
+, 2023
+[18]
+Hao-Shu Fang, Chenxi Wang, Minghao Gou and Cewu Lu
+“GraspNet-1Billion: A Large-Scale Benchmark for General Object Grasping”
+In
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+, 2020, pp. 11444–11453
+[19]
+Kuan Fang, Fangchen Liu, Pieter Abbeel and Sergey Levine
+“MOKA: Open-World Robotic Manipulation through Mark-Based Visual Prompting”
+In
+Robotics: Science and Systems (RSS)
+, 2024
+[20]
+Chelsea Finn et al.
+“One-shot visual imitation learning via meta-learning”
+In
+Conference on robot learning
+, 2017, pp. 357–368
+PMLR
+[21]
+Kristen Grauman et al.
+“Ego4D: Around the World in 3,000 Hours of Egocentric Video”
+In
+IEEE/CVF Computer Vision and Pattern Recognition (CVPR)
+, 2022
+[22]
+Jiayuan Gu et al.
+“RT-Trajectory: Robotic Task Generalization via Hindsight Trajectory Sketches”, 2023
+arXiv:
+2311.01977 [cs.RO]
+[23]
+Karol Hausman et al.
+“Learning an embedding space for transferable robot skills”
+In
+International Conference on Learning Representations
+, 2018
+[24]
+Wenlong Huang et al.
+“ReKep: Spatio-Temporal Reasoning of Relational Keypoint Constraints for Robotic Manipulation”
+In
+arXiv preprint arXiv:2409.01652
+, 2024
+[25]
+Wenlong Huang et al.
+“VoxPoser: Composable 3D Value Maps for Robotic Manipulation with Language Models”
+In
+Conference on Robot Learning
+, 2023, pp. 540–562
+PMLR
+[26]
+Vidhi Jain et al.
+“Vid2Robot: End-to-end Video-conditioned Policy Learning with Cross-Attention Transformers”, 2024
+arXiv:
+2403.12943 [cs.RO]
+[27]
+Stephen James, Michael Bloesch and Andrew Davison
+“Task-embedded control networks for few-shot imitation learning”
+In
+Conference on robot learning
+, 2018, pp. 783–795
+PMLR
+[28]
+Eric Jang et al.
+“BC-Z: Zero-Shot Task Generalization with Robotic Imitation Learning”
+In
+Conference on Robot Learning
+, 2021
+[29]
+Yunfan Jiang et al.
+“VIMA: General Robot Manipulation with Multimodal Prompts”
+In
+International Conference on Machine Learning
+, 2023
+[30]
+Dmitry Kalashnikov et al.
+“Mt-opt: Continuous multi-task robotic reinforcement learning at scale”
+In
+Conference on Robot Learning (CoRL)
+, 2023
+[31]
+Alexander Khazatsky et al.
+“DROID: A Large-Scale In-The-Wild Robot Manipulation Dataset”, 2024
+[32]
+Moo Jin Kim et al.
+“OpenVLA: An Open-Source Vision-Language-Action Model”
+In
+arXiv preprint arXiv:2406.09246
+, 2024
+[33]
+Huihan Liu et al.
+“Robot Learning on the Job: Human-in-the-Loop Autonomy and Learning During Deployment”
+In
+Robotics: Science and Systems (RSS)
+, 2023
+[34]
+Jeffrey Mahler et al.
+“Dex-Net 2.0: Deep Learning to Plan Robust Grasps with Synthetic Point Clouds and Analytic Grasp Metrics”
+In
+Robotics: Science and Systems (RSS)
+, 2017
+[35]
+Arsalan Mousavian, Clemens Eppner and Dieter Fox
+“6-DOF GraspNet: Variational Grasp Generation for Object Manipulation”
+In
+International Conference on Computer Vision (ICCV)
+, 2019
+[36]
+Suraj Nair et al.
+“Learning language-conditioned robot behavior from offline data and crowd-sourced annotation”
+In
+Conference on Robot Learning
+, 2022, pp. 1303–1315
+PMLR
+[37]
+Soroush Nasiriany, Vitchyr Pong, Steven Lin and Sergey Levine
+“Planning with goal-conditioned policies”
+In
+Advances in neural information processing systems
+32
+, 2019
+[38]
+Soroush Nasiriany et al.
+“PIVOT: Iterative Visual Prompting Elicits Actionable Knowledge for VLMs”
+In
+Forty-first International Conference on Machine Learning
+[39]
+Karl Pertsch, Youngwoon Lee and Joseph Lim
+“Accelerating reinforcement learning with learned skill priors”
+In
+Conference on robot learning
+, 2021, pp. 188–204
+PMLR
+[40]
+Rutav Shah, Roberto Marin-Martin and Yuke Zhu
+“MUTEX: Learning Unified Policies from Multimodal Task Specifications”
+In
+7th Annual Conference on Robot Learning
+, 2023
+URL:
+https://openreview.net/forum?id=PwqiqaaEzJ
+[41]
+Mohan Srirama, Sudeep Dasari, Shikhar Bahl and Abhinav Gupta
+“HRP: Human Affordances for Robotic Pre-Training”
+In
+Proceedings of Robotics: Science and Systems
+, 2024
+[42]
+Simon Stepputtis et al.
+“Language-conditioned imitation learning for robot manipulation tasks”
+In
+Advances in Neural Information Processing Systems
+33
+, 2020, pp. 13139–13150
+[43]
+Austin Stone et al.
+“Open-World Object Manipulation using Pre-Trained Vision-Language Models”
+In
+arXiv preprint
+, 2023
+[44]
+Priya Sundaresan, Suneel Belkhale, Dorsa Sadigh and Jeannette Bohg
+“KITE: Keypoint-Conditioned Policies for Semantic Manipulation”
+In
+Robotics: Science and Systems (RSS)
+, 2023
+[45]
+Priya Sundaresan et al.
+“RT-Sketch: Goal-Conditioned Imitation Learning from Hand-Drawn Sketches”, 2024
+arXiv:
+https://arxiv.org/abs/2403.02709
+[46]
+Martin Sundermeyer, Arsalan Mousavian, Rudolph Triebel and Dieter Fox
+“Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes”
+In
+2021 IEEE International Conference on Robotics and Automation (ICRA)
+, 2021
+[47]
+Chao Tang et al.
+“Task-oriented grasp prediction with visual-language inputs”
+In
+2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+, 2023, pp. 4881–4888
+IEEE
+[48]
+Gemini Team
+“Gemini: A Family of Highly Capable Multimodal Models”, 2024
+arXiv:
+2312.11805 [cs.CL]
+[49]
+Gemini Team et al.
+“Gemini: a family of highly capable multimodal models”
+In
+arXiv preprint arXiv:2312.11805
+, 2023
+[50]
+Homer Walke et al.
+“BridgeData V2: A Dataset for Robot Learning at Scale”
+In
+Conference on Robot Learning (CoRL)
+, 2023
+[51]
+Chuan Wen et al.
+“Any-point Trajectory Modeling for Policy Learning”
+In
+Robotics: Science and Systems (RSS)
+, 2024
+[52]
+Wentao Yuan et al.
+“RoboPoint: A Vision-Language Model for Spatial Affordance Prediction for Robotics”, 2024
+arXiv:
+https://arxiv.org/abs/2406.10721
+[53]
+Jesse Zhang, Karl Pertsch, Jiahui Zhang and Joseph Lim
+“Sprint: Scalable policy pre-training via language instruction relabeling”
+In
+2024 IEEE International Conference on Robotics and Automation (ICRA)
+, 2024, pp. 9168–9175
+IEEE
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

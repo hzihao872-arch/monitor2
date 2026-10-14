@@ -1,0 +1,10 @@
+{
+  "client_path": "research/sources/prm_scope_review_20261003/official/eval/prm_judge/prm/robometer.py",
+  "client_sha256": "31a472355a252cd4be2c8c2b6be1ecd1e5dadc3f5d114dfac71ce023136a1210",
+  "client_function": "def sample_frame_indices(total_frames: int, native_fps: float, fps: float) -> list[int]:\n    if fps <= 0:\n        fps = native_fps\n    desired_frames = int(round(total_frames * (fps / native_fps))) if native_fps > 0 else total_frames\n    desired_frames = max(1, min(desired_frames, total_frames))\n    if desired_frames == total_frames:\n        return list(range(total_frames))\n    return np.linspace(0, total_frames - 1, desired_frames, dtype=int).tolist()",
+  "server_path": "research/sources/direction_selection_20261003/eval_server.py",
+  "server_sha256": "a06bb071bdcf9f7fefe590b1af31a7e4e1ebf9337e8f93e6e4c03aa98b5a7cfb",
+  "server_expression": "np.linspace(0, i - 1, NUM_SUBSAMPLED_FRAMES, dtype=int)",
+  "server_linenumber": 230,
+  "model_code_imported": false
+}

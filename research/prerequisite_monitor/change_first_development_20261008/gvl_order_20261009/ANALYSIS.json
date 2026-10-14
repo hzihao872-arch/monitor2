@@ -1,0 +1,264 @@
+{
+  "issued": 16,
+  "completed": 16,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior": 372,
+  "cumulative": 388,
+  "counts": {
+    "chronological": {
+      "n": 8,
+      "valid": 5
+    },
+    "shuffled": {
+      "n": 8,
+      "valid": 4
+    }
+  },
+  "curves_strictly_valid_only": [
+    {
+      "query": "q07e7773ad34d85f6",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 25,
+        "f0010": 75,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, robot arm above, elevated landing with pink cube and gray cube.",
+        "f0003": "Robot arm has moved slightly forward, still above the blue cube and landing.",
+        "f0007": "Robot arm is now grasping the blue cube, lifting it off the floor.",
+        "f0010": "Robot arm is placing the blue cube onto the yellow elevated landing, next to the gray cube.",
+        "f0014": "Robot arm has moved away, blue cube is on the landing and appears stable."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q07e7773ad34d85f6",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 10,
+        "f0007": 30,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is stationary, blue cube on floor, yellow landing with pink cube and gray cube on it.",
+        "f0000": "Robot arm is stationary, blue cube on floor, yellow landing with pink cube and gray cube on it.",
+        "f0010": "Robot arm is moving down, gripper near blue cube, yellow landing with gray cube.",
+        "f0007": "Robot arm is holding blue cube, gripper closed, yellow landing with gray cube.",
+        "f0014": "Robot arm is stationary, blue cube on floor, yellow landing with pink cube and gray cube on it."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q675f22bca6b91b54",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 25,
+        "f0010": 75,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, robot arm not touching it, landing empty.",
+        "f0003": "Robot arm retracted, blue cube still on floor, landing empty.",
+        "f0007": "Robot arm grasping blue cube, cube lifted off floor.",
+        "f0010": "Robot arm placing blue cube onto yellow landing, cube partially on it.",
+        "f0014": "Blue cube fully placed and stable on yellow landing, robot arm retracted."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q675f22bca6b91b54",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 50,
+        "f0007": 50,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is idle, blue cube is on floor, not yet placed on elevated landing.",
+        "f0000": "Robot arm is idle, blue cube is on floor, not yet placed on elevated landing.",
+        "f0010": "Robot arm is holding blue cube above the elevated landing, about to place it.",
+        "f0007": "Robot arm is holding blue cube above the elevated landing, about to place it.",
+        "f0014": "Blue cube is placed on the elevated landing and appears stable."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qbb0dbd57d63ce6a9",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 30,
+        "f0010": 70,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, robot arm idle, yellow landing with grey cube.",
+        "f0003": "Robot arm moves toward blue cube, preparing to grasp it.",
+        "f0007": "Robot arm has grasped the blue cube and is moving it toward the yellow landing.",
+        "f0010": "Robot arm is placing the blue cube onto the yellow landing.",
+        "f0014": "Robot arm has released the blue cube on the yellow landing, which is now stable."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qbb0dbd57d63ce6a9",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 20,
+        "f0007": 60,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is positioned near the blue cube, preparing to interact with it.",
+        "f0000": "Robot arm is stationary, blue cube remains on the floor, task not yet started.",
+        "f0010": "Robot arm is grasping the blue cube, beginning the pick-up phase.",
+        "f0007": "Robot arm is holding the blue cube above the yellow platform, preparing to place it.",
+        "f0014": "Robot arm is stationary, blue cube remains on the floor, task not yet started."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qcde827bb66b99fd4",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 10,
+        "f0007": 30,
+        "f0010": 60,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, robot arm above, yellow landing with grey cube.",
+        "f0003": "Robot arm has moved closer to blue cube, gripper appears open, ready to grasp.",
+        "f0007": "Robot arm is now holding the blue cube, gripper closed, above the yellow landing.",
+        "f0010": "Robot arm has placed the blue cube on the yellow landing, gripper is open.",
+        "f0014": "Robot arm has moved away, blue cube is stable on yellow landing, task complete."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qcde827bb66b99fd4",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 0,
+        "f0007": 50,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is positioned near the blue cube, preparing to grasp it.",
+        "f0000": "Initial scene: robot arm is stationary, blue cube is on the floor, not yet picked up.",
+        "f0010": "Robot arm has moved toward the yellow platform, but blue cube is still on the floor.",
+        "f0007": "Robot arm is holding the blue cube above the yellow platform, preparing to place it.",
+        "f0014": "Blue cube is placed on the yellow platform and appears stable."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qf2bed1caaecc37a0",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 25,
+        "f0010": 75,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on table, transparent box empty, robot arm not interacting.",
+        "f0003": "Blue cube still on table, robot arm repositioned slightly, box unchanged.",
+        "f0007": "Robot arm grasps the blue cube, lifting it off the table.",
+        "f0010": "Robot arm places blue cube inside transparent box, cube resting on floor.",
+        "f0014": "Blue cube inside box, robot arm has released it and moved away, cube stationary."
+      },
+      "all_zero": false
+    }
+  ],
+  "pair_contracts": [
+    {
+      "query_id": "q07108c1875aa88b5",
+      "both_valid": false,
+      "errors_chrono": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ],
+      "errors_shuffle": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ]
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "both_valid": false,
+      "errors_chrono": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ],
+      "errors_shuffle": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ]
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "both_valid": false,
+      "errors_chrono": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ],
+      "errors_shuffle": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ]
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "both_valid": false,
+      "errors_chrono": [],
+      "errors_shuffle": [
+        "Expecting value: line 1 column 1 (char 0)"
+      ]
+    }
+  ],
+  "fence_raw_count": 7,
+  "audit_errors": [],
+  "wall_seconds": 105.93351381551474,
+  "adapter_seconds": 97.82305553229526,
+  "input_tokens": 21856,
+  "output_tokens": 3238,
+  "hit_caps": 0,
+  "peak_vram_gib": 16.74375343322754,
+  "status": "Qwen8B five-frame zero-shot adaptation of GVL; source baseline initial0 mathematically excludes negative net relative to initial; no VOC against chronological index used as utility accuracy"
+}

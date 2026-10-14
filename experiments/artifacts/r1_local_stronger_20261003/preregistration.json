@@ -1,0 +1,266 @@
+{
+  "id": "r1-local-stronger-20261003",
+  "created_utc": "2026-10-03T08:31:36.045731+00:00",
+  "authorization": "User explicitly requested finding and trying stronger already-downloaded local models",
+  "protocol": "S6-draft-4 unchanged; this is a separate local-runtime exploratory variant, not H1 or an author-method reproduction",
+  "data_manifest_version": "S7-screening-4",
+  "model": "qwen3-vl:8b-instruct",
+  "model_digest": "0533d74300e4f9bc367d675d4e64ffd073d50ff16a2b4096cc2e8a1cf8c96319",
+  "quantization": "Q4_K_M",
+  "runtime": "Ollama 0.35.0 local 127.0.0.1:11434",
+  "options": {
+    "temperature": 0,
+    "seed": 0,
+    "repeat_penalty": 1.0,
+    "num_ctx": 4096,
+    "num_predict": 256
+  },
+  "model_choice": "8B only; 4B inventoried but no fallback runs in this batch",
+  "max_model_calls": 75,
+  "phases": {
+    "probe": {
+      "calls": 4,
+      "order": [
+        "ep618 q0 neutral",
+        "ep618 q0 joint",
+        "ep618 q2 joint",
+        "ep618 q6 joint"
+      ],
+      "history": "empty each call",
+      "gate": "Joint outputs all strictly valid, nonempty <=35-word nonrepetitive summaries, below output cap; same-executor review of actual supplied frames finds no clear false stack/completion claim or persistent wrong object assignment. Neutral description checked for evident colors/positions. Unknowns allowed. If gate fails stop."
+    },
+    "chain": {
+      "calls": 9,
+      "episode": 618,
+      "ticks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "method": "S1",
+      "gate": "all strict valid and budgets pass; nonempty memory transferred exactly from previous accepted response; summaries retain relevant earlier observations and uncertainty, no persistent plainly false completion or wrong objects. Minor description uncertainty alone is not mechanism evidence. Manual single-reviewer review; no H1 scoring."
+    },
+    "full": {
+      "calls": 62,
+      "order": [
+        "ep618 S0 q0..15",
+        "ep618 S1 q0..15",
+        "ep621 S0 q0..14",
+        "ep621 S1 q0..14"
+      ],
+      "iterations": 1,
+      "gate_before": "probe and chain content/syntax gates pass; no further prompt adjustment"
+    }
+  },
+  "prompt": "D053 joint prompt reused, plus explicit image-order/timestamp line required by local Ollama message serialization; neutral prompt fixed in script",
+  "per_call_limits": {
+    "images": 4,
+    "image_source_size": [
+      256,
+      256
+    ],
+    "native_prompt_tokens": 3840,
+    "native_output_tokens": 256,
+    "memory_utf8_bytes_conservative_limit": 512,
+    "calls_per_tick_per_arm": 1
+  },
+  "budget_caveats": [
+    "Ollama native token accounting and vision preprocessing differ from the HF BF16 adapter; no exact cross-runtime token equivalence claim.",
+    "4096 context with 256 reserved output, reject reported prompt above3840. No truncation or retry to rescue outputs.",
+    "State is restricted to512 UTF8 bytes, conservatively tighter than512 byte-BPE tokens; no invented native memory token telemetry.",
+    "API reported model GPU residency is not peak VRAM; actual peak unavailable.",
+    "Model, quantization, runtime, vision preprocessing, and image-message serialization differ from2B; do not attribute differences solely to size."
+  ],
+  "frozen_files": [
+    {
+      "path": "experiments/local_stronger_20261003.py",
+      "sha256": "fcea6408b0f183f98cceb1b2c03b912de2a40c6b85c2b9bf54a2c2e21250a29c"
+    },
+    {
+      "path": "experiments/tests/test_local_stronger.py",
+      "sha256": "5bcc2e1a6ce46e76b9f174d5b8409b2603ca147a9b768995fc61d155ce012afd"
+    },
+    {
+      "path": "experiments/summary_isolation_20261003.py",
+      "sha256": "dbff87e98b41354f0ce49a483e11b2bc14672e457c8127adf13e6fc5d0c75957"
+    },
+    {
+      "path": "experiments/monitor_eval.py",
+      "sha256": "a43370c42dd7ef34e87bc20bb9b39287fbbef7a2f2452e5bbe413a568da8651e"
+    },
+    {
+      "path": "experiments/run_online.py",
+      "sha256": "938890dffce7f428d54189ba42c55d5d0e1d84ec49cecc5bacbc9ee623fb4ed1"
+    },
+    {
+      "path": "experiments/config_stage7.json",
+      "sha256": "3508b9ba7e250a2d0a8e0895586ee1af5325021049074d987d7997c7d489efb7"
+    },
+    {
+      "path": "experiments/artifacts/r1_local_stronger_20261003/model_manifest_8b.json",
+      "sha256": "0533d74300e4f9bc367d675d4e64ffd073d50ff16a2b4096cc2e8a1cf8c96319"
+    },
+    {
+      "path": "experiments/artifacts/r1_local_stronger_20261003/local_model_hashes.json",
+      "sha256": "bd1bd10037ec9b2b944b735136eaae62597b2952783d4ab87a62f5344d54f061"
+    },
+    {
+      "path": "experiments/artifacts/r1_local_stronger_20261003/show_8b.json",
+      "sha256": "0e9fe3925e86d92b8398c32bc2ad2efdde8cef35cbc2159c3bc1f7af109807f0"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/online_track.json",
+      "sha256": "96e71e706e039812205abfcc53c66a993ce40c5db04cd84c379abb41e513de87"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_00.png",
+      "sha256": "683aef2cc842dc64e3f2fdc8fa2c14d7653202908a97860448346419928d1eac"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_01.png",
+      "sha256": "7ea37d6d5a65986123865273c7feded45a9f531fa257dadb13bbfbb30102aae9"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_02.png",
+      "sha256": "4c3a345f8b3394ae809b5e6796cfc4a99195aa3556cd774c492f7859a52e7f01"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_03.png",
+      "sha256": "0220d375ffd6fc397279e338bf4d8a12f0efb19980708f72277ab41c545d6251"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_04.png",
+      "sha256": "e9b3e93c33d0451776a4e4c2749645b15ce8ea7e169c31a1c226cc078334ae7f"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_05.png",
+      "sha256": "4930ecbed37aa27d3faf936c6ad8c5ce25200204d9d1516f23ce1a3b04c1cef2"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_06.png",
+      "sha256": "75cb6ead3b8f103cd99b00eaa247dd4e370a56046fb5259e365494657d15e8dc"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_07.png",
+      "sha256": "3a7e60e39e906799e21b4afee98dbe50c7b4e4b6b3129c1b765af35631f66fad"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_08.png",
+      "sha256": "afdc074fb64bbec1fad9469bc14df2028069d0b1071dc02bf96ef80926ccc479"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_09.png",
+      "sha256": "8dc898d38417e96d1ceb973ebd4e13c3186561d8ff3f86a2edd747cc8368750b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_10.png",
+      "sha256": "8cd7f54f743fa686b2b233dc7b4fb60a308522c062b241238e3561f9f2be51d8"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_11.png",
+      "sha256": "33a9a2cc49d18cccafa495698c2f10d350d9e1ea7c1a0a6d534e38f2fc2e792f"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_12.png",
+      "sha256": "648a470e627f9bcc18443582e04a8e96985ee600b53b0dc9f78cb4c87346eb9b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_13.png",
+      "sha256": "d86cbfac0f8e6fba3f21113e6ab3f4fa97f4e87a54875c97861340fa89b73e97"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_14.png",
+      "sha256": "5df188fa2ebd0a2c8733e7f258bb2446e901d8036c35c7838d7535d7fc79ee4e"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_15.png",
+      "sha256": "cd1d5e57e3ccffab7b3b13f5bda6da96a5a0fe1969f5783fa534f82f8970d03b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/online_track.json",
+      "sha256": "70150f2c7c7433dddd946b50f7c15d78cccf1d8af95a90912bea7c1189778bd9"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_00.png",
+      "sha256": "59502c1bc7b9a21076c610fba19a2edddfd1db92f429a69d2f037c2acb5cbe42"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_01.png",
+      "sha256": "60063b9e5cc795d76a1da862342c572fe3230780f978f66da87780b92a6dec97"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_02.png",
+      "sha256": "7b47575bd9bc04d5e2a355dbae02674bfdabbd6ed468a70bcf5c243f98cd73f0"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_03.png",
+      "sha256": "aa993145d9b112ffb650a5d4d08a526b7e01203d5478dd009226ce0f1cfca1ce"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_04.png",
+      "sha256": "2752a3fb0faab3b44a539bd2a382e67cffdf728b83ea6ae73cfea31a8614e382"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_05.png",
+      "sha256": "7d5182ff2966e409567f4d33e00ae2fbc31f05c71b7b57efcb22436a69846133"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_06.png",
+      "sha256": "2e55559edd12e86d0802565152a7192d71464d65e8a5e57bba6959217eca4ae6"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_07.png",
+      "sha256": "f212432a902fe7704ca646dc84efa7cde35c095cb39ebc22a4d15b6ee0c48e91"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_08.png",
+      "sha256": "9ae69e0b72d969e9f2cc31cd95b2c5ad10ff7dcc1e70e4e74638ee2e18c47d9c"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_09.png",
+      "sha256": "4ab7cd32ed592637d2e42fad77109ba83a80939cce0f05498ccd9fff20c3deb4"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_10.png",
+      "sha256": "ad1173488f29cff6aed3f3fb39170a9e657c2879f86a8d355b86a1ee642a9882"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_11.png",
+      "sha256": "b8e447c507a2f7a95fb5ab4602b6e72844860b25d4ce613d38585c4f34e9c18c"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_12.png",
+      "sha256": "ac39c832aea7224f1509099e709afab51f03af19702d1252b677a1e500360839"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_13.png",
+      "sha256": "98038467e1c731591bea19c96c142d0dae1dbf011333b6e98b83d85b07d1bf0d"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_14.png",
+      "sha256": "6d1df494cf7a55e93b2f3d238a2779100e0e1c4b6268919b444d0e7298cba975"
+    }
+  ],
+  "reference_sha256": "94ae92c5aabe9c6581d987b25b807782d471324747737ddea95ea20a0ea60358",
+  "stops": [
+    "runtime or budget failure",
+    "probe content/syntax gate fails",
+    "chain content/syntax gate fails",
+    "single full iteration completed"
+  ],
+  "forbidden": [
+    "new model/source downloads",
+    "training",
+    "paid APIs",
+    "C1/H1 effects/BCY/significance",
+    "stage8",
+    "posthoc JSON repairs",
+    "new prompt variants"
+  ]
+}

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>REBOOT: From Failure to Recovery: A Dataset and Benchmark for Bi-Manual Precision Assembly</title>
+<meta name="description" content="REBOOT (Recovery Episode Benchmark for Off-nominal Trajectories): a bi-manual manipulation benchmark that treats failure as a first-class signal. 2,160 demonstrations across 18 precision assembly tasks, with paired expert and recovery episodes." />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="REBOOT: From Failure to Recovery" />
+<meta property="og:description" content="A bi-manual manipulation benchmark that treats failure as a first-class signal. 2,160 demonstrations across 18 precision assembly tasks with paired recovery episodes." />
+<meta property="og:image" content="./images/overview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./static/style.css" />
+</head>
+<body>
+
+<!-- ambient blueprint grid -->
+<div class="grid-bg" aria-hidden="true"></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+   
+
+    <h1 class="title">
+      <span class="title">REBOOT: From Failure to Recovery – A Dataset and Benchmark for Bi-Manual Precision Assembly</span>
+    </h1>
+
+
+    <div class="authors">
+      <a class="author">Nana Yaw Owusu Ofori-Ampofo<sup>1</sup></a>
+      <a class="author">Samira Ebrahimi Kahou<sup>1,2</sup></a>
+      <a class="author">Joseph Thekinen<sup>1</sup></a>
+    </div>
+    <div class="affil">
+      <span><sup>1</sup>University of Calgary</span>
+      <span><sup>2</sup>Mila</span>
+    </div>
+
+    <nav class="links" aria-label="Resources">
+      <a class="pill" href="#" data-icon="paper">Paper</a>
+      <a class="pill" href="https://huggingface.co/REBOOT26/datasets" data-icon="data">Dataset</a>
+      <a class="pill" href="https://github.com/anon-robo-account/REBOOT" data-icon="code">Code</a>
+      <a class="pill" href="https://huggingface.co/spaces/lerobot/visualize_dataset" data-icon="viz">Visualizer</a>
+    </nav>
+  </div>
+
+
+</header>
+
+<!-- ============ KEY STATS ============ -->
+<section class="stats-strip">
+  <div class="wrap stat-row">
+    <div class="stat"><span class="num">2,160</span><span class="lab">demonstrations</span></div>
+    <div class="stat"><span class="num">18</span><span class="lab">precision tasks</span></div>
+    <div class="stat"><span class="num">50<span class="pct">%</span></span><span class="lab">failure / recovery</span></div>
+    <div class="stat"><span class="num">4</span><span class="lab">RGB-D camera views</span></div>
+    <div class="stat"><span class="num">3</span><span class="lab">policy families</span></div>
+  </div>
+</section>
+
+<!-- ============ THE PIPELINE (signature) ============ -->
+<section class="section" id="pipeline">
+  <div class="wrap">
+    <span class="section-tag">Abstract</span>
+    <p class="lead">
+    Robot learning policies fail in characterizable ways: they stall at high-uncertainty states, drift during contact-rich alignment, and miss targets by millimetres on precision tasks. Yet training datasets consist almost exclusively of successful demonstrations, and real-world benchmarks typically collapse performance into binary success. This disconnect leaves policies without supervision for recovery behaviours and leaves researchers without the resolution needed to localize and analyze failure over long horizons. 
+    We introduce REBOOT (Recovery Episode Benchmark for Off-nominal Trajectories), the first bi-manual robot manipulation benchmark designed around failure as a first-class signal. REBOOT comprises 2,160 demonstrations across 18 precision assembly tasks, each decomposed into a shared five-phase sequence — Align(pick) → Engage(pick) → Transport → Align(place) → Engage(place) — enabling per-phase progress evaluation beyond terminal success. Failures are systematically introduced at each phase and paired with expert recovery trajectories that return the system to a valid continuation state. Each task is annotated with structured metadata encoding mechanical sources of difficulty: mating interfaces are labelled by rotational symmetry class (continuous, C2, or C1), geometric precision tier based on engagement clearance, and assembly direction via matched install–remove pairs. Failure episodes are annotated by phase of occurrence and categorical failure mode (e.g., misalignment, jamming, premature release), enabling fine-grained attribution of failure to kinematic phase and tolerance violation. All data are collected with synchronized RGB-D observations from four fixed camera viewpoints. Each phase is further accompanied by grounded natural-language outcome descriptions characterizing both success and failure conditions (e.g., stalling in free space, misaligned grasp, insertion jamming), providing supervision for vision-language recovery policies. Half the dataset consists of expert demonstrations; the other half consists of recovery-from-failure demonstrations sampled to match the empirical failure distribution of imitation-learned policy rollouts. We benchmark action-chunked transformer, diffusion, and $\pi_0$-FAST policies using per-phase completion rates, revealing architecture-specific failure points invisible under binary evaluation.   </p>
+
+    <div class="pipeline" role="list">
+      <div class="phase" role="listitem" data-phase="1" tabindex="0">
+        <span class="pnum">01</span>
+        <span class="pname">Align<em>(pick)</em></span>
+        <span class="pdesc">Position both arms to the grasp configuration.</span>
+        <div class="lanes">
+          <span class="lane ok">grippers align with object center</span>
+          <span class="lane bad">overshoots target, stalls in free space</span>
+        </div>
+      </div>
+      <div class="phase" role="listitem" data-phase="2" tabindex="0">
+        <span class="pnum">02</span>
+        <span class="pname">Engage<em>(pick)</em></span>
+        <span class="pdesc">Close the grippers to secure the object.</span>
+        <div class="lanes">
+          <span class="lane ok">object grasped completely</span>
+          <span class="lane bad">closes on a misaligned pose, misses object</span>
+        </div>
+      </div>
+      <div class="phase" role="listitem" data-phase="3" tabindex="0">
+        <span class="pnum">03</span>
+        <span class="pname">Transport</span>
+        <span class="pdesc">Move the grasped object to the target location.</span>
+        <div class="lanes">
+          <span class="lane ok">object moved to goal</span>
+          <span class="lane bad">arm drifts off-axis, object dropped</span>
+        </div>
+      </div>
+      <div class="phase" role="listitem" data-phase="4" tabindex="0">
+        <span class="pnum">04</span>
+        <span class="pname">Align<em>(place)</em></span>
+        <span class="pdesc">Orient the object for placement.</span>
+        <div class="lanes">
+          <span class="lane ok">object aligned with goal center</span>
+          <span class="lane bad">connector axis misaligned with mating port</span>
+        </div>
+      </div>
+      <div class="phase" role="listitem" data-phase="5" tabindex="0">
+        <span class="pnum">05</span>
+        <span class="pname">Engage<em>(place)</em></span>
+        <span class="pdesc">Release and seat the object at the goal pose.</span>
+        <div class="lanes">
+          <span class="lane ok">connector fully seated</span>
+          <span class="lane bad">jams partway through insertion</span>
+        </div>
+      </div>
+    </div>
+    <p class="legend">
+      <span class="legend-item"><span class="swatch ok"></span>success lane</span>
+      <span class="legend-item"><span class="swatch bad"></span>failure recovery lane</span>
+    </p>
+  </div>
+</section>
+
+<!-- ============ MOTIVATION ============ -->
+<section class="section alt" id="why">
+  <div class="wrap">
+    <span class="section-tag">Policies fail in characterizable ways</span>
+ 
+
+    <figure class="fig full">
+      <img src="./images/overview.png" alt="Overview of REBOOT: five phases with successful trajectories and recovery from failure" />
+      <figcaption>Successful trajectories (left) and failure recovery episodes (right) at each phase.</figcaption>
+    </figure>
+
+    <div class="prose">
+      <p>
+        Imitation-learned policies stall at high-uncertainty states, drift during contact-rich alignment, and miss targets by millimetres. Training datasets, however, consist almost exclusively of clean, successful trajectories, and real-world benchmarks collapse performance into binary success. This leaves policies without supervision for recovery behaviours and researchers without the resolution to localize failure over long horizons.
+      </p>
+      <p>
+        The limitation is stark in precision assembly. Consider inserting a USB-A connector with 0.62&nbsp;mm of engagement clearance. A policy trained only on successes has no exposure to mid-task deviation: arriving at alignment with a lateral offset exceeding the port clearance, it drives forward rather than retracting. The housing catches on the port rim, yaws under contact force, and jams irreversibly. What the policy needs, but was never shown, is a recovery trajectory: retract, re-align, re-approach.
+      </p>
+      <p>
+        REBOOT records that recovery. Half the dataset consists of expert demonstrations; the other half consists of recovery-from-failure demonstrations, sampled to match the empirical failure distribution of imitation-learned policy rollouts.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTRIBUTIONS ============ -->
+<section class="section" id="contributions">
+  <div class="wrap">
+    <span class="section-tag">What REBOOT provides</span>
+    <div class="cards">
+      <article class="card">
+        <span class="cnum">01</span>
+        <h3>Paired failure data</h3>
+        <p>2,160 bi-manual real-robot trajectories: 1,080 expert demonstrations paired with 1,080 recovery episodes, each annotated with the phase of failure induction and a categorical failure mode.</p>
+      </article>
+      <article class="card">
+        <span class="cnum">02</span>
+        <h3>Shared phase decomposition</h3>
+        <p>A common five-phase sequence with annotated phase boundaries across all 18 install and remove tasks, enabling cross-task failure analysis and recovery transfer.</p>
+      </article>
+      <article class="card">
+        <span class="cnum">03</span>
+        <h3>Mechanical metadata</h3>
+        <p>Each task is annotated with rotational symmetry class, engagement-clearance tier, and install and remove pairs, supporting attribution of failure to mechanical tolerance.</p>
+      </article>
+      <article class="card">
+        <span class="cnum">04</span>
+        <h3>Empirical failure profiles</h3>
+        <p>Per-phase failure recorded across ACT, Diffusion Policy, and Pi0-FAST, used to calibrate the expert-to-recovery proportion rather than assuming a uniform mix.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TASK SUITE ============ -->
+<section class="section alt" id="tasks">
+  <div class="wrap">
+    <span class="section-tag">Task-suite: 9 objects, 18 tasks, expert and recovery demonstrations</span>
+    <p class="lead">
+      The suite is built as an extension of NIST Assembly Task Board #1 and comprises nine manufacturing-relevant objects spanning a range of geometric complexity, engagement tolerance, and rotational symmetry. Each object appears in both an install and a remove variant, yielding 18 tasks. Engagement clearances range from an interference-fit RCA connector at 0&nbsp;mm to a loose HAN&nbsp;10E connector at 2.73&nbsp;mm.
+    </p>
+
+    <div class="table-scroll">
+      <table class="spec">
+        <thead>
+          <tr><th>Object</th><th>Mechanism</th><th>Symmetry</th><th>Tier</th><th class="r">Clearance</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>RCA</td><td>Peg-in-hole</td><td><span class="tag cont">Cont.</span></td><td>Interference</td><td class="r mono">0.00 mm</td></tr>
+          <tr><td>16 mm cylinder</td><td>Peg-in-hole</td><td><span class="tag cont">Cont.</span></td><td>Moderate</td><td class="r mono">0.20 mm</td></tr>
+          <tr><td>M12 fastener</td><td>Threaded</td><td><span class="tag c2">C2</span></td><td>Moderate</td><td class="r mono">0.70 mm</td></tr>
+          <tr><td>USB-C</td><td>Peg-in-hole</td><td><span class="tag c2">C2</span></td><td>Tight</td><td class="r mono">0.09 mm</td></tr>
+          <tr><td>16 mm bar</td><td>Peg-in-hole</td><td><span class="tag c2">C2</span></td><td>Moderate</td><td class="r mono">0.20 mm</td></tr>
+          <tr><td>NEMA 1-15P</td><td>Peg-in-hole</td><td><span class="tag c1">C1</span></td><td>Moderate</td><td class="r mono">0.50 mm</td></tr>
+          <tr><td>RJ45</td><td>Peg-in-hole</td><td><span class="tag c1">C1</span></td><td>Tight</td><td class="r mono">0.13 mm</td></tr>
+          <tr><td>USB-A</td><td>Peg-in-hole</td><td><span class="tag c1">C1</span></td><td>Moderate</td><td class="r mono">0.62 mm</td></tr>
+          <tr><td>HAN 10E</td><td>Peg-in-hole</td><td><span class="tag c1">C1</span></td><td>Loose</td><td class="r mono">2.73 mm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="legend">
+      <span class="legend-item"><span class="tag cont">Cont.</span> any rotation valid</span>
+      <span class="legend-item"><span class="tag c2">C2</span> two valid orientations</span>
+      <span class="legend-item"><span class="tag c1">C1</span> one valid orientation</span>
+    </p>
+  </div>
+</section>
+
+<!-- ============ DATASET GALLERY (videos) ============ -->
+<section class="section" id="gallery">
+  <div class="wrap">
+    <span class="section-tag">Success and recovery, side by side</span>
+    <p class="lead">
+      60 teleoperated demonstrations per task were collected with a bi-manual Trossen WidowX AI robot, with proprioception data and RGB-D observations from four fixed viewpoints: overhead, front-facing, and one per wrist, recorded at 30&nbsp;Hz. Below, expert executions are shown alongside recovery episodes for the same task.
+    </p>
+
+    <div class="video-grid">
+      <figure class="vid">
+        <span class="vtag ok">expert</span>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/TVZSKkmnUcA?si=Q9BSpGDJSJDrfKv5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <figcaption>USB-C install, clean insertion</figcaption>
+      </figure>
+      <figure class="vid">
+        <span class="vtag bad">recovery</span>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/srvMNFdiRUs?si=Y1YBt5BsP1gU9PLp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <figcaption>USB-C install recovery</figcaption>
+      </figure>
+      <figure class="vid">
+        <span class="vtag ok">expert</span>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/A2eKoBlsg_c?si=fdZA4pGrYPhSzShB" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <figcaption>RJ45 install, latched seat</figcaption>
+      </figure>
+      <figure class="vid">
+        <span class="vtag bad">recovery</span>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/gZLTkKMjAF0?si=p22FNsDEXbzvAubS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <figcaption>RJ45 install recovery</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINDINGS ============ -->
+<section class="section alt" id="findings">
+  <div class="wrap">
+    <span class="section-tag">Per-phase task progress evaluation</span>
+    <div class="findings">
+      <div class="finding">
+        <span class="fstat mono">54<span class="pct">%</span></span>
+        <p>of installation-task failures occur in <strong>Align(place)</strong> and
+        <strong>Engage(place)</strong>, two of five phases. The Transport phase accounts for 8%.</p>
+      </div>
+      <div class="finding">
+        <span class="fstat mono">16<span class="pct">%</span> &rarr; 56<span class="pct">%</span></span>
+        <p>mean rollout success from <strong>install</strong> to <strong>remove</strong>. Extraction is
+        largely a free-space pull; insertion couples grasping with sub-millimetre alignment.</p>
+      </div>
+      <div class="finding">
+        <span class="fstat mono">14 &middot; 19 &middot; 22<span class="pct">%</span></span>
+        <p>Engage-phase failure rates for <strong>Continuous</strong>, <strong>C1</strong>, and
+        <strong>C2</strong> symmetry. Keyed connectors must resolve yaw before insertion.</p>
+      </div>
+    </div>
+    <figure class="fig wide">
+      <img src="./images/figure3.png" alt="Distribution of last-completed phase across tasks and policies" />
+      <figcaption>
+        Distribution of the last-completed phase across the three policy families. Tight, low-symmetry
+        connectors fail earliest in the trajectory; loose, high-symmetry connectors progress further before
+        failing.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+
+<!-- ============ CITATION ============ -->
+<section class="section alt" id="citation">
+  <div class="wrap">
+    <span class="section-tag">Citation</span>
+    <div class="bibtex">
+      <button class="copy" data-target="#bib" aria-label="Copy BibTeX">Copy</button>
+      <pre id="bib"><code>@article{oforiampofo2026reboot,
+  title   = {REBOOT: From Failure to Recovery: A Dataset and Benchmark for Bi-Manual Precision Assembly},
+  author  = {Ofori-Ampofo, Nana Yaw Owusu and Ebrahimi Kahou, Samira and Thekinen, Joseph},
+  journal = {arXiv preprint},
+  year    = {2026},
+  url     = {https://nanayawoa.github.io/REBOOT/}
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>REBOOT is released under CC-BY-4.0 on <a href="https://huggingface.co/REBOOT26">Hugging Face</a>.</p>
+  </div>
+</footer>
+
+<script src="./static/main.js"></script>
+</body>
+</html>

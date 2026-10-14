@@ -1,0 +1,57 @@
+{
+  "status": "four_call_probe_finished_runtime_and_content_gate_failed",
+  "model": "qwen3-vl:8b-instruct",
+  "model_digest": "0533d74300e4f9bc367d675d4e64ffd073d50ff16a2b4096cc2e8a1cf8c96319",
+  "quantization": "Q4_K_M",
+  "ollama_version": "0.35.0",
+  "local_weight_blobs_hash_verified": true,
+  "actual_call_attempts": 4,
+  "returned_generations": 3,
+  "strict_valid_joint_outputs": 2,
+  "plain_text_outputs": 1,
+  "runtime_failures": 1,
+  "chain_performed": false,
+  "full_performed": false,
+  "model4b_used": false,
+  "cost": {
+    "returned_response_input_tokens_ollama": 5889,
+    "returned_response_output_tokens_ollama": 167,
+    "request_wall_ms": 18934.360000072047,
+    "initial_load_duration_ns": 7310836000,
+    "rejected_request_input_tokens_from_server_log": 4457,
+    "rejected_request_output_generated": false,
+    "rejected_record_zero_token_fields": "missing native response placeholders; not measured zero input cost. Server-side tokenized request separately recorded above.",
+    "gpu_resident_bytes_reported_after_call": 5534897929,
+    "peak_vram_bytes": null
+  },
+  "backend_context_finding": {
+    "launch_flag": "--image-min-tokens 1024",
+    "proof": "server_context_excerpt.txt",
+    "three_image_request": {
+      "text_tokens": 354,
+      "total_tokens": 3426
+    },
+    "four_image_request": {
+      "total_tokens": 4457,
+      "num_ctx": 4096,
+      "outcome": "explicit rejection before generation"
+    },
+    "interpretation": "Unlike earlier HF64 tokens/image, installed Ollama expands each image to at least1024 visual tokens. Four images alone reach4096; original B1 text+vision input4096 cannot accommodate this path. Not an OOM or proof8B cannot run."
+  },
+  "cross_runtime_confounders": [
+    "8B vs2B weights/size",
+    "Q4_K_M vsBF16",
+    "Ollama/llama.cpp vsHF/torch",
+    "vision tokenization and preprocessing",
+    "image-message serialization and explicit order line"
+  ],
+  "verification": {
+    "frozen_files": 42,
+    "source_hashes": 266,
+    "unchanged_previous_isolation_artifacts": 9,
+    "new_ledger_rows": 4,
+    "reference_draft_unchanged": true,
+    "preregistration_sha256": "31d1b4781e2a6485e8e693eaf0fcb53e687527c55a76b746de57a3837320ee9f"
+  },
+  "scientific_claim": "Initial visual-description failure is not universal to every available local model;8B improves on that one observed example, yet q2 remains unsupported and four-frame integration exceeds current budget. No H1, author replication, or mechanism benefit."
+}

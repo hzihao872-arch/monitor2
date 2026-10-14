@@ -1,0 +1,4288 @@
+0001: Code-as-Monitor: Constraint-aware Visual Programming for Reactive and Proactive Robotic Failure Detection
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: arXiv.org perpetual non-exclusive license
+0009: arXiv:2412.04455v3 [cs.RO] 21 Mar 2025
+0010: Code-as-Monitor: Constraint-aware Visual Programming for
+0011: Reactive and Proactive Robotic Failure Detection
+0012: Enshen Zhou
+0013: 1
+0014: 1
+0015: footnotemark:
+0016: 1
+0017: 3
+0018: 3
+0019: footnotemark:
+0020: 3
+0021: Email:
+0022: zhouenshen@buaa.edu.cnchicheng15@mails.ucas.ac.cnlsheng@buaa.edu.cnhewang@pku.edu.cn
+0023: Qi Su
+0024: 1
+0025: 1
+0026: footnotemark:
+0027: 1
+0028: Affiliation:
+0029: School of Software, Beihang University
+0030: School of Computer Science, Peking University
+0031: Affiliation:
+0032: Beijing Academy of Artificial Intelligence
+0033: Galbot
+0034: Cheng Chi
+0035: 1
+0036: 1
+0037: footnotemark:
+0038: 1
+0039: 2
+0040: 2
+0041: footnotemark:
+0042: 2
+0043: Zhizheng Zhang
+0044: Affiliation:
+0045: Beijing Academy of Artificial Intelligence
+0046: Galbot
+0047: Zhongyuan Wang
+0048: Tiejun Huang
+0049: Affiliation:
+0050: School of Software, Beihang University
+0051: School of Computer Science, Peking University
+0052: Lu Sheng
+0053: 2
+0054: 2
+0055: footnotemark:
+0056: 2
+0057: He Wang
+0058: 2
+0059: 2
+0060: footnotemark:
+0061: 2
+0062: Affiliation:
+0063: School of Software, Beihang University
+0064: School of Computer Science, Peking University
+0065: Affiliation:
+0066: Beijing Academy of Artificial Intelligence
+0067: Galbot
+0068: Abstract
+0069: Automatic detection and prevention of open-set failures are crucial in closed-loop robotic systems.
+0070: Recent studies often struggle to simultaneously identify unexpected failures reactively after they occur and prevent foreseeable ones proactively.
+0071: To this end, we propose Code-as-Monitor (CaM), a novel paradigm leveraging the vision-language model (VLM) for both open-set reactive and proactive failure detection.
+0072: The core of our method is to formulate both tasks as a unified set of spatio-temporal constraint satisfaction problems and use VLM-generated code to evaluate them for real-time monitoring.
+0073: To enhance the accuracy and efficiency of monitoring, we further introduce constraint elements that abstract constraint-related entities or their parts into compact geometric elements.
+0074: This approach offers greater generality, simplifies tracking, and facilitates constraint-aware visual programming by leveraging these elements as visual prompts.
+0075: Experiments show that CaM achieves a
+0076: 28.7
+0077: %
+0078: 28.7\%
+0079: higher success rate and reduces execution time by
+0080: 31.8
+0081: %
+0082: 31.8\%
+0083: under severe disturbances compared to baselines across three simulators and a real-world setting.
+0084: Moreover, CaM can be integrated with open-loop control policies to form closed-loop systems, enabling long-horizon tasks in cluttered scenes with dynamic environments.
+0085: See the project page at
+0086: https://zhoues.github.io/Code-as-Monitor
+0087: .
+0088: Figure 1
+0089: :
+0090: For the task “
+0091: Move the pan with lobster to the stove without losing the lobster
+0092: ”,
+0093: (a)
+0094: reactive failure detection identifies failures after they occur, and
+0095: (b)
+0096: proactive failure detection prevents foreseeable failures.
+0097: In
+0098: (a)
+0099: , at
+0100: t
+0101: 4
+0102: R
+0103: t^{R}_{4}
+0104: , the robot detects the failure after the lobster unpredictably jumps out due to the heat.
+0105: In
+0106: (b)
+0107: , pan tilting is detected at
+0108: t
+0109: 3
+0110: P
+0111: t^{P}_{3}
+0112: and corrected it at
+0113: t
+0114: 3
+0115: P
+0116: ′
+0117: t^{P^{\prime}}_{3}
+0118: , requiring real-time precision.
+0119: We formulate both tasks as spatio-temporal constraint satisfaction problems, leveraging our proposed constraint elements for precise, real-time checking.
+0120: For example, in
+0121: (a)
+0122: , a large relative distance between pan and lobster indicates failure; in
+0123: (b)
+0124: , a large angle between the pan and the horizontal plane needs correction.
+0125: (c)
+0126: shows that our method combined with an open-loop policy forms a closed-loop system, enabling proactive (
+0127: e.g.
+0128: , detecting moving glass during grasping) and reactive (
+0129: e.g.
+0130: , removing toy after grasping) failure detection in cluttered scenes.
+0131: †
+0132: †
+0133: footnotetext:
+0134: ∗
+0135: Equal contribution
+0136: †
+0137: Corresponding author
+0138: †
+0139: †
+0140: footnotetext:
+0141: ‡
+0142: Work done during internship at Galbot
+0143: 1
+0144: Introduction
+0145: As expectations grow for robots to handle long-horizon tasks within intricate environments, failures are unavoidable.
+0146: Therefore, automatically detecting and preventing those failures plays a vital role in ensuring the tasks can eventually be solved, especially for closed-loop robotic systems.
+0147: There are two modes of failure detection
+0148: [
+0149: 29
+0150: ]
+0151: ,
+0152: reactive
+0153: and
+0154: proactive
+0155: .
+0156: As depicted in
+0157: Fig.
+0158: 1
+0159: ,
+0160: reactive
+0161: failure detection aims to identify failures after they occur (
+0162: e.g.
+0163: , recognizing that lobster lands on the table,
+0164: indicating
+0165: a delivery failure).
+0166: In contrast,
+0167: proactive
+0168: failure detection aims to prevent foreseeable failures (
+0169: e.g.
+0170: , recognizing that a tilted pan could cause the lobster to fall out,
+0171: leading to
+0172: a delivery failure).
+0173: Both detection modes are even more challenging in open-set scenarios, where the failures are not predefined.
+0174: With the help of large language models (LLMs)
+0175: [
+0176: 14
+0177: ,
+0178: 60
+0179: ]
+0180: and vision-language models (VLMs)
+0181: [
+0182: 1
+0183: ,
+0184: 38
+0185: ]
+0186: , recent studies can achieve open-set
+0187: reactive
+0188: failure detection
+0189: [
+0190: 20
+0191: ,
+0192: 58
+0193: ,
+0194: 59
+0195: ,
+0196: 12
+0197: ,
+0198: 39
+0199: ,
+0200: 75
+0201: ,
+0202: 13
+0203: ,
+0204: 9
+0205: ,
+0206: 16
+0207: ,
+0208: 69
+0209: ]
+0210: as a special case of visual question answering (VQA) tasks.
+0211: However, these methods often bear compromised execution speeds and coarse-grained detection accuracy, due to the high computational costs and inadequate 3D spatio-temporal perception capability of recent LLMs/VLMs.
+0212: Moreover, open-set
+0213: proactive
+0214: failure detection, which has been less explored in the literature, presents even severer challenges as it is required to foresee potential causes of failure and monitor them in real-time with high precision to anticipate and prevent imminent failure.
+0215: Simply adapting LLMs/VLMs cannot meet such expectations.
+0216: In this work, we aim to develop an open-set failure detection framework that achieves reactive and proactive detection simultaneously, not only benefiting from the generalization power of VLMs but also enjoying high precision in monitoring failure characteristics with real-time efficiency.
+0217: We address this by formulating both tasks as a unified set of spatio-temporal constraint satisfaction problems, which can be
+0218: precisely
+0219: translated by VLMs into executable programs.
+0220: Such visual programs can efficiently verify whether entities (
+0221: e.g.
+0222: , robots, objects) or their parts in the captured environment maintain or achieve required states during or after execution (
+0223: i.e.
+0224: , satisfying constraints), so as to
+0225: immediately
+0226: prevent or detect failures.
+0227: To the best of our knowledge, this is the first attempt to integrate both detection modes within a single framework.
+0228: We name this constraint-aware visual programming framework as Code-as-Monitor (
+0229: CaM
+0230: ).
+0231: To be specific, the proposed spatio-temporal constraint satisfaction scheme abstracts the constraint-related entity or part segments from the observed images into compact geometric elements (
+0232: e.g.
+0233: , points, lines, and surfaces), as shown in
+0234: Fig.
+0235: 1
+0236: .
+0237: It simplifies the monitoring of constraint satisfaction by tracking and evaluating the spatio-temporal combinational dynamics of these elements, eliminating the most irrelevant geometric and visual details of the raw entities/parts.
+0238: The constraint element detection and tracking are grounded by our trained constraint-aware segmentation and off-the-shelf tracking models, ensuring speed, accuracy, and certain open-set adaptation capabilities.
+0239: The evaluation protocol is in the form of VLM-generated code,
+0240: i.e.
+0241: , monitor code, which is visually prompted by the starting frames of a sub-goal and its associated constraint elements, in addition to the textual constraints that must be fulfilled.
+0242: Once generated, this monitor code could detect reactive or proactive failures just by being executed according to the tracked constraint elements, without needing to call the VLMs again.
+0243: Therefore, this minimalist scheme is generalizable to open-set failure detection for unseen entities and scenes (enabled by the potential diversity of the structured associations of constraint elements) as well as common skills (powered by the rich prior knowledge offered by VLMs), maintaining sufficient detection accuracy and real-time execution speed.
+0244: We conduct extensive experiments in three simulators (
+0245: i.e.
+0246: , CLIPort
+0247: [
+0248: 57
+0249: ]
+0250: , Omnigibson
+0251: [
+0252: 31
+0253: ]
+0254: , and RLBench
+0255: [
+0256: 22
+0257: ]
+0258: ) and one real-world setting, spanning diverse manipulation tasks (
+0259: e.g.
+0260: , pick & place, articulated objects, tool-use), robot platforms (
+0261: e.g.
+0262: , UR5, Fetch, Franka) and end-effectors (
+0263: e.g.
+0264: , suction cup, gripper, dexterous hand).
+0265: The results show that
+0266: CaM
+0267: is generalizable and achieves both
+0268: reactive
+0269: and
+0270: proactive
+0271: failure detection in real-time, resulting in
+0272: 28.7
+0273: %
+0274: 28.7\%
+0275: higher success rates and reduced execution time by
+0276: 31.8
+0277: %
+0278: 31.8\%
+0279: under severe disturbances compared to the baselines.
+0280: Moreover, in
+0281: Sec.
+0282: 4.3
+0283: ,
+0284: CaM
+0285: can be integrated with the existing open-loop control policy to form a closed-loop system, enabling long-horizon tasks in cluttered scenes with environment dynamics and human disturbances.
+0286: Our contributions are summarized as follows:
+0287: •
+0288: We introduce Code-as-Monitor (
+0289: CaM
+0290: ), a novel paradigm that leverages VLMs for both
+0291: reactive
+0292: and
+0293: proactive
+0294: failure detection via constraint-aware visual programming.
+0295: •
+0296: We propose the constraint elements to enhance the accuracy and efficiency of constraint satisfaction monitoring.
+0297: •
+0298: Extensive experiments show that
+0299: CaM
+0300: is generalizable and achieves more real-time and precise failure detection than baselines across simulators and real-world settings.
+0301: 2
+0302: Related work
+0303: Figure 2
+0304: :
+0305: Overview of Code-as-Monitor. Given task instructions and prior information, the Constraint Generator derives the next subgoal and corresponding textual constraints based on multi-view observations.
+0306: The Painter maps these constraints onto images as constraint elements.
+0307: The Monitor generates monitor code from these images and tracks them for real-time monitoring.
+0308: If any constraint is violated, it outputs the reason for failure and triggers re-planning.
+0309: This framework unifies
+0310: reactive
+0311: and
+0312: proactive
+0313: failure detection via constraints, more generally abstracts relevant entities/parts through constraint elements, and ensures precise and real-time monitoring via code evaluation.
+0314: Robotic Failure Detection.
+0315: Recent advances in LLMs
+0316: [
+0317: 14
+0318: ,
+0319: 60
+0320: ,
+0321: 4
+0322: ,
+0323: 61
+0324: ]
+0325: and VLMs
+0326: [
+0327: 1
+0328: ,
+0329: 38
+0330: ,
+0331: 48
+0332: ,
+0333: 77
+0334: ,
+0335: 47
+0336: ,
+0337: 67
+0338: ,
+0339: 7
+0340: ,
+0341: 23
+0342: ,
+0343: 50
+0344: ,
+0345: 46
+0346: ,
+0347: 49
+0348: ]
+0349: greatly improve open-set
+0350: reactive
+0351: failure detection for robotic.
+0352: Current LLM-based methods either convert visual inputs into text
+0353: [
+0354: 40
+0355: ,
+0356: 56
+0357: ,
+0358: 66
+0359: ]
+0360: , potentially losing visual details, or rely on ground-truth feedback
+0361: [
+0362: 20
+0363: ,
+0364: 58
+0365: ,
+0366: 59
+0367: ,
+0368: 51
+0369: ]
+0370: , which is impractical in real-world scenarios.
+0371: Recent studies employ VLMs as failure detectors, offering binary success indicators
+0372: [
+0373: 12
+0374: ,
+0375: 39
+0376: ,
+0377: 75
+0378: ,
+0379: 69
+0380: ]
+0381: or textual explanations
+0382: [
+0383: 13
+0384: ,
+0385: 9
+0386: ]
+0387: through visual question answering (VQA), such as DoReMi
+0388: [
+0389: 16
+0390: ]
+0391: .
+0392: However, they often bear compromised execution speeds and coarse-grained detection accuracy.
+0393: Meanwhile, open-set
+0394: proactive
+0395: failure detection is rarely explored, as previous methods
+0396: [
+0397: 2
+0398: ,
+0399: 10
+0400: ]
+0401: are confined to predefined failures.
+0402: This detection mode requires foreseeing potential failure causes and monitoring them in real-time with high precision.
+0403: In this work, we formulate both
+0404: reactive
+0405: and
+0406: proactive
+0407: failure detection as constraint satisfaction problems and use VLM-generated code to evaluate them, meeting the expectations of both modes above.
+0408: Visual Prompting.
+0409: Visual prompts enhance the visual reasoning abilities of VLMs and are categorized into mask-based, point-based, and element-based methods.
+0410: Mask-based approaches like SoM
+0411: [
+0412: 65
+0413: ]
+0414: apply numbered segmentation masks on images without considering instructions, whereas instruction-guided methods like IVM
+0415: [
+0416: 74
+0417: ]
+0418: and API
+0419: [
+0420: 68
+0421: ]
+0422: generate masks to block irrelevant regions.
+0423: Point-based prompting encodes functionalities via points, including affordances
+0424: [
+0425: 28
+0426: ,
+0427: 37
+0428: ,
+0429: 70
+0430: ]
+0431: , motion
+0432: [
+0433: 44
+0434: ,
+0435: 37
+0436: ]
+0437: , and constraints like ReKep
+0438: [
+0439: 21
+0440: ]
+0441: .
+0442: However, ReKep
+0443: [
+0444: 21
+0445: ]
+0446: extracts semantic keypoints using DINOv2
+0447: [
+0448: 45
+0449: ]
+0450: and struggles to capture precise keypoints that accurately represent desired constraints.
+0451: Element-based methods like CoPa
+0452: [
+0453: 19
+0454: ]
+0455: , represent robotic control using basic elements (
+0456: e.g.
+0457: , points, lines) via pre-trained models like SAM
+0458: [
+0459: 26
+0460: ]
+0461: and GPT-4V
+0462: [
+0463: 1
+0464: ]
+0465: simply.
+0466: In contrast, this work explores constraint satisfaction monitoring and introduces constraint elements that more precisely represent relevant entities/parts.
+0467: These elements are tracked and evaluated in real-time to simplify monitoring.
+0468: Visual Programming.
+0469: Visual programming requires strong visual concept understanding and reasoning.
+0470: Prior works show strong generalization (
+0471: e.g.
+0472: , zero-shot) across various tasks, such as image editing
+0473: [
+0474: 8
+0475: ,
+0476: 17
+0477: ]
+0478: , 3D visual grounding
+0479: [
+0480: 71
+0481: ]
+0482: , and robotics control
+0483: [
+0484: 35
+0485: ,
+0486: 62
+0487: ]
+0488: , by integrating LLMs with visual modules but lose fine-grained details.
+0489: Recent studies
+0490: [
+0491: 43
+0492: ,
+0493: 63
+0494: ]
+0495: explore visual programming using VLMs, but these methods take raw RGB images as inputs with predefined primitive libraries.
+0496: In contrast, this work leverages constraint elements for visual programming and uses arithmetic operations in the code to encode their spatio-temporal combinational dynamics, presenting greater challenges.
+0497: 3
+0498: Method
+0499: Figure 3
+0500: :
+0501: Constraint Element Pipeline. Given a constraint, our model
+0502: ConSeg
+0503: generates instance-level and part-level masks across multiple views, which are projected into 3D space.
+0504: Through a series of heuristics, the desired elements are produced. Once all elements are obtained, they are annotated onto the original multi-view images. Here we display the annotation result of one element.
+0505: We first give an overview of the proposed Code-as-Monitor (
+0506: CaM
+0507: ) (
+0508: Sec.
+0509: 3.1
+0510: ).
+0511: Then, we elaborate on the constraint element in Constraint Painter, especially constraint-aware segmentation (
+0512: Sec.
+0513: 3.2
+0514: ).
+0515: Finally, we present Constraint Monitor for real-time detection (
+0516: Sec.
+0517: 3.3
+0518: ).
+0519: 3.1
+0520: Overview
+0521: The proposed
+0522: CaM
+0523: comprises three key modules: the Constraint Generator, Painter, and Monitor.
+0524: We focus on long-horizon manipulation task instructions
+0525: ℒ
+0526: global
+0527: \mathcal{L}_{\mathrm{global}}
+0528: (
+0529: e.g.
+0530: ,
+0531: “Move the pan with the bread to the stove, and be careful not to let the bread fall out”
+0532: ), using RGB-D observations
+0533: 𝒪
+0534: \mathcal{O}
+0535: from two camera views (front and top).
+0536: As shown in
+0537: Fig.
+0538: 2
+0539: , the RGB images
+0540: 𝒪
+0541: \mathcal{O}
+0542: , along with instructions
+0543: ℒ
+0544: global
+0545: \mathcal{L}_{\mathrm{global}}
+0546: , previous subgoal
+0547: l
+0548: pre
+0549: {l}_{\mathrm{pre}}
+0550: , and failure feedback from the Constraint Monitor
+0551: f
+0552: pre
+0553: f_{\mathrm{pre}}
+0554: (
+0555: e.g.
+0556: , subgoal success or failure reason), are fed into the Constraint Generator
+0557: ℱ
+0558: VLM
+0559: \mathcal{F}_{\mathrm{VLM}}
+0560: (
+0561: i.e.
+0562: , GPT-4o
+0563: [
+0564: 1
+0565: ]
+0566: ) to generate the next subgoal
+0567: l
+0568: next
+0569: {l}_{\mathrm{next}}
+0570: and associated textual constraints
+0571: 𝒞
+0572: \mathcal{C}
+0573: .
+0574: This process can be formulated as follows:
+0575: l
+0576: next
+0577: ,
+0578: 𝒞
+0579: d
+0580: ,
+0581: 𝒞
+0582: u
+0583: =
+0584: ℱ
+0585: VLM
+0586: ​
+0587: (
+0588: 𝒪
+0589: ,
+0590: ℒ
+0591: global
+0592: ,
+0593: l
+0594: pre
+0595: ,
+0596: f
+0597: pre
+0598: )
+0599: {l}_{\mathrm{next}},\mathcal{C}_{d},\mathcal{C}_{u}=\mathcal{F}_{\mathrm{VLM}}(\mathcal{O},\mathcal{L}_{\mathrm{global}},{l}_{\mathrm{pre}},{f}_{\mathrm{pre}})
+0600: (1)
+0601: where
+0602: 𝒞
+0603: d
+0604: =
+0605: {
+0606: c
+0607: d
+0608: 0
+0609: ,
+0610: c
+0611: d
+0612: 1
+0613: ,
+0614: …
+0615: ,
+0616: c
+0617: d
+0618: n
+0619: }
+0620: \mathcal{C}_{d}=\{{c}^{0}_{d},{c}^{1}_{d},\ldots,{c}^{n}_{d}\}
+0621: denotes the constraints that must be maintained during subgoal execution (
+0622: e.g.
+0623: , pan handle must be grasped, bread must remain in the pan, pan should remain horizontal during transfer), and
+0624: 𝒞
+0625: u
+0626: =
+0627: {
+0628: c
+0629: u
+0630: 0
+0631: ,
+0632: c
+0633: u
+0634: 1
+0635: ,
+0636: …
+0637: ,
+0638: c
+0639: u
+0640: k
+0641: }
+0642: \mathcal{C}_{u}=\{{c}^{0}_{u},{c}^{1}_{u},\ldots,{c}^{k}_{u}\}
+0643: refers to the constraints that must be met upon subgoal completion (
+0644: e.g.
+0645: , pan should be directly above the stove).
+0646: We successfully unify
+0647: reactive
+0648: and
+0649: proactive
+0650: failure detection as these task-specific, situation-aware constraint satisfaction problems.
+0651: In Painter, for each textual constraint
+0652: c
+0653: c
+0654: from
+0655: 𝒞
+0656: d
+0657: \mathcal{C}_{d}
+0658: or
+0659: 𝒞
+0660: u
+0661: \mathcal{C}_{u}
+0662: , we generate corresponding constraint elements
+0663: e
+0664: e
+0665: (detailed in
+0666: Sec.
+0667: 3.2
+0668: ) from observations
+0669: 𝒪
+0670: \mathcal{O}
+0671: .
+0672: These elements, which are composed of 3D points, abstract the constraint-related entities or their parts to represent the desired textual constraint more easily (
+0673: e.g.
+0674: , the constant distance between green points on bread and pan determines if bread remains in pan, as shown in
+0675: Fig.
+0676: 2
+0677: .)
+0678: These generated elements are then aggregated into the final set
+0679: ℰ
+0680: =
+0681: {
+0682: e
+0683: 0
+0684: ,
+0685: e
+0686: 1
+0687: ,
+0688: …
+0689: ,
+0690: e
+0691: n
+0692: +
+0693: k
+0694: }
+0695: \mathcal{E}=\{{e}^{0},{e}^{1},\ldots,{e}^{n+k}\}
+0696: , and numerically annotated across all views to produce the final visual prompted images
+0697: 𝒪
+0698: ℰ
+0699: \mathcal{O}_{\mathcal{E}}
+0700: .
+0701: In Monitor, we provide GPT-4o
+0702: [
+0703: 1
+0704: ]
+0705: with the next subgoal
+0706: l
+0707: next
+0708: l_{\mathrm{next}}
+0709: , textual constraints
+0710: 𝒞
+0711: \mathcal{C}
+0712: , and annotated observations
+0713: 𝒪
+0714: ℰ
+0715: \mathcal{O}_{\mathcal{E}}
+0716: for constraint-aware visual programming to generate the evaluation protocol,
+0717: i.e.
+0718: , monitor code.
+0719: This code inputs the elements’ 3D positions, calculates arithmetic operations within it, and returns a boolean to indicate potential or actual failure and a string to describe its reason.
+0720: During subgoal execution, Monitor tracks the elements and evaluates the spatio-temporal combinational dynamics of these elements.
+0721: If the code returns
+0722: False
+0723: , the policy execution halts immediately, and the accompanying string is used as feedback
+0724: f
+0725: pre
+0726: f_{\mathrm{pre}}
+0727: for re-planning. Otherwise, the subgoal is considered completed. In either case, the cycle is repeated.
+0728: 3.2
+0729: Constraint Element
+0730: To simplify the monitoring of constraint satisfaction, we introduce constraint elements by abstracting constraint-related entities/parts into compact geometric elements (
+0731: e.g.
+0732: , points, lines) to get rid of the most irrelevant geometric and visual details, making them easier to track and generalize.
+0733: Pipeline.
+0734: The constraint element generation pipeline is shown in
+0735: Fig.
+0736: 3
+0737: .
+0738: Our trained multi-granularity constraint-aware model
+0739: ConSeg
+0740: performs two inference steps for each
+0741: c
+0742: c
+0743: and each RGB image
+0744: o
+0745: o
+0746: from the set of views
+0747: O
+0748: O
+0749: .
+0750: First, instance-level masks
+0751: ℳ
+0752: i
+0753: \mathcal{M}_{i}
+0754: are generated to capture constraint-related entities.
+0755: Then, fine-grained part-level masks
+0756: ℳ
+0757: p
+0758: \mathcal{M}_{p}
+0759: and corresponding element type descriptions
+0760: l
+0761: e
+0762: l_{\mathrm{e}}
+0763: are produced, as shown in
+0764: Fig.
+0765: 4
+0766: .
+0767: Using corresponding depth data, we project
+0768: ℳ
+0769: p
+0770: \mathcal{M}_{p}
+0771: from all views into 3D space, fusing them into a point cloud.
+0772: However, directly tracking and evaluating the spatio-temporal combinational dynamics of these constraint-related entities/parts is challenging.
+0773: Therefore, we convert these entities into proposed constraint elements.
+0774: We first apply voxelization to the point cloud with voxel size determined by element type
+0775: l
+0776: e
+0777: l_{\mathrm{e}}
+0778: (
+0779: e.g.
+0780: , the surface needs at least
+0781: 3
+0782: 3
+0783: points, we divide the occupied space into
+0784: 2
+0785: ×
+0786: 2
+0787: 2\times 2
+0788: voxels.).
+0789: Then we cluster one representative point within each voxel and filter them to a specified number, also determined by
+0790: l
+0791: e
+0792: l_{\mathrm{e}}
+0793: to extract the final desired 3D points.
+0794: We connect points within each instance-level mask
+0795: ℳ
+0796: i
+0797: \mathcal{M}_{i}
+0798: to form the constraint element
+0799: e
+0800: e
+0801: associated with constraint
+0802: c
+0803: c
+0804: .
+0805: Notably, points modeled as end-effectors (
+0806: e.g.
+0807: , the points of the fingertips and hand’s center represent a dexterous hand) can be directly obtained from forward kinematics, bypassing the process above.
+0808: Additionally, we perform parallel inference of
+0809: ConSeg
+0810: across all views to expedite the acquisition of the final set
+0811: ℰ
+0812: \mathcal{E}
+0813: and their annotations onto the corresponding views
+0814: 𝒪
+0815: ℰ
+0816: \mathcal{O}_{\mathcal{E}}
+0817: .
+0818: Moreover, this minimalist approach,
+0819: i.e.
+0820: , constraint elements, emphasizes the most relevant entities/parts, enabling generalization to unseen scenes and entities, which is critical for open-set failure detection.
+0821: For more details, please check Supp.
+0822: B.3
+0823: .
+0824: Constraint-aware Segmentation.
+0825: Since the textual constraint does not explicitly specify relevant entities/parts, we require a model capable of logical reasoning and certain open-set adaptation, enabling precise constraint-aware instance and part-level segmentation.
+0826: As depicted in
+0827: Fig.
+0828: 4
+0829: , we propose
+0830: ConSeg
+0831: , which builds upon LISA
+0832: [
+0833: 27
+0834: ]
+0835: comprising a VLM
+0836: ℱ
+0837: VLM
+0838: \mathcal{F}_{\mathrm{VLM}}
+0839: (
+0840: i.e.
+0841: , LLaVA
+0842: [
+0843: 38
+0844: ]
+0845: ) with the vision encoder
+0846: ℱ
+0847: enc
+0848: \mathcal{F}_{\mathrm{enc}}
+0849: and decoder
+0850: ℱ
+0851: dec
+0852: \mathcal{F}_{\mathrm{dec}}
+0853: from SAM
+0854: [
+0855: 26
+0856: ]
+0857: .
+0858: The textual constraint
+0859: c
+0860: c
+0861: and the image
+0862: o
+0863: o
+0864: are input into the VLM
+0865: ℱ
+0866: VLM
+0867: \mathcal{F}_{\mathrm{VLM}}
+0868: to generate an embedding for the
+0869: <SEG>
+0870: token.
+0871: The VLM outputs a textual description
+0872: l
+0873: e
+0874: l_{\mathrm{e}}
+0875: of the desired element type additionally for part-level segmentation.
+0876: The decoder
+0877: ℱ
+0878: dec
+0879: \mathcal{F}_{\mathrm{dec}}
+0880: then generates the segmentation mask
+0881: ℳ
+0882: \mathcal{M}
+0883: by leveraging visual features from the vision encoder
+0884: ℱ
+0885: enc
+0886: \mathcal{F}_{\mathrm{enc}}
+0887: based on the current observation
+0888: o
+0889: o
+0890: , and features derived from the final-layer embedding
+0891: h
+0892: <SEG>
+0893: h_{\texttt{<SEG>}}
+0894: of the
+0895: <SEG>
+0896: token, transformed via an MLP (
+0897: ℱ
+0898: MLP
+0899: \mathcal{F}_{\mathrm{MLP}}
+0900: ).
+0901: The process can be formulated as follows:
+0902: l
+0903: e
+0904: ,
+0905: h
+0906: <SEG>
+0907: =
+0908: ℱ
+0909: VLM
+0910: ​
+0911: (
+0912: c
+0913: ,
+0914: o
+0915: )
+0916: ,
+0917: ℳ
+0918: =
+0919: ℱ
+0920: dec
+0921: ​
+0922: (
+0923: ℱ
+0924: MLP
+0925: ​
+0926: (
+0927: h
+0928: <SEG>
+0929: )
+0930: ,
+0931: ℱ
+0932: enc
+0933: ​
+0934: (
+0935: o
+0936: )
+0937: )
+0938: l_{\mathrm{e}},h_{\texttt{<SEG>}}=\mathcal{F}_{\mathrm{VLM}}(c,o),\mathcal{M}=\mathcal{F}_{\mathrm{dec}}(\mathcal{F}_{\mathrm{MLP}}(h_{\texttt{<SEG>}}),\mathcal{F}_{\mathrm{enc}}(o))
+0939: (2)
+0940: The entire pipeline, including additional LoRA
+0941: [
+0942: 18
+0943: ]
+0944: parameters, is optimized end-to-end while keeping the parameters of the VLM
+0945: ℱ
+0946: VLM
+0947: \mathcal{F}_{\mathrm{VLM}}
+0948: and vision encoder
+0949: ℱ
+0950: enc
+0951: \mathcal{F}_{\mathrm{enc}}
+0952: frozen.
+0953: Dataset and Collection Pipeline.
+0954: Our dataset utilizes images from BridgeData V2
+0955: [
+0956: 64
+0957: ]
+0958: .
+0959: While BridgeData V2 provides trajectory-level instructions, we require frame-level annotations for per-frame subgoals and constraints.
+0960: To address this, we sample pick-and-place data, using external references (
+0961: e.g.
+0962: , gripper open/close states) to generate
+0963: 10,181
+0964: 10,181
+0965: trajectories with
+0966: 219,356
+0967: 219,356
+0968: images.
+0969: We employ GPT-4o to decompose trajectory instructions into subgoals, constraints, and object-part associations to generate ground-truth annotations.
+0970: Instance-level and part-level segmentations are performed using Grounded SAM
+0971: [
+0972: 53
+0973: ]
+0974: and Semantic SAM
+0975: [
+0976: 32
+0977: ]
+0978: , respectively.
+0979: These outputs are integrated and refined through manual inspection to produce the multi-granularity dataset, which is combined with LISA’s training data to fine-tune our model. More details are in Supp.
+0980: B
+0981: .
+0982: Figure 4
+0983: :
+0984: ConSeg
+0985: architecture. Here we display the part-level segmentation, which will output the desired element type and mask.
+0986: 3.3
+0987: Real-time Monitor Module
+0988: After annotating constraint elements with unique colors and numerical labels across all views, these images serve as visual prompts to generate monitor code via GPT-4o
+0989: [
+0990: 1
+0991: ]
+0992: with constraints
+0993: 𝒞
+0994: \mathcal{C}
+0995: and the next subgoal
+0996: l
+0997: next
+0998: l_{\mathrm{next}}
+0999: .
+1000: The generated code accepts the elements’ 3D positions as input and performs arithmetic operations (
+1001: e.g.
+1002: , NumPy-supported calculations) to evaluate spatio-temporal constraints at various stages (
+1003: i.e.
+1004: , during execution or upon completion), as shown in
+1005: Fig.
+1006: 2
+1007: code block.
+1008: It returns a boolean flag indicating potential or actual failure if the computed result exceeds a predefined tolerance (
+1009: e.g.
+1010: , accepting deviations of the pan’s surface normal from the z-axis within
+1011: 15
+1012: ∘
+1013: 15^{\circ}
+1014: ), along with a string explaining the cause.
+1015: By tracking the elements using CoTracker
+1016: [
+1017: 24
+1018: ]
+1019: , we achieve real-time detection via VLMs without frequent calls, reducing the computational cost.
+1020: Notably, including both current positions and historical trajectories of the elements as input allows us to monitor tasks needing high precision, such as the requirement of
+1021: 2
+1022: 2
+1023: cm movement or
+1024: 180
+1025: ∘
+1026: 180^{\circ}
+1027: rotation, which previous
+1028: reactive
+1029: detection methods could not address through direct VLM queries using raw RGB images.
+1030: Moreover, the potential diversity in the structured associations of constraint elements within the code (
+1031: e.g.
+1032: , calculating the angle between the normal vector of the pan’s surface element and the z-axis determines if the pan is level, as shown in
+1033: Fig.
+1034: 2
+1035: code block) and rich prior knowledge offered by VLMs enable generalization to certain unseen tasks requiring common skills.
+1036: 4
+1037: Experiments
+1038: Our experiments aim to address the following questions:
+1039: (1)
+1040: Can
+1041: CaM
+1042: achieve open-set
+1043: reactive
+1044: and
+1045: proactive
+1046: failure detection across diverse robots, end-effectors, and objects, both in simulator (
+1047: Sec.
+1048: 4.2
+1049: ) and on real robots (
+1050: Sec.
+1051: 4.3
+1052: )?
+1053: (2)
+1054: Can
+1055: ConSeg
+1056: infer multi-granularity constraint-aware masks for unseen scenes and objects (
+1057: Sec.
+1058: 4.4
+1059: )?
+1060: (3)
+1061: Which design choices greatly enhance the performance (
+1062: Sec.
+1063: 4.5
+1064: )?
+1065: 4.1
+1066: Experimental Setup
+1067: Environment Settings.
+1068: We evaluate
+1069: CaM
+1070: across three simulators (
+1071: i.e.
+1072: , CLIPort
+1073: [
+1074: 57
+1075: ]
+1076: , Omnigibson
+1077: [
+1078: 31
+1079: ]
+1080: , and RLBench
+1081: [
+1082: 22
+1083: ]
+1084: ) and a real-world setting.
+1085: In CLIPort, we employ a UR5 arm equipped with a suction cup for pick-and-place and a spatula for pushing, controlled by pre-trained CLIPort policy
+1086: [
+1087: 57
+1088: ]
+1089: .
+1090: Omnigibson features a Fetch robot with a gripper, controlled by ReKep
+1091: [
+1092: 21
+1093: ]
+1094: .
+1095: RLBench uses a Franka arm with a gripper, controlled by ARP
+1096: [
+1097: 73
+1098: ]
+1099: .
+1100: We use a UR5 arm with a Leap Hand
+1101: [
+1102: 55
+1103: ]
+1104: for real-world experiments, controlled by an open-loop policy named DexGraspNet 2.0
+1105: [
+1106: 72
+1107: ]
+1108: .
+1109: More details are provided in Supp.
+1110: C
+1111: .
+1112: ConSeg
+1113: Configuration.
+1114: Given the significant gap between simulation and real-world data, we fine-tune the
+1115: ConSeg
+1116: model with
+1117: 100
+1118: 100
+1119: trajectories collected from each simulation environment before deploying it.
+1120: To share the same data collection and auto-label pipeline, this fine-tuning dataset is also limited to pick-and-place tasks.
+1121: We manually annotate trajectory-level instructions, and image frames are captured at a frequency of
+1122: 1
+1123: 1
+1124: Hz.
+1125: Using only pick-and-place task data helps mitigate the data distribution gap while allowing us to validate the model’s generalization to unseen tasks, including tool-use, articulated objects, and long-horizon complex tasks.
+1126: Notably, the
+1127: ConSeg
+1128: model used in real-world experiments is not fine-tuned, ensuring a rigorous evaluation of
+1129: ConSeg
+1130: ’s generalization capability.
+1131: Task Settings.
+1132: We introduce disturbances across all environments to induce failures, classified by the affected constraints (
+1133: e.g.
+1134: , points, lines, surfaces).
+1135: We evaluate task success rate, execution time, and additional token usage in Omnigibson.
+1136: Notably, we don’t assess failure judgment success rate because our code operates continuously in real-time, rendering this metric inapplicable.
+1137: Moreover, there is no standard for evaluating proactive failure detection accuracy.
+1138: Detailed evaluation settings are provided in each section.
+1139: Baselines.
+1140: We compare DoReMi (DRM)
+1141: [
+1142: 16
+1143: ]
+1144: as the baseline for all settings, which uses VLMs to detect intermediate failures during execution via frequent VQA-based queries.
+1145: In CLIPort, we include Inner Monologue
+1146: [
+1147: 20
+1148: ]
+1149: baseline, which detects failures only upon each subgoal completion.
+1150: 4.2
+1151: Main Results in Simulator
+1152: 4.2.1
+1153: Results in CLIPort
+1154: We evaluate two tasks in CLIPort:
+1155: (1)
+1156: Stack in Order: The robot must stack blocks in a specified order, including two point-level disturbances:
+1157: (a) with per-step probability
+1158: p
+1159: p
+1160: , the suction cup may release a block, causing it to drop;
+1161: (b) placement positions are perturbed by uniform noise in
+1162: [
+1163: 0
+1164: ,
+1165: q
+1166: ]
+1167: [0,q]
+1168: cm, potentially leading to tower collapse.
+1169: Success is defined as correctly stacking the blocks within
+1170: 70
+1171: 70
+1172: s.
+1173: (2)
+1174: Sweep Half the Blocks:
+1175: To address the pre-trained policy’s tendency to sweep all blocks, the robot must determine when to halt, sweeping half of the blocks (±10%) into a specified colored area within
+1176: 30
+1177: 30
+1178: s.
+1179: Success is achieved by meeting these criteria.
+1180: Tab.
+1181: 1
+1182: shows the mean results over
+1183: 5
+1184: 5
+1185: different seeds, each with
+1186: 12
+1187: 12
+1188: episodes.
+1189: For more details, please check Supp.
+1190: D.1
+1191: .
+1192: The following paragraphs present our analyses.
+1193: Code better monitors 3D space relations.
+1194: As shown in the
+1195: Tab.
+1196: 1
+1197: , Under the most severe disturbances (
+1198: p
+1199: p
+1200: =
+1201: 0.3
+1202: 0.3
+1203: ,
+1204: q
+1205: q
+1206: =
+1207: 3
+1208: 3
+1209: ) in “Stack in Order”,
+1210: CaM
+1211: achieves a
+1212: 17.5
+1213: %
+1214: 17.5\%
+1215: higher success rate than DoReMi.
+1216: Frequent VLM queries lead to increased incorrect failure judgments due to a limited 3D spatial understanding from single images, compared to code-based evaluation of block positions.
+1217: For example, after placing the green block on the red and preparing to pick up the blue, DoReMi mistakenly thinks that the green block is no longer atop the red, causing it to re-execute the previous subgoal.
+1218: Code with elements achieve
+1219: reactive
+1220: and
+1221: proactive
+1222: failure detetction.
+1223: As shown in
+1224: Tab.
+1225: 1
+1226: , under severe disturbances in “Stack in Order”,
+1227: CaM
+1228: reduces execution time by
+1229: 38.7
+1230: %
+1231: 38.7\%
+1232: and
+1233: 14.4
+1234: %
+1235: 14.4\%
+1236: compared to Inner Monologue
+1237: [
+1238: 20
+1239: ]
+1240: , which only detects failures upon subgoal completion, and DoReMi
+1241: [
+1242: 16
+1243: ]
+1244: , which suffers from misjudgments due to repeated VLM queries, respectively.
+1245: In contrast,
+1246: CaM
+1247: unifies both
+1248: reactive
+1249: and
+1250: proactive
+1251: failure detection with high precision in real-time, especially in preventing foreseeable failures.
+1252: For example, if the green block is placed on the red block with heavy placement position disturbance,
+1253: CaM
+1254: anticipates that further stacking the blue may lead to collapse and then stabilizes the green block before proceeding.
+1255: Code with elements leads to more accurate counting.
+1256: As shown in the
+1257: Tab.
+1258: 1
+1259: , in “Sweep Half the Blocks”,
+1260: CaM
+1261: achieves average success rates
+1262: 4.5
+1263: ×
+1264: 4.5\times
+1265: higher than DoReMi
+1266: [
+1267: 16
+1268: ]
+1269: .
+1270: Calculating the block points in the designated surface region provides more accurate results than directly using the VLM to count, enabling a more precise halting of the policy to complete the task.
+1271: Table 1
+1272: :
+1273: Performance in CLIPort. We report the success rate and execution time, compared to CLIPort (CP)
+1274: [
+1275: 57
+1276: ]
+1277: , with Inner Monologue (IM)
+1278: [
+1279: 20
+1280: ]
+1281: and DoReMi (DRM)
+1282: [
+1283: 16
+1284: ]
+1285: .
+1286: Tasks with
+1287: Success Rate(%)
+1288: ↑
+1289: \uparrow
+1290: Execution Time(s)
+1291: ↓
+1292: \downarrow
+1293: disturbance
+1294: CP
+1295: +IM
+1296: +DRM
+1297: +
+1298: Ours
+1299: +IM
+1300: +DRM
+1301: +
+1302: Ours
+1303: Stack in
+1304: p
+1305: p
+1306: =0.0
+1307: 100.0
+1308: 100.0
+1309: 100.0
+1310: 100.0
+1311: 13.4
+1312: 13.4
+1313: 13.4
+1314: order with
+1315: p
+1316: p
+1317: =0.15
+1318: 56.67
+1319: 81.67
+1320: 83.33
+1321: 95.00
+1322: 34.8
+1323: 26.00
+1324: 21.0
+1325: drop
+1326: p
+1327: p
+1328: p
+1329: p
+1330: =0.3
+1331: 21.67
+1332: 75.00
+1333: 76.67
+1334: 88.33
+1335: 42.8
+1336: 34.20
+1337: 25.4
+1338: Stack in
+1339: q
+1340: q
+1341: =1
+1342: 90.00
+1343: 90.00
+1344: 96.67
+1345: 98.33
+1346: 24.8
+1347: 24.6
+1348: 24.2
+1349: order with
+1350: q
+1351: q
+1352: =2
+1353: 41.67
+1354: 71.67
+1355: 75.00
+1356: 83.33
+1357: 39.4
+1358: 37.0
+1359: 29.2
+1360: noise
+1361: q
+1362: q
+1363: q
+1364: q
+1365: =3
+1366: 15.00
+1367: 40.00
+1368: 40.00
+1369: 63.33
+1370: 58.2
+1371: 54.2
+1372: 36.8
+1373: Sweep Half the Blocks
+1374: 0.00
+1375: 18.33
+1376: 16.67
+1377: 75.00
+1378: 22.0
+1379: 16.6
+1380: 16.4
+1381: Table 2
+1382: :
+1383: Performance in Omnigibson. We report the success rate (SR), execution time, and token usage, compared to DoReMi (DRM)
+1384: [
+1385: 16
+1386: ]
+1387: .
+1388: Method
+1389: Slot Pen (Point-level Disturbances)
+1390: Stow Book (Line-level Disturbances)
+1391: Pour Tea (Surface-level Disturbances)
+1392: SR with Disturbance(%)
+1393: ↑
+1394: \uparrow
+1395: Time
+1396: Token
+1397: SR with Disturbance(%)
+1398: ↑
+1399: \uparrow
+1400: Time
+1401: Token
+1402: SR with Disturbance(%)
+1403: ↑
+1404: \uparrow
+1405: Time
+1406: Token
+1407: None
+1408: Dist.(a)
+1409: Dist.(b)
+1410: Dist.(c)
+1411: (s)
+1412: ↓
+1413: \downarrow
+1414: (k)
+1415: ↓
+1416: \downarrow
+1417: None
+1418: Dist.(a)
+1419: Dist.(b)
+1420: Dist.(c)
+1421: (s)
+1422: ↓
+1423: \downarrow
+1424: (k)
+1425: ↓
+1426: \downarrow
+1427: None
+1428: Dist.(a)
+1429: Dist.(b)
+1430: Dist.(c)
+1431: (s)
+1432: ↓
+1433: \downarrow
+1434: (k)
+1435: ↓
+1436: \downarrow
+1437: ReKep
+1438: [
+1439: 21
+1440: ]
+1441: 30
+1442: 20
+1443: 10
+1444: 10
+1445: -
+1446: -
+1447: 40
+1448: 30
+1449: 30
+1450: 20
+1451: -
+1452: -
+1453: 20
+1454: 20
+1455: 20
+1456: 10
+1457: -
+1458: -
+1459: +DRM
+1460: 40
+1461: 10
+1462: 20
+1463: 20
+1464: 177.84
+1465: 54.54
+1466: 50
+1467: 40
+1468: 20
+1469: 40
+1470: 127.17
+1471: 38.67
+1472: 0
+1473: 0
+1474: 0
+1475: 0
+1476: -
+1477: -
+1478: +Ours
+1479: 60
+1480: 50
+1481: 40
+1482: 40
+1483: 101.85
+1484: 25.82
+1485: 70
+1486: 60
+1487: 70
+1488: 60
+1489: 93.08
+1490: 18.67
+1491: 50
+1492: 40
+1493: 40
+1494: 30
+1495: 174.55
+1496: 44.19
+1497: Figure 5
+1498: :
+1499: Example of Real-world Evaluation.
+1500: The red bounding box shows the current grasp target, which may shift due to environmental changes.
+1501: CaM
+1502: monitors and adapts to these changes in real-time, resulting in a closed-loop system with an open-loop policy.
+1503: 4.2.2
+1504: Results in Omnigibson
+1505: We conduct experiments on three tasks in Omnigibson, each involving a distinct type of constraint-element disturbance:
+1506: (1)
+1507: Slot Pen: Insert a pen into a holder, facing point-level disturbances wherein
+1508: (a) pen is moved during grasping;
+1509: (b) pen is dropped during transport;
+1510: (c) holder is moved during insertion.
+1511: (2)
+1512: Stow Book: Place a book to a bookshelf vertically, with line-level disturbances where
+1513: (a) book is randomly rotated during grasping;
+1514: (b) end-effector joint is randomly actuated to alter the book pose;
+1515: (c) book is reoriented horizontally after placement.
+1516: (3)
+1517: Pour Tea: Pours from a teapot into a teacup, encountering surface-level disturbances wherein
+1518: (a) teapot is tilted forward/backward during movement;
+1519: (b) end-effector joint is actuated to induce a lateral tilt of the teapot during movement;
+1520: (c) teapot is returned to a horizontal position during pouring.
+1521: Tab.
+1522: 2
+1523: reports the results across three tasks, each including one no-disturbance trial and three specific-disturbance trials, with
+1524: 10
+1525: 10
+1526: runs for each setting.
+1527: More details are provided in Supp.
+1528: D.2
+1529: .
+1530: Code with elements detects richer failures.
+1531: In
+1532: Tab.
+1533: 2
+1534: , only
+1535: CaM
+1536: can detect failures caused by surface-level disturbances in “Pour Tea” compared to DoReMi
+1537: [
+1538: 16
+1539: ]
+1540: .
+1541: The reason is that changes in the teapot’s pitch and roll angles are hard to detect by querying VLM via VQA using one current image.
+1542: The misjudgment leads to a
+1543: 0
+1544: %
+1545: 0\%
+1546: success rate of DoReMi in this task.
+1547: Notably, DoReMi’s success rate is sometimes lower than that of ReKep alone due to VLM’s limited spatio-temporal understanding of single images.
+1548: Table 3
+1549: :
+1550: Performance of Single Pick & Place. We report the success rate and execution time. DGN donates DexGraspNet 2.0
+1551: [
+1552: 72
+1553: ]
+1554: .
+1555: Tasks with
+1556: Object
+1557: Success Rate(%)
+1558: ↑
+1559: \uparrow
+1560: Execution Time(s)
+1561: ↓
+1562: \downarrow
+1563: disturbance
+1564: types
+1565: DGN
+1566: +DRM
+1567: +
+1568: Ours
+1569: +DRM
+1570: +
+1571: Ours
+1572: Pick & Place
+1573: Deformable
+1574: 0.00
+1575: 83.33
+1576: 96.67
+1577: 61.8
+1578: 46.3
+1579: with the
+1580: Transparent
+1581: 0.00
+1582: 66.67
+1583: 93.33
+1584: 72.6
+1585: 48.1
+1586: objects being
+1587: Small Rigid
+1588: 0.00
+1589: 80.0
+1590: 96.67
+1591: 65.7
+1592: 45.4
+1593: moved
+1594: Large Geometric
+1595: 0.00
+1596: 86.67
+1597: 96.67
+1598: 68.9
+1599: 45.3
+1600: Pick & Place
+1601: Deformable
+1602: 0.00
+1603: 76.67
+1604: 93.33
+1605: 68.7
+1606: 62.5
+1607: with the
+1608: Transparent
+1609: 0.00
+1610: 60.00
+1611: 90.00
+1612: 77.7
+1613: 62.7
+1614: objects being
+1615: Small Rigid
+1616: 0.00
+1617: 63.33
+1618: 93.33
+1619: 69.8
+1620: 60.5
+1621: removed
+1622: Large Geometric
+1623: 0.00
+1624: 76.67
+1625: 96.67
+1626: 72.3
+1627: 60.3
+1628: Table 4
+1629: :
+1630: Performance of Reasoning Pick & Place in cluttered scene. We report the success rate.
+1631: The robot is controlled by an open-loop policy named DexGraspNet 2.0 (DGN)
+1632: [
+1633: 72
+1634: ]
+1635: .
+1636: w/ CE with
+1637: ✓
+1638: \checkmark
+1639: indicates using constraint elements; otherwise, constraint-aware entities or parts are used for tracking and code computation.
+1640: Tasks
+1641: w/ CE
+1642: Success Rate(%)
+1643: ↑
+1644: \uparrow
+1645: DGN
+1646: +DRM
+1647: +
+1648: Ours
+1649: Clear all objects on table except for animals
+1650: ✓
+1651: 0.00
+1652: 10.00
+1653: 60.00
+1654: ✗
+1655: 0.00
+1656: 10.00
+1657: 20.00
+1658: Grasp the animals according to their
+1659: ✓
+1660: 0.00
+1661: 0.00
+1662: 90.00
+1663: distances to fruits, from nearest to farthest
+1664: Code with elements detects failure with lower computational cost.
+1665: As shown in
+1666: Tab.
+1667: 2
+1668: , we achieve a
+1669: 34.8
+1670: %
+1671: 34.8\%
+1672: reduction in execution time and a
+1673: 52.2
+1674: %
+1675: 52.2\%
+1676: decrease in token count compared to DoReMi
+1677: [
+1678: 16
+1679: ]
+1680: .
+1681: This improvement stems from
+1682: proactive
+1683: failure detection, which prevents more severe failures ahead in real-time for timely re-planning while generating code only once per subgoal.
+1684: For example, in “Pour Tea”,
+1685: CaM
+1686: detects failure by monitoring the teapot’s tilt angle in real-time, avoiding frequent VLM checks.
+1687: 4.2.3
+1688: Results in RLBench
+1689: We further evaluate
+1690: CaM
+1691: on RLbench and demonstrate its superior generalization across diverse manipulation tasks, including articulated objects, rotational manipulation, and tool use.
+1692: Experimental details can be found in Supp.
+1693: D.3
+1694: .
+1695: Table 5
+1696: :
+1697: Performance of reasoning and constraint-aware segmentation. FMC denotes the foundation model combination baseline.
+1698: Method
+1699: ReasonSeg
+1700: ConstraintSeg
+1701: Instance-level
+1702: Instance-level
+1703: Part-level
+1704: gIoU
+1705: cIoU
+1706: gIoU
+1707: cIoU
+1708: gIoU
+1709: cIoU
+1710: OVSeg
+1711: [
+1712: 34
+1713: ]
+1714: 28.5
+1715: 18.6
+1716: 32.9
+1717: 31.4
+1718: 20.2
+1719: 21.5
+1720: GRES
+1721: [
+1722: 36
+1723: ]
+1724: 22.4
+1725: 19.9
+1726: 28.6
+1727: 26.4
+1728: 22.7
+1729: 22.6
+1730: X-Decoder
+1731: [
+1732: 78
+1733: ]
+1734: 22.6
+1735: 17.9
+1736: 27.8
+1737: 28.0
+1738: 23.5
+1739: 25.1
+1740: SEEM
+1741: [
+1742: 79
+1743: ]
+1744: 25.5
+1745: 21.2
+1746: 29.4
+1747: 28.0
+1748: 23.1
+1749: 24.8
+1750: PixelLM
+1751: [
+1752: 54
+1753: ]
+1754: 56.0
+1755: 61.4
+1756: 44.4
+1757: 43.2
+1758: 24.1
+1759: 22.6
+1760: LISA-13B
+1761: [
+1762: 27
+1763: ]
+1764: 56.6
+1765: 65.1
+1766: 42.1
+1767: 38.9
+1768: 23.4
+1769: 24.3
+1770: FMC
+1771: 51.2
+1772: 53.3
+1773: 49.3
+1774: 49.6
+1775: 40.8
+1776: 39.3
+1777: ConSeg
+1778: -13B
+1779: 55.7
+1780: 63.9
+1781: 62.1
+1782: 68.7
+1783: 60.2
+1784: 65.3
+1785: Figure 6
+1786: :
+1787: Visual comparison between our
+1788: ConSeg
+1789: and LISA
+1790: [
+1791: 27
+1792: ]
+1793: at instance and part level. The red masks are the segmentation results.
+1794: 4.3
+1795: Main Results in Real World
+1796: We conduct real-world evaluations on two tasks:
+1797: (1)
+1798: Simple Pick & Place: The robot has
+1799: 70
+1800: 70
+1801: s to pick up objects and place them at specified locations, facing two disturbances: (a) moving the object during grasping, and (b) removing the object from hand during movement.
+1802: We test four object types (
+1803: e.g.
+1804: , deformable, transparent), selecting
+1805: 3
+1806: 3
+1807: examples per type and conducting
+1808: 10
+1809: 10
+1810: trials for each (see
+1811: Tab.
+1812: 3
+1813: ).
+1814: (2)
+1815: Reasoning Pick & Place: The robot executes long-horizon tasks, involving ambiguous terms (
+1816: e.g.
+1817: , “fruit”, “animal”), under the same disturbances.
+1818: We evaluate
+1819: 2
+1820: 2
+1821: long-horizon tasks in cluttered scenes, performing
+1822: 10
+1823: 10
+1824: trials each (see
+1825: Tab.
+1826: 4
+1827: ).
+1828: For more details, please check Supp.
+1829: D.4
+1830: .
+1831: The following paragraphs present our analyses.
+1832: Elements generally abstract constraints and relevant entities.
+1833: As shown in
+1834: Tab.
+1835: 3
+1836: , using a different end-effector (
+1837: i.e.
+1838: , Leap Hand
+1839: [
+1840: 55
+1841: ]
+1842: ) in Simple Pick & Place,
+1843: CaM
+1844: also achieves success rates surpassing DoReMi
+1845: [
+1846: 16
+1847: ]
+1848: by
+1849: 20.4
+1850: %
+1851: 20.4\%
+1852: when handling different kinds of objects (
+1853: e.g.
+1854: , deformable).
+1855: We find that abstracting constraint-related entities/parts removes the irrelevant visual details, enabling generalization to different kinds of entities in unseen scenes (as discussed in
+1856: Sec.
+1857: 3.2
+1858: ), leading to easier tracking and code evaluation.
+1859: Reactive
+1860: and
+1861: Proactive
+1862: failure detection combined with an open-loop policy forms a close-loop system.
+1863: Tab.
+1864: 4
+1865: shows that only
+1866: CaM
+1867: successfully handles long-horizon tasks in cluttered scenes, while all baselines fail.
+1868: These tasks are challenging as the robot is controlled by an open-loop policy that cannot handle environment dynamics and human disturbances in a closed-loop manner.
+1869: By incorporating both
+1870: reactive
+1871: and
+1872: proactive
+1873: failure detection with the open-loop policy, as shown in
+1874: Fig.
+1875: 5
+1876: , the robot can dynamically adjust its target object in real-time.
+1877: For example, when a human moves the horse or pear during the task, the robot adapts by grasping the animal closest to the fruit, effectively forming a closed-loop system.
+1878: Table 6
+1879: :
+1880: Ablation studies in Omnigibson’s “Stow Book”, assessing the impact of Multi-View (MV), Constraint-aware Segmentation (CS) for elements, and Connect Points (CP) for element formation.
+1881: MV
+1882: CS
+1883: CP
+1884: Success Rate with Disturbance(%)
+1885: ↑
+1886: \uparrow
+1887: None
+1888: Dist.(a)
+1889: Dist.(b)
+1890: Dist.(c)
+1891: Avg
+1892: ✗
+1893: ✓
+1894: ✓
+1895: 40.0
+1896: 40.0
+1897: 30.0
+1898: 50.0
+1899: 40.0
+1900: ✓
+1901: ✗
+1902: ✓
+1903: 50.0
+1904: 40.0
+1905: 40.0
+1906: 40.0
+1907: 42.5
+1908: ✓
+1909: ✓
+1910: ✗
+1911: 60.0
+1912: 50.0
+1913: 60.0
+1914: 50.0
+1915: 55.0
+1916: ✓
+1917: ✓
+1918: ✓
+1919: 70.0
+1920: 60.0
+1921: 70.0
+1922: 60.0
+1923: 65.0
+1924: 4.4
+1925: Main Results of Segmentation
+1926: Tab.
+1927: 5
+1928: presents segmentation results comparing our
+1929: ConSeg
+1930: , with SOTA models and a Foundation Model Combination (FMC) baseline.
+1931: FMC integrates GPT-4o for reasoning over tasks and constraints to identify relevant instances and parts, along with Grounded SAM
+1932: [
+1933: 53
+1934: ]
+1935: and Semantic SAM
+1936: [
+1937: 32
+1938: ]
+1939: for instance and part-level segmentation, respectively, similar to our data collection pipeline.
+1940: We evaluate performance on the ReasonSeg
+1941: [
+1942: 27
+1943: ]
+1944: benchmark and our proposed Constraint-Aware Segmentation (ConstraintSeg) benchmark.
+1945: Our benchmark evaluates performance using gIoU and cIoU, following ReasonSeg’s evaluation setting.
+1946: ConSeg
+1947: performs both reasoning and multi-granularity constraint-aware segmentation.
+1948: As shown in
+1949: Tab.
+1950: 5
+1951: ,
+1952: ConSeg
+1953: performs comparably to LISA and PixelLM on the ReasonSeg but significantly surpasses them on ConstraintSeg, achieving nearly a
+1954: 40
+1955: %
+1956: 40\%
+1957: improvement at the part level. Visual comparisons in
+1958: Fig.
+1959: 6
+1960: further demonstrate
+1961: ConSeg
+1962: ’s strong generalization to unseen objects, scenes, and tasks.
+1963: 4.5
+1964: Ablation Study
+1965: We conduct ablation studies following the corresponding environment settings and present analyses below.
+1966: Multi views are critical for visual programming.
+1967: As shown in
+1968: Tab.
+1969: 6
+1970: , using only front-view images with constraint elements reduces the average success rate from
+1971: 65
+1972: %
+1973: 65\%
+1974: to
+1975: 40
+1976: %
+1977: 40\%
+1978: . This is primarily due to (1) occlusion leading to suboptimal element generation and (2) errors in visual programming, where dimensional reduction causes surfaces to be misinterpreted as lines or lines as points.
+1979: Table 7
+1980: :
+1981: Ablation study on training data. SemanticSeg includes ADE20K
+1982: [
+1983: 76
+1984: ]
+1985: , COCO-Stuff
+1986: [
+1987: 5
+1988: ]
+1989: , PACO-LVIS
+1990: [
+1991: 52
+1992: ]
+1993: and PASCAL-Part
+1994: [
+1995: 6
+1996: ]
+1997: . ReferSeg includes refCLEF, refCOCO, refCOCO+
+1998: [
+1999: 25
+2000: ]
+2001: and refCOCOg
+2002: [
+2003: 41
+2004: ]
+2005: . VQA indicates LLaVAInstruct-150k
+2006: [
+2007: 38
+2008: ]
+2009: .
+2010: SemanticSeg
+2011: ReferSeg
+2012: VQA
+2013: ReasonSeg
+2014: ContraintSeg
+2015: Ins-level
+2016: Part-level
+2017: Ins
+2018: Part
+2019: gIoU
+2020: cIoU
+2021: gIoU
+2022: cIoU
+2023: ✓
+2024: ✓
+2025: ✓
+2026: ✓
+2027: ✗
+2028: ✗
+2029: 42.1
+2030: 38.9
+2031: 23.4
+2032: 24.3
+2033: ✓
+2034: ✓
+2035: ✓
+2036: ✓
+2037: ✓
+2038: ✗
+2039: 60.7
+2040: 65.9
+2041: 40.4
+2042: 45.6
+2043: ✓
+2044: ✓
+2045: ✓
+2046: ✓
+2047: ✗
+2048: ✓
+2049: 51.5
+2050: 50.6
+2051: 56.5
+2052: 61.7
+2053: ✓
+2054: ✓
+2055: ✓
+2056: ✓
+2057: ✓
+2058: ✓
+2059: 62.1
+2060: 68.7
+2061: 60.2
+2062: 65.3
+2063: Constraint-aware segmentation enhances element.
+2064: As shown in
+2065: Tab.
+2066: 6
+2067: , using DINOv2
+2068: [
+2069: 45
+2070: ]
+2071: to generate semantic points to form elements, rather than through constraint-aware segmentation, reduces the success rate from
+2072: 65
+2073: %
+2074: 65\%
+2075: to
+2076: 42.5
+2077: %
+2078: 42.5\%
+2079: , because these constructed elements fail to represent the desired constraints accurately.
+2080: For example, capturing a book’s vertical orientation requires two precise points on its edge, which DINOv2 can not provide.
+2081: Forming elements improves code generation.
+2082: As shown in
+2083: Tab.
+2084: 6
+2085: , using unconnected 3D points as final elements reduces the success rate from
+2086: 65
+2087: %
+2088: 65\%
+2089: to
+2090: 55
+2091: %
+2092: 55\%
+2093: .
+2094: Pre-formed elements contain more prior constraint information, serving as visual cues better encoded in code, whereas standalone points require recombination during visual programming.
+2095: Elements simplify constraints computation.
+2096: As shown in
+2097: Tab.
+2098: 4
+2099: , the success rate decreases from
+2100: 60
+2101: %
+2102: 60\%
+2103: to
+2104: 20
+2105: %
+2106: 20\%
+2107: when entities or parts are not transformed into proposed elements in real-world evaluation.
+2108: We find two key issues:
+2109: (1) inaccurate 3D position and slow pose tracking of entities or parts; and
+2110: (2) difficulties in performing arithmetic operations on their 3D positions or poses in code, hindering the encoding of their spatio-temporal constraints.
+2111: Both instance-level and part-level data improve performance.
+2112: We conduct ablation studies to assess the impact of our proposed dataset on the ConstraintSeg benchmark. The results are shown in
+2113: Tab.
+2114: 7
+2115: .
+2116: The results indicate that both the instance-level and part-level subsets contribute to performance improvements and enhance each other’s effects.
+2117: 5
+2118: Conclusion
+2119: In this paper, we present a novel paradigm termed Code-as-Monitor, leveraging the VLMs for both open-set reactive and proactive failure detection.
+2120: In detail, We formulate both detection modes as spatio-temporal constraint satisfaction problems and use VLM-generated code to evaluate them for real-time monitoring.
+2121: We further propose constraint elements, which abstract constraints-related entities or their parts into compact geometric elements, to improve the precision and efficiency of monitoring.
+2122: Extensive experiments demonstrate the superiority of the proposed approach and highlight its potential to advance closed-loop robot systems.
+2123: Acknowledgement
+2124: This work was supported by the National Natural Science Foundation of China (62132001), the National Science and Technology Major Project (2022ZD0116314), and the Fundamental Research Funds for the Central Universities.
+2125: We sincerely thank Xingqiang Yu for his valuable discussions and insightful feedback about the Leap Hand and UR5 in real-world experiments.
+2126: We also sincerely appreciate Jingyi Yang’s excellent figure design (
+2127: e.g.
+2128: , teaser figure, pipeline overview) and demo editing work.
+2129: References
+2130: [1]
+2131: Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al.
+2132: Gpt-4 technical report.
+2133: arXiv
+2134: , 2023.
+2135: [2]
+2136: Aneseh Alvanpour, Sumit Kumar Das, Christopher Kevin Robinson, Olfa Nasraoui, and Dan Popa.
+2137: Robot failure mode prediction with explainable machine learning.
+2138: CASE
+2139: , 2020.
+2140: [3]
+2141: Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Joseph Dabis, Chelsea Finn, Keerthana Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine Hsu, et al.
+2142: Rt-1: Robotics transformer for real-world control at scale.
+2143: arXiv
+2144: , 2022.
+2145: [4]
+2146: Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al.
+2147: Language models are few-shot learners.
+2148: NeurIPS
+2149: , 2020.
+2150: [5]
+2151: Holger Caesar, Jasper Uijlings, and Vittorio Ferrari.
+2152: Coco-stuff: Thing and stuff classes in context.
+2153: CVPR
+2154: , 2018.
+2155: [6]
+2156: Xianjie Chen, Roozbeh Mottaghi, Xiaobai Liu, Sanja Fidler, Raquel Urtasun, and Alan Yuille.
+2157: Detect what you can: Detecting and representing objects using holistic models and body parts.
+2158: CVPR
+2159: , 2014.
+2160: [7]
+2161: Zeren Chen, Zhelun Shi, Xiaoya Lu, Lehan He, Sucheng Qian, Zhenfei Yin, Wanli Ouyang, Jing Shao, Yu Qiao, Cewu Lu, et al.
+2162: Rh20t-p: A primitive-level robotic dataset towards composable generalization agents.
+2163: arXiv preprint arXiv:2403.19622
+2164: , 2024.
+2165: [8]
+2166: Jaemin Cho, Abhay Zala, and Mohit Bansal.
+2167: Visual programming for step-by-step text-to-image generation and evaluation.
+2168: NeurIPS
+2169: , 2024.
+2170: [9]
+2171: Yinpei Dai, Jayjun Lee, Nima Fazeli, and Joyce Chai.
+2172: Racer: Rich language-guided failure recovery policies for imitation learning.
+2173: arXiv
+2174: , 2024.
+2175: [10]
+2176: Maximilian Diehl and Karinne Ramirez-Amaro.
+2177: A causal-based approach to explain, predict and prevent failures in robotic tasks.
+2178: RAS
+2179: , 2023.
+2180: [11]
+2181: Yufei Ding, Haoran Geng, Chaoyi Xu, Xiaomeng Fang, Jiazhao Zhang, Songlin Wei, Qiyu Dai, Zhizheng Zhang, and He Wang.
+2182: Open6dor: Benchmarking open-instruction 6-dof object rearrangement and a vlm-based approach.
+2183: IROS
+2184: , 2024.
+2185: [12]
+2186: Yuqing Du, Ksenia Konyushkova, Misha Denil, Akhil Raju, Jessica Landon, Felix Hill, Nando de Freitas, and Serkan Cabi.
+2187: Vision-language models as success detectors.
+2188: arXiv
+2189: , 2023.
+2190: [13]
+2191: Jiafei Duan, Wilbert Pumacay, Nishanth Kumar, Yi Ru Wang, Shulin Tian, Wentao Yuan, Ranjay Krishna, Dieter Fox, Ajay Mandlekar, and Yijie Guo.
+2192: Aha: A vision-language-model for detecting and reasoning over failures in robotic manipulation.
+2193: arXiv
+2194: , 2024.
+2195: [14]
+2196: Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan, et al.
+2197: The llama 3 herd of models.
+2198: arXiv
+2199: , 2024.
+2200: [15]
+2201: Ankit Goyal, Valts Blukis, Jie Xu, Yijie Guo, Yu-Wei Chao, and Dieter Fox.
+2202: Rvt2: Learning precise manipulation from few demonstrations.
+2203: RSS
+2204: , 2024.
+2205: [16]
+2206: Yanjiang Guo, Yen-Jen Wang, Lihan Zha, Zheyuan Jiang, and Jianyu Chen.
+2207: Doremi: Grounding language model by detecting and recovering from plan-execution misalignment.
+2208: arXiv
+2209: , 2023.
+2210: [17]
+2211: Tanmay Gupta and Aniruddha Kembhavi.
+2212: Visual programming: Compositional visual reasoning without training.
+2213: CVPR
+2214: , 2023.
+2215: [18]
+2216: Edward J Hu, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen, et al.
+2217: Lora: Low-rank adaptation of large language models.
+2218: ICLR
+2219: , 2021.
+2220: [19]
+2221: Haoxu Huang, Fanqi Lin, Yingdong Hu, Shengjie Wang, and Yang Gao.
+2222: Copa: General robotic manipulation through spatial constraints of parts with foundation models.
+2223: arXiv
+2224: , 2024a.
+2225: [20]
+2226: Wenlong Huang, Fei Xia, Ted Xiao, Harris Chan, Jacky Liang, Pete Florence, Andy Zeng, Jonathan Tompson, Igor Mordatch, Yevgen Chebotar, et al.
+2227: Inner monologue: Embodied reasoning through planning with language models.
+2228: arXiv
+2229: , 2022.
+2230: [21]
+2231: Wenlong Huang, Chen Wang, Yunzhu Li, Ruohan Zhang, and Li Fei-Fei.
+2232: Rekep: Spatio-temporal reasoning of relational keypoint constraints for robotic manipulation.
+2233: arXiv
+2234: , 2024b.
+2235: [22]
+2236: Stephen James, Zicong Ma, David Rovick Arrojo, and Andrew J. Davison.
+2237: Rlbench: The robot learning benchmark & learning environment.
+2238: RAL
+2239: , 2020.
+2240: [23]
+2241: Yuheng Ji, Huajie Tan, Jiayu Shi, Xiaoshuai Hao, Yuan Zhang, Hengyuan Zhang, Pengwei Wang, Mengdi Zhao, Yao Mu, Pengju An, et al.
+2242: Robobrain: A unified brain model for robotic manipulation from abstract to concrete.
+2243: arXiv preprint arXiv:2502.21257
+2244: , 2025.
+2245: [24]
+2246: Nikita Karaev, Ignacio Rocco, Benjamin Graham, Natalia Neverova, Andrea Vedaldi, and Christian Rupprecht.
+2247: Cotracker: It is better to track together.
+2248: ECCV
+2249: , 2024.
+2250: [25]
+2251: Sahar Kazemzadeh, Vicente Ordonez, Mark Matten, and Tamara Berg.
+2252: Referitgame: Referring to objects in photographs of natural scenes.
+2253: EMNLP
+2254: , 2014.
+2255: [26]
+2256: Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C Berg, Wan-Yen Lo, et al.
+2257: Segment anything.
+2258: ICCV
+2259: , 2023.
+2260: [27]
+2261: Xin Lai, Zhuotao Tian, Yukang Chen, Yanwei Li, Yuhui Yuan, Shu Liu, and Jiaya Jia.
+2262: Lisa: Reasoning segmentation via large language model.
+2263: CVPR
+2264: , 2024.
+2265: [28]
+2266: Olivia Y Lee, Annie Xie, Kuan Fang, Karl Pertsch, and Chelsea Finn.
+2267: Affordance-guided reinforcement learning via visual prompting.
+2268: arXiv
+2269: , 2024.
+2270: [29]
+2271: Gregory LeMasurier, Alvika Gautam, Zhao Han, Jacob W Crandall, and Holly A Yanco.
+2272: Reactive or proactive? how robots should explain failures.
+2273: HRI
+2274: , 2024.
+2275: [30]
+2276: Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al.
+2277: Retrieval-augmented generation for knowledge-intensive nlp tasks.
+2278: NeurIPS
+2279: , 2020.
+2280: [31]
+2281: Chengshu Li, Ruohan Zhang, Josiah Wong, Cem Gokmen, Sanjana Srivastava, Roberto Martín-Martín, Chen Wang, Gabrael Levine, Michael Lingelbach, Jiankai Sun, Mona Anvari, Minjune Hwang, Manasi Sharma, Arman Aydin, Dhruva Bansal, Samuel Hunter, Kyu-Young Kim, Alan Lou, Caleb R Matthews, Ivan Villa-Renteria, Jerry Huayang Tang, Claire Tang, Fei Xia, Silvio Savarese, Hyowon Gweon, Karen Liu, Jiajun Wu, and Li Fei-Fei.
+2282: Behavior-1k: A benchmark for embodied ai with 1,000 everyday activities and realistic simulation.
+2283: CoRL
+2284: , 2022.
+2285: [32]
+2286: Feng Li, Hao Zhang, Peize Sun, Xueyan Zou, Shilong Liu, Jianwei Yang, Chunyuan Li, Lei Zhang, and Jianfeng Gao.
+2287: Semantic-sam: Segment and recognize anything at any granularity.
+2288: arXiv
+2289: , 2023a.
+2290: [33]
+2291: Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi.
+2292: Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models.
+2293: ICML
+2294: , 2023b.
+2295: [34]
+2296: Feng Liang, Bichen Wu, Xiaoliang Dai, Kunpeng Li, Yinan Zhao, Hang Zhang, Peizhao Zhang, Peter Vajda, and Diana Marculescu.
+2297: Open-vocabulary semantic segmentation with mask-adapted clip.
+2298: CVPR
+2299: , 2023a.
+2300: [35]
+2301: Jacky Liang, Wenlong Huang, Fei Xia, Peng Xu, Karol Hausman, Brian Ichter, Pete Florence, and Andy Zeng.
+2302: Code as policies: Language model programs for embodied control.
+2303: ICRA
+2304: , 2023b.
+2305: [36]
+2306: Chang Liu, Henghui Ding, and Xudong Jiang.
+2307: Gres: Generalized referring expression segmentation.
+2308: CVPR
+2309: , 2023a.
+2310: [37]
+2311: Fangchen Liu, Kuan Fang, Pieter Abbeel, and Sergey Levine.
+2312: Moka: Open-vocabulary robotic manipulation through mark-based visual prompting.
+2313: arXiv
+2314: , 2024a.
+2315: [38]
+2316: Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee.
+2317: Visual instruction tuning.
+2318: NeurIPS
+2319: , 2024b.
+2320: [39]
+2321: Jiaming Liu, Chenxuan Li, Guanqun Wang, Lily Lee, Kaichen Zhou, Sixiang Chen, Chuyan Xiong, Jiaxin Ge, Renrui Zhang, and Shanghang Zhang.
+2322: Self-corrected multimodal large language model for end-to-end robot manipulation.
+2323: arXiv
+2324: , 2024c.
+2325: [40]
+2326: Zeyi Liu, Arpit Bahety, and Shuran Song.
+2327: Reflect: Summarizing robot experiences for failure explanation and correction.
+2328: CoRL
+2329: , 2023b.
+2330: [41]
+2331: Junhua Mao, Jonathan Huang, Alexander Toshev, Oana Camburu, Alan L Yuille, and Kevin Murphy.
+2332: Generation and comprehension of unambiguous object descriptions.
+2333: CVPR
+2334: , 2016.
+2335: [42]
+2336: Pasquale Minervini et al.
+2337: awesome-hallucination-detection.
+2338: https://github.com/EdinburghNLP/awesome-hallucination-detection
+2339: , 2024.
+2340: [43]
+2341: Yao Mu, Junting Chen, Qinglong Zhang, Shoufa Chen, Qiaojun Yu, Chongjian Ge, Runjian Chen, Zhixuan Liang, Mengkang Hu, Chaofan Tao, et al.
+2342: Robocodex: Multimodal code generation for robotic behavior synthesis.
+2343: arXiv
+2344: , 2024.
+2345: [44]
+2346: Soroush Nasiriany, Fei Xia, Wenhao Yu, Ted Xiao, Jacky Liang, Ishita Dasgupta, Annie Xie, Danny Driess, Ayzaan Wahid, Zhuo Xu, et al.
+2347: Pivot: Iterative visual prompting elicits actionable knowledge for vlms.
+2348: arXiv
+2349: , 2024.
+2350: [45]
+2351: Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al.
+2352: Dinov2: Learning robust visual features without supervision.
+2353: arXiv
+2354: , 2023.
+2355: [46]
+2356: Zekun Qi, Wenyao Zhang, Yufei Ding, Runpei Dong, Xinqiang Yu, Jingwen Li, Lingyun Xu, Baoyu Li, Xialin He, Guofan Fan, et al.
+2357: Sofar: Language-grounded orientation bridges spatial reasoning and object manipulation.
+2358: arXiv preprint arXiv:2502.13143
+2359: , 2025.
+2360: [47]
+2361: Yiran Qin, Zhelun Shi, Jiwen Yu, Xijun Wang, Enshen Zhou, Lijun Li, Zhenfei Yin, Xihui Liu, Lu Sheng, Jing Shao, et al.
+2362: Worldsimbench: Towards video generation models as world simulators.
+2363: arXiv preprint arXiv:2410.18072
+2364: , 2024a.
+2365: [48]
+2366: Yiran Qin, Enshen Zhou, Qichang Liu, Zhenfei Yin, Lu Sheng, Ruimao Zhang, Yu Qiao, and Jing Shao.
+2367: Mp5: A multi-modal open-ended embodied system in minecraft via active perception.
+2368: In
+2369: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2370: , pages 16307–16316. IEEE, 2024b.
+2371: [49]
+2372: Yiran Qin, Li Kang, Xiufeng Song, Zhenfei Yin, Xiaohong Liu, Xihui Liu, Ruimao Zhang, and Lei Bai.
+2373: Robofactory: Exploring embodied agent collaboration with compositional constraints.
+2374: arXiv preprint arXiv:2503.16408
+2375: , 2025a.
+2376: [50]
+2377: Yiran Qin, Ao Sun, Yuze Hong, Benyou Wang, and Ruimao Zhang.
+2378: Navigatediff: Visual predictors are zero-shot navigation assistants.
+2379: arXiv preprint arXiv:2502.13894
+2380: , 2025b.
+2381: [51]
+2382: Shreyas Sundara Raman, Vanya Cohen, Eric Rosen, Ifrah Idrees, David Paulius, and Stefanie Tellex.
+2383: Planning with large language models via corrective re-prompting.
+2384: NeurIPS
+2385: , 2022.
+2386: [52]
+2387: Vignesh Ramanathan, Anmol Kalia, Vladan Petrovic, Yi Wen, Baixue Zheng, Baishan Guo, Rui Wang, Aaron Marquez, Rama Kovvuri, Abhishek Kadian, et al.
+2388: Paco: Parts and attributes of common objects.
+2389: CVPR
+2390: , 2023.
+2391: [53]
+2392: Tianhe Ren, Shilong Liu, Ailing Zeng, Jing Lin, Kunchang Li, He Cao, Jiayu Chen, Xinyu Huang, Yukang Chen, Feng Yan, Zhaoyang Zeng, Hao Zhang, Feng Li, Jie Yang, Hongyang Li, Qing Jiang, and Lei Zhang.
+2393: Grounded sam: Assembling open-world models for diverse visual tasks.
+2394: arXiv
+2395: , 2024a.
+2396: [54]
+2397: Zhongwei Ren, Zhicheng Huang, Yunchao Wei, Yao Zhao, Dongmei Fu, Jiashi Feng, and Xiaojie Jin.
+2398: Pixellm: Pixel reasoning with large multimodal model.
+2399: CVPR
+2400: , 2024b.
+2401: [55]
+2402: Kenneth Shaw, Ananye Agarwal, and Deepak Pathak.
+2403: Leap hand: Low-cost, efficient, and anthropomorphic hand for robot learning.
+2404: arXiv
+2405: , 2023.
+2406: [56]
+2407: Noah Shinn, Beck Labash, and Ashwin Gopinath.
+2408: Reflexion: an autonomous agent with dynamic memory and self-reflection.
+2409: arXiv
+2410: , 2023.
+2411: [57]
+2412: Mohit Shridhar, Lucas Manuelli, and Dieter Fox.
+2413: Cliport: What and where pathways for robotic manipulation.
+2414: CoRL
+2415: , 2021.
+2416: [58]
+2417: Tom Silver, Soham Dan, Kavitha Srinivas, Joshua B Tenenbaum, Leslie Kaelbling, and Michael Katz.
+2418: Generalized planning in pddl domains with pretrained large language models.
+2419: AAAI
+2420: , 2024.
+2421: [59]
+2422: Marta Skreta, Naruki Yoshikawa, Sebastian Arellano-Rubach, Zhi Ji, Lasse Bjørn Kristensen, Kourosh Darvish, Alán Aspuru-Guzik, Florian Shkurti, and Animesh Garg.
+2423: Errors are useful prompts: Instruction guided task programming with verifier-assisted iterative prompting.
+2424: arXiv
+2425: , 2023.
+2426: [60]
+2427: Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al.
+2428: Llama: Open and efficient foundation language models.
+2429: arXiv
+2430: , 2023a.
+2431: [61]
+2432: Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al.
+2433: Llama 2: Open foundation and fine-tuned chat models.
+2434: arXiv
+2435: , 2023b.
+2436: [62]
+2437: Sai H Vemprala, Rogerio Bonatti, Arthur Bucker, and Ashish Kapoor.
+2438: Chatgpt for robotics: Design principles and model abilities.
+2439: IEEE Access
+2440: , 2024.
+2441: [63]
+2442: David Venuto, Sami Nur Islam, Martin Klissarov, Doina Precup, Sherry Yang, and Ankit Anand.
+2443: Code as reward: Empowering reinforcement learning with vlms.
+2444: arXiv
+2445: , 2024.
+2446: [64]
+2447: Homer Rich Walke, Kevin Black, Tony Z Zhao, Quan Vuong, Chongyi Zheng, Philippe Hansen-Estruch, Andre Wang He, Vivek Myers, Moo Jin Kim, Max Du, et al.
+2448: Bridgedata v2: A dataset for robot learning at scale.
+2449: CoRL
+2450: , 2023.
+2451: [65]
+2452: Jianwei Yang, Hao Zhang, Feng Li, Xueyan Zou, Chunyuan Li, and Jianfeng Gao.
+2453: Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v.
+2454: arXiv
+2455: , 2023.
+2456: [66]
+2457: Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao.
+2458: React: Synergizing reasoning and acting in language models.
+2459: arXiv
+2460: , 2022.
+2461: [67]
+2462: Zhenfei Yin, Jiong Wang, Jianjian Cao, Zhelun Shi, Dingning Liu, Mukai Li, Xiaoshui Huang, Zhiyong Wang, Lu Sheng, Lei Bai, et al.
+2463: Lamm: Language-assisted multi-modal instruction-tuning dataset, framework, and benchmark.
+2464: NeurIPS
+2465: , 36:26650–26685, 2023.
+2466: [68]
+2467: Runpeng Yu, Weihao Yu, and Xinchao Wang.
+2468: Attention prompting on image for large vision-language models.
+2469: arXiv
+2470: , 2024a.
+2471: [69]
+2472: Zhouliang Yu, Jie Fu, Yao Mu, Chenguang Wang, Lin Shao, and Yaodong Yang.
+2473: Multireact: Multimodal tools augmented reasoning-acting traces for embodied agent planning.
+2474: ICLR
+2475: , 2024b.
+2476: [70]
+2477: Wentao Yuan, Jiafei Duan, Valts Blukis, Wilbert Pumacay, Ranjay Krishna, Adithyavairavan Murali, Arsalan Mousavian, and Dieter Fox.
+2478: Robopoint: A vision-language model for spatial affordance prediction for robotics.
+2479: arXiv
+2480: , 2024a.
+2481: [71]
+2482: Zhihao Yuan, Jinke Ren, Chun-Mei Feng, Hengshuang Zhao, Shuguang Cui, and Zhen Li.
+2483: Visual programming for zero-shot open-vocabulary 3d visual grounding.
+2484: CVPR
+2485: , 2024b.
+2486: [72]
+2487: Jialiang Zhang, Haoran Liu, Danshi Li, XinQiang Yu, Haoran Geng, Yufei Ding, Jiayi Chen, and He Wang.
+2488: Dexgraspnet 2.0: Learning generative dexterous grasping in large-scale synthetic cluttered scenes.
+2489: CoRL
+2490: , 2024a.
+2491: [73]
+2492: Xinyu Zhang, Yuhan Liu, Haonan Chang, Liam Schramm, and Abdeslam Boularias.
+2493: Autoregressive action sequence learning for robotic manipulation.
+2494: arXiv
+2495: , 2024b.
+2496: [74]
+2497: Jinliang Zheng, Jianxiong Li, Sijie Cheng, Yinan Zheng, Jiaming Li, Jihao Liu, Yu Liu, Jingjing Liu, and Xianyuan Zhan.
+2498: Instruction-guided visual masking.
+2499: arXiv
+2500: , 2024a.
+2501: [75]
+2502: Zhi Zheng, Qian Feng, Hang Li, Alois Knoll, and Jianxiang Feng.
+2503: Evaluating uncertainty-based failure detection for closed-loop llm planners.
+2504: arXiv
+2505: , 2024b.
+2506: [76]
+2507: Bolei Zhou, Hang Zhao, Xavier Puig, Sanja Fidler, Adela Barriuso, and Antonio Torralba.
+2508: Scene parsing through ade20k dataset.
+2509: CVPR
+2510: , 2017.
+2511: [77]
+2512: Enshen Zhou, Yiran Qin, Zhenfei Yin, Yuzhou Huang, Ruimao Zhang, Lu Sheng, Yu Qiao, and Jing Shao.
+2513: Minedreamer: Learning to follow instructions via chain-of-imagination for simulated-world control.
+2514: arXiv preprint arXiv:2403.12037
+2515: , 2024.
+2516: [78]
+2517: Xueyan Zou, Zi-Yi Dou, Jianwei Yang, Zhe Gan, Linjie Li, Chunyuan Li, Xiyang Dai, Harkirat Behl, Jianfeng Wang, Lu Yuan, et al.
+2518: Generalized decoding for pixel, image, and language.
+2519: CVPR
+2520: , 2023.
+2521: [79]
+2522: Xueyan Zou, Jianwei Yang, Hao Zhang, Feng Li, Linjie Li, Jianfeng Wang, Lijuan Wang, Jianfeng Gao, and Yong Jae Lee.
+2523: Segment everything everywhere all at once.
+2524: NeurIPS
+2525: , 2024.
+2526: Supplementary Material
+2527: The supplementary document is organized as follows:
+2528: •
+2529: Sec.
+2530: A
+2531: : More Discussions like Technical Details, Limitations, and Future Work.
+2532: •
+2533: Sec.
+2534: B
+2535: : Implementation Details of Painter, including data collection, training, and element pipeline details.
+2536: •
+2537: Sec.
+2538: C
+2539: : Environment Configuration, including environmental setups, control policies, and baseline details.
+2540: •
+2541: Sec.
+2542: D
+2543: : Evaluation Details, including detailed task definition, disturbances, and experimental results.
+2544: •
+2545: Sec.
+2546: E
+2547: : More Ablation Studies.
+2548: •
+2549: Sec.
+2550: F
+2551: : More Demonstrations of
+2552: CaM
+2553: .
+2554: Appendix A
+2555: More discussions
+2556: A.1
+2557: Methodology discussions
+2558: What contributes to generalization.
+2559: VLM’s intrinsic knowledge and reasoning enable task-level generalization, while geometric abstraction ensures generalization across scenes and entities (
+2560: e.g.
+2561: , objects, robots).
+2562: The constraint-based formulation seamlessly integrates both aspects, achieving overall framework generalization.
+2563: Proactive detection for long-term dynamics.
+2564: Our framework can potentially handle long-term dynamics by leveraging the Constraint Generator to decompose long-horizon tasks into subgoals and enables proactive detection within each subgoal to
+2565: constrain the future state space
+2566: rather than directly predict future states.
+2567: Moreover, failed subgoals are re-planned with updated proactive constraints, ensuring adaptability to long-term dynamic changes.
+2568: Key methodology compared to Rekep
+2569: [
+2570: 21
+2571: ]
+2572: .
+2573: Our key method differs from ReKep in two key aspects:
+2574: (1) Element extraction:
+2575: ReKep simply relies on DINOv2 for keypoint detection via 2D feature clustering, which offers a limited representation of constraints and geometric relationships crucial for failure detection.
+2576: In contrast, our method achieves higher-order geometric abstraction by leveraging
+2577: ConSeg
+2578: to extract constraint-aware objects/parts in 2D space, then combining these with point clouds to integrate 3D geometric constraints.
+2579: (2) Code Generation:
+2580: Unlike ReKep, which lacks fine-grained guidance, our method leverages these
+2581: geometry-rich elements
+2582: as visual prompts on
+2583: multi-view
+2584: images to generate code more accurately
+2585: at each subgoal’s beginning
+2586: , enabling seamless integration with various policies to form closed-loop systems.
+2587: Part segmentation for ambiguous or incomplete instructions.
+2588: In our framework, we mainly leverage
+2589: ConSeg
+2590: ’s abilities to handle cases where instructions with ambiguous or missing explicit part information.
+2591: (1)
+2592: We do not impose whether the textual instructions contain part information in our dataset collection pipeline.
+2593: This allows the
+2594: ConSeg
+2595: to possess a certain ability to handle ambiguous instructions.
+2596: (2)
+2597: ConSeg
+2598: architecture adopts a VLM-based design, leveraging VLM’s world knowledge to infer constraint-related parts for unseen objects.
+2599: Based on our experiments (see Supp.
+2600: F.4
+2601: ),
+2602: ConSeg
+2603: does demonstrate some generalization ability, but its performance on unseen objects is weaker than on objects within the training distribution.
+2604: A.2
+2605: Technical detail discussions
+2606: Executability and reliability of code.
+2607: For executability, we validate the code using the path coverage of White-box Testing at the subgoal’s beginning, where the current state is used as input to verify the accuracy of each logic branch (
+2608: i.e.
+2609: , every if-else block). If any error occurs during testing, the code is regenerated.
+2610: For reliability, we prompt VLM to generate code that closely adheres to the given specifications and requirements.
+2611: As frequent VLM calls increase hallucinations, we only invoke VLM once at each subgoal’s beginning, making it less affected by hallucination and more reliable.
+2612: Failure threshold Selection.
+2613: We use two ways:
+2614: (1)
+2615: manually initializing thresholds for common tasks in an external knowledge base;
+2616: (2)
+2617: generating thresholds for unseen tasks using VLM’s internal knowledge.
+2618: We find that the system remains robust to threshold selection in common settings, but the impact of threshold variations under diverse conditions remains unexplored and is left for future work.
+2619: Computational cost.
+2620: The segmentation model is only invoked at the subgoal’s beginning to generate elements and
+2621: excluded during execution
+2622: , ensuring real-time code-based monitoring by tracking only the elements without high computational cost.
+2623: We also perform parallel inference of segmentation models to accelerate at the subgoal’s beginning.
+2624: A.3
+2625: Limitations and Future Work
+2626: Despite promising results, our approach has several limitations.
+2627: First, using Visual Language Models (VLMs)—such as off-the-shelf GPT for code generation and constraint-aware segmentation models—inevitably leads to hallucination issues. Even with minimized VLM usage, inaccuracies in code generation and biases in segmentation may persist. Integrating more relevant knowledge via methods like Retrieval-Augmented Generation (RAG)
+2628: [
+2629: 30
+2630: ]
+2631: or reducing multimodal large language model (MLLM) hallucinations
+2632: [
+2633: 42
+2634: ]
+2635: could alleviate these problems.
+2636: Second, while we unify reactive and proactive failure detection as spatio-temporal constraint satisfaction problems and propose constraint elements for simplified real-time, high-precision monitoring, the constraint element representation has limitations:
+2637: (1) It primarily focuses on failures detectable through explicit displacement and rotation, rendering it less effective for force-direction-related failures without noticeable displacement—for example, a robotic gripper failing to open a drawer due to incorrect force application.
+2638: (2) The simplified representation abstracts objects and minimizes irrelevant visual details for efficient failure detection but may overlook critical visual cues and multimodal inputs, such as flowing water or audible sounds from a partially closed faucet, which are ignored in our current framework.
+2639: Thus, exploring more robust representations that balance real-time precision with minimal information loss or integrate richer multimodal inputs is a promising direction for future research.
+2640: Appendix B
+2641: Constraint Painter
+2642: In this section, we first describe the data collection and annotation process of the Constraint-aware Segmentation Dataset. Next, we present the training details of the proposed
+2643: ConSeg
+2644: model. Finally, it is followed by a detailed explanation of the Element Pipeline.
+2645: Figure 7
+2646: :
+2647: Dataset Collection Pipeline. Our data is sourced from BridgeData V2
+2648: [
+2649: 31
+2650: ]
+2651: . The data collection process consists of three steps:
+2652: (1)
+2653: Using GPT-4o
+2654: [
+2655: 1
+2656: ]
+2657: to decompose the task instruction based on the initial observation from the first frame of the trajectory, generating subgoals along with two types of constraints for each subgoal (
+2658: i.e.
+2659: , constraints during execution and upon completion) and object-part associations.
+2660: (2)
+2661: Utilizing external references (
+2662: e.g.
+2663: , gripper open/close states) to assign subgoals, constraints, and object-part associations to each frame. (3) Leveraging off-the-shelf models (
+2664: e.g.
+2665: , Grounded SAM
+2666: [
+2667: 53
+2668: ]
+2669: , Semantic SAM
+2670: [
+2671: 32
+2672: ]
+2673: ) to generate instance- and part-level masks (blue mask in this figure) automatically, followed by manual filtering to curate the final dataset.
+2674: B.1
+2675: ConSeg
+2676: Data Collection
+2677: To ensure broader coverage of scenarios and objects in our dataset, along with text-based instructions, we utilized the BridgeData V2 dataset
+2678: [
+2679: 64
+2680: ]
+2681: . This large and diverse dataset of robotic manipulation behaviors comprises
+2682: 60,096
+2683: 60,096
+2684: trajectories collected across
+2685: 24
+2686: 24
+2687: environments, encompassing
+2688: 13
+2689: 13
+2690: distinct skills.
+2691: The dataset collection pipeline is shown in
+2692: Fig.
+2693: 7
+2694: . The entire process is divided into three stages,
+2695: i.e.
+2696: , trajectory decomposition, assigning textual information, and dataset collection.
+2697: First, we decompose each trajectory’s instruction and initial observation from BridgeData V2 into subgoals for each stage, along with the constraints upon completion, constraints during execution, the corresponding object-part associations and element type for each constraint.
+2698: Subfigure 1 in
+2699: Fig.
+2700: 7
+2701: illustrates a specific example, demonstrating the decomposition of the task “Take cup off plate”.
+2702: Notably, the third subgoal, “Place the cup on the stove”, indicates that the initial observation ensures the decomposition process fully understands the task’s contextual environment.
+2703: During this process, we also obtain the constraint element type, which serves as the ground-truth text response for part-level constraint-aware segmentation.
+2704: This decomposition is performed using the off-the-shelf GPT-4o API.
+2705: After obtaining the subgoals, constraints, and object-part associations for each stage, we need to assign each frame to its corresponding stage.
+2706: Since BridgeData V2 does not provide per-frame annotations, we addressed this issue by sampling pick-and-place data and leveraging the additional information (
+2707: e.g.
+2708: , gripper open/close states) provided by BridgeData V2 for assignment.
+2709: The pick-and-place task is typically divided into three stages: Approach, Grasp and Transfer, and Place, corresponding to the gripper states of open, closed, and open, respectively.
+2710: Leveraging the characteristics of the pick-and-place task, we complete the frame-level assignment. Subfigure 2 in
+2711: Fig.
+2712: 7
+2713: illustrates a specific example of the assignment process.
+2714: Using the obtained frame-level constraint-aware object and part information, Instance-level and part-level segmentations are performed using Grounded SAM
+2715: [
+2716: 53
+2717: ]
+2718: and Semantic SAM
+2719: [
+2720: 32
+2721: ]
+2722: , respectively.
+2723: We conducted a sampled manual inspection of the final annotations to filter out errors and low-quality labels. Our final dataset is composed of
+2724: 10,181
+2725: 10,181
+2726: trajectories with
+2727: 219,356
+2728: 219,356
+2729: images.
+2730: Figure 8
+2731: :
+2732: Environmental Setup of three simulators and one real-world setting.
+2733: For CLIPort
+2734: [
+2735: 57
+2736: ]
+2737: and OmniGibson
+2738: [
+2739: 31
+2740: ]
+2741: , we provide third-person front and top views and the robot platforms are the UR5 arm and Fetch, respectively.
+2742: RLBench
+2743: [
+2744: 22
+2745: ]
+2746: offers four camera views, including front left shoulder, right shoulder, and wrist views, with the robot platform being Franka equipped with a gripper.
+2747: We provide a wrist and a third-person front view for the real-world setting, utilizing a UR5 robot equipped with a Leap Hand
+2748: [
+2749: 55
+2750: ]
+2751: .
+2752: B.2
+2753: ConSeg
+2754: Training Details
+2755: We adopt LISA’s
+2756: [
+2757: 27
+2758: ]
+2759: loss function, including the next-token prediction loss for text output, and the combination of per-pixel BCE loss with DICE loss for mask output.
+2760: Our
+2761: ConSeg
+2762: -13B model is trained on an
+2763: 8
+2764: 8
+2765: NVIDIA 80G H800 GPU for two days with a batch size of
+2766: 4
+2767: 4
+2768: .
+2769: Our training data comprises multiple components: SemanticSeg, ReferSeg, VQA, ReasonSeg, and ConstraintSeg, to ensure our model retains dialogue and reasoning segmentation capabilities while achieving constraint-aware segmentation.
+2770: LISA inspires this training data setting.
+2771: SemanticSeg includes ADE20K, COCO-Stuff, PACO-LVIS, and PASCALPart. ReferSeg includes refCLEF, refCOCO, refCOCO+, and refCOCOg. VQA includes LLaVAInstruct-150k. ConstraintSeg includes instance and part-level data.
+2772: The training setting described above is for the
+2773: ConSeg
+2774: -base model. Since the training data consists entirely of real-world scenarios, there is a significant gap between the simulation and real-world environments.
+2775: To address this, the
+2776: ConSeg
+2777: model used in the simulation experiments is a fine-tuned version, called
+2778: ConSeg
+2779: -ft, finetuned on a small amount of data collected from the simulator. Specifically, we collect
+2780: 100
+2781: 100
+2782: trajectories from each simulator, sampled frames at
+2783: 1
+2784: 1
+2785: Hz, and utilize either ground truth masks from the simulator or annotations generated using Grounded SAM and Semantic SAM.
+2786: Notably, we use the
+2787: ConSeg
+2788: -base model in real-world experiments, demonstrating the model’s generalization capability across different scenarios.
+2789: B.3
+2790: Element Pipeline Details
+2791: Here, we provide additional details about the Constraint Element Pipeline. We first filter out outliers after obtaining the constraint-aware object/part point clouds. Next, we calculate the 3D spatial bounds occupied by the remaining point cloud and determine the voxel size for voxelization based on the element type.
+2792: We then perform point cloud clustering using the DBSCAN algorithm, which has advantages over other methods, including identifying clusters of arbitrary shapes, eliminating the need to predefine the number of clusters, and its effectiveness in high-density regions.
+2793: Appendix C
+2794: Environment Configuration
+2795: We first provide detailed descriptions of the simulators (CLIPort
+2796: [
+2797: 57
+2798: ]
+2799: , Omnigibson
+2800: [
+2801: 31
+2802: ]
+2803: , RLBench
+2804: [
+2805: 22
+2806: ]
+2807: ) and real-world setups used in our study.
+2808: We then discuss the low-level control policies implemented in these environments.
+2809: Finally, we present the baselines and their implementation specific to each environment.
+2810: Notably, our framework,
+2811: CaM
+2812: , is policy agnostic, meaning it can be adapted to any control policy without requiring any modification.
+2813: C.1
+2814: Environmental Setup
+2815: The CLIPort
+2816: [
+2817: 57
+2818: ]
+2819: simulator
+2820: †
+2821: †
+2822: https://github.com/cliport/cliport
+2823: is a robotic manipulation benchmark to gather extensive data for imitation learning and train a language-conditioned multi-task low-level control policy.
+2824: The environment features a UR5 robotic arm with a suction cup as the end effector for pick-and-place tasks and a spatula as the end effector for pushing tasks, both operating on a black tabletop.
+2825: We use two cameras: a third-person front view and a top view to provide comprehensive perspectives of the tabletop, as shown in
+2826: Fig.
+2827: 8
+2828: (a).
+2829: The OmniGibson
+2830: [
+2831: 31
+2832: ]
+2833: simulator
+2834: †
+2835: †
+2836: https://github.com/StanfordVL/OmniGibson
+2837: offers a realistic setting including a physics engine capable of supporting features such as lighting rendering, gravity effects, and temperature variations impacting objects within the environment.
+2838: This platform also provides an extensive array of pre-configured scenes and objects, enabling researchers to customize setups and train mobile manipulation robots.
+2839: We select version 1.1.0 for our study.
+2840: This simulator involves a Fetch robot equipped with a gripper as the end effector, operating on a white tabletop.
+2841: We utilize two cameras: a third-person front view and a top view to provide comprehensive perspectives of the tabletop, as shown in
+2842: Fig.
+2843: 8
+2844: (b).
+2845: RLBench
+2846: [
+2847: 22
+2848: ]
+2849: simulator
+2850: †
+2851: †
+2852: https://github.com/stepjam/RLBench
+2853: is a widely used benchmark for robot manipulation, featuring tasks such as articulated objects and tool use.
+2854: Researchers can gather data and train low-level control policies using imitation learning or reinforcement learning within this environment.
+2855: RLBench features a Franka robotic arm with a gripper as its end effector, operating on a brown tabletop. Four cameras provide comprehensive tabletop coverage, as shown in
+2856: Fig.
+2857: 8
+2858: (c).
+2859: Additionally, RLBench uses a sampling-based motion planner for motion planning given the next predicted action/pose.
+2860: In the real-world setup depicted in
+2861: Fig.
+2862: 8
+2863: (d), we utilize a fixed UR5 robotic arm with a Leap Hand
+2864: [
+2865: 55
+2866: ]
+2867: as the end effector.
+2868: Two RealSense D415 RGB-D cameras capture the scene, one mounted on the wrist and the other positioned for a third-person front view.
+2869: Figure 9
+2870: :
+2871: CLIPort task demonstration. we present three types of tasks in our experiments, including the starting and ending frames.
+2872: C.2
+2873: Control Policy
+2874: In CLIPort, we use a pre-trained low-level policy the CLIPort
+2875: [
+2876: 57
+2877: ]
+2878: simulator provides to control the robotic arm and end effector.
+2879: This policy can execute multi-task operations based on language instructions with RGB observations and its performance approaches perfection due to extensive imitation learning training.
+2880: Notably, the policy is open-loop, meaning it does not adjust its actions in response to dynamic environmental changes (
+2881: e.g.
+2882: , it will not immediately pick up a dropped block during movement but will continue with the previously planned actions).
+2883: In Omnigibson, We utilize ReKep
+2884: [
+2885: 21
+2886: ]
+2887: as our low-level control policy, transforming long-horizon tasks into a set of relationships between fixed keypoints at different stages.
+2888: At each stage, an optimization algorithm computes these relationships to generate actions, enabling language-conditioned closed-loop control.
+2889: Notably, ReKep employs a pre-trained large vision model (
+2890: i.e.
+2891: , DINOv2
+2892: [
+2893: 45
+2894: ]
+2895: ) to process raw RGB data, extracting semantically relevant keypoints.
+2896: This approach also serves as the compared method in our ablation study for extracting 3D points through constraint-aware segmentation, showing our superiority.
+2897: In RLBench, we employ the Autoregressive Policy (ARP)
+2898: [
+2899: 73
+2900: ]
+2901: as the control policy, which generates the next action based on historical observations and action sequences through an autoregressive process.
+2902: This method achieves state-of-the-art performance in the RLBench.
+2903: In the real-world setting, We employ DexGraspNet 2.0
+2904: [
+2905: 72
+2906: ]
+2907: as our low-level policy, which predicts the dexterous hand’s grasping pose based on the scene’s point cloud and facilitates the robotic arm’s action trajectory through motion planning to achieve robust generalized grasping.
+2908: Notably, DexGraspNet 2.0 is an open-loop policy, which means it does not adjust to environmental changes during action execution.
+2909: For example, if the target object’s position shifts while the arm moves, the system does not modify its motion plan.
+2910: Therefore, it continues to execute toward the originally intended location to complete the grasp, failing.
+2911: C.3
+2912: Baseline Details
+2913: In CLIPort, we compare three baselines: CLIPort
+2914: [
+2915: 57
+2916: ]
+2917: , CLIPort with Inner Monologue
+2918: [
+2919: 20
+2920: ]
+2921: , and CLIPort with DoReMi
+2922: [
+2923: 16
+2924: ]
+2925: .
+2926: We slightly modify the original implementations of these three baselines to suit our task requirements.
+2927: (1)
+2928: For CLIPort
+2929: [
+2930: 57
+2931: ]
+2932: , the sole modification involves substituting the original oracle success detector with an off-the-shelf VLM (
+2933: i.e.
+2934: , GPT-4o
+2935: [
+2936: 1
+2937: ]
+2938: ) used as a failure detector.
+2939: This change enables the robot system to determine whether to transition to the next subgoal using image-based vision question answering (VQA).
+2940: Notably, CLIPort decomposes the instructions into a list of subgoals before the task begins and does not dynamically adjust or revert to previous subgoals upon detecting a failure.
+2941: (2)
+2942: For Inner Monologue
+2943: [
+2944: 20
+2945: ]
+2946: , we replicate the implementation detailed in the original literature, by employing CLIPort for the low-level policy and an off-the-shelf VLM (
+2947: i.e.
+2948: , GPT-4o
+2949: [
+2950: 1
+2951: ]
+2952: ) as the planner.
+2953: This pipeline determines the next subgoal based on the completed subgoals and current observations after each subgoal concludes.
+2954: Notably, Inner Monologue queries the VLM only at the end of each subgoal, without considering events that occur during execution.
+2955: (3)
+2956: For DoReMi
+2957: [
+2958: 16
+2959: ]
+2960: , we reproduce the implementation according to the original DoReMi paper and enhance it by replacing the VLM initially (
+2961: i.e.
+2962: , BLIP2
+2963: [
+2964: 33
+2965: ]
+2966: ) used for repeated VQA-style queries during robotic execution with a more powerful VLM (
+2967: i.e.
+2968: , GPT-4o
+2969: [
+2970: 1
+2971: ]
+2972: ).
+2973: Additionally, we substitute its LLM, which lacks environmental awareness, with the same GPT-4o to serve as the task planner.
+2974: Table 8
+2975: :
+2976: Detailed Performance in CLIPort. We report the success rate and execution time for three tasks, compared to baseline methods.
+2977: Tasks with
+2978: Success Rate(%)
+2979: ↑
+2980: \uparrow
+2981: Execution Time(s)
+2982: ↓
+2983: \downarrow
+2984: disturbance
+2985: CLIPort
+2986: +Inner Monologue
+2987: +DoReMi
+2988: +
+2989: Ours
+2990: +Inner Monologue
+2991: +DoReMi
+2992: +
+2993: Ours
+2994: Stack in
+2995: p
+2996: p
+2997: =0.0
+2998: 100.00
+2999: ±
+3000: \pm
+3001: 0.00
+3002: 100.00
+3003: ±
+3004: \pm
+3005: 0.00
+3006: 100.00
+3007: ±
+3008: \pm
+3009: 0.00
+3010: 100.00
+3011: ±
+3012: \pm
+3013: 0.00
+3014: 13.40
+3015: ±
+3016: \pm
+3017: 1.82
+3018: 13.40
+3019: ±
+3020: \pm
+3021: 1.82
+3022: 13.40
+3023: ±
+3024: \pm
+3025: 1.82
+3026: order with
+3027: p
+3028: p
+3029: =0.15
+3030: 56.67
+3031: ±
+3032: \pm
+3033: 6.11
+3034: 81.67
+3035: ±
+3036: \pm
+3037: 6.11
+3038: 83.33
+3039: ±
+3040: \pm
+3041: 5.17
+3042: 95.00
+3043: ±
+3044: \pm
+3045: 4.00
+3046: 34.80
+3047: ±
+3048: \pm
+3049: 3.12
+3050: 26.00
+3051: ±
+3052: \pm
+3053: 2.77
+3054: 21.00
+3055: ±
+3056: \pm
+3057: 1.75
+3058: drop
+3059: p
+3060: p
+3061: p
+3062: p
+3063: =0.3
+3064: 21.67
+3065: ±
+3066: \pm
+3067: 8.33
+3068: 75.00
+3069: ±
+3070: \pm
+3071: 8.95
+3072: 76.67
+3073: ±
+3074: \pm
+3075: 9.52
+3076: 88.33
+3077: ±
+3078: \pm
+3079: 6.53
+3080: 42.80
+3081: ±
+3082: \pm
+3083: 3.18
+3084: 34.20
+3085: ±
+3086: \pm
+3087: 2.73
+3088: 25.40
+3089: ±
+3090: \pm
+3091: 2.95
+3092: Stack in
+3093: q
+3094: q
+3095: =1
+3096: 90.00
+3097: ±
+3098: \pm
+3099: 6.11
+3100: 90.00
+3101: ±
+3102: \pm
+3103: 6.11
+3104: 96.67
+3105: ±
+3106: \pm
+3107: 4.00
+3108: 98.33
+3109: ±
+3110: \pm
+3111: 3.27
+3112: 24.80
+3113: ±
+3114: \pm
+3115: 4.08
+3116: 24.60
+3117: ±
+3118: \pm
+3119: 4.66
+3120: 24.20
+3121: ±
+3122: \pm
+3123: 4.65
+3124: order with
+3125: q
+3126: q
+3127: =2
+3128: 41.67
+3129: ±
+3130: \pm
+3131: 7.30
+3132: 71.67
+3133: ±
+3134: \pm
+3135: 8.33
+3136: 75.00
+3137: ±
+3138: \pm
+3139: 5.17
+3140: 83.33
+3141: ±
+3142: \pm
+3143: 5.17
+3144: 39.40
+3145: ±
+3146: \pm
+3147: 5.87
+3148: 37.00
+3149: ±
+3150: \pm
+3151: 6.29
+3152: 29.20
+3153: ±
+3154: \pm
+3155: 4.61
+3156: noise
+3157: q
+3158: q
+3159: q
+3160: q
+3161: =3
+3162: 15.00
+3163: ±
+3164: \pm
+3165: 6.11
+3166: 40.00
+3167: ±
+3168: \pm
+3169: 8.00
+3170: 40.00
+3171: ±
+3172: \pm
+3173: 6.11
+3174: 63.33
+3175: ±
+3176: \pm
+3177: 8.33
+3178: 58.20
+3179: ±
+3180: \pm
+3181: 4.74
+3182: 54.20
+3183: ±
+3184: \pm
+3185: 6.02
+3186: 36.80
+3187: ±
+3188: \pm
+3189: 4.61
+3190: Sweep Half the Blocks
+3191: 0.00
+3192: ±
+3193: \pm
+3194: 0.00
+3195: 18.33
+3196: ±
+3197: \pm
+3198: 6.11
+3199: 16.67
+3200: ±
+3201: \pm
+3202: 8.95
+3203: 75.00
+3204: ±
+3205: \pm
+3206: 11.55
+3207: 22.00
+3208: ±
+3209: \pm
+3210: 2.91
+3211: 16.60
+3212: ±
+3213: \pm
+3214: 1.33
+3215: 16.40
+3216: ±
+3217: \pm
+3218: 1.00
+3219: Use Rope to Close
+3220: 0.00
+3221: ±
+3222: \pm
+3223: 0.00
+3224: 68.33
+3225: ±
+3226: \pm
+3227: 9.52
+3228: 58.33
+3229: ±
+3230: \pm
+3231: 18.62
+3232: 76.67
+3233: ±
+3234: \pm
+3235: 6.11
+3236: 41.60
+3237: ±
+3238: \pm
+3239: 6.34
+3240: 65.80
+3241: ±
+3242: \pm
+3243: 7.40
+3244: 34.60
+3245: ±
+3246: \pm
+3247: 2.81
+3248: the Opening Square
+3249: In Omnigibson, we compare two baselines: ReKep
+3250: [
+3251: 21
+3252: ]
+3253: and ReKep with DoReMi
+3254: [
+3255: 16
+3256: ]
+3257: .
+3258: (1)
+3259: For ReKep, we directly implement it using the official codebase.
+3260: (2)
+3261: For DoReMi, it is implemented as described above.
+3262: In RLBench, we compare two baselines: ReKep
+3263: [
+3264: 21
+3265: ]
+3266: and ReKep with DoReMi
+3267: [
+3268: 16
+3269: ]
+3270: .
+3271: (1)
+3272: For ReKep, we directly implement it using the official codebase.
+3273: (2)
+3274: For DoReMi, it is implemented as described above.
+3275: For the real-world evaluation, we compare two baselines:
+3276: DexGraspNet 2.0
+3277: [
+3278: 72
+3279: ]
+3280: and DexGraspNet 2.0 with DoReMi
+3281: [
+3282: 16
+3283: ]
+3284: .
+3285: (1)
+3286: For DexGraspNet 2.0, we directly implement it using the official codebase.
+3287: (2)
+3288: For DoReMi, it is implemented as described above.
+3289: Appendix D
+3290: Evaluation Details
+3291: In this section, we first detail the task specifications within the simulator and real-world evaluations.
+3292: Then, we introduce the disturbances introduced in each task and the evaluation metrics used.
+3293: Finally, we report the detailed experimental results and our analyses, with additional results not included in the main text due to space constraints.
+3294: D.1
+3295: CLIPort
+3296: D.1.1
+3297: Task, Disturbance and Metric Details
+3298: As shown in
+3299: Fig.
+3300: 9
+3301: , we evaluate three tasks in CLIPort:
+3302: (1)
+3303: “Stack in Order”: Given blocks in red, green, and blue on a table, the robot must stack them with red at the bottom, green in the middle, and blue on top.
+3304: (2)
+3305: “Sweep Half the Blocks” With
+3306: 40
+3307: 40
+3308: blocks on the table, the robot must sweep approximately half of them (with a permissible error margin of
+3309: ±
+3310: 10
+3311: %
+3312: \pm 10\%
+3313: ,
+3314: i.e.
+3315: ,
+3316: 16
+3317: 16
+3318: to
+3319: 24
+3320: 24
+3321: blocks) to a designated area.
+3322: (3)
+3323: “Use Rope to Close the Opening Square”: The robot should use a rope to enclose an open square, to enclose the area sufficiently, rather than form a perfectly closed square.
+3324: Figure 10
+3325: :
+3326: Omnigibson task demonstration. we present three types of tasks in our experiments, including the starting and ending frames.
+3327: We introduce two types of disturbances to the “Stack in Order” task:
+3328: (1)
+3329: after the suction cup grasps a block, there is a probability
+3330: p
+3331: p
+3332: at each step that the block will be released, causing it to drop;
+3333: (2)
+3334: The predicted placement position by the policy is perturbed by a uniform noise in the range
+3335: [
+3336: 0
+3337: ,
+3338: q
+3339: ]
+3340: [0,q]
+3341: cm, potentially leading to block tower collapse.
+3342: For each task and disturbance type, we conduct
+3343: 5
+3344: 5
+3345: trials using different seeds, each comprising
+3346: 12
+3347: 12
+3348: episodes.
+3349: We assess performance based on success rate and execution time,
+3350: excluding
+3351: the computational time for invoking the VLM.
+3352: Results are reported as mean values with
+3353: 95
+3354: %
+3355: 95\%
+3356: confidence intervals.
+3357: In the “Stack in Order” task, the robot must successfully stack the blocks in the specified order into a tower within
+3358: 70
+3359: 70
+3360: seconds, despite the two perturbations above.
+3361: For the “Sweep Half the Blocks” task, the pre-trained policy aims to sweep blocks into a designated area. The robot must stop the policy once half of the blocks are in the target region. If, after
+3362: 30
+3363: 30
+3364: seconds, the number of blocks in the area falls within the required range (
+3365: 16
+3366: 16
+3367: –
+3368: 24
+3369: 24
+3370: ), the task is considered successful.
+3371: For the “Use Rope to Close the Opening Square” task, the pre-trained policy attempts to close an open rectangle into a perfect square using a rope. The robot must detect when the rectangle is sufficiently enclosed and immediately stop execution. Success is achieved if the robot halts within
+3372: 70
+3373: 70
+3374: seconds, and the enclosure is complete.
+3375: D.1.2
+3376: Detailed Experiment Results
+3377: In
+3378: Tab.
+3379: 8
+3380: , we present detailed results in CLIPort, including those discussed in the main text and additional results.
+3381: In the “Stack in Order” task under severe interference conditions, our
+3382: CaM
+3383: shows an improvement of
+3384: 18.33
+3385: %
+3386: 18.33\%
+3387: and
+3388: 17.5
+3389: %
+3390: 17.5\%
+3391: in success rate over Inner Monologue
+3392: [
+3393: 20
+3394: ]
+3395: and DoReMi
+3396: [
+3397: 16
+3398: ]
+3399: , respectively, while also reducing execution times by
+3400: 38.7
+3401: %
+3402: 38.7\%
+3403: and
+3404: 14.4
+3405: %
+3406: 14.4\%
+3407: compared to Inner Monologue and DoReMi, respectively.
+3408: The failure detection and recovery processes are shown in
+3409: Fig.
+3410: 12
+3411: and
+3412: Fig.
+3413: 13
+3414: .
+3415: In the “Sweep Half the Blocks” task, our
+3416: CaM
+3417: achieved success rates that are
+3418: 4.1
+3419: 4.1
+3420: and
+3421: 4.5
+3422: 4.5
+3423: times higher than those of Inner Monologue
+3424: [
+3425: 20
+3426: ]
+3427: and DoReMi
+3428: [
+3429: 16
+3430: ]
+3431: , respectively.
+3432: However, the success rate is not very high even in distraction-free scenarios.
+3433: This is attributed to the high density of tracking points in the scene, which increases the likelihood of confusion and tracking errors, leading to inconsistent block counts within the target area.
+3434: The completion process of the task is also illustrated in
+3435: Fig.
+3436: 14
+3437: .
+3438: In the “Use Rope to Close the Opening Square” task, our approach outperforms Inner Monologue
+3439: [
+3440: 20
+3441: ]
+3442: and DoReMi
+3443: [
+3444: 16
+3445: ]
+3446: by
+3447: 8.34
+3448: %
+3449: 8.34\%
+3450: and
+3451: 18.34
+3452: %
+3453: 18.34\%
+3454: in success rates, respectively, while also reducing execution times by
+3455: 16.82
+3456: %
+3457: 16.82\%
+3458: and
+3459: 47.43
+3460: %
+3461: 47.43\%
+3462: compared to Inner Monologue and DoReMi, respectively.
+3463: We find that calculating the distance between the rope ends and the opening’s edges to determine closure is more accurate than directly querying a VLM with an image, allowing for earlier termination of the policy execution.
+3464: The complete processes of the task are illustrated in
+3465: Fig.
+3466: 15
+3467: .
+3468: D.2
+3469: OmniGibson
+3470: D.2.1
+3471: Task, Disturbance and Metric Details
+3472: As shown in
+3473: Fig.
+3474: 10
+3475: , in the OmniGibson environment, we evaluated three distinct tasks:
+3476: (1)
+3477: Slot Pen: A pen placed on a desk is picked up, rotated to a near-vertical position, moved above a pen holder, and then inserted into the holder.
+3478: (2)
+3479: Stow Book: A book located on a desk is picked up and vertically positioned on a bookshelf.
+3480: (3)
+3481: Pour Tea: A teapot on the desk is lifted, horizontally moved above a teacup, and then tilted to pour tea into the cup.
+3482: We introduce three types of disturbances with varying constraint elements for each task:
+3483: (1)
+3484: Slot Pen Task: Point-level disturbances are applied as follows: (a) moving the pen while the robot is grasping it, (b) forcing the robot to release the pen mid-transfer, causing it to drop onto the table, and (c) moving the pen holder while the robot attempts to insert the pen. Despite these disturbances, the task is considered successful only if the robot can insert the pen into the holder.
+3485: (2)
+3486: Stow Book Task: Line-level disturbances include: (a) rotating the book during the robot’s grasping process, (b) altering the book’s pose during transfer to disrupt its vertical alignment, and (c) reorienting the book horizontally after it has been placed vertically on the shelf. Success requires the robot to place the book vertically on the shelf despite these disturbances.
+3487: (3)
+3488: Pour Tea Task: Surface-level disturbances involve: (a) tilting the container forward or backward during transfer, (b) inducing lateral tilts during movement, and (c) restoring the container to a level position during pouring. To succeed, the robot must prevent spillage and complete the pouring task under these disturbances.
+3489: We conduct experiments on three tasks, each consisting of one no-disturbance trial and three specific-disturbance trials. Each trial was repeated 10 times, and the performance was evaluated based on success rate, execution time (
+3490: including
+3491: the computation time for invoking the VLM), and the number of tokens used.
+3492: D.2.2
+3493: Detailed Experiment Results
+3494: Specific experimental results are detailed in the main text; here, we present additional demonstrations in Sec.
+3495: F.2
+3496: .
+3497: Figure 11
+3498: :
+3499: RLBench task demonstration. we present six types of tasks in our experiments, including the starting and ending frames.
+3500: Table 9
+3501: :
+3502: Performance in RLBench. We report the success rate, compared to baseline methods.
+3503: Method
+3504: Avg.
+3505: Articulated Object
+3506: Tool-Use
+3507: Tool-Use
+3508: Success Rate (%)
+3509: ↑
+3510: \uparrow
+3511: Open Drawer
+3512: Put in Drawer
+3513: Screw Bulb
+3514: Turn Tap
+3515: Drag Stick
+3516: Sweep to Dustpan
+3517: RVT2
+3518: [
+3519: 15
+3520: ]
+3521: 89.83
+3522: 90.3
+3523: 97.6
+3524: 86.6
+3525: 91.0
+3526: 93.8
+3527: 79.7
+3528: ARP
+3529: [
+3530: 73
+3531: ]
+3532: 91.27
+3533: 93.9
+3534: 91.0
+3535: 86.4
+3536: 96.6
+3537: 88.1
+3538: 91.6
+3539: +DRM
+3540: [
+3541: 16
+3542: ]
+3543: 87.97
+3544: 90.6
+3545: 87.7
+3546: 83.1
+3547: 93.3
+3548: 84.8
+3549: 88.3
+3550: +Ours
+3551: 97.08
+3552: 98.1
+3553: 98.3
+3554: 97.5
+3555: 97.9
+3556: 95.6
+3557: 94.0
+3558: D.3
+3559: RLBench
+3560: D.3.1
+3561: Task, Disturbance and Metric Details
+3562: As shown in
+3563: Fig.
+3564: 11
+3565: , in RLBench, we evaluate six tasks across three categories of manipulation:
+3566: (1)
+3567: Articulated Object Interaction: (a) Open Drawer——Open the top drawer (b) Put in Drawer——Open the drawer and place an item into the open drawer.
+3568: (2)
+3569: Rotational Manipulation: (a) Screw Bulb——Screw in the red light bulb. (b) Turn Tap——Turn the left tap.
+3570: (3)
+3571: Tool Use: (a) Drag Stick——Use a stick to drag the cube onto the red target. (b) Sweep to Dustpan——Sweep dirt into the tall dustpan.
+3572: In RLBench, we avoid introducing additional disturbances, as its control policy naturally generates diverse failures to validate the effectiveness of our framework.
+3573: The RLBench-trained policy lacks failure recovery mechanisms; thus, any episode flagged as a failure by the detection framework is deemed invalid, and a new episode is initiated.
+3574: For each task, we evaluate performance over
+3575: 1,000
+3576: 1,000
+3577: valid episodes (maximum
+3578: 25
+3579: 25
+3580: steps each), measured by the average success rate.
+3581: D.3.2
+3582: Detailed Experiment Results
+3583: Code with elements can generalize better to monitor diverse tasks.
+3584: Notably, despite our training data lacking information on articulated objects at both the instance and part levels, our method effectively handles them, accurately segmenting parts such as drawer handles
+3585: .
+3586: In the “Open Drawer” task,
+3587: CaM
+3588: achieves a
+3589: 98.1
+3590: %
+3591: 98.1\%
+3592: success rate, significantly outperforming DRM’s
+3593: 90.6
+3594: %
+3595: 90.6\%
+3596: .
+3597: For “Put in Drawer”,
+3598: CaM
+3599: reaches
+3600: 98.3
+3601: %
+3602: 98.3\%
+3603: , surpassing DRM’s
+3604: 87.7
+3605: %
+3606: 87.7\%
+3607: by
+3608: 10.6
+3609: 10.6
+3610: percentage points.
+3611: We attribute this generalization to two factors: (1) the inherent prior world knowledge of extensively pre-trained VLMs (
+3612: e.g.
+3613: , SAM, LLaVA), which enables generalization to unseen tasks; and (2) our minimalist scheme that abstracts articulated objects into geometric components via constraint elements, ignoring irrelevant details, enhancing the generalizability.
+3614: We also demonstrate our method on additional unseen tasks, such as rotational manipulation and tool use, where it consistently outperforms baseline methods.
+3615: D.4
+3616: Real-world Evaluation
+3617: Table 10
+3618: :
+3619: Detailed Performance of Single Pick & Place. We report the success rate and execution time. DGN is DexGraspNet 2.0
+3620: [
+3621: 72
+3622: ]
+3623: .
+3624: Tasks with
+3625: Object
+3626: Object
+3627: Success Rate(%)
+3628: ↑
+3629: \uparrow
+3630: Execution Time(s)
+3631: ↓
+3632: \downarrow
+3633: disturbance
+3634: types
+3635: Name
+3636: DGN
+3637: +DoReMi
+3638: +
+3639: Ours
+3640: +DoReMi
+3641: +
+3642: Ours
+3643: Pick & Place with
+3644: Deformable
+3645: Toy Loopy
+3646: 0.00
+3647: 80.00
+3648: 100.00
+3649: 64.91
+3650: ±
+3651: \pm
+3652: 2.83
+3653: 46.02
+3654: ±
+3655: \pm
+3656: 3.11
+3657: the objects being
+3658: Toy Dog
+3659: 0.00
+3660: 80.00
+3661: 100.00
+3662: 60.68
+3663: ±
+3664: \pm
+3665: 4.00
+3666: 47.06
+3667: ±
+3668: \pm
+3669: 3.24
+3670: moved during
+3671: Toy Rabbit
+3672: 0.00
+3673: 90.00
+3674: 90.00
+3675: 59.83
+3676: ±
+3677: \pm
+3678: 1.82
+3679: 45.77
+3680: ±
+3681: \pm
+3682: 2.03
+3683: grasping
+3684: Transparent
+3685: Beverage Bottle
+3686: 0.00
+3687: 60.00
+3688: 100.00
+3689: 69.97
+3690: ±
+3691: \pm
+3692: 7.89
+3693: 47.61
+3694: ±
+3695: \pm
+3696: 2.58
+3697: Glass Cup
+3698: 0.00
+3699: 70.00
+3700: 90.00
+3701: 76.99
+3702: ±
+3703: \pm
+3704: 4.60
+3705: 48.32
+3706: ±
+3707: \pm
+3708: 3.22
+3709: Shampoo Bottle
+3710: 0.00
+3711: 70.00
+3712: 90.00
+3713: 70.91
+3714: ±
+3715: \pm
+3716: 5.68
+3717: 48.31
+3718: ±
+3719: \pm
+3720: 3.08
+3721: Small Rigid
+3722: Apple Model
+3723: 0.00
+3724: 80.00
+3725: 100.00
+3726: 64.65
+3727: ±
+3728: \pm
+3729: 4.34
+3730: 45.39
+3731: ±
+3732: \pm
+3733: 0.71
+3734: Pear Model
+3735: 0.00
+3736: 90.00
+3737: 90.00
+3738: 67.11
+3739: ±
+3740: \pm
+3741: 1.10
+3742: 45.48
+3743: ±
+3744: \pm
+3745: 1.01
+3746: Peach Model
+3747: 0.00
+3748: 70.00
+3749: 90.00
+3750: 65.48
+3751: ±
+3752: \pm
+3753: 2.90
+3754: 45.37
+3755: ±
+3756: \pm
+3757: 0.64
+3758: Large Geometric
+3759: Plate
+3760: 0.00
+3761: 80.00
+3762: 100.00
+3763: 69.86
+3764: ±
+3765: \pm
+3766: 2.64
+3767: 45.18
+3768: ±
+3769: \pm
+3770: 0.65
+3771: Ball
+3772: 0.00
+3773: 90.00
+3774: 100.00
+3775: 67.43
+3776: ±
+3777: \pm
+3778: 2.63
+3779: 45.37
+3780: ±
+3781: \pm
+3782: 0.70
+3783: Pyramid
+3784: 0.00
+3785: 90.00
+3786: 90.00
+3787: 69.14
+3788: ±
+3789: \pm
+3790: 3.32
+3791: 45.42
+3792: ±
+3793: \pm
+3794: 0.72
+3795: Pick & Place with
+3796: Deformable
+3797: Toy Loopy
+3798: 0.00
+3799: 80.00
+3800: 90.00
+3801: 69.29
+3802: ±
+3803: \pm
+3804: 4.87
+3805: 60.86
+3806: ±
+3807: \pm
+3808: 3.41
+3809: the objects being
+3810: Toy Dog
+3811: 0.00
+3812: 70.00
+3813: 100.00
+3814: 66.09
+3815: ±
+3816: \pm
+3817: 2.99
+3818: 63.12
+3819: ±
+3820: \pm
+3821: 3.75
+3822: removed during
+3823: Toy Rabbit
+3824: 0.00
+3825: 80.00
+3826: 90.00
+3827: 70.86
+3828: ±
+3829: \pm
+3830: 4.56
+3831: 63.40
+3832: ±
+3833: \pm
+3834: 3.88
+3835: movement
+3836: Transparent
+3837: Beverage Bottle
+3838: 0.00
+3839: 50.00
+3840: 90.00
+3841: 77.90
+3842: ±
+3843: \pm
+3844: 2.89
+3845: 61.97
+3846: ±
+3847: \pm
+3848: 3.90
+3849: Glass Cup
+3850: 0.00
+3851: 70.00
+3852: 90.00
+3853: 70.00
+3854: ±
+3855: \pm
+3856: 3.46
+3857: 63.22
+3858: ±
+3859: \pm
+3860: 4.35
+3861: Shampoo Bottle
+3862: 0.00
+3863: 60.00
+3864: 90.00
+3865: 60
+3866: ±
+3867: \pm
+3868: 4.28
+3869: 63.00
+3870: ±
+3871: \pm
+3872: 3.81
+3873: Small Rigid
+3874: Apple Model
+3875: 0.00
+3876: 70.00
+3877: 90.00
+3878: 70.21
+3879: ±
+3880: \pm
+3881: 4.30
+3882: 63.71
+3883: ±
+3884: \pm
+3885: 3.91
+3886: Pear Model
+3887: 0.00
+3888: 60.00
+3889: 100.00
+3890: 72.70
+3891: ±
+3892: \pm
+3893: 4.84
+3894: 58.61
+3895: ±
+3896: \pm
+3897: 2.41
+3898: Peach Model
+3899: 0.00
+3900: 60.00
+3901: 90.00
+3902: 66.48
+3903: ±
+3904: \pm
+3905: 3.32
+3906: 59.19
+3907: ±
+3908: \pm
+3909: 2.59
+3910: Large Geometric
+3911: Plate
+3912: 0.00
+3913: 90.00
+3914: 100.00
+3915: 72.00
+3916: ±
+3917: \pm
+3918: 2.77
+3919: 59.21
+3920: ±
+3921: \pm
+3922: 2.61
+3923: Ball
+3924: 0.00
+3925: 70.00
+3926: 100.00
+3927: 70.92
+3928: ±
+3929: \pm
+3930: 3.37
+3931: 61.57
+3932: ±
+3933: \pm
+3934: 3.80
+3935: Pyramid
+3936: 0.00
+3937: 70.00
+3938: 90.00
+3939: 73.83
+3940: ±
+3941: \pm
+3942: 2.82
+3943: 60.25
+3944: ±
+3945: \pm
+3946: 3.25
+3947: D.4.1
+3948: Task, Disturbance and Metric Details
+3949: We conduct real-world evaluations on two tasks:
+3950: (1)
+3951: Simple Pick & Place: The robot should pick and place objects within
+3952: 70
+3953: 70
+3954: seconds.
+3955: We include four kinds of objects: Deformable, Transparent, Small Rigid, and Large Geometric, with three objects in each category.
+3956: The deformable objects are Loopy, Dog, and Rabbit toys, which undergo deformation when grasped by the dexterous hand.
+3957: The transparent objects are a clear beverage bottle, a transparent glass, and a clear shampoo bottle.
+3958: The small rigid objects consist of apple, pear, and peach models, while the large geometric objects include a large plate, ball, and pyramid.
+3959: (2)
+3960: Reasoning Pick & Place: In cluttered scenes, the robot must perform long-horizon tasks where the instructions contain ambiguous terms (
+3961: e.g.
+3962: , “animals” or “fruits” without specifying particular types).
+3963: Specifically, the tasks are: (a) “Clear all objects on the table except for
+3964: animals
+3965: ”, and (b) ”Grasp the
+3966: animals
+3967: according to their distances to
+3968: fruits
+3969: , from nearest to farthest”, with ambiguous terms underlined.
+3970: For both tasks, we introduce two identical disturbances:
+3971: (1)
+3972: Moving the object during the robot’s grasping.
+3973: (2)
+3974: Removing the object from the robot’s dexterous hand during movement after grasping.
+3975: For each task, and each object involved in Simple Pick & Place, we conduct 10 trials.
+3976: For each long-horizon task in Reasoning Pick & Place, we also conduct 10 trials.
+3977: We evaluate performance based on success rate and execution time,
+3978: including
+3979: the computational time invoking the VLM.
+3980: Results are reported as mean values with
+3981: 95
+3982: %
+3983: 95\%
+3984: confidence intervals.
+3985: For the Simple Pick & Place, the robot has only one opportunity to autonomously release the object held in its gripper at a designated location.
+3986: Any disturbance the robot encounters allows for a return and reattempt at grasping if the robot successfully detects it.
+3987: Success is defined as meeting these conditions within
+3988: 90
+3989: 90
+3990: seconds.
+3991: For the Reasoning Pick & Place task, the robot must clear all objects on the table except for animals within
+3992: 4
+3993: 4
+3994: minutes for “Clear all objects on the table except for animals”.
+3995: In the task “Grasp the animals according to their distances to fruits, from nearest to farthest”, the robot must sequentially grasp the animals in the correct order within
+3996: 2
+3997: 2
+3998: minutes, despite human-induced distractions such as moving animals or fruits.
+3999: Notably, this task is particularly challenging because the robot operates under an open-loop policy, preventing it from using closed-loop feedback to handle the dynamic distances between fruits and animals caused by external disturbances.
+4000: Therefore, a failure detection framework is necessary to enable both
+4001: reactive
+4002: and
+4003: proactive
+4004: real-time detection with high precision, monitoring the distance changes and adjusting the grasping sequence accordingly.
+4005: D.4.2
+4006: Detailed Experiment Results
+4007: In
+4008: Tab.
+4009: 10
+4010: , we present detailed results of Simple Pick & Place.
+4011: CaM
+4012: achieves success rates surpassing DoReMi by
+4013: 20.4
+4014: %
+4015: 20.4\%
+4016: when handling different kinds of objects.
+4017: We show real-world demonstrations of Simple Pick & Place and Reasoning Pick & Place in Sec.
+4018: F.3
+4019: .
+4020: Appendix E
+4021: More ablation studies
+4022: Segmentation model ablations.
+4023: Tab.
+4024: 11
+4025: presents further ablation studies, replacing
+4026: ConSeg
+4027: with LISA and PixelLM.
+4028: Our
+4029: ConSeg
+4030: shows superior overall framework performance (check
+4031: Tab.
+4032: 11
+4033: ID A & B & E), which represents a key technical contribution.
+4034: Failure detection mode ablations.
+4035: (1)
+4036: In
+4037: Tab.
+4038: 11
+4039: (ID C), proactive failure detection alone yields a lower success rate due to its inability to handle unforeseen failures;
+4040: (2)
+4041: In
+4042: Tab.
+4043: 11
+4044: (ID D), reactive detection alone achieves a slightly higher success rate but incurs longer execution times, as it only responds post-failure;
+4045: (3)
+4046: In
+4047: Tab.
+4048: 11
+4049: (ID E), the synergy of both modes achieves the best performance by addressing the limitations of each mode.
+4050: Appendix F
+4051: More Demonstrations and Prompts
+4052: This section presents additional demonstrations, including simulations and real-world scenarios of failure detection and recovery, as well as constraint-aware segmentation results and prompts.
+4053: F.1
+4054: CLIPort
+4055: Here, we present demonstrations of three tasks in CLIPort: “Stack in Order”, “Sweep Half the Blocks”, and “Use Rope to Close the Opening Square”.
+4056: Fig.
+4057: 12
+4058: demonstrates how our framework detects failures and assists in recovery when the placement positions predicted by the policy for the “Stack in Order” task are subject to a uniform
+4059: [
+4060: 0
+4061: ,
+4062: q
+4063: ]
+4064: [0,q]
+4065: cm interference.
+4066: Fig.
+4067: 13
+4068: illustrates how our framework performs failure detection and aids in recovery when, in the “Stack in Order” task, there is a probability
+4069: p
+4070: p
+4071: that blocks will fall due to being released by the robot’s suction cup at each step.
+4072: Fig.
+4073: 14
+4074: shows the “Sweep Half the Blocks” task, where our framework precisely counts the blocks within a specified area and timely halts the policy execution to complete the task. In contrast, DoReMi
+4075: [
+4076: 16
+4077: ]
+4078: fails to stop the policy execution in time, leading to task failure.
+4079: Fig.
+4080: 15
+4081: depicts the “Use Rope to Close the Opening Square” task. Our framework effectively detects when the rope closes the opening square and promptly stops the policy execution to complete the task successfully. Conversely, DoReMi fails to halt the policy execution on time; although it eventually succeeds in closing the opening, the excessive execution time results in task failure.
+4082: Table 11
+4083: :
+4084: Following the Omnigibson evaluation protocol, we report the average success rate under disturbance (SR) and execution time to assess the impact of
+4085: ConSeg
+4086: and various failure detection modes on overall framework performance.
+4087: ID
+4088: Method
+4089: Slot Pen
+4090: Stow Book
+4091: Pour Tea
+4092: SR(%)
+4093: ↑
+4094: \uparrow
+4095: Time(s)
+4096: ↓
+4097: \downarrow
+4098: SR(%)
+4099: ↑
+4100: \uparrow
+4101: Time(s)
+4102: ↓
+4103: \downarrow
+4104: SR(%)
+4105: ↑
+4106: \uparrow
+4107: Time(s)
+4108: ↓
+4109: \downarrow
+4110: A
+4111: LISA
+4112: 30.00
+4113: 126.89
+4114: 42.50
+4115: 118.93
+4116: 24.00
+4117: 218.92
+4118: B
+4119: PixelLM
+4120: 29.50
+4121: 134.10
+4122: 41.00
+4123: 124.26
+4124: 24.50
+4125: 214.04
+4126: C
+4127: Only Proactive
+4128: 37.50
+4129: 130.15
+4130: 50.00
+4131: 109.47
+4132: 32.50
+4133: 192.23
+4134: D
+4135: Only Reactive
+4136: 42.50
+4137: 157.63
+4138: 57.50
+4139: 147.95
+4140: 35.50
+4141: 284.15
+4142: E
+4143: Ours
+4144: 47.50
+4145: 101.85
+4146: 65.00
+4147: 93.08
+4148: 40.00
+4149: 174.55
+4150: F.2
+4151: OmniGibson
+4152: As shown in
+4153: Fig.
+4154: 16
+4155: ,
+4156: Fig.
+4157: 17
+4158: and
+4159: Fig.
+4160: 18
+4161: , we show how our framework detects failures and assists in recovery when facing point-, line- and surface -level disturbances.
+4162: F.3
+4163: Real-world Evaluation
+4164: Fig.
+4165: 19
+4166: demonstrates the task “Clear all objects on the table except for animals”, where our framework achieves both reactive failure detection (
+4167: e.g.
+4168: , detecting unexpected failures when humans remove objects from the robot’s grasp) and proactive failure detection (
+4169: e.g.
+4170: , identifying target object movement during grasping to prevent foreseeable failures).
+4171: This effectively enhances the task success rate and reduces the execution time.
+4172: F.4
+4173: Constraint-aware segmentation
+4174: As shown in
+4175: Fig.
+4176: 20
+4177: ,
+4178: Fig.
+4179: 21
+4180: ,
+4181: Fig.
+4182: 22
+4183: , and
+4184: Fig.
+4185: 23
+4186: we present additional results on constraint-aware segmentation, including instance and part-level results.
+4187: To demonstrate generalizability, we utilize out-of-distribution (OOD) data, including the RoboFail Dataset from REFLECT
+4188: [
+4189: 40
+4190: ]
+4191: , datasets from the Open6DOF benchmark
+4192: [
+4193: 11
+4194: ]
+4195: , and the RT-1 dataset
+4196: [
+4197: 3
+4198: ]
+4199: .
+4200: Additionally, we showcase segmentation results from the OmniGibson.
+4201: F.5
+4202: Prompts
+4203: As illustrated in
+4204: Fig.
+4205: 24
+4206: , we detail the prompt used to invoke an off-the-shelf VLM,
+4207: i.e.
+4208: , GPT-4o
+4209: [
+4210: 1
+4211: ]
+4212: , to generate Python code for monitoring.
+4213: Figure 12
+4214: :
+4215: Demonstration of “Stack in Order”. We show how our framework detects failures and assists in recovery when the placement positions predicted by the policy for the “Stack in Order” task are subject to a uniform
+4216: [
+4217: 0
+4218: ,
+4219: q
+4220: ]
+4221: [0,q]
+4222: cm interference. Red boxes indicate the occurrence of failures, while green boxes signify successful task execution.
+4223: Figure 13
+4224: :
+4225: Demonstration of “Stack in Order”. We show how our framework performs failure detection and aids in recovery when, in the “Stack in Order” task, there is a probability
+4226: p
+4227: p
+4228: that blocks will fall due to being released by the robot’s suction cup at each step. Red boxes indicate the occurrence of failures, while green boxes signify successful task execution.
+4229: Figure 14
+4230: :
+4231: Demonstration of “Sweep Half the Blocks” and comparison to baseline. We show our framework can precisely count the blocks within a specified area and timely halts the policy execution to complete the task. In contrast, DoReMi
+4232: [
+4233: 16
+4234: ]
+4235: fails to stop the policy execution in time, leading to task failure. Red boxes indicate the occurrence of failures, while green boxes signify successful task execution.
+4236: Figure 15
+4237: :
+4238: Demonstration of “Use Rope to Close the Opening Square” and comparison to baseline. We show that our framework effectively detects when the rope closes the opening square and promptly stops the policy execution to complete the task successfully. Conversely, DoReMi fails to halt the policy execution on time; although it eventually succeeds in closing the opening, the excessive execution time results in task failure. Red boxes indicate the occurrence of failures, while green boxes signify successful task execution.
+4239: Figure 16
+4240: :
+4241: Demonstration of “Slot Pen”. We show how our framework detects failures and assists in recovery when facing point-level disturbances. Red boxes indicate the occurrence of failures, light green indicates the recovery with subgoal success and dark green boxes signify successful task execution.
+4242: Figure 17
+4243: :
+4244: Demonstration of “Stow Book”. We show how our framework detects failures and assists in recovery when facing line-level disturbances. Red boxes indicate the occurrence of failures, light green indicates the recovery with subgoal success and dark green boxes signify successful task execution.
+4245: Figure 18
+4246: :
+4247: Demonstration of “Pour Tea”. We show how our framework detects failures and assists in recovery when facing surface-level disturbances. Red boxes indicate the occurrence of failures, light green indicates the recovery with subgoal success and dark green boxes signify successful task execution.
+4248: Figure 19
+4249: :
+4250: Demonstration of “Clear all objects on the table except for animals”. We show that our framework achieves both reactive failure detection (
+4251: e.g.
+4252: , detecting unexpected failures when humans remove objects from the robot’s grasp) and proactive failure detection (
+4253: e.g.
+4254: , identifying target object movement during grasping to prevent foreseeable failures).
+4255: This effectively enhances the task success rate and reduces the execution time.
+4256: Figure 20
+4257: :
+4258: Visualization of constraint-aware segmentation for the RoboFail Dataset
+4259: [
+4260: 40
+4261: ]
+4262: . This dataset is not included in the training data.
+4263: Figure 21
+4264: :
+4265: Visualization of constraint-aware segmentation for the Open6DOF
+4266: [
+4267: 11
+4268: ]
+4269: . This dataset is not included in the training data.
+4270: Figure 22
+4271: :
+4272: Visualization of constraint-aware segmentation for the RT-1 dataset
+4273: [
+4274: 3
+4275: ]
+4276: . This dataset is not included in the training data.
+4277: Figure 23
+4278: :
+4279: Visualization of constraint-aware segmentation for the Omnigibsom simulator.
+4280: Figure 24
+4281: :
+4282: Prompt of monitor code generation. We use this prompt, combined with additional task instructions, the current subgoal, and images from two perspectives, to enable an off-the-shelf VLM,
+4283: i.e.
+4284: , GPT-4o
+4285: [
+4286: 1
+4287: ]
+4288: , to generate Python code for monitoring.

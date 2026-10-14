@@ -1,0 +1,84 @@
+[Sli25] ConditionNET: Learning Preconditions and Effects for Execution Monitoring (2025)
+IEEE Robotics and Automation Letters, pp. 1337-1344
+Date: 2025-02-01
+By Daniel Sliwowski, Dongheui Lee - 16 citations - 9.5 cit./yr
+DOI: 10.1109/LRA.2024.3520916
+PDF ✓
+
+The introduction of robots into everyday scenarios necessitates algorithms capable of monitoring the execution of tasks. In this letter, we propose ConditionNET, an approach for learning the preconditions and effects of actions in a fully data-driven manner. We develop an efficient vision-language model and introduce additional optimization objectives during training to optimize for consistent feature representations. ConditionNET explicitly models the dependencies between actions, preconditions, and effects, leading to improved performance. We evaluate our model on two robotic datasets, one of which we collected for this letter, containing 406 successful and 138 failed teleoperated demonstrations of a Franka Emika Panda robot performing tasks like pouring and cleaning the counter. We show in our experiments that ConditionNET outperforms all baselines on both anomaly detection and phase prediction tasks. Furthermore, we implement an action monitoring system on a real robot to demonstrate the practical applicability of the learned preconditions and effects. Our results highlight the potential of ConditionNET for enhancing the reliability and adaptability of robots in real-world environments.
+
+[Sha20] Relational Learning for Skill Preconditions (2020)
+Conference on Robot Learning, pp. 845-861
+Date: 2020-12-03
+By Mohit Sharma, Oliver Kroemer - 22 citations - 3.8 cit./yr
+No DOI found. Link: https://arxiv.org/abs/2012.01693
+PDF ✓
+
+To determine if a skill can be executed in any given environment, a robot needs to learn the preconditions for the skill. As robots begin to operate in dynamic and unstructured environments, precondition models will need to generalize to variable number of objects with different shapes and sizes. In this work, we focus on learning precondition models for manipulation skills in unconstrained environments. Our work is motivated by the intuition that many complex manipulation tasks, with multiple objects, can be simplified by focusing on less complex pairwise object relations. We propose an object-relation model that learns continuous representations for these pairwise object relations. Our object-relation model is trained completely in simulation, and once learned, is used by a separate precondition model to predict skill preconditions for real world tasks. We evaluate our precondition model on $3$ different manipulation tasks: sweeping, cutting, and unstacking. We show that our approach leads to significant improvements in predicting preconditions for all 3 tasks, across objects of different shapes and sizes.
+
+[Sch26] RAFAIL: Relationship-Aware Failure Detection for Robotic Manipulation (2026)
+Unknown Journal
+Date: 2026-09-16
+By Loris Schneider, Edgar Welte, R. Rayyes
+No DOI found. Link: https://arxiv.org/abs/2609.18324
+PDF ✓
+
+Detecting failures during execution is essential for reliable robotic manipulation. Vision-language models (VLMs) can assess task outcomes semantically but add runtime computation, whereas out-of-distribution (OOD) detectors may respond to harmless scene variations rather than failure-relevant deviations. We introduce RAFAIL, a framework for detecting execution failures during robotic manipulation. RAFAIL identifies failures by detecting anomalies in task-relevant relationships between entities, such as a gripper and an object or an object and its target. By focusing OOD detection on relevant parts of the observation, RAFAIL reduces sensitivity to task-irrelevant scene variation. Offline, a VLM annotates successful demonstrations with task progress and relationship importance, which are used to learn point-cloud-based relationship representations without relying on policy-internal features. At runtime, relationship-specific OOD detectors evaluate these representations while relationship importance and task progress are predicted without VLM inference. RAFAIL requires no failure data and achieves 73.4% balanced accuracy across three real-world robotic manipulation tasks, outperforming the strongest evaluated OOD- and uncertainty-based baselines.
+
+[Zhe26] ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models (2026)
+Unknown Journal
+Date: 2026-08-13
+By Ge-Han Zheng, Matthew Johnson-Roberson, Weiming Zhi - 1 citations - 2.0 cit./yr
+No DOI found. Link: https://arxiv.org/abs/2608.13438
+PDF ✓
+
+Contact-rich manipulation failures are often detected only after the robot has committed to contact. This is especially limiting in wrist-camera setups: close gripper--object views help observe contact, but a poor approach may already push, miss, slip, or disturb the object before conventional detectors react. We introduce \emph{ContactGuard}, a pre-contact execution monitor for chunked visuomotor policies. Given the policy's planned action chunk, ContactGuard predicts its short-horizon consequence in latent visual space and aborts if the predicted future latent indicates likely failure. Its latent world model is trained from unlabelled robot trajectories to predict compact multi-view visual embeddings under planned actions, avoiding pixel-level video prediction. A lightweight failure probe is then trained from a small labelled set of pre-contact clips. At deployment, ContactGuard anchors prediction before an imminent contact event, rolls the model forward under the policy's own actions, and verifies the predicted post-contact latent. Across real-world contact-rich manipulation tasks, ContactGuard predicts failure more accurately than direct and corrupted-action ablations, and transfers to live robot as a pre-contact abort signal without modifying the underlying policy.
+
+[Far22] Failure Prediction with Statistical Guarantees for Vision-Based Robot Control (2022)
+ArXiv
+Date: 2022-02-11
+By Alec Farid, David Snyder, Allen Z. Ren, Anirudha Majumdar - 34 citations - 7.3 cit./yr
+DOI: 10.15607/rss.2022.xviii.042
+PDF ✓
+
+We are motivated by the problem of performing failure prediction for safety-critical robotic systems with high-dimensional sensor observations (e.g., vision). Given access to a black-box control policy (e.g., in the form of a neural network) and a dataset of training environments, we present an approach for synthesizing a failure predictor with guaranteed bounds on false-positive and false-negative errors. In order to achieve this, we utilize techniques from Probably Approximately Correct (PAC)-Bayes generalization theory. In addition, we present novel class-conditional bounds that allow us to trade-off the relative rates of false-positive vs. false-negative errors. We propose algorithms that train failure predictors (that take as input the history of sensor observations) by minimizing our theoretical error bounds. We demonstrate the resulting approach using extensive simulation and hardware experiments for vision-based navigation with a drone and grasping objects with a robotic manipulator equipped with a wrist-mounted RGB-D camera. These experiments illustrate the ability of our approach to (1) provide strong bounds on failure prediction error rates (that closely match empirical error rates), and (2) improve safety by predicting failures.
+
+[Li21] MURAL: Meta-Learning Uncertainty-Aware Rewards for Outcome-Driven Reinforcement Learning (2021)
+ArXiv
+Date: 2021-07-15
+By Kevin Li, Abhishek Gupta, Ashwin Reddy, Vitchyr H. Pong, Aurick Zhou, Justin Yu, S. Levine - 38 citations - 7.2 cit./yr
+No DOI found. Link: https://arxiv.org/abs/2107.07184
+PDF ✓
+
+Exploration in reinforcement learning is a challenging problem: in the worst case, the agent must search for high-reward states that could be hidden anywhere in the state space. Can we define a more tractable class of RL problems, where the agent is provided with examples of successful outcomes? In this problem setting, the reward function can be obtained automatically by training a classifier to categorize states as successful or not. If trained properly, such a classifier can provide a well-shaped objective landscape that both promotes progress toward good states and provides a calibrated exploration bonus. In this work, we show that an uncertainty aware classifier can solve challenging reinforcement learning problems by both encouraging exploration and provided directed guidance towards positive outcomes. We propose a novel mechanism for obtaining these calibrated, uncertainty-aware classifiers based on an amortized technique for computing the normalized maximum likelihood (NML) distribution. To make this tractable, we propose a novel method for computing the NML distribution by using meta-learning. We show that the resulting algorithm has a number of intriguing connections to both count-based exploration methods and prior algorithms for learning reward functions, while also providing more effective guidance towards the goal. We demonstrate that our algorithm solves a number of challenging navigation and robotic manipulation tasks which prove difficult or impossible for prior methods.
+
+[Du24] To Err is Robotic: Rapid Value-Based Trial-and-Error during Deployment (2024)
+ArXiv
+Date: 2024-06-22
+By Maximilian Du, Alexander Khazatsky, Tobias Gerstenberg, Chelsea Finn - 6 citations - 2.6 cit./yr
+DOI: 10.48550/arXiv.2406.15917
+PDF ✓
+
+When faced with a novel scenario, it can be hard to succeed on the first attempt. In these challenging situations, it is important to know how to retry quickly and meaningfully. Retrying behavior can emerge naturally in robots trained on diverse data, but such robot policies will typically only exhibit undirected retrying behavior and may not terminate a suboptimal approach before an unrecoverable mistake. We can improve these robot policies by instilling an explicit ability to try, evaluate, and retry a diverse range of strategies. We introduce Bellman-Guided Retrials, an algorithm that works on top of a base robot policy by monitoring the robot's progress, detecting when a change of plan is needed, and adapting the executed strategy until the robot succeeds. We start with a base policy trained on expert demonstrations of a variety of scenarios. Then, using the same expert demonstrations, we train a value function to estimate task completion. During test time, we use the value function to compare our expected rate of progress to our achieved rate of progress. If our current strategy fails to make progress at a reasonable rate, we recover the robot and sample a new strategy from the base policy while skewing it away from behaviors that have recently failed. We evaluate our method on simulated and real-world environments that contain a diverse suite of scenarios. We find that Bellman-Guided Retrials increases the average absolute success rates of base policies by more than 20% in simulation and 50% in real-world experiments, demonstrating a promising framework for instilling existing trained policies with explicit trial and error capabilities. For evaluation videos and other documentation, go to https://sites.google.com/view/to-err-robotic/home
+
+[Ami26] GIFT: Generalizing Intent for Flexible Test-Time Rewards (2026)
+ArXiv
+Date: 2026-03-23
+By Fin Amin, Nathaniel Dennler, Andreea Bobu
+DOI: 10.48550/arXiv.2603.22574
+PDF ✓
+
+Robots learn reward functions from user demonstrations, but these rewards often fail to generalize to new environments. This failure occurs because learned rewards latch onto spurious correlations in training data rather than the underlying human intent that demonstrations represent. Existing methods leverage visual or semantic similarity to improve robustness, yet these surface-level cues often diverge from what humans actually care about. We present Generalizing Intent for Flexible Test-Time Rewards (GIFT), a framework that grounds reward generalization in human intent rather than surface cues. GIFT leverages language models to infer high-level intent from user demonstrations by contrasting preferred with non-preferred behaviors. At deployment, GIFT maps novel test states to behaviorally equivalent training states via intent-conditioned similarity, enabling learned rewards to generalize across distribution shifts without retraining. We evaluate GIFT on tabletop manipulation tasks with new objects and layouts. Across four simulated tasks with over 50 unseen objects, GIFT consistently outperforms visual and semantic similarity baselines in test-time pairwise win rate and state-alignment F1 score. Real-world experiments on a 7-DoF Franka Panda robot demonstrate that GIFT reliably transfers to physical settings. Further discussion can be found at https://mit-clear-lab.github.io/GIFT/
+
+[Pek23] SpaTiaL: monitoring and planning of robotic tasks using spatio-temporal logic specifications (2023)
+Autonomous Robots, pp. 1439 - 1462
+Date: 2023-11-03
+By Christian Pek, Georg Friedrich Schuppe, Francesco Esposito, Jana Tumova, Danica Kragic - 14 citations - 4.8 cit./yr
+DOI: 10.1007/s10514-023-10145-1
+PDF ✓
+
+Many tasks require robots to manipulate objects while satisfying a complex interplay of spatial and temporal constraints. For instance, a table setting robot first needs to place a mug and then fill it with coffee, while satisfying spatial relations such as forks need to placed left of plates. We propose the spatio-temporal framework SpaTiaL that unifies the specification, monitoring, and planning of object-oriented robotic tasks in a robot-agnostic fashion. SpaTiaL is able to specify diverse spatial relations between objects and temporal task patterns. Our experiments with recorded data, simulations, and real robots demonstrate how SpaTiaL provides real-time monitoring and facilitates online planning. SpaTiaL is open source and easily expandable to new object relations and robotic applications.
+
+PDF symbols - ✓ PDF available; X No PDF available; … PDF download attempt in progress
+
+When using cite keys in your reply to the user, format as [[cite_key]](url), where url is https://doi.org/<DOI> for the DOI shown above (or the exact Link shown for papers without one), separating multiple with commas. In workspace files, keep bare [cite_key] markers with no URLs.

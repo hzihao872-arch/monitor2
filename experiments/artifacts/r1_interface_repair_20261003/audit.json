@@ -1,0 +1,102 @@
+{
+  "status": "completed_bounded_repair_both_candidates_failed_interface_gate",
+  "preregistration_sha256": "82a4fc9342e94f9725902cafba566d0a29f352a146d11e08b85112ddfd397d07",
+  "model_calls": 12,
+  "unused_call_allowance": 62,
+  "full_diagnostic_performed": false,
+  "selected_candidate": null,
+  "runs": [
+    {
+      "run": "probe_A_S0",
+      "records_path": "experiments/artifacts/r1_interface_repair_20261003/probe_A_S0/records.jsonl",
+      "calls": 3,
+      "parse_status": {
+        "valid": 3
+      },
+      "output_cap_count": 0,
+      "accepted_nonempty_memory_count": 0,
+      "input_tokens": 1560,
+      "output_tokens": 114,
+      "tick_elapsed_ms": 5105.172600131482,
+      "peak_vram_bytes": 4433944064
+    },
+    {
+      "run": "probe_A_S1",
+      "records_path": "experiments/artifacts/r1_interface_repair_20261003/probe_A_S1/records.jsonl",
+      "calls": 3,
+      "parse_status": {
+        "invalid_json": 3
+      },
+      "output_cap_count": 3,
+      "accepted_nonempty_memory_count": 0,
+      "input_tokens": 2004,
+      "output_tokens": 768,
+      "tick_elapsed_ms": 25945.610200054944,
+      "peak_vram_bytes": 4488696832
+    },
+    {
+      "run": "probe_B_S0",
+      "records_path": "experiments/artifacts/r1_interface_repair_20261003/probe_B_S0/records.jsonl",
+      "calls": 3,
+      "parse_status": {
+        "valid": 3
+      },
+      "output_cap_count": 0,
+      "accepted_nonempty_memory_count": 0,
+      "input_tokens": 1560,
+      "output_tokens": 114,
+      "tick_elapsed_ms": 4170.2781999483705,
+      "peak_vram_bytes": 4433944064
+    },
+    {
+      "run": "probe_B_S1",
+      "records_path": "experiments/artifacts/r1_interface_repair_20261003/probe_B_S1/records.jsonl",
+      "calls": 3,
+      "parse_status": {
+        "invalid_json": 3
+      },
+      "output_cap_count": 2,
+      "accepted_nonempty_memory_count": 0,
+      "input_tokens": 1755,
+      "output_tokens": 607,
+      "tick_elapsed_ms": 20835.913800168782,
+      "peak_vram_bytes": 4455387648
+    }
+  ],
+  "totals": {
+    "input_tokens": 6879,
+    "output_tokens": 1603,
+    "tick_elapsed_ms": 56056.97480030358,
+    "peak_vram_bytes": 4488696832,
+    "strict_valid": 6,
+    "s1_strict_valid": 0
+  },
+  "verified": {
+    "frozen_files": 42,
+    "unchanged_reference_draft": true,
+    "source_manifests": [
+      {
+        "manifest": "research/sources/recovery_search_20261003/fetch_manifest.json",
+        "files_verified": 211
+      },
+      {
+        "manifest": "research/sources/recovery_search_20261003/upstream_trace/fetch_manifest.json",
+        "files_verified": 55
+      }
+    ],
+    "unchanged_v1_run_files": 8,
+    "new_ledger_entries": 4,
+    "same_frames_across_methods": true,
+    "online_prompt_and_parser_reproduced": true,
+    "no_future_frames": true,
+    "all_per_tick_budgets_respected": true,
+    "no_output_postprocessing": true
+  },
+  "scope": "format-only development probe on ep618 q0..2; no event/H1 scoring; S0 valid outputs are all unknown; S1 has no accepted memory",
+  "failure_details": {
+    "A_S1": "3/3 repetitive incomplete JSON at 256-token cap",
+    "B_S1": "q0/q1 repetitive incomplete JSON at 256-token cap; q2 95 tokens with an extra closing brace (strict JSON Extra data); no salvage",
+    "S0": "6/6 strict valid, identical unknown H/C/P/G with evidence_time=0; cannot infer task accuracy or full-trajectory robustness"
+  },
+  "causal_limit": "Adding explicit braces eliminated observed fences in this 12-call prefix test; shortening the S1 instruction did not produce valid transferable summaries. Underlying repetition cause not isolated; do not blame historical reasoning or declare an architectural benefit."
+}

@@ -1,0 +1,392 @@
+{
+  "issued": 48,
+  "completed": 48,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior_issued": 80,
+  "cumulative": 128,
+  "counts": {
+    "oracle_chat": {
+      "n": 8,
+      "bare_correct": 6,
+      "alias_correct": 6,
+      "unknown": 2,
+      "wall_seconds": 8.907589223235846,
+      "adapter_seconds": 0.833403427619487,
+      "input_tokens": 849
+    },
+    "oracle_raw": {
+      "n": 8,
+      "bare_correct": 0,
+      "alias_correct": 5,
+      "unknown": 3,
+      "wall_seconds": 0.2675720611587167,
+      "adapter_seconds": 0.26509253354743123,
+      "input_tokens": 809
+    },
+    "rgb_chat": {
+      "n": 16,
+      "bare_correct": 11,
+      "alias_correct": 11,
+      "unknown": 0,
+      "wall_seconds": 10.141245390754193,
+      "adapter_seconds": 1.9815076971426606,
+      "input_tokens": 4450
+    },
+    "rgb_raw": {
+      "n": 16,
+      "bare_correct": 7,
+      "alias_correct": 9,
+      "unknown": 4,
+      "wall_seconds": 1.3101094020530581,
+      "adapter_seconds": 1.3040812509134412,
+      "input_tokens": 4370
+    }
+  },
+  "pairs": [
+    {
+      "kind": "oracle",
+      "template": "chat",
+      "probe": "grasp_07",
+      "positive_value": "True",
+      "opposed_value": "Unknown",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 3.9245042806527097,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "chat",
+      "probe": "inside_14",
+      "positive_value": "True",
+      "opposed_value": "False",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 18.847015763742007,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "chat",
+      "probe": "opening_00",
+      "positive_value": "False",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -17.192824977939768,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "chat",
+      "probe": "plate_14",
+      "positive_value": "Unknown",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -6.536015730793965,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "raw",
+      "probe": "grasp_07",
+      "positive_value": "Unknown",
+      "opposed_value": "Unknown",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 2.6240498183453234,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "raw",
+      "probe": "inside_14",
+      "positive_value": "True",
+      "opposed_value": "False",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 4.627328533293891,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "raw",
+      "probe": "opening_00",
+      "positive_value": "False",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -5.187692241613327,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "oracle",
+      "template": "raw",
+      "probe": "plate_14",
+      "positive_value": "Unknown",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -2.626144937815635,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "grasp_07",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": 0.12781167284061135,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "grasp_14",
+      "positive_value": "False",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -12.75190090825574,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "inside_07",
+      "positive_value": "False",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -12.749655831068903,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "inside_14",
+      "positive_value": "True",
+      "opposed_value": "False",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 13.000663054932083,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "opening_00",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": -0.0003834089315246848,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "opening_14",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": 0.00028486191370926815,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "plate_00",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": 0.01260417127537799,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "chat",
+      "probe": "plate_14",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": -0.0031751766712827664,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "grasp_07",
+      "positive_value": "True",
+      "opposed_value": "Unknown",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 0.875,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "grasp_14",
+      "positive_value": "False",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -5.80831562043851,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "inside_07",
+      "positive_value": "Unknown",
+      "opposed_value": "True",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -6.477992884392535,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "inside_14",
+      "positive_value": "True",
+      "opposed_value": "False",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 6.486751339043533,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "opening_00",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": -0.2618830999289905,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "opening_14",
+      "positive_value": "True",
+      "opposed_value": "True",
+      "both_true": true,
+      "both_false": false,
+      "contrast_margin": 0.0,
+      "contrast_value": "Unknown",
+      "contrast_correct_ai": false,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "plate_00",
+      "positive_value": "True",
+      "opposed_value": "Unknown",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": 1.125,
+      "contrast_value": "True",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    },
+    {
+      "kind": "rgb",
+      "template": "raw",
+      "probe": "plate_14",
+      "positive_value": "True",
+      "opposed_value": "Unknown",
+      "both_true": false,
+      "both_false": false,
+      "contrast_margin": -0.12004229245869524,
+      "contrast_value": "False",
+      "contrast_correct_ai": true,
+      "contrastive_status": "exploratory derived scoring; two-forward cost; statement priors are uncontrolled"
+    }
+  ],
+  "candidate_token_ids": {
+    "False": [
+      [
+        4049
+      ],
+      [
+        3557
+      ]
+    ],
+    "True": [
+      [
+        2514
+      ],
+      [
+        3007
+      ]
+    ],
+    "Unknown": [
+      [
+        13790
+      ],
+      [
+        21693
+      ]
+    ]
+  },
+  "audit_errors": [],
+  "wall_seconds": 20.626516077201813,
+  "adapter_seconds": 4.38408490922302,
+  "input_tokens": 10478,
+  "peak_vram_gib": 16.42863130569458,
+  "references": "AI development pre-audit; directed predicates; no main-method score or blind assessment"
+}

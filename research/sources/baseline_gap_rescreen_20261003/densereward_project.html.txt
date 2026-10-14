@@ -1,0 +1,99 @@
+DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation
+DenseReward:
+Dense Reward Learning via Failure Synthesis for Robotic Manipulation
+Yu Fang1*
+Wanxi Dong1*
+Jiaqi Liu1
+Yue Yang1
+Mingxiao Huo2
+Yao Mu3
+Huaxiu Yao1
+Li Erran Li4
+Daniel Szafir1
+Mingyu Ding1
+1 University of North Carolina at Chapel Hill
+2 Carnegie Mellon University
+3 Shanghai Jiao Tong University
+4 Amazon AWS AI
+* Equal contribution
+arXiv
+Code
+Dataset
+Models
+Back to Top
+DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation
+Video Summary
+Overview
+We present a dense robotic reward model for vision-language-guided manipulation.
+(a) We construct a 27k-episode dataset with automatically synthesized success and failure trajectories in simulation, providing diverse dense reward supervision.
+(b) Given a task instruction and observations consisting of the current frame and historical frames, DenseReward predicts both the current execution state and a per-timestep dense reward score that reflects task progress. Unlike binary success/failure labels, this dense reward provides fine-grained feedback for intermediate states.
+(c) The predicted rewards can be used in downstream reinforcement learning for policy improvement.
+Abstract
+Reinforcement learning holds great promise for improving robot policies beyond the limits of imitation learning. However, its practical adoption remains bottlenecked by the lack of reliable vision-language reward models that provide dense and informative feedback. Two key challenges remain: acquiring diverse failure data at scale and obtaining fine-grained reward signals beyond sparse trajectory-level success labels. Existing approaches reuse successful trajectories to construct negative or suboptimal examples through trajectory truncation, instruction relabeling, or trajectory comparisons, without generating new trajectories where physical interaction failures such as collisions, missed grasps, object drops, and recovery actually occur. Meanwhile, many existing reward models predict sparse binary or trajectory-level rewards, which provide limited guidance for efficient policy optimization.
+We introduce DenseReward, a dense robotic reward model that addresses both challenges. To train DenseReward, we develop an automated failure data generation pipeline that synthesizes physically realistic failure trajectories in simulation without manual annotation, covering diverse failure modes such as collisions, missed grasps, object drops, and recovery behaviors. DenseReward predicts dense frame-level reward scores from visual observations and language instructions, enabling fine-grained estimation of task progress throughout an episode.
+Experiments show that DenseReward outperforms general-purpose VLMs and existing robotic reward models in dense reward prediction across both simulated and real-world manipulation. We further demonstrate that DenseReward provides effective reward guidance for downstream model predictive control and reinforcement learning. We release the dataset, trained reward models, and evaluation suite to support the development of failure-aware dense reward modeling for robot learning.
+Method
+Our method consists of three components: 1) an automated data generation pipeline that generates trajectories with phase-aware dense reward labels, 2) failure synthesis that creates diverse failure trajectories through targeted perturbations, and 3) DenseReward models trained on the resulting mixture of successful and failure trajectories to estimate fine-grained task progress.
+(a) Five-phase manipulation with dense rewards. (b) Targeted perturbations synthesize diverse failure modes.
+Experiments
+Dense Reward Prediction
+We report the mean absolute error (MAE) with respect to the dense reward annotations in our evaluation set.
+DenseReward achieves the lowest error across all evaluated data sources.
+| Model
+| Overall
+| DROID
+| Isaac Sim
+| RoboSuite
+| LIBERO
+| Qwen3-VL-4B-Instruct | 0.289 | 0.532 | 0.285 | 0.195 | 0.478
+| Qwen3-VL-8B-Instruct | 0.293 | 0.538 | 0.305 | 0.180 | 0.502
+| Molmo2-4B | 0.282 | 0.506 | 0.282 | 0.187 | 0.478
+| Molmo2-8B | 0.335 | 0.480 | 0.307 | 0.303 | 0.455
+| RoboReward-4B | 0.275 | 0.534 | 0.269 | 0.179 | 0.470
+| RoboReward-8B | 0.230 | 0.484 | 0.185 | 0.172 | 0.431
+| Robometer | 0.366 | 0.521 | 0.328 | 0.345 | 0.468
+| DenseReward (Ours) | 0.081 | 0.259 | 0.081 | 0.051 | 0.044
+Dense reward prediction results (mean absolute error, lower is better).
+DenseReward more closely follows task progress than strong VLM and robotic reward model baselines across successful and failed executions.
+Milk: success
+Soap: collision
+Lime: miss
+Hot dog: fall
+Model Predictive Control
+We evaluate whether the learned reward signal can provide useful local guidance for action selection in a simple short-horizon control setting.
+At each decision step, we sample 28 candidate actions (27 directions and gripper open/close), and use the reward model to score candidate transitions.
+The simulator state is then restored, and the action with the highest predicted score is executed by the robot.
+We evaluate this procedure on three object manipulation settings involving a can, cup, and lemon.
+We evaluate the quality of local guidance using the minimum distance between the gripper and the target object, where a lower value indicates more effective guidance.
+| Model
+| Can
+| Cup
+| Lemon
+| Avg.
+| RoboReward-4B | 0.199 | 0.307 | 0.295 | 0.267
+| RoboReward-8B | 0.314 | 0.270 | 0.317 | 0.300
+| VLAC-2B | 0.316 | 0.346 | 0.380 | 0.347
+| VLAC-8B | 0.351 | 0.360 | 0.363 | 0.358
+| DenseReward (Ours) | 0.219 | 0.181 | 0.288 | 0.229
+MPC performance on three object manipulation tasks (minimum distance, lower is better).
+Can
+Cup
+Lemon
+VLAC-8B
+RoboReward-4B
+DenseReward(Ours)
+Qualitative MPC rollouts guided by each reward model. DenseReward drives the end-effector toward the target object more reliably than VLAC-8B and RoboReward-4B.
+Reinforcement Learning on LIBERO
+We apply DenseReward as a shaping signal for online PPO fine-tuning of a $\pi_0$ policy on LIBERO, combining the sparse simulator success reward with dense chunk-level feedback. PPO with DenseReward achieves competitive or improved performance compared with the sparse-reward PPO baseline.
+Real-World Policy Learning
+We evaluate DenseReward for real-world online RL on a DROID platform, using DSRL to steer a frozen $\pi_0$ policy with only 10–20 real-world rollout trajectories. Adding DenseReward improves the success rate from 60% to 80% on stack the cups, and from 40% to 70% on put ball in basket, demonstrating effective dense feedback for real-world policy learning.
+Collision. The predicted reward rises as the robot grasps the ball and moves toward the basket, then drops once a collision disrupts the placement.
+Missed grasp and recovery. The reward degrades when the robot fails to grasp the ball, then climbs back to a high final score after it recovers and regrasps.
+BibTeX
+Copy
+@article{fang2026densereward,
+title={DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation},
+author={Fang, Yu and Dong, Wanxi and Liu, Jiaqi and Yang, Yue and Huo, Mingxiao and Mu, Yao and Yao, Huaxiu and Li, Li Erran and Szafir, Daniel and Ding, Mingyu},
+journal={arXiv preprint arXiv:2607.13033},
+year={2026}
+}

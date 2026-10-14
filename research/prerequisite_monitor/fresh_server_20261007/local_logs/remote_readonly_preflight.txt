@@ -1,0 +1,21 @@
+2026-10-07 fresh prerequisite existing-server read-only preflight
+SSH endpoint: connect.bjb2.seetacloud.com:36053 (credential not recorded)
+Remote hostname: autodl-container-b28c4e9e59-e3f3921e
+Remote UTC observed: 2026-10-07T10:53:49Z through 10:58:26Z
+User-reported rental remaining at approximately 10:54Z: two hours. Conservative internal deadline for GPU scheduling: 2026-10-07T12:40:00Z, with a further ten-minute download buffer in scripts.
+GPU: NVIDIA GeForce RTX 5090, 32607 MiB total, 32110 MiB free at first check.
+Data disk: /root/autodl-tmp, XFS 100G, 74.2G free at first check.
+Clone data disk was still copying at 10:53Z: monitor2 grew from 20K to 9.9G by 10:56Z. Hash checks below were performed after all six shard sizes matched the frozen manifest.
+TOPReward Python: /root/autodl-tmp/monitor2/.venv-topreward/bin/python, Python 3.12.3; torch 2.8.0+cu128, CUDA True.
+Robometer Python: /root/autodl-tmp/monitor2/.venv-robometer/bin/python, Python 3.10.22; torch 2.8.0+cu128, CUDA True.
+TOPReward commit: 4877a0ee5098cbec18485125466631b1dcc4a573.
+Robometer commit: 352d160389daa964788de1ec933d1925f3a6de4f.
+Robometer compatibility diff SHA-256 after stripping trailing newline, consistent with Python preflight: b560da190b4dccaa405684beb2e33a5950fefd035983dc98ae9d02406b9d2fac.
+Qwen3-VL-8B config SHA-256: 5cd452860dc1e9c29dd71cc3cef7f39b338b7a40793f7a260655c2d3568f3661.
+Robometer-4B config SHA-256: 2287e93a95c1dcd5e471cf386cf5750e7643ee0b2c44a2544a1318b8b8f3c9be.
+Qwen3-VL-8B shards SHA-256, in order: d5d0aef0eb170fc7453a296c43c0849a56f510555d3588e4fd662bb35490aefa; 8be88fb5501e4d5719a6d4cc212e6a13480330e74f3e8c77daa1a68f199106b5; 83de00eafe6e0d57ccd009dbcf71c9974d74df2f016c27afb7e95aafd16b2192; 0a88b98e9f96270973f567e6a2c103ede6ccdf915ca3075e21c755604d0377a5.
+Robometer-4B shards SHA-256, in order: 2cfa81761595f6b10bd079736eb32bdeeeb0b49224619411bd511d9d1f1171a4; a25be9713ccc3cb14738be76ef6665742093d70323ec026ea70e8fa843a342be.
+Existing old-format anonymous input: /root/autodl-tmp/monitor2/single_scene_pilot/flat_red_v1_cache_fix/model_input, six numbered MP4s plus instruction.txt, manifest.jsonl and media_hashes.json.
+All six shard sizes matched official_weight_hashes.json. No weight download or replacement was performed.
+P0 upload after read-only checks, remote ZIP/script SHA-256: access_gate.zip 3e57af3072091bafbc10b81eea17d8ebd597337458cae5edd6b8433ab5842e78; support_surface.zip 3124b5117820707f3458696d4a553f0fee27d41aa969d45eca78bfd84b6cfc9d; model_side_code.zip 42c1892ada623216519f9da252cfdfb2626d6bd3e126c25fda57aab04614467a; run_remote_p0.sh d0a56f2808c8723aa0e35b664c7090d07a46f9f738bcf98320d6136746603000.
+P0 remote run root: /root/autodl-tmp/monitor2/fresh_prerequisite_runs/20261007_dev_v2_01. Launched at approximately 2026-10-07T11:01:24Z, background PID 1703.

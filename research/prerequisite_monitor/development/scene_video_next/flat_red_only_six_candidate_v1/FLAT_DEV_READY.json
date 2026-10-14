@@ -1,0 +1,29 @@
+{
+  "status": "ready_for_single_scene_development_input",
+  "scene_protocol": "flat_square_dev_v2",
+  "video_protocol": "15s_1fps_640x480_15_decoded_frames",
+  "scope": "development_only",
+  "model_input": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/flat_red_only_six_candidate_v1/model_input",
+  "input_only_zip": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/flat_red_only_six_candidate_v1/flat_red_only_development_model_input.zip",
+  "input_only_zip_sha256": "c99543639e2ac7e8ddf270654d1394f42d6f121021463bf3f452648686183cfa",
+  "model_input_file_count": 9,
+  "anonymous_video_count": 6,
+  "runner_manifest": "model_input/manifest.jsonl",
+  "media_manifest": "model_input/media_hashes.json",
+  "independent_six_clip_review": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/reviews/flat_red_only_six_receipt_and_comparison.md",
+  "independent_six_clip_review_raw_sha256": "cb54f4770fee4a8d2d288feb26dc9e48557de324dec859d5b994dfd2ca23620c",
+  "independent_six_clip_supplement_review": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/reviews/flat_red_only_six_supplement_receipt_and_comparison.md",
+  "independent_six_clip_supplement_raw_sha256": "516079348d838c07c4feb2dfefe74723fcf67f4cefba7ccbd1a68baa361c0238",
+  "input_audit_status": "pass",
+  "existing_runner_input_and_decode_status": "pass_6_videos_15_decoded_frames_each",
+  "existing_runner_dry_run_status": "pass_6_videos_no_model_loaded",
+  "compatibility_audit": "verification/compatibility_audit.json",
+  "known_limits": [
+    "The first answer described distinguishing motion for all six clips but explicitly judged whole-goal completion only for B0; a separately preserved supplement classified all six in agreement with truth.",
+    "The supplement did not separately explain direct tabletop support, gripper release, or settling for the successful clip.",
+    "B0 has a longer round-trip motion than the one-way conditions.",
+    "This is one development mechanism; the original two-mechanism SCENE_READY.json gate is not met.",
+    "The method is not frozen and this package is not a fresh blind test.",
+    "Independent human discrimination does not guarantee Monitor model discrimination."
+  ]
+}

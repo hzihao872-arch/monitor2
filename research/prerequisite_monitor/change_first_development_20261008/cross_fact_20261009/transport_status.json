@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_cross_fact_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_cross_fact_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 16:02:19 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\": 47, \"last\": \"qf2bed1caaecc37a0_2_after_cross\", \"parent\": 555, \"total\": 602}{\"id\": \"qf2bed1caaecc37a0_0_after_cross\", \"value\": \"False\", \"issued\": 44}\n{\"id\": \"qf2bed1caaecc37a0_1_before_cross\", \"value\": \"False\", \"issued\": 45}\n{\"id\": \"qf2bed1caaecc37a0_1_after_cross\", \"value\": \"False\", \"issued\": 45}\n{\"id\": \"qf2bed1caaecc37a0_2_before_cross\", \"value\": \"True\", \"issued\": 46}\n{\"id\": \"qf2bed1caaecc37a0_2_after_cross\", \"value\": \"True\", \"issued\": 47}\n",
+  "stderr": "",
+  "exit_code": 0
+}

@@ -1,0 +1,2613 @@
+Experience-Driven Continual Learning of Terrain Traversability for Quadruped Robots
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+I
+INTRODUCTION
+II
+RELATED WORK
+II-A
+Geometric and Semantic Traversability
+II-B
+Proprioceptive Assessment and Physical Properties
+II-C
+Learning from Experience and Continual Adaptation
+II-D
+Uncertainty and the Navigation Interface
+III
+METHODOLOGY
+III-A
+Problem Formulation and System Overview
+III-B
+Causal Visual–Proprioceptive Supervision
+III-C
+Uncertainty-Aware Multi-Property Regression
+III-D
+Guarded Continual Adaptation
+III-E
+Spatial Traversability Mapping
+IV
+RESULTS
+IV-A
+Experimental Setup and Protocol
+IV-B
+Property Prediction and Calibration
+IV-C
+Continual Acquisition and Retention
+IV-D
+Traversability-Aware Navigation
+V
+CONCLUSIONS
+References
+License: arXiv.org perpetual non-exclusive license
+arXiv:2609.39755v1 [cs.RO] 30 Sep 2026
+Experience-Driven Continual Learning of Terrain Traversability for Quadruped Robots
+Luca Bricarello
+Affiliation:
+Dynamic Legged Systems Lab, Istituto Italiano di Tecnologia, Genoa, Italy.   Università degli Studi di Genova, Genoa, Italy. Correspondence:
+joao.virgolino@iit.it
+João Carlos Virgolino Soares
+Alberto Sanchez-Delgado
+Fulvio Mastrogiovanni
+Affiliation:
+Dynamic Legged Systems Lab, Istituto Italiano di Tecnologia, Genoa, Italy.   Università degli Studi di Genova, Genoa, Italy. Correspondence:
+joao.virgolino@iit.it
+Claudio Semini
+Abstract
+Safe and efficient quadruped navigation over unfamiliar terrain requires predicting terrain–robot interaction before contact: geometry and visual appearance alone cannot reveal how the robot will slip, load its feet, or expend energy.
+This paper presents a continual learning pipeline that uses locomotion experience to learn these interaction outcomes from pre-contact images and continually updates the predictions as new contacts are observed.
+Pre-contact descriptors, produced by a DINOv3 backbone model frozen during training, are mapped to five proprioceptive indicators weighted according to measurement reliability: planar foot slip, mean normal ground-reaction force, traction index, cost of transport, and touchdown loading rate.
+A compact evidential regressor allows us to predict these indicators together with aleatoric and epistemic uncertainty from the visual descriptors.
+Continual adaptation combines bounded experience replay with a validation gate: candidate models replace the deployed predictor only when they improve performance on recent held-out data while keeping degradation on historical held-out data within a prescribed tolerance.
+Predictions and epistemic uncertainty are projected into a local multilayer map and combined into a conservative traversability score map whose property weights can be adjusted without retraining.
+The resulting map is used for downstream navigation tests.
+The ROS 2 implementation supports evaluation on a Unitree Go2 in simulation and on hardware, with models trained separately in each domain.
+On a sequential hardware stream over three previously unseen terrains, gated replay reduces final anchor negative log-likelihood (NLL) degradation by 23.1% relative to replay without the gate while attaining similar new-terrain adaptation.
+Fig. 1:
+Qualitative hardware dataflow: RGB features are extracted by frozen DINOv3, converted by the evidential regressor into five interaction-property score images, and projected into a traversability grid map. The foam surfaces receive lower traversability scores. Artificial grass scores close to the laboratory floor, but slightly lower because it is perceived as more slippery.
+I
+INTRODUCTION
+Planning where a quadruped robot can step and how the terrain will respond to loading are equally important navigation considerations.
+Terrain elevation maps enable foothold and path planning on rough terrain
+[
+1
+,
+2
+]
+, yet identical terrain geometry can obscure variations in friction, compliance, or load-bearing properties
+[
+3
+,
+4
+]
+.
+Vegetation perceived as blocking a path may be pushed through instead
+[
+5
+,
+6
+]
+.
+Thus, terrain traversability depends on terrain-robot interaction effects rather than terrain appearance alone.
+We aim to leverage information about terrain ahead of the robot to anticipate these interaction effects.
+Vision and proprioception are two sources of information about terrain-robot interactions. Optical images capture information about terrain before it is contacted, and internal sensors report how the terrain responds to attempted locomotion
+[
+7
+,
+8
+]
+.
+Self-supervised approaches relate these two data streams by registering post-contact state to corresponding images
+[
+9
+,
+3
+]
+.
+Features learned from visuals can then be used to rapidly adapt predictions with small amounts of robot experience
+[
+10
+,
+11
+]
+.
+Yet robot adaptation methods must also be able to handle continued accumulation of experience: online fine-tuning may forget past terrain encounters
+[
+12
+,
+13
+]
+, while models may become overconfident on out-of-distribution observations
+[
+14
+,
+15
+]
+.
+Prior work has addressed parts of these challenges through visual prediction of physical properties
+[
+9
+,
+3
+]
+, retention of robot experience during adaptation
+[
+12
+,
+13
+]
+, and uncertainty-aware navigation costs
+[
+11
+,
+15
+]
+.
+This paper presents a quadruped traversability pipeline that combines predictions of the robot’s own interaction outcomes with continual adaptation and uncertainty-aware mapping.
+It associates pre-contact visual descriptions with five confidence-weighted foot-contact indicators: planar foot slip, mean normal ground-reaction force, traction index, cost of transport, and touchdown loading rate. A compact evidential regressor predicts each indicator and its uncertainty from frozen visual features, allowing the source of terrain difficulty to be examined separately for each property.
+After offline training, the regressor adapts with new and replayed contacts.
+We call the candidate acceptance test a
+validation gate
+: an update replaces the deployed predictor only if it improves negative log-likelihood (NLL) on recent held-out contacts without exceeding a prescribed tolerance for degradation on historical held-out contacts.
+We hypothesize that adding historical validation to recent-validation replay improves retention without impairing adaptation to new terrain.
+To the best of the authors’ knowledge, this is the first quadruped visual traversability system to combine confidence-weighted prediction of multiple foot-contact outcomes with validation-gated continual adaptation on both recent and historical experience.
+The main contributions of this work are:
+•
+A novel validation-gated continual learning strategy that combines replay-based training with held-out recent and historical validation. In a one-stream hardware ablation, the historical gate reduced final anchor NLL degradation by 23.1% relative to replay with recent validation alone, with similar new-terrain adaptation.
+•
+A contact-level supervision formulation that associates pre-contact visual observations with five proprioceptive interaction indicators, weighted by their individual measurement confidences.
+•
+A property-resolved evidential traversability map that preserves individual interaction predictions and their epistemic uncertainties, enabling adjustment of navigation preferences and uncertainty penalties without retraining the predictor.
+II
+RELATED WORK
+II-A
+Geometric and Semantic Traversability
+Geometric approaches evaluate terrain morphology against the robot’s locomotion skills.
+Wermelinger et al.
+[
+1
+]
+integrate geometric traversability assessment with navigation planning for a legged robot.
+Separately, Miki et al.
+[
+2
+]
+accelerate elevation-map construction with GPU processing and demonstrate the map in quadrupedal locomotion experiments.
+Geometric maps alone may not distinguish vegetation from the underlying support surface or determine whether a surface can sustain contact.
+VERN
+[
+5
+]
+incorporates vegetation properties into costmap construction, while Li et al.
+[
+6
+]
+use foothold supervision to recover the support surface beneath grass.
+Human demonstrations offer another source of visual terrain knowledge.
+Kim et al.
+[
+16
+]
+generate semantic traversability annotations from egocentric walking videos and deploy the predictor on a quadruped.
+STEPP
+[
+17
+]
+learns the distribution of pose-projected visual features from human walking and detects unfamiliar terrain by reconstruction error.
+These methods reduce annotation effort, but the demonstrated traversable regions do not directly measure the target robot’s planar foot slip, mean normal ground-reaction force, or cost of transport.
+II-B
+Proprioceptive Assessment and Physical Properties
+ProNav
+[
+7
+]
+uses joint, force, and current signals to assess terrain-induced instability and resistance to locomotion, including risks of slipping or leg entrapment.
+Kang et al.
+[
+8
+]
+account for slip in state estimation and incorporate stiffness into terrain maps.
+Sanchez-Delgado et al.
+[
+18
+]
+construct proprioceptive maps of elevation, slip, energy, and stability under lunar gravity in simulation.
+Dedicated probing supplies additional evidence: Haddeler et al.
+[
+19
+]
+combine vision with a force-sensing arm to assess collapsibility, while Medeiros et al.
+[
+4
+]
+use quadruped joint measurements and planned foot probing motions to assess load-bearing capacity.
+To anticipate contact, Wellhausen et al.
+[
+9
+]
+transfer force-derived foothold labels into images.
+Chen et al.
+[
+3
+]
+train a physical decoder in simulation to supervise visual friction and stiffness prediction.
+Ewen et al.
+[
+20
+]
+instead infer friction distributions through a Bayesian semantic map with class-dependent property priors.
+A remaining gap is to connect several effects measured during the robot’s own foot contacts to what it saw before contact, while accounting for the different reliability of each measurement.
+To address this gap, our formulation associates each completed stance with five interaction indicators and their individual measurement confidences.
+These confidence-weighted targets supervise predictions from pre-contact visual observations, capturing the robot’s experienced response under the observed operating conditions.
+II-C
+Learning from Experience and Continual Adaptation
+STERLING
+[
+21
+]
+learns terrain representations by aligning visual and non-visual experience.
+De Miguel et al.
+[
+22
+]
+cluster encoded elevation–texture patches and assess new terrain by similarity to accumulated traversals.
+WVN
+[
+10
+]
+learns a visual traversability head online using frozen features and robot-generated supervision.
+SALON
+[
+11
+]
+adapts cost and speed maps from experienced roughness, using Gaussian-process prediction and a managed experience buffer.
+Multimodal navigation also benefits from feedback: AMCO
+[
+23
+]
+combines visual and proprioceptive costmaps according to image reliability, and TOP-Nav
+[
+24
+]
+corrects visual estimates using locomotion evaluations.
+Retention during sequential learning is addressed explicitly by IMOST
+[
+12
+]
+, which combines scene-aware incremental memory with self-supervised segmentation, and by COTRATE
+[
+13
+]
+, which learns proprioceptive assessments and retains diverse visual features in compact replay.
+Lee et al.
+[
+25
+]
+evaluate continual traversability learning on a skid-steering wheeled robot. Their predictor combines visual and geometric terrain features with robot velocity to predict linear and angular traction using a probabilistic ensemble that models aleatoric and epistemic uncertainty.
+Their continual learning framework uses generative experience recall to retain prior knowledge without storing past datasets, and accounts for the uncertainty of recalled samples when updating the recall model.
+These approaches address retention through the selection, replay, or generation of past experience.
+Our approach additionally separates replay-based optimization from candidate acceptance: recent and historical held-out data determine whether an update replaces the deployed model.
+Acceptance requires improved predictive likelihood on recent experience and limits historical degradation relative to the current model.
+II-D
+Uncertainty and the Navigation Interface
+Unfamiliarity and poor traversability are related but distinct.
+Wellhausen et al.
+[
+14
+]
+detect anomalous terrain from multimodal observations, while STEPP
+[
+17
+]
+uses reconstruction error as a familiarity measure.
+Distributional approaches expose uncertainty more directly: Ewen et al.
+[
+20
+]
+maintain property distributions, SALON
+[
+11
+]
+adjusts costs and speeds using predictive variance, and EVORA
+[
+15
+]
+combines evidential traction distributions with feature-space epistemic uncertainty and risk-aware planning.
+A complementary planning formulation predicts action outcomes rather than cell costs.
+Kim et al.
+[
+26
+]
+combine a learned forward dynamics
+model with trajectory sampling for quadruped navigation; Roth et al.
+[
+27
+]
+predict future states and failure probabilities from geometry and proprioceptive history.
+Our representation builds on deep evidential regression
+[
+28
+]
+to estimate individual interaction outcomes and their uncertainties.
+The spatial map retains separate property and epistemic uncertainty layers before aggregation into a traversability score.
+This separation allows navigation preferences and uncertainty penalties to be adjusted while keeping the learned predictor fixed.
+Table
+I
+compares the approaches most relevant to this work by predicted outputs, online adaptation, retention, uncertainty, and update gating.
+TABLE I:
+Comparison of selected traversability methods.
+Online
+denotes predictor adaptation from newly acquired deployment experience.
+Gate
+denotes candidate acceptance based jointly on improved predictive performance on recent held-out data and a prescribed tolerance on historical held-out degradation relative to the deployed model.
+A/E: aleatoric/epistemic uncertainty; –: not reported as a component of the described method.
+Method
+Predicted output
+Online
+Memory / retention
+Uncertainty / confidence
+Gate
+WVN
+[
+10
+]
+Traversability score
+Yes
+Mission graph
+Reconstruction-based confidence
+–
+Chen et al.
+[
+3
+]
+Friction, stiffness
+Yes
+Mission graph
+Anomaly-based confidence mask
+–
+EVORA
+[
+15
+]
+Linear/angular traction
+–
+–
+Evidential distributions + feature density (A/E)
+–
+SALON
+[
+11
+]
+Roughness, speed
+Yes
+Experience buffer
+GP predictive variance
+–
+IMOST
+[
+12
+]
+Traversability
+Yes
+Incremental memory
+Reconstruction-based anomaly / sampling scores
+–
+Lee et al.
+[
+25
+]
+Linear/angular traction
+Yes
+Generative recall
+Probabilistic ensemble (A/E)
+–
+COTRATE
+[
+13
+]
+Traversability score
+Yes
+Selective feature replay
+–
+–
+Proposed
+Five interaction indicators
+Yes
+Bounded replay
+Evidential regression (A/E)
+Yes
+III
+METHODOLOGY
+III-A
+Problem Formulation and System Overview
+We define traversability as a robot-dependent outcome of interaction with the terrain, rather than a semantic terrain category.
+Accordingly, instead of assigning semantic labels such as sand or gravel, the proposed system predicts the expected interaction outcomes when the robot traverses visually observed terrain.
+We represent these outcomes through five complementary indicators, defined below.
+These predictions are subsequently converted into property-specific traversability scores and fused into a navigation cost representation.
+Fig.
+1
+illustrates this prediction-to-map process on hardware.
+At time
+t
+t
+, an RGB image
+I
+t
+I_{t}
+is processed by a frozen DINOv3 ViT-S/16 backbone
+[
+29
+]
+.
+Its patch tokens form a spatial feature map
+𝐗
+t
+∈
+ℝ
+36
+×
+36
+×
+384
+\mathbf{X}_{t}\in\mathbb{R}^{36\times 36\times 384}
+, where
+𝐱
+t
+,
+i
+,
+j
+∈
+ℝ
+384
+\mathbf{x}_{t,i,j}\in\mathbb{R}^{384}
+describes one image region.
+For each completed foot contact
+k
+k
+, proprioception provides the multi-property target
+𝐲
+k
+=
+[
+d
+slip
+,
+F
+¯
+n
+,
+r
+tr
+,
+CoT
+,
+F
+˙
+n
+td
+]
+k
+𝖳
+,
+\mathbf{y}_{k}=\left[d_{\mathrm{slip}},\ \overline{F}_{n},\ r_{\mathrm{tr}},\ \mathrm{CoT},\ \dot{F}^{\mathrm{td}}_{n}\right]^{\mathsf{T}}_{k},
+(1)
+together with property-specific confidence values
+𝐜
+k
+∈
+[
+0
+,
+1
+]
+5
+\mathbf{c}_{k}\in[0,1]^{5}
+. The five quantities respectively describe planar foot slip, mean normal ground-reaction force, traction index, cost of transport, and touchdown loading rate. We abbreviate ground-reaction force as GRF and cost of transport as CoT below. Their equations are given in Sec.
+III-B
+.
+The central requirement is that supervision remains causal.
+Let
+t
+k
+td
+t_{k}^{\mathrm{td}}
+and
+t
+k
+lo
+t_{k}^{\mathrm{lo}}
+denote touchdown and liftoff, respectively.
+A training sample is generated only from a visual observation acquired before contact,
+𝒮
+k
+=
+(
+𝐱
+t
+v
+,
+i
+,
+j
+,
+𝐲
+k
+,
+𝐜
+k
+)
+,
+t
+v
+≤
+t
+k
+td
+<
+t
+k
+lo
+.
+\mathcal{S}_{k}=\left(\mathbf{x}_{t_{v},i,j},\mathbf{y}_{k},\mathbf{c}_{k}\right),\qquad t_{v}\leq t_{k}^{\mathrm{td}}<t_{k}^{\mathrm{lo}}.
+(2)
+The resulting samples can either be stored for offline training or used immediately by the continual learner to update the current model. During deployment, the same visual features are processed by an evidential regressor and projected into a local multi-layer traversability map.
+Fig.
+2
+summarizes the inference and experience-learning paths.
+Fig. 2:
+Overview of the proposed experience-driven traversability pipeline. The deployed model performs uninterrupted inference while a separate candidate is trained from newly acquired visual–proprioceptive experience.
+III-B
+Causal Visual–Proprioceptive Supervision
+Each RGB frame is evaluated by the DINOv3 visual backbone, which remains frozen during both offline and online learning.
+Freezing it reduces the onboard training cost and, crucially, keeps the representation stationary: descriptors stored at different times remain compatible with the same lightweight downstream model, which instead can be updated with continual learning.
+The input image is resized to
+576
+×
+576
+576\times 576
+pixels, from which DINOv3 extracts a
+36
+×
+36
+36\times 36
+grid of local tokens.
+We use the ROS 2
+odom
+frame as the common local odometry coordinate system for visual patches, foot-contact positions, and maps; superscript
+o
+o
+denotes quantities expressed in this frame.
+Registered depth and camera pose are evaluated at the original RGB timestamp and used to project each valid patch into a
+5
+5
+cm contact-association grid in this frame.
+We approximate its ground footprint by deprojecting the four patch corners at the median depth of the corresponding image region.
+In parallel, each foot is tracked independently from touchdown to liftoff to compute the five indicators listed above.
+Let
+𝐩
+f
+,
+k
+o
+​
+(
+t
+)
+{}^{o}\mathbf{p}_{f,k}(t)
+be the odometry-frame position of the contacting foot in contact
+k
+k
+. Planar foot slip is its horizontal displacement during stance,
+d
+slip
+,
+k
+=
+‖
+𝐩
+f
+,
+k
+o
+​
+(
+t
+k
+lo
+)
+−
+𝐩
+f
+,
+k
+o
+​
+(
+t
+k
+td
+)
+‖
+x
+​
+y
+.
+d_{\mathrm{slip},k}=\left\|{}^{o}\mathbf{p}_{f,k}(t_{k}^{\mathrm{lo}})-{}^{o}\mathbf{p}_{f,k}(t_{k}^{\mathrm{td}})\right\|_{xy}.
+(3)
+Contact-force indicators use joint torque measurements and the analytic leg Jacobian. At each synchronized stance sample
+t
+r
+t_{r}
+, the GRF is estimated with a damped inverse to remain well-conditioned near kinematic singularities,
+𝐅
+^
+k
+b
+​
+(
+t
+r
+)
+\displaystyle{}^{b}\widehat{\mathbf{F}}_{k}(t_{r})
+=
+𝐉
+k
+​
+(
+t
+r
+)
+\displaystyle=\mathbf{J}_{k}(t_{r})
+(4)
+(
+𝐉
+k
+𝖳
+​
+(
+t
+r
+)
+​
+𝐉
+k
+​
+(
+t
+r
+)
++
+μ
+2
+​
+𝐈
+)
+−
+1
+​
+𝝉
+k
+​
+(
+t
+r
+)
+.
+\displaystyle\left(\mathbf{J}_{k}^{\mathsf{T}}(t_{r})\mathbf{J}_{k}(t_{r})+\mu^{2}\mathbf{I}\right)^{-1}\boldsymbol{\tau}_{k}(t_{r}).
+We use
+μ
+=
+10
+−
+3
+\mu=10^{-3}
+.
+We estimate the local support plane from the odometry-frame positions of at least three feet simultaneously in stance. When fewer feet are in contact or the plane estimate is degenerate, we use the horizontal plane.
+The estimated force is rotated into the odometry frame and resolved along the upward-pointing normal of this plane into the normal component
+F
+n
+,
+k
+​
+(
+t
+r
+)
+F_{n,k}(t_{r})
+and tangential component
+𝐅
+t
+,
+k
+​
+(
+t
+r
+)
+\mathbf{F}_{t,k}(t_{r})
+. Let
+N
+F
+,
+k
+N_{F,k}
+be the number of valid force samples during stance. Mean normal ground-reaction force and traction index are
+F
+¯
+n
+,
+k
+\displaystyle\overline{F}_{n,k}
+=
+1
+N
+F
+,
+k
+​
+∑
+r
+=
+1
+N
+F
+,
+k
+F
+n
+,
+k
+​
+(
+t
+r
+)
+,
+\displaystyle=\frac{1}{N_{F,k}}\sum_{r=1}^{N_{F,k}}F_{n,k}(t_{r}),
+(5)
+r
+tr
+,
+k
+\displaystyle r_{\mathrm{tr},k}
+=
+‖
+𝐅
+t
+,
+k
+‖
+¯
+|
+F
+¯
+n
+,
+k
+|
++
+ϵ
+F
+.
+\displaystyle=\frac{\overline{\|\mathbf{F}_{t,k}\|}}{|\overline{F}_{n,k}|+\epsilon_{F}}.
+(6)
+Here
+‖
+𝐅
+t
+,
+k
+‖
+¯
+\overline{\|\mathbf{F}_{t,k}\|}
+is the mean tangential-force magnitude over the same samples, and
+ϵ
+F
+=
+1
+\epsilon_{F}=1
+N regularizes small normal loads.
+The traction index measures the tangential-force magnitude sustained relative to normal load during the observed gait; it is not a direct estimate of the terrain friction coefficient. In our scoring convention, larger values of this raw index receive a higher traction score, while planar foot slip separately penalizes loss of grip.
+Let
+P
+¯
+abs
+,
+k
+\overline{P}_{\mathrm{abs},k}
+be the mean absolute joint mechanical power during stance, where
+P
+abs
+​
+(
+t
+)
+=
+∑
+j
+|
+τ
+j
+​
+(
+t
+)
+​
+q
+˙
+j
+​
+(
+t
+)
+|
+P_{\mathrm{abs}}(t)=\sum_{j}|\tau_{j}(t)\dot{q}_{j}(t)|
+, and let
+v
+¯
+x
+​
+y
+,
+k
+\overline{v}_{xy,k}
+be the mean planar base speed in the same interval. For the touchdown window
+[
+t
+k
+td
+,
+t
+k
+td
++
+50
+​
+ms
+]
+[t_{k}^{\mathrm{td}},t_{k}^{\mathrm{td}}+50\,\mathrm{ms}]
+, let
+t
+a
+<
+t
+b
+t_{a}<t_{b}
+be the first and last valid normal-force sample times. Cost of transport and touchdown loading rate are
+CoT
+k
+\displaystyle\mathrm{CoT}_{k}
+=
+P
+¯
+abs
+,
+k
+m
+​
+g
+​
+v
+¯
+x
+​
+y
+,
+k
+,
+\displaystyle=\frac{\overline{P}_{\mathrm{abs},k}}{mg\overline{v}_{xy,k}},
+(7)
+F
+˙
+n
+,
+k
+td
+\displaystyle\dot{F}^{\mathrm{td}}_{n,k}
+=
+F
+n
+,
+k
+​
+(
+t
+b
+)
+−
+F
+n
+,
+k
+​
+(
+t
+a
+)
+t
+b
+−
+t
+a
+.
+\displaystyle=\frac{F_{n,k}(t_{b})-F_{n,k}(t_{a})}{t_{b}-t_{a}}.
+(8)
+Here
+m
+m
+is the robot mass and
+g
+g
+the gravity constant. Touchdown loading rate requires at least two valid force samples in the
+50
+50
+ms window.
+Let
+N
+k
+N_{k}
+be the number of synchronized samples collected during stance,
+κ
+¯
+k
+\bar{\kappa}_{k}
+the mean Jacobian conditioning ratio
+σ
+min
+​
+(
+𝐉
+)
+/
+σ
+max
+​
+(
+𝐉
+)
+\sigma_{\min}(\mathbf{J})/\sigma_{\max}(\mathbf{J})
+, and
+N
+k
+td
+N_{k}^{\mathrm{td}}
+the number of force samples in the touchdown window.
+The property confidences are
+c
+k
+slip
+\displaystyle c_{k}^{\mathrm{slip}}
+=
+min
+⁡
+(
+1
+,
+N
+k
+/
+N
+min
+)
+,
+\displaystyle=\min(1,N_{k}/N_{\min}),
+c
+k
+F
+n
+\displaystyle c_{k}^{F_{n}}
+=
+min
+⁡
+(
+1
+,
+κ
+¯
+k
+/
+κ
+min
+)
+,
+\displaystyle=\min(1,\bar{\kappa}_{k}/\kappa_{\min}),
+c
+k
+tr
+\displaystyle c_{k}^{\mathrm{tr}}
+=
+c
+k
+F
+n
+​
+min
+⁡
+(
+1
+,
+|
+F
+¯
+n
+,
+k
+|
+/
+(
+10
+​
+ϵ
+F
+)
+)
+,
+\displaystyle=c_{k}^{F_{n}}\min(1,|\bar{F}_{n,k}|/(10\epsilon_{F})),
+c
+k
+CoT
+\displaystyle c_{k}^{\mathrm{CoT}}
+=
+𝕀
+[
+v
+¯
+x
+​
+y
+,
+k
+≥
+v
+min
+]
+,
+\displaystyle=\mathbb{I}[\bar{v}_{xy,k}\geq v_{\min}],
+c
+k
+load
+\displaystyle c_{k}^{\mathrm{load}}
+=
+𝕀
+[
+N
+k
+td
+≥
+2
+]
+min
+(
+1
+,
+N
+k
+td
+/
+3
+)
+min
+(
+1
+,
+κ
+¯
+k
+td
+/
+κ
+min
+)
+.
+\displaystyle=\mathbb{I}[N_{k}^{\mathrm{td}}\geq 2]\min(1,N_{k}^{\mathrm{td}}/3)\min(1,\bar{\kappa}_{k}^{\mathrm{td}}/\kappa_{\min}).
+(9)
+Missing measurements yield zero confidence.
+A contact is rejected when the minimum property confidence is below
+0.25
+0.25
+; otherwise the individual confidences weight the corresponding learning objectives.
+The full property vector becomes available only at liftoff, although it refers to the contact location recorded at touchdown.
+The previously saved grid map associates the five computed indicators with visual descriptors at the foot-contact position.
+For a touchdown location, the system selects the most recent feature map that (i) precedes touchdown, (ii) is at most
+5
+5
+s old, and (iii) contains a projected patch footprint covering the same
+5
+5
+cm contact-association cell. These cells match contacts to visual patches; the output traversability map instead uses
+0.1
+0.1
+m cells, as described in Sec.
+III-E
+.
+This procedure associates the outcome of a step with terrain that was actually visible before interaction and prevents future observations from leaking into the training sample.
+III-C
+Uncertainty-Aware Multi-Property Regression
+The predictor is a compact multi-head evidential MLP based on deep evidential regression
+[
+28
+]
+.
+Standardized
+384
+384
+-dimensional visual descriptors are processed by a shared
+→
+→
+64
+384\!\rightarrow\!128\!\rightarrow\!64
+trunk, followed by five independent
+→
+→
+4
+64\!\rightarrow\!32\!\rightarrow\!4
+heads.
+Each head outputs the parameters
+(
+γ
+,
+ν
+,
+α
+,
+β
+)
+(\gamma,\nu,\alpha,\beta)
+of a Normal–Inverse-Gamma distribution (NIG). We enforce
+ν
+>
+0
+\nu>0
+,
+α
+>
+1
+\alpha>1
+, and
+β
+>
+0
+\beta>0
+using softplus transformations.
+The predictive mean is
+γ
+\gamma
+, whereas aleatoric and epistemic uncertainty are
+σ
+ale
+2
+=
+β
+α
+−
+1
+,
+σ
+epi
+2
+=
+β
+ν
+⁡
+(
+α
+−
+1
+)
+.
+\sigma^{2}_{\mathrm{ale}}=\frac{\beta}{\alpha-1},\qquad\sigma^{2}_{\mathrm{epi}}=\frac{\beta}{\nu(\alpha-1)}.
+(10)
+This provides the five predictions of the considered properties and their uncertainties in a single forward pass.
+Only epistemic uncertainty is propagated to the traversability map, while aleatoric uncertainty is used only for model evaluation.
+For a mini-batch
+ℬ
+\mathcal{B}
+, the network is trained with a confidence-weighted evidential objective
+ℓ
+n
+,
+p
+\displaystyle\ell_{n,p}
+=
+ℒ
+n
+,
+p
+NIG
++
+λ
+e
+​
+|
+y
+~
+n
+,
+p
+−
+γ
+n
+,
+p
+|
+​
+(
+2
+​
+ν
+n
+,
+p
++
+α
+n
+,
+p
+)
+,
+\displaystyle=\mathcal{L}^{\mathrm{NIG}}_{n,p}+\lambda_{e}|\widetilde{y}_{n,p}-\gamma_{n,p}|(2\nu_{n,p}+\alpha_{n,p}),
+(11)
+ℒ
+ℬ
+\displaystyle\mathcal{L}_{\mathcal{B}}
+=
+∑
+n
+∈
+ℬ
+∑
+p
+c
+n
+,
+p
+​
+ℓ
+n
+,
+p
+∑
+n
+∈
+ℬ
+∑
+p
+c
+n
+,
+p
+.
+\displaystyle=\frac{\sum_{n\in\mathcal{B}}\sum_{p}c_{n,p}\ell_{n,p}}{\sum_{n\in\mathcal{B}}\sum_{p}c_{n,p}}.
+where
+ℒ
+NIG
+\mathcal{L}^{\mathrm{NIG}}
+is the negative log-likelihood (NLL) of the Student-
+t
+t
+distribution induced by the NIG parameters.
+The objective of the second term is to discourage confident but inaccurate predictions.
+Input and target scalers are fitted only on the offline training partition and then frozen.
+Samples sharing a timestamp or an identical descriptor are grouped before the offline train/validation/test split to prevent contact-correlated observations from leaking across partitions.
+At inference, predicted means and epistemic variances are transformed back to their respective physical units.
+Before normalization, we orient the raw predictions with the sign vector
+(
+−
+1
+,
++
+1
+,
++
+1
+,
+−
+1
+,
++
+1
+)
+(-1,+1,+1,-1,+1)
+in the order of Eq.
+1
+. Thus planar foot slip and cost of transport are inverted, while mean normal ground-reaction force, traction index, and touchdown loading rate retain their signs under our operational scoring convention. Larger oriented values, and hence larger normalized property scores, denote better traversability.
+Each property is normalized between
+[
+0
+,
+1
+]
+[0,1]
+using fixed 5th and 95th percentiles computed on reference predictions, thus building a score for each property.
+The variances are scaled by the square of the same interval, but are not clipped, preserving large uncertainty on out-of-distribution terrain.
+III-D
+Guarded Continual Adaptation
+During locomotion, accepted samples are assigned deterministically to recent training and validation buffers using a hash of the session identifier and touchdown timestamp. This keeps simultaneous contacts in the same partition.
+Then, nearly identical descriptors are rejected using cosine similarity, avoiding an artificial over-representation of visually uniform terrain.
+A nominal update starts after the collection of
+50
+50
+recent training samples and at least
+10
+10
+held-out samples.
+To reduce catastrophic forgetting, each recent block is combined with a bounded replay set,
+𝒟
+k
+train
+=
+𝒟
+k
+rec
+∪
+𝒟
+k
+rep
+,
+|
+𝒟
+k
+rep
+|
+≤
+150
+.
+\mathcal{D}^{\mathrm{train}}_{k}=\mathcal{D}^{\mathrm{rec}}_{k}\cup\mathcal{D}^{\mathrm{rep}}_{k},\qquad|\mathcal{D}^{\mathrm{rep}}_{k}|\leq 150.
+(12)
+Replay draws from previously consolidated online samples and, when available, samples collected offline in previous experiments.
+The online memory is bounded to
+1000
+1000
+elements and sampled across planar foot slip quantiles so that rare contacts with high planar foot slip are not displaced by nominal contacts.
+Replay data is used in gradient updates, whereas a separate anchor set remains strictly held out and measures retention of prior knowledge.
+At update
+k
+k
+, a candidate is initialized from the deployed parameters
+𝜽
+(
+k
+)
+\boldsymbol{\theta}^{(k)}
+and optimized in a background thread.
+Let
+J
+rec
+J_{\mathrm{rec}}
+and
+J
+anc
+J_{\mathrm{anc}}
+denote confidence-weighted NIG negative log-likelihood on the recent validation set and the anchor, respectively.
+Promotion requires
+J
+rec
+​
+(
+𝜽
+cand
+)
+\displaystyle J_{\mathrm{rec}}(\boldsymbol{\theta}^{\mathrm{cand}})
+<
+J
+rec
+​
+(
+𝜽
+(
+k
+)
+)
+−
+δ
+min
+,
+\displaystyle<J_{\mathrm{rec}}(\boldsymbol{\theta}^{(k)})-\delta_{\min},
+J
+anc
+​
+(
+𝜽
+cand
+)
+\displaystyle J_{\mathrm{anc}}(\boldsymbol{\theta}^{\mathrm{cand}})
+≤
+J
+anc
+​
+(
+𝜽
+(
+k
+)
+)
+\displaystyle\leq J_{\mathrm{anc}}(\boldsymbol{\theta}^{(k)})
++
+ρ
+max
+​
+max
+⁡
+(
+|
+J
+anc
+​
+(
+𝜽
+(
+k
+)
+)
+|
+,
+10
+−
+6
+)
+,
+\displaystyle\quad+\rho_{\max}\max\!\left(|J_{\mathrm{anc}}(\boldsymbol{\theta}^{(k)})|,10^{-6}\right),
+(13)
+In the sequential hardware experiment we set
+δ
+min
+=
+0
+\delta_{\min}=0
+and
+ρ
+max
+=
+0.0015
+\rho_{\max}=0.0015
+; thus, an update must strictly improve performance on recent experience while allowing at most a
+0.15
+%
+0.15\%
+relative increase in anchor NLL at each promotion opportunity.
+Candidates producing non-finite outputs are also rejected.
+A successful checkpoint is written and validated before atomically replacing the inference model; otherwise the previous model keeps producing predictions without interruption.
+Continual adaptation starts from an offline-trained evidential checkpoint.
+A partition excluded from checkpoint fitting and model selection supplies the initial historical anchor.
+III-E
+Spatial Traversability Mapping
+As described above, the regressor produces five normalized means and epistemic variances for each image patch.
+Synchronized depth and camera pose are then used to project each predicted patch footprint into a
+15
+×
+15
+15\times 15
+m robot-centered GridMap with
+0.1
+0.1
+m resolution in the odom frame.
+When multiple patches overlap a cell
+c
+c
+in the same frame, their first and second moments are aggregated as
+μ
+¯
+c
+,
+p
+=
+1
+M
+c
+​
+∑
+j
+μ
+j
+,
+p
+,
+v
+¯
+c
+,
+p
+=
+1
+M
+c
+​
+∑
+j
+(
+v
+j
+,
+p
++
+μ
+j
+,
+p
+2
+)
+−
+μ
+¯
+c
+,
+p
+2
+.
+\overline{\mu}_{c,p}=\frac{1}{M_{c}}\sum_{j}\mu_{j,p},\qquad\overline{v}_{c,p}=\frac{1}{M_{c}}\sum_{j}(v_{j,p}+\mu_{j,p}^{2})-\overline{\mu}_{c,p}^{2}.
+(14)
+The resulting variance therefore contains both predicted epistemic uncertainty and disagreement among overlapping patches.
+One temporal exponential update with
+α
+EMA
+=
+0.05
+\alpha_{\mathrm{EMA}}=0.05
+is then applied per observed cell and frame.
+Before fusion, each property is conservatively corrected as
+q
+c
+,
+p
+=
+μ
+c
+,
+p
+−
+λ
+​
+v
+c
+,
+p
+q_{c,p}=\mu_{c,p}-\lambda\sqrt{v_{c,p}}
+, with
+λ
+=
+0.15
+\lambda=0.15
+.
+The final traversability is then computed as a normalized weighted sum
+τ
+c
+=
+clip
+⁡
+(
+∑
+p
+∈
+𝒜
+w
+p
+​
+q
+c
+,
+p
+∑
+p
+∈
+𝒜
+w
+p
+,
+0
+,
+1
+)
+,
+𝒜
+=
+{
+p
+∣
+w
+p
+>
+0
+}
+.
+\tau_{c}=\operatorname{clip}\!\left(\frac{\sum_{p\in\mathcal{A}}w_{p}q_{c,p}}{\sum_{p\in\mathcal{A}}w_{p}},0,1\right),\qquad\mathcal{A}=\{p\mid w_{p}>0\}.
+(15)
+The weights are configurable because the informativeness of each interaction property depends on the domain in which the robot is operating.
+For example, properties affected by contact compliance can be disabled in rigid-contact simulation, while all five remain available for hardware experiments.
+The map keeps the individual property and uncertainty layers in addition to
+τ
+c
+\tau_{c}
+, so changing the navigation objective does not require retraining the predictor.
+Unobserved cells remain unknown rather than being implicitly marked as safe, and severe low-score conditions can be exposed as lethal cells to the downstream planner.
+IV
+RESULTS
+IV-A
+Experimental Setup and Protocol
+We evaluate property prediction, continual adaptation, and autonomous navigation on a Unitree Go2 quadruped robot in two scenarios.
+Isaac Sim provides an environment containing three visually distinct surfaces, one with high friction (
+μ
+d
+=
+1.1
+,
+μ
+s
+=
+1.2
+\mu_{d}=1.1,\mu_{s}=1.2
+) and two with lower friction (
+μ
+d
+=
+0.45
+,
+μ
+s
+=
+0.5
+\mu_{d}=0.45,\mu_{s}=0.5
+).
+Hardware property prediction and mapping use the laboratory floor, foam, textured foam, artificial grass, and a rubber patch; a separate continual-learning stream uses artificial grass, textured foam, and foam. Surface identities define the evaluation protocol but are not used as learning labels; updates exploit contact-derived supervision.
+The difficulty of the hardware surfaces is established by independently measured interaction outcomes, rather than being assigned based on appearance.
+The scoring in simulation employs planar foot slip and traction index, with
+𝐰
+sim
+=
+[
+0.5
+,
+0
+,
+0.5
+,
+0
+,
+0
+]
+\mathbf{w}_{\mathrm{sim}}=[0.5,0,0.5,0,0]
+, while the hardware uses
+𝐰
+real
+=
+[
+0.4
+,
+0.05
+,
+0.1
+,
+0.05
+,
+0.3
+]
+\mathbf{w}_{\mathrm{real}}=[0.4,0.05,0.1,0.05,0.3]
+.
+The simulation study evaluates and fuses planar foot slip and traction index only, because its rigid-contact model does not provide representative evidence for the broader interaction vector. The hardware study evaluates all five indicators.
+On the real robot, we use a Unitree Go2 with an externally mounted RealSense D435 camera and the standard Go2 controller. The pipeline runs on an external PC with an RTX 5050 GPU, an Intel Core 7 CPU, and 16GB of RAM.
+The models are trained separately for each domain; the hardware trials therefore evaluate the same pipeline, without assuming any model transfer from simulation to the real world.
+The simulation and hardware datasets are disjoint and their regressors are trained independently.
+Offline prediction and closed-loop navigation are assessed separately from the sequential hardware continual-learning comparison.
+In that comparison, CL-P and Replay start from the same regressor trained only on laboratory-floor contacts and process the same recorded contact stream.
+Both methods train with bounded online replay and select candidates using recent held-out contacts; CL-P additionally applies the historical anchor gate.
+Navigation is evaluated in independent closed-loop simulation trials.
+IV-B
+Property Prediction and Calibration
+Initially, we evaluate Offline regressors trained on separate multi-terrain acquisition datasets for simulation and hardware.
+These datasets contain observations from all terrains used in their respective offline evaluations.
+In particular, the hardware regressor reported in Table
+II
+is not the Lab-only checkpoint that initializes CL-P and Replay in the sequential experiment. Both offline regressors are tested on held-out causally associated visual-contact pairs.
+Table
+II
+reports the mean absolute error (MAE),
+R
+2
+R^{2}
+, and the empirical coverage
+C
+80
+C_{80}
+of the central 80% Student’s t predictive interval.
+The coverage leverages the entire predictive distribution, including both aleatoric and epistemic components; the closeness to the nominal coverage is interpreted alongside the prediction error and likelihood.
+These measurements evaluate the agreement with proprioceptive interaction indicators, and not the accuracy with respect to intrinsic material constants.
+TABLE II:
+Offline prediction on held-out contact-level tests. Within each domain, a separate multi-terrain acquisition dataset was divided into 70% training, 15% validation, and 15% testing. Contacts sharing a timestamp or identical descriptor were grouped. MAE is in the shown units and
+C
+80
+C_{80}
+is a percentage (nominal: 80).
+Domain
+Indicator (units)
+MAE
+R
+2
+R^{2}
+C
+80
+C_{80}
+Sim.
+Planar foot Slip (m)
+0.0050
+0.3958
+82.11%
+Traction index (–)
+0.0711
+0.6037
+74.80%
+Real
+Planar foot Slip (m)
+0.0047
+0.4110
+80.21%
+Normal GRF (N)
+3.6191
+0.3470
+80.21%
+Traction index (–)
+0.0296
+0.5269
+82.81%
+CoT (–)
+0.235608
+0.3128
+85.42%
+Loading rate (N/s)
+321.605
+0.5908
+71.36%
+To evaluate spatial separation, we associate valid mapped cells with independently annotated surface regions, excluding boundaries with mixed support.
+We measure the score gap between favorable and unfavorable
+Δ
+​
+τ
+=
+𝔼
+⁡
+[
+τ
+∣
+favorable
+]
+−
+𝔼
+⁡
+[
+τ
+∣
+unfavorable
+]
+\Delta\tau=\mathbb{E}[\tau\mid\mathrm{favorable}]-\mathbb{E}[\tau\mid\mathrm{unfavorable}]
+, averaging first within each surface and run. The measured gaps are
+Δ
+​
+τ
+s
+​
+i
+​
+m
+=
+0.2991
+\Delta\tau_{sim}=0.2991
+and
+Δ
+​
+τ
+r
+​
+e
+​
+a
+​
+l
+=
+0.4382
+\Delta\tau_{real}=0.4382
+; the smaller simulated gap may reflect the simulated camera’s distant terrain view.
+Fig.
+1
+illustrates the hardware prediction and its projection into the traversability map.
+IV-C
+Continual Acquisition and Retention
+We conduct a hardware ablation study to evaluate whether the historical promotion gate improves retention beyond replay-based candidate training.
+A regressor trained only on a laboratory-floor acquisition initializes both CL-P and Replay.
+Its offline anchor acquisition was excluded from checkpoint training and model selection.
+For this study the anchor is held out from gradient updates: both methods replay previously accepted
+online
+contacts only.
+Separate laboratory-floor and new-terrain test acquisitions are used only to report standardized MAE. Contacts from these test acquisitions are excluded from candidate optimization, replay memory, both recent and historical validation sets, and candidate-promotion decisions.
+The hardware comparison uses one recorded contact stream with a fixed sequence of artificial grass, textured foam, and foam phases.
+It contains
+1072
+1072
+received observations, of which
+951
+951
+contacts are accepted after filtering; the phase ends correspond to
+297
+297
+,
+583
+583
+, and
+951
+951
+accepted contacts.
+The same stream is replayed for both methods with five optimization seeds (
+42
+42
+–
+46
+46
+), identical scalers and checkpoint, and the same maximum of
+50
+50
+optimizer steps per candidate.
+Replay keeps the recent-validation promotion test but disables the anchor constraint; CL-P adds the constraint in Eq. (
+13
+).
+We define new-terrain adaptation as the percentage reduction in standardized MAE on its independent test set from immediately before to immediately after its stream phase, averaging the three terrain gains.
+Laboratory-floor degradation is the percentage increase on the independent Lab test from the initial to final deployed model.
+The final macro MAE averages the four test-domain MAEs equally.
+Anchor NLL degradation uses the same initial-to-final relative change, but on the held-out gate set; it describes the gate mechanism rather than independent generalization.
+TABLE III:
+Sequential hardware results, averaged over five optimization seeds on one fixed stream. Lab uses an independent test; anchor NLL uses the gate-validation set, not an independent test. Final MAE is the four-domain macro standardized MAE.
+Method
+Adapt.
+↑
+\uparrow
+Lab
+↓
+\downarrow
+Anchor
+↓
+\downarrow
+Final MAE
+↓
+\downarrow
+(%)
+(%)
+NLL (%)
+CL-P
+1.658
+0.801
+0.608
+1.03711
+Replay
+1.664
+0.924
+0.790
+1.03633
+Fig. 3:
+Relative anchor NLL of deployed models during artificial grass
+→
+\rightarrow
+textured foam
+→
+\rightarrow
+foam. Curves show five-seed means; bands show seed ranges, crosses gate-rejected CL-P candidates, and vertical lines phase transitions. The anchor is used for candidate selection.
+Table
+III
+shows nearly equal mean new-terrain adaptation for CL-P and Replay (
+1.658
+%
+1.658\%
+versus
+1.664
+%
+1.664\%
+).
+CL-P initially adapts more slowly to artificial grass (
+0.756
+%
+0.756\%
+versus
+1.890
+%
+1.890\%
+), as the gate rejects early candidates, but its gains on textured foam (
+3.239
+%
+3.239\%
+versus
+2.329
+%
+2.329\%
+) and foam (
+0.979
+%
+0.979\%
+versus
+0.773
+%
+0.773\%
+) compensate.
+Both methods continue to improve on previously encountered online terrains in later phases; this short stream does not exhibit a positive error increase on those terrains after their respective phases.
+Across
+80
+80
+candidate opportunities per method, CL-P promotes
+53
+53
+and rejects
+24
+24
+specifically by the anchor gate, with three additional recent-validation rejections. Replay promotes
+70
+70
+, with
+10
+10
+recent-validation rejections.
+Figure
+3
+shows that rejecting early anchor-degrading candidates keeps the CL-P deployed-model trajectory below Replay.
+Mean final anchor NLL degradation is
+0.608
+%
+0.608\%
+for CL-P and
+0.790
+%
+0.790\%
+for Replay, a
+23.1
+%
+23.1\%
+relative reduction.
+On the independent Lab test, CL-P also has a slightly smaller mean MAE degradation (
+0.801
+%
+0.801\%
+versus
+0.924
+%
+0.924\%
+), although this difference is small across the five seeds.
+Replay retains a marginally lower final macro standardized MAE (
+1.03633
+1.03633
+versus
+1.03711
+1.03711
+).
+Thus, the gate provides a measurable retention benefit relative to replay alone while largely preserving new-terrain adaptation; it does not establish an overall accuracy advantage on every terrain or across independently acquired hardware streams.
+IV-D
+Traversability-Aware Navigation
+We evaluate whether the predicted traversability map can support closed-loop navigation in simulation. Nav2 is used with the SMAC Lattice global planner in the environment described in Sec.
+IV-A
+, which contains elevation changes and three simulated surfaces with different friction coefficients. These terrains are distinct from those used in the sequential hardware experiment. Fig.
+4
+illustrates the resulting navigation costmap.
+Fig. 4:
+Traversability-aware navigation in simulation: environment and camera view (left), predicted interaction-property scores (center), and resulting navigation costmap and planned path (right).
+We compare Offline and CL-P over five trials with identical initial conditions and a goal
+15
+​
+m
+15\,\mathrm{m}
+from the robot. A trial succeeds if the robot reaches the goal within
+180
+​
+s
+180\,\mathrm{s}
+, with position and yaw tolerances of
+0.2
+​
+m
+0.2\,\mathrm{m}
+and
+0.25
+​
+rad
+0.25\,\mathrm{rad}
+, without falling or operator intervention. We report success rate, path length
+L
+L
+, and unfavorable-terrain exposure
+E
+bad
+E_{\mathrm{bad}}
+, defined as the percentage of steps taken in unfavorable regions.
+Both methods completed all five trials. Offline and CL-P achieved mean unfavorable-terrain exposures of 3.13% and 2.76%, respectively, and mean path lengths of 23.75 m and 24.53 m. The comparable results indicate that CL-P updates preserve downstream navigation performance under the tested conditions. These trials complement the sequential hardware analysis but do not isolate the gate contribution or evaluate navigation after the hardware adaptation stream.
+V
+CONCLUSIONS
+This paper presents a quadruped traversability pipeline that predicts five interaction indicators from pre-contact images, adapts through validation-gated replay, and maps property predictions and epistemic uncertainty for navigation.
+In a sequential hardware stream, CL-P reduced final anchor NLL degradation by
+23.1
+%
+23.1\%
+relative to Replay with similar new-terrain adaptation. In simulation, Offline and CL-P each completed all five navigation trials, with
+3.13
+%
+3.13\%
+and
+2.76
+%
+2.76\%
+exposure to unfavorable terrain, respectively. These results support guarded adaptation under the tested conditions, but do not establish an overall accuracy advantage or isolate the gate’s effect on navigation.
+The hardware comparison uses one recorded stream with five optimization seeds, while simulation and hardware use separately trained models. Future work will test longer terrain sequences, deformable terrain, and varying locomotion conditions, as well as uncertainty estimation and active sampling on unfamiliar terrain.
+References
+[1]
+M. Wermelinger, P. Fankhauser, R. Diethelm, P. Krüsi, R. Y. Siegwart, and M. Hutter
+(2016)
+Navigation planning for legged robots in challenging terrain
+.
+In
+Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)
+,
+pp. 1184–1189
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-A
+.
+[2]
+T. Miki, L. Wellhausen, R. Grandia, F. Jenelten, T. Homberger, and M. Hutter
+(2022)
+Elevation mapping for locomotion and navigation using GPU
+.
+In
+Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)
+,
+pp. 2273–2280
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-A
+.
+[3]
+J. Chen, J. Frey, R. Zhou, T. Miki, G. Martius, and M. Hutter
+(2024)
+Identifying terrain physical parameters from vision - towards physical-parameter-aware locomotion and navigation
+.
+IEEE Robot. Autom. Lett.
+9
+(
+11
+),
+pp. 9279–9286
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§I
+,
+§I
+,
+§II-B
+,
+TABLE I
+.
+[4]
+V. S. Medeiros, G. B. Dessy, T. Boaventura, M. Becker, C. Semini, and V. Barasuol
+(2025)
+Load-bearing assessment for safe locomotion of quadruped robots on collapsing terrain
+.
+IEEE Robot. Autom. Lett.
+10
+(
+12
+),
+pp. 12971–12978
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-B
+.
+[5]
+A. J. Sathyamoorthy
+et al.
+(2023)
+VERN: vegetation-aware robot navigation in dense unstructured outdoor environments
+.
+In
+Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)
+,
+pp. 11233–11240
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-A
+.
+[6]
+A. Li, C. Yang, J. Frey, J. Lee, C. Cadena, and M. Hutter
+(2023)
+Seeing through the grass: semantic pointcloud filter for support surface learning
+.
+IEEE Robot. Autom. Lett.
+8
+(
+11
+),
+pp. 7687–7694
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-A
+.
+[7]
+M. B. Elnoor, A. J. Sathyamoorthy, K. Weerakoon, and D. Manocha
+(2024)
+ProNav: proprioceptive traversability estimation for legged robot navigation in outdoor environments
+.
+IEEE Robot. Autom. Lett.
+9
+(
+8
+),
+pp. 7190–7197
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-B
+.
+[8]
+P. Kang, X. Mu, W. Xu, and Y. Xu
+(2023)
+State estimation and traversability map construction method of a quadruped robot on soft uneven terrain
+.
+J. Field Robot.
+40
+(
+5
+),
+pp. 1130–1150
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-B
+.
+[9]
+L. Wellhausen, A. Dosovitskiy, R. Ranftl, K. Walas, C. Cadena, and M. Hutter
+(2019)
+Where Should I Walk? Predicting Terrain Properties From Images Via Self-Supervised Learning
+.
+IEEE Robot. Autom. Lett.
+4
+(
+2
+),
+pp. 1509–1516
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§I
+,
+§II-B
+.
+[10]
+M. Mattamala, J. Frey, P. Libera, N. Chebrolu, G. Martius, C. Cadena, M. Hutter, and M. F. Fallon
+(2025)
+Wild visual navigation: fast traversability learning via pre-trained models and online self-supervision
+.
+Auton. Robots
+49
+(
+3
+),
+pp. 19
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-C
+,
+TABLE I
+.
+[11]
+M. Sivaprakasam
+et al.
+(2025)
+SALON: self-supervised adaptive learning for off-road navigation
+.
+In
+Proc. IEEE Int. Conf. Robot. Autom. (ICRA)
+,
+pp. 16999–17006
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§I
+,
+§II-C
+,
+§II-D
+,
+TABLE I
+.
+[12]
+K. Ma, Z. Sun, C. Xiong, Q. Zhu, K. Wang, and L. Pei
+(2025)
+IMOST: incremental memory mechanism with online self-supervision for continual traversability learning
+.
+In
+Proc. IEEE Int. Conf. Robot. Autom. (ICRA)
+,
+pp. 8788–8794
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§I
+,
+§II-C
+,
+TABLE I
+.
+[13]
+J. Hindel, S. Bultmann, H. Masnavi, D. Cattaneo, and A. Valada
+(2026)
+Self-supervised online robot-agnostic traversability estimation for open-world environments
+.
+External Links:
+2605.28442
+,
+Link
+Cited by:
+§I
+,
+§I
+,
+§II-C
+,
+TABLE I
+.
+[14]
+L. Wellhausen, R. Ranftl, and M. Hutter
+(2020)
+Safe robot navigation via multi-modal anomaly detection
+.
+IEEE Robot. Autom. Lett.
+5
+(
+2
+),
+pp. 1326–1333
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§II-D
+.
+[15]
+X. Cai
+et al.
+(2024)
+EVORA: deep evidential traversability learning for risk-aware off-road autonomy
+.
+IEEE Trans. Robot.
+40
+,
+pp. 3756–3777
+.
+External Links:
+Document
+Cited by:
+§I
+,
+§I
+,
+§II-D
+,
+TABLE I
+.
+[16]
+Y. Kim, J. H. Lee, C. Lee, J. Mun, D. Youm, J. Park, and J. Hwangbo
+(2024)
+Learning semantic traversability with egocentric video and automated annotation strategy
+.
+IEEE Robot. Autom. Lett.
+9
+(
+11
+),
+pp. 10423–10430
+.
+External Links:
+Document
+Cited by:
+§II-A
+.
+[17]
+S. Ægidius, D. Hadjivelichkov, J. Jiao, J. Embley-Riches, and D. Kanoulas
+(2025)
+Watch Your STEPP: Semantic Traversability Estimation Using Pose Projected Features
+.
+In
+Proc. IEEE Int. Conf. Robot. Autom. (ICRA)
+,
+pp. 2376–2382
+.
+External Links:
+Document
+Cited by:
+§II-A
+,
+§II-D
+.
+[18]
+A. Sánchez-Delgado, J. C. V. Soares, V. Barasuol, and C. Semini
+(2025)
+Towards proprioceptive terrain mapping with quadruped robots for exploration in planetary permanently shadowed regions
+.
+In
+Proc. Int. Conf. Space Robot. (iSpaRo)
+,
+pp. 189–196
+.
+External Links:
+Document
+Cited by:
+§II-B
+.
+[19]
+G. Haddeler
+et al.
+(2022)
+Traversability analysis with vision and terrain probing for safe legged robot navigation
+.
+Front. Robot. AI
+9
+.
+External Links:
+Document
+Cited by:
+§II-B
+.
+[20]
+P. Ewen, A. Li, Y. Chen, S. Hong, and R. Vasudevan
+(2022)
+These maps are made for walking: real-time terrain property estimation for mobile robots
+.
+IEEE Robot. Autom. Lett.
+7
+(
+3
+),
+pp. 7083–7090
+.
+External Links:
+Document
+Cited by:
+§II-B
+,
+§II-D
+.
+[21]
+H. Karnan, E. Yang, D. Farkash, G. Warnell, J. Biswas, and P. Stone
+(2023)
+STERLING: self-supervised terrain representation learning from unconstrained robot experience
+.
+In
+Proc. Conf. Robot Learn. (CoRL)
+,
+Vol.
+229
+,
+pp. 2393–2413
+.
+Cited by:
+§II-C
+.
+[22]
+M. Á. de Miguel, J. Beltrán, J. S. Cely, F. Martín, J. C. Manzanares, and A. García
+(2026)
+I Move Therefore I Learn: Experience-Based Traversability in Outdoor Robotics
+.
+IEEE Access
+14
+,
+pp. 110462–110472
+.
+External Links:
+Document
+Cited by:
+§II-C
+.
+[23]
+M. B. Elnoor, K. Weerakoon, A. J. Sathyamoorthy, T. Guan, V. Rajagopal, and D. Manocha
+(2024)
+AMCO: adaptive multimodal coupling of vision and proprioception for quadruped robot navigation in outdoor environments
+.
+In
+Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)
+,
+pp. 7687–7694
+.
+External Links:
+Document
+Cited by:
+§II-C
+.
+[24]
+J. Ren, Y. Liu, Y. Dai, J. Long, and G. Wang
+(2025)
+TOP-Nav: legged navigation integrating terrain, obstacle and proprioception estimation
+.
+In
+Proc. Conf. Robot Learn. (CoRL)
+,
+Vol.
+270
+,
+pp. 3454–3473
+.
+Cited by:
+§II-C
+.
+[25]
+H. Lee, Y. Lee, D. A. Duecker, and C. Kwon
+(2025)
+Continual learning for traversability prediction with uncertainty-aware adaptation
+.
+IEEE Robot. Autom. Lett.
+10
+(
+11
+),
+pp. 12109–12116
+.
+External Links:
+Document
+Cited by:
+§II-C
+,
+TABLE I
+.
+[26]
+Y. Kim, C. Kim, and J. Hwangbo
+(2022)
+Learning forward dynamics model and informed trajectory sampler for safe quadruped navigation
+.
+In
+Proc. Robot. Sci. Syst. (RSS)
+,
+External Links:
+Document
+Cited by:
+§II-D
+.
+[27]
+P. Roth, J. Frey, C. Cadena, and M. Hutter
+(2025)
+Learned perceptive forward dynamics model for safe and platform-aware robotic navigation
+.
+In
+Proc. Robot. Sci. Syst. (RSS)
+,
+External Links:
+Document
+Cited by:
+§II-D
+.
+[28]
+A. Amini, W. Schwarting, A. Soleimany, and D. Rus
+(2020)
+Deep evidential regression
+.
+Adv. Neural Inf. Process. Syst.
+33
+.
+Cited by:
+§II-D
+,
+§III-C
+.
+[29]
+O. Siméoni
+et al.
+(2025)
+DINOv3
+.
+External Links:
+2508.10104
+,
+Link
+Cited by:
+§III-A
+.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

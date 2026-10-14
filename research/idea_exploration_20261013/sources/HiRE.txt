@@ -1,0 +1,3746 @@
+0001: HiRE: Hindsight Reward Editing for Policy Finetuning
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY-NC-ND 4.0
+0009: arXiv:2609.27068v1 [cs.RO] 22 Sep 2026
+0010: HiRE: Hindsight Reward Editing for Policy Finetuning
+0011: Haoyi Niu
+0012: †
+0013: †
+0014: thanks:
+0015: Equal contribution, order determined by coin flip and may be listed in either order. Correspondence to:
+0016: niu@berkeley.edu
+0017: .
+0018: Affiliation:
+0019: University of California, Berkeley
+0020: Zhengtao Han
+0021: Yufeng Ji
+0022: Affiliation:
+0023: The Chinese University of Hong Kong
+0024: Zhongyu Li
+0025: Affiliation:
+0026: The Chinese University of Hong Kong
+0027: Koushil Sreenath
+0028: Affiliation:
+0029: University of California, Berkeley
+0030: Abstract
+0031: Pre-trained robot policies always require finetuning to adapt to specific environments.
+0032: Reinforcement Learning (RL) offers high performance potential because it improves action optimality rather than simply mimicking data.
+0033: However, such potential depends heavily on reward quality.
+0034: Sparse rewards lack process feedback, human-designed rewards are costly and biased, and semantic rewards from foundation representations are often not control-centric.
+0035: We propose Hindsight Reward Editing (HiRE), a training-free framework to break this reward bottleneck.
+0036: HiRE bridges the broad knowledge of foundation representation models with physical control awareness, by contrasting successful and failed trajectories in hindsight.
+0037: It calibrates foundation representation models by identifying “trap states” that are predicted as high-rewarding states yet eventually result in failure, and vice versa.
+0038: HiRE explicitly penalizes these traps while boosting rewards for critical successful states. This approach can be flexibly compatible with any foundation representations and RL algorithms.
+0039: Experiments show that HiRE consistently outperforms other reward recipes by delivering dense, control-aware feedback that prevents value function collapse and reward hacking, thereby achieving superior sample efficiency, stable policy updates, and higher performance ceilings, e.g., at least
+0040: 3
+0041: ×
+0042: 3\times
+0043: performance of the base policies.
+0044: Qualitative results at
+0045: Project Website
+0046: .
+0047: Keywords:
+0048: Reinforcement Learning, Reward Specification, Policy Finetuning
+0049: 1
+0050: Introduction
+0051: Reinforcement Learning (RL) has drawn renewed interest in post-training robot policies
+0052: [
+0053: 13
+0054: ,
+0055: 39
+0056: ]
+0057: .
+0058: By optimizing for long-term value, RL policies are naturally robust to perturbations and demonstrate strong generalization during deployment.
+0059: This capability stems from reward signals, which allow RL to ground policies in task objectives rather than merely mimicking expert demonstrations.
+0060: However, reward specification remains a long-standing bottleneck of robot learning.
+0061: Sparse rewards fall short on long-horizon tasks because they lack detailed process feedback.
+0062: To address this, many works leverage human priors to specify dense rewards, which inevitably introduce subjective bias and struggle to generalize across diverse tasks.
+0063: Unsatisfied with using only task-specific rewards, emergent efforts focus on training expressive reward models that offer fine-grained signals for unseen tasks.
+0064: Yet, obtaining high-quality reward labels for grounding such large-scale models remains a significant bottleneck.
+0065: Therefore, current general-purpose reward models still struggle with out-of-distribution (OOD) tasks
+0066: [
+0067: 16
+0068: ,
+0069: 18
+0070: ,
+0071: 7
+0072: ]
+0073: and often require further calibration to faithfully adapt to new scenarios
+0074: [
+0075: 36
+0076: ]
+0077: .
+0078: These limitations point to two key desiderata for robot reward modeling: generalization across diverse visual scenarios and adaptation to task-specific physical outcomes. For generalization, foundation vision(-language) representations can be directly reused to produce similarity-based rewards in a pretrained latent space
+0079: [
+0080: 30
+0081: ,
+0082: 20
+0083: ,
+0084: 19
+0085: ]
+0086: . These models are trained on massive amounts of image(-text) data and thus they seldom suffer from OOD issues, while they are not control-aware because they were never trained on robot behavioral data
+0087: [
+0088: 28
+0089: ,
+0090: 37
+0091: ]
+0092: . For adaptation, reward signals should be grounded in physical task outcomes during policy finetuning, using interactive feedback without expensive human labels or additional reward-model training. Thus, a natural question arises:
+0093: Can we build a reward scheme that is both universal to generalize and cheap to adapt to new scenarios?
+0094: A promising solution would enjoy the broad generalization of foundation vision(-language) representations with minimalist efforts of grounding rewards to task-specific physical outcomes during policy finetuning.
+0095: Instantiating such a solution requires addressing two major challenges.
+0096: Primarily, similarity-based rewards based on foundation representation models often misvalue robot states
+0097: [
+0098: 3
+0099: ]
+0100: .
+0101: For example, it might highly reward a robot for moving toward a placement area even if it has already dropped the object that it should take to that place. This happens because the model prioritizes visually dominant robot motions over small but critical objects, failing to capture the true task objectives.
+0102: Besides, naïvely adjusting rewards during policy finetuning can destabilize training.
+0103: A constantly shifting reward landscape often destroys the ability of RL policies to reason about long-term value that helps navigate to final task completion
+0104: [
+0105: 31
+0106: ]
+0107: .
+0108: To address these, we instantiate
+0109: Hi
+0110: ndsight
+0111: R
+0112: eward
+0113: E
+0114: diting (
+0115: HiRE
+0116: ), a training-free reward recipe that adjusts rewards produced by foundation vision(-language) representations by contrasting successful and failed trajectories in hindsight of interactions during policy finetuning.
+0117: HiRE derives a closed-form formulation that directly calibrates reward landscape: it penalizes states that are too close to failure traps and boosts states that lead to success.
+0118: This approach ensures the rewards are grounded in actual physical outcomes without requiring any extra gradient-based optimization.
+0119: Furthermore, we incorporate these adjusted rewards through potential-based reward shaping
+0120: [
+0121: 27
+0122: ]
+0123: .
+0124: By combining sparse rewards that indicate success with our refined dense rewards, we provide control-aware feedback while mathematically guaranteeing that optimal policy for task success remains unchanged.
+0125: These designs allow HiRE to break the control-unawareness bottleneck of foundation representation models with minimal computation and high efficiency.
+0126: In summary, our contributions are three-fold:
+0127: (1)
+0128: A practical and scalable reward recipe for real-world robot policies.
+0129: We bridge the gap between the strong generalization of foundation representations and the specific task requirements of physical control.
+0130: By using interaction data from specific tasks, HiRE provides the “missing piece” of control awareness through a training-free reward editing paradigm that empowers sample-efficient RL.
+0131: It can be highly compatible with any foundation representation models like DINOv2
+0132: [
+0133: 28
+0134: ]
+0135: and SigLIP
+0136: [
+0137: 37
+0138: ]
+0139: , as well as any RL finetuning algorithmic designs summarized in DICE-RL
+0140: [
+0141: 34
+0142: ]
+0143: .
+0144: (2)
+0145: Strong empirical results on simulation and real-world tasks.
+0146: HiRE achieves strong performance and high sample efficiency on prehensile, non-prehensile, and long-horizon manipulation tasks on MimicGen
+0147: [
+0148: 21
+0149: ]
+0150: and RoboMimic
+0151: [
+0152: 22
+0153: ]
+0154: where it can improve low base success rates (
+0155: <
+0156: 10
+0157: %
+0158: <10\%
+0159: ) to near 100%, as well as on a single YAM robot arm where it achieves at least
+0160: 3
+0161: ×
+0162: 3\times
+0163: improvement sometimes with only 30 online rollouts.
+0164: (3)
+0165: In-depth analyses on effects of HiRE.
+0166: We provide systematic studies to understand why HiRE works, including visualizing the evolving reward landscapes during policy finetuning, and ablation studies on the key components.
+0167: 2
+0168: Related Work
+0169: 2.1
+0170: Reward Learning for Robotics
+0171: Learning effective reward models remains a long-standing bottleneck in RL for robotics. One line of work learns task-specific reward models from explicit supervision. Methods such as DrS
+0172: [
+0173: 24
+0174: ]
+0175: and SARM
+0176: [
+0177: 6
+0178: ]
+0179: require intensive human annotations of stages or task progress, while Rank2Reward
+0180: [
+0181: 40
+0182: ]
+0183: leverages rankings from passive videos to learn shaped reward functions. Recent methods further improve trajectory-level reward evaluation: RoboReward
+0184: [
+0185: 16
+0186: ]
+0187: and RoboMeter
+0188: [
+0189: 18
+0190: ]
+0191: introduce dedicated metrics for trajectory comparison and progress tracking, while Robo-Dopamine
+0192: [
+0193: 36
+0194: ]
+0195: learns a reward model from large-scale multi-view manipulation data. Despite their effectiveness, these methods often require task-specific supervision, reward-model training, or large-scale curated robotic data, limiting their generalization to novel visual scenes and task semantics. A complementary line of work derives zero-shot rewards from embedding-space similarity between current and goal observations. Representations such as VIP
+0196: [
+0197: 20
+0198: ]
+0199: , LIV
+0200: [
+0201: 19
+0202: ]
+0203: , R3M
+0204: [
+0205: 25
+0206: ]
+0207: , and DecisionNCE
+0208: [
+0209: 17
+0210: ]
+0211: are pretrained on passive behavior datasets so that representation distance reflects task progress. However, since these models can only learn from passive expert data, they often suffer from OOD generalization issues in unseen scenarios. To address this, GCR
+0212: [
+0213: 3
+0214: ]
+0215: extends VIP with a goal-contrastive objective trained on task-specific successful and failed trajectories to finetune embeddings during deployment.
+0216: To fundamentally bypass such OOD vulnerabilities, emergent efforts repurpose large-scale foundation vision(-language) representations trained on internet-scale, non-robotic data to achieve robust open-world generalization.
+0217: For instance, CLIPReward
+0218: [
+0219: 30
+0220: ]
+0221: extracts language-conditioned rewards from CLIP
+0222: [
+0223: 29
+0224: ]
+0225: by evaluating the cross-modal semantic alignment between text prompts and robot visual observations.
+0226: RewardingDINO
+0227: [
+0228: 15
+0229: ]
+0230: injects task-specific semantics by training an explicit preference-based reward head on top of frozen DINOv2 embeddings
+0231: [
+0232: 28
+0233: ]
+0234: .
+0235: TOPReward
+0236: [
+0237: 7
+0238: ]
+0239: instead extracts training-free rewards from from pretrained vision-language models (VLMs) by scoring task-completion token probabilities given trajectory prefixes and instructions.
+0240: Although these approaches enjoy exceptional generalization ability of foundation models, they are inherently
+0241: control-unaware
+0242: due to the lack of physical interaction data in their pretraining phase. They evaluate task progress strictly through passive visual matching, making them highly prone to overestimating deceptive states where visually similar scenes correspond to opposite physical outcomes.
+0243: HiRE achieves training-free reward editing while remaining control-aware. It calibrates foundation representation models in hindsight by contrasting successful and failed rollouts, which introduces no auxiliary network and no manual dense labels, and is agnostic to choices of representation models and RL algorithms.
+0244: 2.2
+0245: RL Policy Finetuning for Robotics
+0246: Recent work has increasingly used RL in post-training stage for pretrained robot policies
+0247: [
+0248: 14
+0249: ]
+0250: . One line tailors specialized RL recipes to the structure of generative policies:
+0251: π
+0252: RL
+0253: \pi_{\texttt{RL}}
+0254: [
+0255: 5
+0256: ]
+0257: makes flow policies amenable for direct finetuning by PPO
+0258: [
+0259: 32
+0260: ]
+0261: via constructing tractable likelihoods.
+0262: Direct finetuning is often expensive for fresh samples, so DSRL
+0263: [
+0264: 38
+0265: ]
+0266: instead keeps the base policy frozen and only steers in its latent-noise space.
+0267: Moreover, ResFiT
+0268: [
+0269: 1
+0270: ]
+0271: and Policy Decorator
+0272: [
+0273: 41
+0274: ]
+0275: attach residual modules that learn additive offsets to the base policy output, whereas RL-Token
+0276: [
+0277: 39
+0278: ]
+0279: distinguishes itself from traditional residual methods by training a lightweight policy head for final actions upon a compact token readout of a Vision-Language-Action (VLA) model.
+0280: DICE-RL
+0281: [
+0282: 34
+0283: ]
+0284: instead freezes the base policy and treats it as a stochastic action proposal, contracting its distribution toward high-value modes through a residual actor
+0285: [
+0286: 1
+0287: ,
+0288: 41
+0289: ]
+0290: and value-guided action selection
+0291: [
+0292: 26
+0293: ]
+0294: .
+0295: While all these methods focus on policy improvement, HiRE is entirely orthogonal as it addresses the reward improvement. Consequently, HiRE can be seamlessly integrated with any of these policy finetuning methods, lifting their performance ceilings by providing dynamic, training-free reward shaping that guides policy optimization toward physically correct trajectories.
+0296: 3
+0297: Preliminaries
+0298: We formulate the RL problem as a finite-horizon Markov Decision Process (MDP)
+0299: [
+0300: 35
+0301: ]
+0302: , defined by a tuple
+0303: ℳ
+0304: :=
+0305: (
+0306: 𝒮
+0307: ,
+0308: 𝒜
+0309: ,
+0310: R
+0311: ,
+0312: 𝒫
+0313: ,
+0314: γ
+0315: ,
+0316: H
+0317: )
+0318: \mathcal{M}:=\left(\mathcal{S},\mathcal{A},R,\mathcal{P},\gamma,H\right)
+0319: .
+0320: 𝒮
+0321: \mathcal{S}
+0322: and
+0323: 𝒜
+0324: \mathcal{A}
+0325: denote the state and action space,
+0326: R
+0327: :
+0328: 𝒮
+0329: ×
+0330: 𝒜
+0331: ×
+0332: 𝒮
+0333: →
+0334: ℝ
+0335: R:\mathcal{S}\times\mathcal{A}\times\mathcal{S}\rightarrow\mathbb{R}
+0336: represents the reward function,
+0337: 𝒫
+0338: :
+0339: 𝒮
+0340: ×
+0341: 𝒜
+0342: →
+0343: Δ
+0344: ⁡
+0345: (
+0346: 𝒮
+0347: )
+0348: \mathcal{P}:\mathcal{S}\times\mathcal{A}\rightarrow\Delta(\mathcal{S})
+0349: stands for the transition dynamics,
+0350: γ
+0351: ∈
+0352: [
+0353: 0
+0354: ,
+0355: 1
+0356: ]
+0357: \gamma\in[0,1]
+0358: is the discount factor and
+0359: H
+0360: H
+0361: is the task horizon.
+0362: The goal of RL is to find the optimal policy
+0363: π
+0364: ∗
+0365: \pi^{*}
+0366: that maximizes cumulative discounted reward starting from an initial state distribution
+0367: ρ
+0368: \rho
+0369: ,
+0370: i.e.
+0371: ,
+0372: π
+0373: ∗
+0374: =
+0375: arg
+0376: max
+0377: π
+0378: 𝔼
+0379: s
+0380: 0
+0381: ∈
+0382: ρ
+0383: ,
+0384: a
+0385: ∼
+0386: π
+0387: (
+0388: ⋅
+0389: |
+0390: s
+0391: )
+0392: ,
+0393: s
+0394: ′
+0395: ∼
+0396: 𝒫
+0397: (
+0398: ⋅
+0399: |
+0400: s
+0401: ,
+0402: a
+0403: )
+0404: [
+0405: ∑
+0406: t
+0407: =
+0408: 0
+0409: H
+0410: γ
+0411: t
+0412: R
+0413: (
+0414: s
+0415: ,
+0416: a
+0417: )
+0418: ]
+0419: \pi^{*}=\arg\max_{\pi}\mathbb{E}_{s_{0}\in\rho,a\sim\pi(\cdot|s),s^{\prime}\sim\mathcal{P}(\cdot|s,a)}\left[\sum_{t=0}^{H}\gamma^{t}R\left(s,a\right)\right]
+0420: . RL methods based on approximated dynamic programming typically learn an action-value function
+0421: Q
+0422: ⁡
+0423: (
+0424: s
+0425: ,
+0426: a
+0427: )
+0428: Q(s,a)
+0429: , and optionally, a state value function
+0430: V
+0431: ⁡
+0432: (
+0433: s
+0434: )
+0435: V(s)
+0436: to practically estimate the cumulative discounted reward for policy optimization.
+0437: 4
+0438: HiRE: A Training-free Reward Recipe for Policy Finetuning
+0439: Our objective is to build a control-aware reward function from semantic foundation representations without any additional training. To achieve this, we leverage success and failure signals in past interactions to dynamically reshape the reward landscape in hindsight.
+0440: Ideally, an optimal control-aware reward should guide the robot away from failure traps and toward successful paths. In adversarial imitation learning
+0441: [
+0442: 12
+0443: ,
+0444: 9
+0445: ]
+0446: , a standard binary cross-entropy objective is widely used to distinguish expert demonstrations from policy rollouts. Drawing inspiration from this, we can analogously formulate a discriminator
+0447: D
+0448: ⁡
+0449: (
+0450: s
+0451: )
+0452: D(s)
+0453: to distinguish the success manifold from the failure one. This discriminator is trained to predict the probability that a given state
+0454: s
+0455: s
+0456: belongs to a successful trajectory:
+0457: max
+0458: D
+0459: ⁡
+0460: 𝔼
+0461: s
+0462: ∼
+0463: p
+0464: +
+0465: ​
+0466: [
+0467: log
+0468: ⁡
+0469: D
+0470: ⁡
+0471: (
+0472: s
+0473: )
+0474: ]
+0475: +
+0476: 𝔼
+0477: s
+0478: ∼
+0479: p
+0480: −
+0481: ​
+0482: [
+0483: log
+0484: ⁡
+0485: (
+0486: 1
+0487: −
+0488: D
+0489: ⁡
+0490: (
+0491: s
+0492: )
+0493: )
+0494: ]
+0495: \max_{D}\mathbb{E}_{s\sim p_{+}}[\log D(s)]+\mathbb{E}_{s\sim p_{-}}[\log(1-D(s))]
+0496: where
+0497: p
+0498: +
+0499: ​
+0500: (
+0501: s
+0502: )
+0503: p_{+}(s)
+0504: and
+0505: p
+0506: −
+0507: ​
+0508: (
+0509: s
+0510: )
+0511: p_{-}(s)
+0512: denote the state distributions of successful and failed states, respectively. According to Maximum Entropy Inverse RL
+0513: [
+0514: 43
+0515: ]
+0516: , the optimal reward function
+0517: R
+0518: ∗
+0519: ​
+0520: (
+0521: s
+0522: )
+0523: R^{*}(s)
+0524: is mathematically tied to the log-odds of this perfect discriminator
+0525: D
+0526: ∗
+0527: ​
+0528: (
+0529: s
+0530: )
+0531: D^{*}(s)
+0532: :
+0533: R
+0534: ∗
+0535: ​
+0536: (
+0537: s
+0538: )
+0539: =
+0540: log
+0541: ⁡
+0542: (
+0543: D
+0544: ∗
+0545: ​
+0546: (
+0547: s
+0548: )
+0549: 1
+0550: −
+0551: D
+0552: ∗
+0553: ​
+0554: (
+0555: s
+0556: )
+0557: )
+0558: =
+0559: log
+0560: ⁡
+0561: p
+0562: +
+0563: ​
+0564: (
+0565: s
+0566: )
+0567: −
+0568: log
+0569: ⁡
+0570: p
+0571: −
+0572: ​
+0573: (
+0574: s
+0575: )
+0576: R^{*}(s)=\log\left(\frac{D^{*}(s)}{1-D^{*}(s)}\right)=\log p_{+}(s)-\log p_{-}(s)
+0577: (1)
+0578: This formulation delivers a key insight:
+0579: the ideal reward is simply the log-density ratio between success and failure.
+0580: Thus, rather than training a parameterized discriminator through costly optimization, we can analytically determine the optimal reward if these densities can be evaluated directly.
+0581: This shifts the core challenge from neural network training to density estimation, opening the door for a training-free, non-parametric solution within the representation space.
+0582: 4.1
+0583: Non-parametric Reward Estimation in Foundation Representation Space
+0584: To completely circumvent expensive model training, we estimate the densities
+0585: p
+0586: +
+0587: ​
+0588: (
+0589: s
+0590: )
+0591: p_{+}(s)
+0592: and
+0593: p
+0594: −
+0595: ​
+0596: (
+0597: s
+0598: )
+0599: p_{-}(s)
+0600: using non-parametric Kernel Density Estimation (KDE). Under the general KDE framework, the probability density at any state
+0601: s
+0602: s
+0603: is evaluated by averaging the kernel similarities to all historical samples within a support set:
+0604: p
+0605: ⁡
+0606: (
+0607: s
+0608: )
+0609: ≈
+0610: 1
+0611: N
+0612: ​
+0613: ∑
+0614: i
+0615: =
+0616: 1
+0617: N
+0618: K
+0619: ⁡
+0620: (
+0621: s
+0622: ,
+0623: s
+0624: i
+0625: )
+0626: p(s)\approx\frac{1}{N}\sum_{i=1}^{N}K(s,s_{i})
+0627: .
+0628: A major challenge is that frozen vision foundation models produce representations that reside on a high-dimensional unit hypersphere due to
+0629: L
+0630: 2
+0631: L_{2}
+0632: normalization. Traditional Euclidean kernels perform poorly in such spaces because they ignore the curved geometry of the manifold. To respect this geometric property, we employ the Von Mises-Fisher (vMF) kernel
+0633: [
+0634: 23
+0635: ]
+0636: , which is specifically designed for directional data on hyperspheres:
+0637: K
+0638: ⁡
+0639: (
+0640: s
+0641: ,
+0642: s
+0643: i
+0644: )
+0645: =
+0646: C
+0647: ⁡
+0648: (
+0649: κ
+0650: )
+0651: ​
+0652: exp
+0653: ⁡
+0654: (
+0655: κ
+0656: ⋅
+0657: sim
+0658: ϕ
+0659: ​
+0660: (
+0661: s
+0662: ,
+0663: s
+0664: i
+0665: )
+0666: )
+0667: K(s,s_{i})=C(\kappa)\exp\left(\kappa\cdot\text{sim}_{\phi}(s,s_{i})\right)
+0668: (2)
+0669: where
+0670: sim
+0671: ϕ
+0672: ​
+0673: (
+0674: s
+0675: ,
+0676: s
+0677: i
+0678: )
+0679: \text{sim}_{\phi}(s,s_{i})
+0680: represents the cosine similarity function in the foundation representation space
+0681: ϕ
+0682: \phi
+0683: ;
+0684: κ
+0685: \kappa
+0686: is the concentration parameter, and
+0687: C
+0688: ⁡
+0689: (
+0690: κ
+0691: )
+0692: C(\kappa)
+0693: is a normalization constant.
+0694: By applying this kernel to the success buffer
+0695: ℬ
+0696: +
+0697: \mathcal{B}^{+}
+0698: and the failure buffer
+0699: ℬ
+0700: −
+0701: \mathcal{B}^{-}
+0702: , we can directly formulate the log-densities. By embedding the non-parametric expectation within the logarithm and separating the multiplicative constants into additive ones, we obtain:
+0703: log
+0704: ⁡
+0705: p
+0706: +
+0707: ​
+0708: (
+0709: s
+0710: )
+0711: =
+0712: log
+0713: ⁡
+0714: [
+0715: C
+0716: ⁡
+0717: (
+0718: κ
+0719: +
+0720: )
+0721: ​
+0722: 𝔼
+0723: ℬ
+0724: +
+0725: ​
+0726: exp
+0727: ⁡
+0728: (
+0729: κ
+0730: +
+0731: ​
+0732: sim
+0733: ϕ
+0734: ​
+0735: (
+0736: s
+0737: ,
+0738: g
+0739: +
+0740: )
+0741: )
+0742: ]
+0743: =
+0744: log
+0745: ⁡
+0746: 𝔼
+0747: ℬ
+0748: +
+0749: ​
+0750: exp
+0751: ⁡
+0752: (
+0753: κ
+0754: +
+0755: ​
+0756: sim
+0757: ϕ
+0758: ​
+0759: (
+0760: s
+0761: ,
+0762: g
+0763: +
+0764: )
+0765: )
+0766: +
+0767: C
+0768: +
+0769: \log p_{+}(s)=\log\left[C(\kappa^{+})\mathbb{E}_{\mathcal{B}^{+}}\exp\left(\kappa^{+}\text{sim}_{\phi}(s,g^{+})\right)\right]=\log\mathbb{E}_{\mathcal{B}^{+}}\exp\left(\kappa^{+}\text{sim}_{\phi}(s,g^{+})\right)+C^{+}
+0770: (3)
+0771: log
+0772: ⁡
+0773: p
+0774: −
+0775: ​
+0776: (
+0777: s
+0778: )
+0779: =
+0780: log
+0781: ⁡
+0782: [
+0783: C
+0784: ⁡
+0785: (
+0786: κ
+0787: −
+0788: )
+0789: ​
+0790: 𝔼
+0791: ℬ
+0792: −
+0793: ​
+0794: exp
+0795: ⁡
+0796: (
+0797: κ
+0798: −
+0799: ​
+0800: sim
+0801: ϕ
+0802: ​
+0803: (
+0804: s
+0805: ,
+0806: g
+0807: −
+0808: )
+0809: )
+0810: ]
+0811: =
+0812: log
+0813: ⁡
+0814: 𝔼
+0815: ℬ
+0816: −
+0817: ​
+0818: exp
+0819: ⁡
+0820: (
+0821: κ
+0822: −
+0823: ​
+0824: sim
+0825: ϕ
+0826: ​
+0827: (
+0828: s
+0829: ,
+0830: g
+0831: −
+0832: )
+0833: )
+0834: +
+0835: C
+0836: −
+0837: \log p_{-}(s)=\log\left[C(\kappa^{-})\mathbb{E}_{\mathcal{B}^{-}}\exp\left(\kappa^{-}\text{sim}_{\phi}(s,g^{-})\right)\right]=\log\mathbb{E}_{\mathcal{B}^{-}}\exp\left(\kappa^{-}\text{sim}_{\phi}(s,g^{-})\right)+C^{-}
+0838: (4)
+0839: Let LogSumExp operator
+0840: 𝕃
+0841: ℬ
+0842: κ
+0843: ​
+0844: (
+0845: X
+0846: )
+0847: :=
+0848: 1
+0849: κ
+0850: ​
+0851: log
+0852: ⁡
+0853: 𝔼
+0854: ℬ
+0855: ​
+0856: [
+0857: exp
+0858: ⁡
+0859: (
+0860: κ
+0861: ​
+0862: X
+0863: )
+0864: ]
+0865: \mathbb{L}^{\kappa}_{\mathcal{B}}(X):=\frac{1}{\kappa}\log\mathbb{E}_{\mathcal{B}}[\exp(\kappa X)]
+0866: . Substituting these refined log-densities back into Eq.
+0867: 1
+0868: yields the complete, closed-form formulation of the potential-based rewards in HiRE:
+0869: Φ
+0870: HiRE
+0871: ​
+0872: (
+0873: s
+0874: )
+0875: :=
+0876: 1
+0877: κ
+0878: +
+0879: ​
+0880: R
+0881: ∗
+0882: ​
+0883: (
+0884: s
+0885: )
+0886: =
+0887: 𝕃
+0888: ℬ
+0889: +
+0890: κ
+0891: +
+0892: ​
+0893: (
+0894: sim
+0895: ϕ
+0896: ​
+0897: (
+0898: s
+0899: ,
+0900: g
+0901: +
+0902: )
+0903: )
+0904: −
+0905: λ
+0906: ⋅
+0907: 𝕃
+0908: ℬ
+0909: −
+0910: κ
+0911: −
+0912: ​
+0913: (
+0914: sim
+0915: ϕ
+0916: ​
+0917: (
+0918: s
+0919: ,
+0920: g
+0921: −
+0922: )
+0923: )
+0924: \Phi_{\text{HiRE}}(s):=\frac{1}{\kappa^{+}}R^{*}(s)=\mathbb{L}^{\kappa^{+}}_{\mathcal{B}^{+}}\left(\text{sim}_{\phi}(s,g^{+})\right)-\lambda\cdot\mathbb{L}^{\kappa^{-}}_{\mathcal{B}^{-}}\left(\text{sim}_{\phi}(s,g^{-})\right)
+0925: (5)
+0926: where
+0927: λ
+0928: =
+0929: κ
+0930: −
+0931: /
+0932: κ
+0933: +
+0934: \lambda=\kappa^{-}/\kappa^{+}
+0935: naturally emerges as the ratio of the two concentration parameters that aligns the landscapes of the success and failure manifolds.
+0936: The additive constant shift
+0937: C
+0938: +
+0939: −
+0940: C
+0941: −
+0942: C^{+}-C^{-}
+0943: is omitted as a state-independent constant shift in the reward function as it does not alter the optimal policy or the policy gradient direction in reinforcement learning
+0944: [
+0945: 27
+0946: ]
+0947: .
+0948: Crucially, the magnitude of
+0949: λ
+0950: \lambda
+0951: reflects the geometric constraints of tasks: precision-critical assembly tasks naturally demand
+0952: λ
+0953: <
+0954: 1
+0955: \lambda<1
+0956: (
+0957: κ
+0958: +
+0959: >
+0960: κ
+0961: −
+0962: \kappa^{+}>\kappa^{-}
+0963: ) because the successful manifold is extremely narrow and localized, i.e. high concentration, whereas failure modes are broad and generic. This configuration inherently shapes an asymmetric potential field, providing a steep, sharp attraction gradient toward the microscopic goal alongside a broad, gentle repulsion basin that steers the agent away from failure traps without suppressing local exploration.
+0964: Finally, to augment foundation representations with control awareness while preserving the optimality of the policy, we integrate this control-aware potential
+0965: Φ
+0966: HiRE
+0967: \Phi_{\text{HiRE}}
+0968: with standard task success indicators
+0969: R
+0970: sparse
+0971: ​
+0972: (
+0973: s
+0974: ,
+0975: a
+0976: ,
+0977: s
+0978: ′
+0979: )
+0980: R_{\text{sparse}}(s,a,s^{\prime})
+0981: (i.e. sparse reward) via potential-based reward shaping
+0982: [
+0983: 27
+0984: ]
+0985: :
+0986: R
+0987: HiRE
+0988: ​
+0989: (
+0990: s
+0991: ,
+0992: a
+0993: ,
+0994: s
+0995: ′
+0996: )
+0997: =
+0998: R
+0999: sparse
+1000: ​
+1001: (
+1002: s
+1003: ,
+1004: a
+1005: ,
+1006: s
+1007: ′
+1008: )
+1009: +
+1010: w
+1011: ⁡
+1012: (
+1013: γ
+1014: ​
+1015: Φ
+1016: HiRE
+1017: ​
+1018: (
+1019: s
+1020: ′
+1021: )
+1022: −
+1023: Φ
+1024: HiRE
+1025: ​
+1026: (
+1027: s
+1028: )
+1029: )
+1030: R_{\text{HiRE}}(s,a,s^{\prime})=R_{\text{sparse}}(s,a,s^{\prime})+w\left(\gamma\Phi_{\text{HiRE}}(s^{\prime})-\Phi_{\text{HiRE}}(s)\right)
+1031: (6)
+1032: where
+1033: γ
+1034: \gamma
+1035: is the discount factor,
+1036: ensuring that the edited reward landscape provides dense guidance without introducing any unintended optima deviated from task objective.
+1037: Intuitive interpretations.
+1038: The subtractive structure of the HiRE potential in Eq.
+1039: 5
+1040: directly corrects the control-unawareness of raw foundation representations, whose conventional similarity-based rewards rely strictly on passive visual matching and remain unaware of physical task dynamics.
+1041: By contrasting hindsight interaction data, HiRE partitions the representation space into three distinct geometric regimes that systematically resolve the misalignment between visual similarity and control objectives:
+1042: (1)
+1043: Success-dominated regime (correcting false negatives):
+1044: Raw foundation representations evaluate task progress purely upon visual features, routinely underestimating intermediate states that are dynamically correct yet appear visually distant from the final goal (e.g., a correct motion reaching the target object that occurs far from the ultimate placement site). HiRE elevates the potential of these states by aggregating successful histories, injecting a strong attractive gradient that rescues these false negatives from being under-rewarded due to visual disparity.
+1045: (2)
+1046: Failure-dominated regime (correcting false positives):
+1047: Conversely, semantic similarity is inherently blind to physical constraints, making it highly prone to overestimating deceptive “trap states”—states that appear visually identical to the goal but have suffered irreversible physical failures (e.g., moving toward the placement site after dropping the small object). HiRE imposes a severe penalty on these zones, explicitly suppressing visual reward hacking that drives the robot into physical failures.
+1048: (3)
+1049: Equilibrium regime (gradient cancellation):
+1050: In equilibrium zones or vast under-covered regions, the gradients of the success and failure terms achieve a dynamic counter-balance. Mathematically, even though the potential values do not identically sum to zero due to
+1051: λ
+1052: <
+1053: 1
+1054: \lambda<1
+1055: , the reward landscape converges to a flat constant plateau where the localized shaping gradient vanishes, i.e.,
+1056: ∇
+1057: s
+1058: Φ
+1059: HiRE
+1060: ​
+1061: (
+1062: s
+1063: )
+1064: ≈
+1065: 𝟎
+1066: \nabla_{s}\Phi_{\text{HiRE}}(s)\approx\mathbf{0}
+1067: . This gradient cancellation allows HiRE to gracefully degrade to the clean sparse-reward recipe. Consequently, it prevents HiRE from issuing conflicting signals on states from blurred manifolds and ensures the robot is not overly penalized by localized failures when exploring distant, out-of-distribution states.
+1068: 4.2
+1069: RL Policy Finetuning with HiRE
+1070: To dynamically evaluate the non-parametric densities, HiRE maintains a positive buffer
+1071: ℬ
+1072: +
+1073: \mathcal{B}^{+}
+1074: and a negative buffer
+1075: ℬ
+1076: −
+1077: \mathcal{B}^{-}
+1078: during policy finetuning. The positive buffer
+1079: ℬ
+1080: +
+1081: \mathcal{B}^{+}
+1082: consists of an offline buffer constructed from expert demonstrations, together with an online first-in-first-out (FIFO) buffer that stores observations from recent successful rollouts. The negative buffer
+1083: ℬ
+1084: −
+1085: \mathcal{B}^{-}
+1086: is another FIFO buffer, populated only with terminal states from failed rollouts to illustrate the failure manifold.
+1087: As HiRE only reshapes the intrinsic reward signal, it is agnostic to the underlying RL algorithm. We formalize this plug-and-play integration through a generalized actor-critic objective. Let
+1088: 𝒰
+1089: \mathcal{U}
+1090: denote the sampling distribution from which the backbone draws training transitions
+1091: (
+1092: s
+1093: ,
+1094: a
+1095: ,
+1096: s
+1097: ​
+1098: ’
+1099: )
+1100: (s,a,s\textquoteright)
+1101: . The critic
+1102: Q
+1103: ψ
+1104: Q_{\psi}
+1105: is updated by minimizing the shaped Bellman residual:
+1106: ℒ
+1107: ψ
+1108: =
+1109: 𝔼
+1110: (
+1111: s
+1112: ,
+1113: a
+1114: ,
+1115: s
+1116: ′
+1117: )
+1118: ∼
+1119: 𝒰
+1120: ​
+1121: [
+1122: Q
+1123: ψ
+1124: ​
+1125: (
+1126: s
+1127: ,
+1128: a
+1129: )
+1130: −
+1131: (
+1132: R
+1133: HiRE
+1134: ​
+1135: (
+1136: s
+1137: ,
+1138: a
+1139: ,
+1140: s
+1141: ′
+1142: )
+1143: +
+1144: γ
+1145: ​
+1146: 𝔼
+1147: a
+1148: ′
+1149: ∼
+1150: π
+1151: θ
+1152: ​
+1153: [
+1154: Q
+1155: ψ
+1156: ¯
+1157: ​
+1158: (
+1159: s
+1160: ′
+1161: ,
+1162: a
+1163: ′
+1164: )
+1165: ]
+1166: )
+1167: ]
+1168: 2
+1169: \mathcal{L}_{\psi}=\mathbb{E}_{(s,a,s^{\prime})\sim\mathcal{U}}\left[Q_{\psi}(s,a)-\big(R_{\text{HiRE}}(s,a,s^{\prime})+\gamma\mathbb{E}_{a^{\prime}\sim\pi_{\theta}}[Q_{\bar{\psi}}(s^{\prime},a^{\prime})]\big)\right]^{2}
+1170: (7)
+1171: where
+1172: Q
+1173: ψ
+1174: ¯
+1175: Q_{\bar{\psi}}
+1176: is the target network;
+1177: ψ
+1178: ¯
+1179: \bar{\psi}
+1180: is periodically copied from
+1181: ψ
+1182: \psi
+1183: ;
+1184: R
+1185: HiRE
+1186: ​
+1187: (
+1188: s
+1189: ,
+1190: a
+1191: ,
+1192: s
+1193: ′
+1194: )
+1195: R_{\text{HiRE}}(s,a,s^{\prime})
+1196: in Eq.
+1197: 6
+1198: represents our dense reward recipe that draw policies toward success and away from failure, where
+1199: λ
+1200: ∈
+1201: [
+1202: 0
+1203: ,
+1204: 1
+1205: )
+1206: \lambda\in[0,1)
+1207: as success manifolds are usually higher concentrated than failure ones. Subsequently, the actor
+1208: π
+1209: θ
+1210: \pi_{\theta}
+1211: is optimized to minimize the negative estimated shaped return
+1212: Q
+1213: ψ
+1214: Q_{\psi}
+1215: alongside a flexible regularization term
+1216: ℒ
+1217: algo
+1218: \mathcal{L}_{\texttt{algo}}
+1219: which depends on choice of RL algorithm
+1220: algo
+1221: :
+1222: ℒ
+1223: θ
+1224: =
+1225: 𝔼
+1226: s
+1227: ∼
+1228: 𝒰
+1229: ,
+1230: a
+1231: ∼
+1232: π
+1233: θ
+1234: [
+1235: −
+1236: ω
+1237: algo
+1238: (
+1239: s
+1240: ,
+1241: a
+1242: )
+1243: ⋅
+1244: Q
+1245: ψ
+1246: (
+1247: s
+1248: ,
+1249: a
+1250: )
+1251: +
+1252: ℒ
+1253: algo
+1254: ]
+1255: \mathcal{L}_{\theta}=\mathbb{E}_{s\sim\mathcal{U},a\sim\pi_{\theta}}\left[-\omega_{\texttt{algo}}(s,a)\cdot Q_{\psi}(s,a)+\mathcal{L}_{\texttt{algo}}\right]
+1256: (8)
+1257: This abstraction elegantly accommodates various RL backbones: setting
+1258: ω
+1259: algo
+1260: =
+1261: 1
+1262: \omega_{\texttt{algo}}=1
+1263: recovers standard deterministic or stochastic off-policy methods; incorporating
+1264: ω
+1265: algo
+1266: \omega_{\texttt{algo}}
+1267: with clipped importance sampling constraints yields stable on-policy updates (e.g., PPO
+1268: [
+1269: 32
+1270: ]
+1271: ); and applying behavior regularization
+1272: ℒ
+1273: algo
+1274: \mathcal{L}_{\texttt{algo}}
+1275: enables entropy-based exploration bonus for stochastic policies (e.g., TD3
+1276: [
+1277: 10
+1278: ]
+1279: , SAC
+1280: [
+1281: 11
+1282: ]
+1283: ) or safe finetuning from the base policy (e.g., DICE-RL
+1284: [
+1285: 34
+1286: ]
+1287: ). In our main implementations, we integrate our reward recipe on top of DICE-RL, a stable and sample-efficient RL policy finetuning algorithm.
+1288: 5
+1289: Experiments
+1290: We evaluate HiRE in the setting of online RL finetuning of pretrained robot policies. We adopt DINOv2
+1291: [
+1292: 28
+1293: ]
+1294: and SigLIP
+1295: [
+1296: 37
+1297: ]
+1298: as foundation encoders, and DICE-RL
+1299: [
+1300: 34
+1301: ]
+1302: , a stable and sample-efficient finetuning framework for generative behavior cloning policies, as policy learning backbone.
+1303: Building on such a competitive backbone lets us cleanly isolate the contribution of the reward signal, and ask whether a better reward can push an already strong finetuning pipeline even further.
+1304: Concretely, our experiments are designed around three questions: Can HiRE improve an RL finetuning backbone with dense and correct guidance? How does HiRE compare with learned reward adaptation, pretrained robotic reward models, and training-free VLM rewards? How does HiRE dynamically shape reward landscape that eventually lifts policy finetuning ceiling? Implementation details, additional comparative, hyperparameter sensitivity and ablation results are elaborated on in App.
+1305: C
+1306: .
+1307: 5.1
+1308: Experimental Setup
+1309: (1) Benchmarks and tasks.
+1310: We evaluate HiRE on both simulation and real-robot manipulation tasks.
+1311: We use RoboMimic
+1312: [
+1313: 22
+1314: ]
+1315: and MimicGen
+1316: [
+1317: 21
+1318: ]
+1319: simulation benchmarks,
+1320: and test on two different manipulation tasks with I2RT YAM robot arms for real-robot experiments, detailed in App.
+1321: A.1
+1322: and
+1323: A.2
+1324: respectively.
+1325: Together, these tasks span prehensile, long-horizon, contact-rich, and high-precision manipulation, with several requiring high-precision insertion and assembly. For each task, we first train generative behavior cloning (BC) policies from offline demonstrations on two benchmarks respectively, achieving base policies with success rates of
+1326: 18.0
+1327: %
+1328: 18.0\%
+1329: on
+1330: Stack_Three
+1331: ,
+1332: 6.0
+1333: %
+1334: 6.0\%
+1335: on
+1336: Three_Piece_Assembly
+1337: ,
+1338: 1.0
+1339: %
+1340: 1.0\%
+1341: on
+1342: Threading
+1343: ,
+1344: 2.0
+1345: %
+1346: 2.0\%
+1347: on
+1348: Tool_Hang
+1349: , and
+1350: 20.0
+1351: %
+1352: 20.0\%
+1353: on both hardware tasks, i.e.,
+1354: Bottle_Pick-and-Place
+1355: and
+1356: Towers_of_Hanoi
+1357: , and then finetune them with DICE-RL.
+1358: (2) Reward baselines.
+1359: We compare HiRE with four reward baselines.
+1360: Sparse reward
+1361: uses binary task success signals.
+1362: It is easy to obtain in both simulation and real-world settings but provides no intermediate feedback before task completion, which falls short on long-horizon multi-stage tasks.
+1363: RoboMeter
+1364: [
+1365: 18
+1366: ]
+1367: (with
+1368: RoboMeter-4B
+1369: configuration) is a general-purpose robotic dense reward model trained with frame-level progress supervision and trajectory-level preference supervision.
+1370: It learns from trajectory comparisons among expert, suboptimal, and failed rollouts, with large-scale task-specific human labeling.
+1371: TOPReward
+1372: [
+1373: 7
+1374: ]
+1375: (with
+1376: Qwen3-VL-8B-Instruct
+1377: configuration) is a training-free robotic reward method that estimates task progress from a pretrained VLM.
+1378: It scores task-completion token probabilities conditioned on trajectory prefixes and task instructions, without task-specific reward-model training or human progress annotations.
+1379: GCR
+1380: [
+1381: 3
+1382: ]
+1383: learns dense rewards by combining implicit value learning with a goal-contrastive objective that distinguishes successful and failed trajectories.
+1384: It provides a learned reward-adaptation baseline for comparison with HiRE’s training-free reward editing.
+1385: Figure 1:
+1386: Comparisons on RoboMimic and MimicGen tasks.
+1387: Success rate versus online environment steps for different reward recipes integrated with DICE-RL policy learning backbone. Curves are averaged over three random seeds, with shaded regions denoting variability across seeds.
+1388: 5.2
+1389: Benchmark Comparative Results
+1390: Long-horizon, multi-stage tasks (
+1391: Stack_Three
+1392: ,
+1393: Three_Piece_Assembly
+1394: ).
+1395: For these long-horizon tasks,
+1396: HiRE lifts the final success rate substantially above the sparse reward baseline
+1397: as shown in Fig.
+1398: 1
+1399: . On
+1400: Stack_Three
+1401: , sparse-reward policy finetuning initially improves but later declines to around
+1402: 30
+1403: %
+1404: 30\%
+1405: , while HiRE continues to improve and reaches a success rate of roughly
+1406: 50
+1407: %
+1408: 50\%
+1409: . On
+1410: Three_Piece_Assembly
+1411: , sparse-reward finetuning reaches a final success rate of around
+1412: 70
+1413: %
+1414: 70\%
+1415: , while HiRE climbs to over
+1416: 80
+1417: %
+1418: 80\%
+1419: .
+1420: Since both tasks require several ordered sub-stages before terminal success, sparse rewards provide limited credit assignment within available interaction budgets. In contrast, HiRE supplies dense progress feedback, leading to higher performance.
+1421: Contact-rich and high-precision tasks (
+1422: Tool_Hang
+1423: ,
+1424: Threading
+1425: ).
+1426: For contact-rich and precision tasks, HiRE’s advantage appears in two related but distinct aspects. On
+1427: Tool_Hang
+1428: , sparse-reward finetuning fails completely despite non-zero base policy performance, whereas HiRE steadily improves to a success rate of around
+1429: 95
+1430: %
+1431: 95\%
+1432: as shown in Fig.
+1433: 1
+1434: .
+1435: HiRE provides dense feedback on intermediate progress, helping the policy learn useful manipulation behaviors even when task successes are rare. On
+1436: Threading
+1437: , though the sparse-reward recipe eventually reaches a comparable final success rate,
+1438: HiRE always reaches the same performance with markedly fewer online interactions
+1439: , showing clear gains in sample efficiency.
+1440: Comparison with other reward baselines.
+1441: The above results show that HiRE raises performance when sparse rewards fail
+1442: to capture intermediate progress and at least improves sample efficiency when sparse
+1443: supervision is eventually sufficient. We further compare HiRE with pretrained
+1444: reward models and methods that adapt rewards online.
+1445: The pretrained robotic reward model
+1446: RoboMeter
+1447: and the VLM-based reward
+1448: method
+1449: TOPReward
+1450: exhibit inconsistent performance across tasks and achieve
+1451: substantially lower final success rates than HiRE, suggesting limited
+1452: generalization of their reward signals to these unseen tasks and scenarios.
+1453: GCR
+1454: also adapts rewards using online failure experience, but requires
+1455: gradient-based reward-model updates. On the multi-stage tasks (
+1456: Stack_Three
+1457: ,
+1458: Three_Piece_Assembly
+1459: ), GCR requires roughly
+1460: 3
+1461: 3
+1462: times as many interactions as HiRE to reach
+1463: 30
+1464: %
+1465: 30\%
+1466: success. On the high-precision tasks (
+1467: Tool_Hang
+1468: ,
+1469: Threading
+1470: ), it fails to make substantial progress. Together, these comparisons highlight HiRE’s sample
+1471: efficiency and performance consistency across tasks, achieved through its training-free dense reward recipe.
+1472: Figure 2:
+1473: HiRE reflects task progress better than naïve visual similarity-based rewards.
+1474: We visualize reward scores along two representative trajectories, with selected segments highlighted and shown as thumbnails above the plot.
+1475: The shaded regions correspond to key behavioral phases, including target approach, target loss, target recovery, and direction correction.
+1476: While DINO similarity-based potentials mainly reflect visual resemblance to the ultimate goal frame, the HiRE potential remains faithful to reflect task progress and penalizes visually plausible but failure-prone states.
+1477: 5.3
+1478: Real-Robot Comparative Results
+1479: Figure 3:
+1480: Real-robot evaluation.
+1481: Left:
+1482: Representative successful HiRE rollouts for
+1483: Bottle_Pick-and-Place
+1484: (top) and
+1485: Towers_of_Hanoi
+1486: (bottom).
+1487: Right:
+1488: Success rates over online fine-tuning episodes.
+1489: Starting from the same base policy (
+1490: 20
+1491: %
+1492: 20\%
+1493: ), HiRE reaches
+1494: 67
+1495: %
+1496: 67\%
+1497: on
+1498: Bottle_Pick-and-Place
+1499: and
+1500: 73
+1501: %
+1502: 73\%
+1503: on
+1504: Towers_of_Hanoi
+1505: , consistently outperforming sparse-reward and RoboMeter baselines.
+1506: We evaluate each method on two real-robot tasks, comparing their success rates per checkpoint in Fig.
+1507: 3
+1508: .
+1509: On
+1510: Bottle_Pick-and-Place
+1511: , HiRE steadily guides the policy toward better performance, boosting the success rate from
+1512: 20
+1513: %
+1514: 20\%
+1515: to
+1516: 67
+1517: %
+1518: 67\%
+1519: , whereas the sparse-reward and Robometer baselines nearly fail entirely in the early training phases.
+1520: Detailed performance across all six initial positions is further reported in Tab.
+1521: 2
+1522: .
+1523: On
+1524: Towers_of_Hanoi
+1525: , HiRE instantly boosts the success rate to 53.3% with only 20 episodes, eventually reaching a peak of
+1526: 73.3%
+1527: (3.67
+1528: ×
+1529: \times
+1530: base policy). In contrast, the baselines achieve substantially lower peak performances (Sparse: 53.3% at 30 episodes; Robometer: 46.7% at 40 episodes), requiring more interactions to reach inferior caps.
+1531: While HiRE maintains steady performance gains, both baselines suffer from severe degradation during fine-tuning (e.g., Sparse drops to 30.0% and Robometer to 20.0% at 50 episodes) due to reward hacking or noisy reward estimates.
+1532: In conclusion, HiRE achieves superior sample efficiency, stable improvement, and higher policy performance ceiling on both hardware tasks.
+1533: Figure 4:
+1534: Critic loss.
+1535: We compare critic loss between HiRE and baselines during policy finetuning.
+1536: HiRE maintains non-trivial critic updates, while sparse reward yields significantly lower critic loss due to its sparse signals, and Robometer probably produces inconsistent rewards that are hard for the critic to converge.
+1537: This significant contrast stems from HiRE’s ability to extract dense optimality signals from the positive and negative buffers, which efficiently activates and steers the base policy toward successful cases.
+1538: Conversely, sparse rewards fail to provide sufficient optimization gradients.
+1539: As illustrated by the critic loss comparison during online training on
+1540: Bottle_Pick-and-Place
+1541: in Fig.
+1542: 4
+1543: , sparse rewards yield a prematurely low critic loss due to the severe sparsity of reward signals, leading to value function collapse.
+1544: In contrast, Robometer induces a non-converged critic loss, probably because it introduces extrinsic rewards that are not robust with OOD observations.
+1545: HiRE maintains non-trivial critic updates throughout the finetuning process, demonstrating that its edited potential field continuously delivers informative feedback to sustain effective policy learning.
+1546: 5.4
+1547: Visualizations and Analyses
+1548: HiRE endows foundation vision representations with control-awareness.
+1549: In Fig.
+1550: 2
+1551: , we compare the raw DINO goal-similarity potential
+1552: Φ
+1553: raw
+1554: ​
+1555: (
+1556: s
+1557: )
+1558: =
+1559: sim
+1560: ϕ
+1561: ​
+1562: (
+1563: s
+1564: ,
+1565: g
+1566: ⋆
+1567: +
+1568: )
+1569: \Phi_{\text{raw}}(s)=\text{sim}_{\phi}(s,g^{+}_{\star})
+1570: commonly adopted by existing representation-based reward learning methods
+1571: [
+1572: 20
+1573: ,
+1574: 19
+1575: ,
+1576: 17
+1577: ]
+1578: , against our edited potential
+1579: Φ
+1580: HiRE
+1581: ​
+1582: (
+1583: s
+1584: )
+1585: \Phi_{\text{HiRE}}(s)
+1586: in Eq.
+1587: 5
+1588: on
+1589: Threading
+1590: and
+1591: Stack_Three
+1592: trajectories. Taking
+1593: Threading
+1594: subplot as an example, the robot correctly approaches the target object during the early execution phase (e.g. Timestep 0-50).
+1595: However, because this leads to observations visually distinct from the ultimate goal frame
+1596: g
+1597: ⋆
+1598: +
+1599: g^{+}_{\star}
+1600: ,
+1601: Φ
+1602: raw
+1603: ​
+1604: (
+1605: s
+1606: )
+1607: \Phi_{\text{raw}}(s)
+1608: severely degrades, potentially causing optimization misdirection.
+1609: In sharp contrast,
+1610: Φ
+1611: HiRE
+1612: ​
+1613: (
+1614: s
+1615: )
+1616: \Phi_{\text{HiRE}}(s)
+1617: successfully aggregates historical success data to steadily elevate the reward, reinforcing this critical task progress and correcting such false negatives of
+1618: Φ
+1619: raw
+1620: ​
+1621: (
+1622: s
+1623: )
+1624: \Phi_{\text{raw}}(s)
+1625: caused by visual disparity.
+1626: Conversely, a more catastrophic visual artifact occurs during the bad navigation phases (e.g. Timestep 75-180), where the robot loses its target and tracks overshoots, causing its leaving the camera view. Paradoxically,
+1627: Φ
+1628: raw
+1629: ​
+1630: (
+1631: s
+1632: )
+1633: \Phi_{\text{raw}}(s)
+1634: exhibits a deceptive increase, falsely interpreting the empty background as a closer match to
+1635: g
+1636: ⋆
+1637: +
+1638: g^{+}_{\star}
+1639: .
+1640: These highlight a fundamental flaw in raw rewards derived from foundation vision representations:
+1641: Φ
+1642: raw
+1643: ​
+1644: (
+1645: s
+1646: )
+1647: \Phi_{\text{raw}}(s)
+1648: is inherently vulnerable to both
+1649: false negatives
+1650: (under-rewarding visually incorrect yet beneficial behaviors) and
+1651: false positives
+1652: (over-rewarding visually correct yet improper behaviors). By attracting towards success and repelling from failure manifolds, HiRE systematically unmasks these visual illusions and grounds control-awareness into rewards.
+1653: HiRE co-adapts the reward manifold upon policy finetuning performance.
+1654: In Fig.
+1655: 5
+1656: , we analyze the joint t-SNE embedding space of both online positive and negative buffer samples across training steps. The empirical density quantile contours reveal two profound insights into dynamical reward shaping nature of HiRE.
+1657: First, online negative buffer dynamically captures stage-progressive failure modes while preventing over-penalization. At the beginning, the negative samples concentrates around the initial state (Region 1). As the policy performance improves, the buffer removes these early, trivial failures and segments into multiple localized clusters (Regions 2-5) that encapsulate harder, later-stage failures. HiRE thus avoids global over-penalization and maintains a targeted shaping to only suppress localized failures along training.
+1658: Second, the positive distribution remains highly concentrated whereas the negative one is much wider and scattered. This empirical discrepancy confirms assigning a larger concentration factor
+1659: κ
+1660: +
+1661: \kappa^{+}
+1662: than to
+1663: κ
+1664: −
+1665: \kappa^{-}
+1666: , which we discuss in Sec.
+1667: 4.1
+1668: .
+1669: Figure 5:
+1670: The negative buffer captures distinct failure behaviors during policy finetuning.
+1671: We visualize positive and negative buffer samples in a shared t-SNE space across training steps.
+1672: Online positive buffer samples correspond to successful rollouts whereas negative ones are the terminal frames of failure rollouts.
+1673: Density quantile contours highlight high-density regions of the negative-buffer distribution, where selected failure frames are sampled as representative examples.
+1674: Expert initial and goal frames are plotted as reference markers.
+1675: 6
+1676: Conclusion and Limitations
+1677: HiRE addresses the reward bottleneck in RL policy finetuning by endowing foundation-representation similarity with control-awareness. Without training reward models or using human labels, HiRE edits rewards online through hindsight evidence from successful and failed rollouts, suppressing deceptive trap states while preserving genuine task progress. Across RoboMimic, MimicGen, and real-robot platforms, this lightweight calibration consistently improves both final success rate and sample efficiency over other reward methods, while remaining agnostic to the encoder and finetuning algorithm. Overall, HiRE offers a practical and scalable recipe that helps existing RL finetuning pipelines unlock their full potential.
+1678: Limitations and Future Work.
+1679: While success and failure signals offer highly accessible and clean feedback, they overlook intermediate, control-centric information. Future extensions could incorporate human guidance to make interaction data more control-aware, thereby shaping a more nuanced reward landscape.
+1680: Another promising direction is to develop more sophisticated buffer construction strategies that account for suboptimal segments within successful trajectories, such as segments involving retries or recovery behaviors of varying degrees.
+1681: Acknowledgement
+1682: We express our sincere gratitude to Neural Motion and the Tianqiao & Chrissy Chen Institute for providing essential computational resources for this work. In particular, we deeply appreciate Neural Motion for supplying critical GPU compute in the final month prior to submission. We also thank Zhanyi Sun and Qianzhong Chen from Stanford University for their valuable insights and technical guidance on implementation details.
+1683: References
+1684: [1]
+1685: L. Ankile, Z. Jiang, R. Duan, G. Shi, P. Abbeel, and A. Nagabandi
+1686: (2025)
+1687: Residual off-policy rl for finetuning behavior cloning policies
+1688: .
+1689: arXiv preprint arXiv:2509.19301
+1690: .
+1691: Cited by:
+1692: §2.2
+1693: .
+1694: [2]
+1695: P. J. Ball, L. Smith, I. Kostrikov, and S. Levine
+1696: (2023)
+1697: Efficient online reinforcement learning with offline data
+1698: .
+1699: arXiv preprint arXiv:2302.02948
+1700: .
+1701: Cited by:
+1702: §A.3
+1703: .
+1704: [3]
+1705: O. Biza, T. Weng, L. Sun, K. Schmeckpeper, T. Kelestemur, Y. J. Ma, R. Platt, J. van de Meent, and L. L. Wong
+1706: (2025)
+1707: On-robot reinforcement learning with goal-contrastive rewards
+1708: .
+1709: In
+1710: 2025 IEEE International Conference on Robotics and Automation (ICRA)
+1711: ,
+1712: pp. 4797–4805
+1713: .
+1714: Cited by:
+1715: §A.3
+1716: ,
+1717: §A.3
+1718: ,
+1719: §1
+1720: ,
+1721: §2.1
+1722: ,
+1723: §5.1
+1724: .
+1725: [4]
+1726: S. Boyd, S. P. Boyd, and L. Vandenberghe
+1727: (2004)
+1728: Convex optimization
+1729: .
+1730: Cambridge university press
+1731: .
+1732: Cited by:
+1733: Appendix B
+1734: .
+1735: [5]
+1736: K. Chen, Z. Liu, T. Zhang, Z. Guo, S. Xu, H. Lin, H. Zang, Q. Zhang, Z. Yu, G. Fan,
+1737: et al.
+1738: (2025)
+1739: π
+1740: ​
+1741: _
+1742: ​
+1743: R
+1744: ​
+1745: L
+1746: \pi\_{RL}
+1747: : Online rl fine-tuning for flow-based vision-language-action models
+1748: .
+1749: arXiv preprint arXiv:2510.25889
+1750: .
+1751: Cited by:
+1752: §2.2
+1753: .
+1754: [6]
+1755: Q. Chen, J. Yu, M. Schwager, P. Abbeel, F. Shentu, and P. Wu
+1756: (2026)
+1757: SARM: stage-aware reward modeling for long horizon robot manipulation
+1758: .
+1759: In
+1760: The Fourteenth International Conference on Learning Representations
+1761: ,
+1762: External Links:
+1763: Link
+1764: Cited by:
+1765: §2.1
+1766: .
+1767: [7]
+1768: S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna
+1769: (2026)
+1770: Topreward: token probabilities as hidden zero-shot rewards for robotics
+1771: .
+1772: arXiv preprint arXiv:2602.19313
+1773: .
+1774: Cited by:
+1775: §A.3
+1776: ,
+1777: §1
+1778: ,
+1779: §2.1
+1780: ,
+1781: §5.1
+1782: .
+1783: [8]
+1784: C. Chi, S. Feng, Y. Du, Z. Xu, E. Cousineau, B. Burchfiel, and S. Song
+1785: (2023)
+1786: Diffusion policy: visuomotor policy learning via action diffusion
+1787: .
+1788: In
+1789: Proceedings of Robotics: Science and Systems (RSS)
+1790: ,
+1791: Cited by:
+1792: §A.1
+1793: .
+1794: [9]
+1795: J. Fu, K. Luo, and S. Levine
+1796: (2018)
+1797: Learning robust rewards with adverserial inverse reinforcement learning
+1798: .
+1799: In
+1800: International Conference on Learning Representations
+1801: ,
+1802: External Links:
+1803: Link
+1804: Cited by:
+1805: §4
+1806: .
+1807: [10]
+1808: S. Fujimoto, H. Hoof, and D. Meger
+1809: (2018)
+1810: Addressing function approximation error in actor-critic methods
+1811: .
+1812: In
+1813: International Conference on Machine Learning
+1814: ,
+1815: pp. 1587–1596
+1816: .
+1817: Cited by:
+1818: §4.2
+1819: .
+1820: [11]
+1821: T. Haarnoja, A. Zhou, P. Abbeel, and S. Levine
+1822: (2018)
+1823: Soft actor-critic: off-policy maximum entropy deep reinforcement learning with a stochastic actor
+1824: .
+1825: In
+1826: International Conference on Machine Learning
+1827: ,
+1828: pp. 1861–1870
+1829: .
+1830: Cited by:
+1831: §4.2
+1832: .
+1833: [12]
+1834: J. Ho and S. Ermon
+1835: (2016)
+1836: Generative adversarial imitation learning
+1837: .
+1838: Advances in neural information processing systems
+1839: 29
+1840: .
+1841: Cited by:
+1842: §4
+1843: .
+1844: [13]
+1845: P. Intelligence, A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo,
+1846: et al.
+1847: (2025)
+1848: π
+1849: 0.6
+1850: ∗
+1851: \pi_{0.6}^{*}
+1852: : A vla that learns from experience
+1853: .
+1854: arXiv preprint arXiv:2511.14759
+1855: .
+1856: Cited by:
+1857: §1
+1858: .
+1859: [14]
+1860: P. Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai,
+1861: et al.
+1862: (2025)
+1863: π
+1864: 0.5
+1865: \pi_{0.5}
+1866: : A vision-language-action model with open-world generalization
+1867: .
+1868: arXiv preprint arXiv:2504.16054
+1869: .
+1870: Cited by:
+1871: §2.2
+1872: .
+1873: [15]
+1874: P. Krack, T. Jülg, W. Burgard, and F. Walter
+1875: (2026)
+1876: Rewarding dino: predicting dense rewards with vision foundation models
+1877: .
+1878: arXiv preprint arXiv:2603.16978
+1879: .
+1880: Cited by:
+1881: §2.1
+1882: .
+1883: [16]
+1884: T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+1885: (2026)
+1886: RoboReward: general-purpose vision-language reward models for robotics
+1887: .
+1888: arXiv preprint arXiv:2601.00675
+1889: .
+1890: Cited by:
+1891: §1
+1892: ,
+1893: §2.1
+1894: .
+1895: [17]
+1896: J. Li, J. Zheng, Y. Zheng, L. Mao, X. Hu, S. Cheng, H. Niu, J. Liu, Y. Liu, J. Liu,
+1897: et al.
+1898: (2024)
+1899: DecisionNCE: embodied multimodal representations via implicit preference learning
+1900: .
+1901: In
+1902: Proceedings of the 41st International Conference on Machine Learning
+1903: ,
+1904: pp. 29461–29488
+1905: .
+1906: Cited by:
+1907: §2.1
+1908: ,
+1909: §5.4
+1910: .
+1911: [18]
+1912: A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox, Y. Xiang, A. Li, A. Bobu, A. Gupta, S. Tu, E. Biyik, and J. Zhang
+1913: (2026)
+1914: Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+1915: .
+1916: In
+1917: Robotics: Science and Systems 2026
+1918: ,
+1919: Cited by:
+1920: §A.3
+1921: ,
+1922: §1
+1923: ,
+1924: §2.1
+1925: ,
+1926: §5.1
+1927: .
+1928: [19]
+1929: Y. J. Ma, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+1930: (2023)
+1931: Liv: language-image representations and rewards for robotic control
+1932: .
+1933: In
+1934: International Conference on Machine Learning
+1935: ,
+1936: pp. 23301–23320
+1937: .
+1938: Cited by:
+1939: §A.3
+1940: ,
+1941: §1
+1942: ,
+1943: §2.1
+1944: ,
+1945: §5.4
+1946: .
+1947: [20]
+1948: Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+1949: (2022)
+1950: Vip: towards universal visual reward and representation via value-implicit pre-training
+1951: .
+1952: arXiv preprint arXiv:2210.00030
+1953: .
+1954: Cited by:
+1955: §1
+1956: ,
+1957: §2.1
+1958: ,
+1959: §5.4
+1960: .
+1961: [21]
+1962: A. Mandlekar, S. Nasiriany, B. Wen, I. Akinola, Y. Narang, L. Fan, Y. Zhu, and D. Fox
+1963: (2023)
+1964: MimicGen: a data generation system for scalable robot learning using human demonstrations
+1965: .
+1966: In
+1967: Conference on Robot Learning
+1968: ,
+1969: pp. 1820–1864
+1970: .
+1971: Cited by:
+1972: §A.1
+1973: ,
+1974: §1
+1975: ,
+1976: §5.1
+1977: .
+1978: [22]
+1979: A. Mandlekar, D. Xu, J. Wong, S. Nasiriany, C. Wang, R. Kulkarni, L. Fei-Fei, S. Savarese, Y. Zhu, and R. Martín-Martín
+1980: (2022)
+1981: What matters in learning from offline human demonstrations for robot manipulation
+1982: .
+1983: In
+1984: Conference on Robot Learning
+1985: ,
+1986: pp. 1678–1690
+1987: .
+1988: Cited by:
+1989: §A.1
+1990: ,
+1991: §1
+1992: ,
+1993: §5.1
+1994: .
+1995: [23]
+1996: K. V. Mardia and P. E. Jupp
+1997: (2009)
+1998: Directional statistics
+1999: .
+2000: John Wiley & Sons
+2001: .
+2002: Cited by:
+2003: §4.1
+2004: .
+2005: [24]
+2006: T. Mu, M. Liu, and H. Su
+2007: (2024)
+2008: DrS: learning reusable dense rewards for multi-stage tasks
+2009: .
+2010: In
+2011: The Twelfth International Conference on Learning Representations
+2012: ,
+2013: External Links:
+2014: Link
+2015: Cited by:
+2016: §2.1
+2017: .
+2018: [25]
+2019: S. Nair, A. Rajeswaran, V. Kumar, C. Finn, and A. Gupta
+2020: (2023)
+2021: R3M: a universal visual representation for robot manipulation
+2022: .
+2023: In
+2024: Conference on Robot Learning
+2025: ,
+2026: pp. 892–909
+2027: .
+2028: Cited by:
+2029: §2.1
+2030: .
+2031: [26]
+2032: M. Nakamoto, O. Mees, A. Kumar, and S. Levine
+2033: (2025)
+2034: Steering your generalists: improving robotic foundation models via value guidance
+2035: .
+2036: In
+2037: Proceedings of The 8th Conference on Robot Learning
+2038: ,
+2039: P. Agrawal, O. Kroemer, and W. Burgard (Eds.)
+2040: ,
+2041: Proceedings of Machine Learning Research
+2042: , Vol.
+2043: 270
+2044: ,
+2045: pp. 4996–5013
+2046: .
+2047: External Links:
+2048: Link
+2049: Cited by:
+2050: §2.2
+2051: .
+2052: [27]
+2053: A. Y. Ng, D. Harada, and S. J. Russell
+2054: (1999)
+2055: Policy invariance under reward transformations: theory and application to reward shaping
+2056: .
+2057: In
+2058: Proceedings of the Sixteenth International Conference on Machine Learning
+2059: ,
+2060: pp. 278–287
+2061: .
+2062: Cited by:
+2063: §1
+2064: ,
+2065: §4.1
+2066: ,
+2067: §4.1
+2068: .
+2069: [28]
+2070: M. Oquab, T. Darcet, T. Moutakanni, H. V. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, D. HAZIZA, F. Massa, A. El-Nouby, M. Assran, N. Ballas, W. Galuba, R. Howes, P. Huang, S. Li, I. Misra, M. Rabbat, V. Sharma, G. Synnaeve, H. Xu, H. Jegou, J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski
+2071: (2024)
+2072: DINOv2: learning robust visual features without supervision
+2073: .
+2074: Transactions on Machine Learning Research
+2075: .
+2076: Note:
+2077: Featured Certification
+2078: External Links:
+2079: ISSN 2835-8856
+2080: ,
+2081: Link
+2082: Cited by:
+2083: §A.3
+2084: ,
+2085: §1
+2086: ,
+2087: §1
+2088: ,
+2089: §2.1
+2090: ,
+2091: §5
+2092: .
+2093: [29]
+2094: A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark,
+2095: et al.
+2096: (2021)
+2097: Learning transferable visual models from natural language supervision
+2098: .
+2099: In
+2100: International conference on machine learning
+2101: ,
+2102: pp. 8748–8763
+2103: .
+2104: Cited by:
+2105: §2.1
+2106: .
+2107: [30]
+2108: J. Rocamonde, V. Montesinos, E. Nava, E. Perez, and D. Lindner
+2109: (2024)
+2110: Vision-language models are zero-shot reward models for reinforcement learning
+2111: .
+2112: In
+2113: International Conference on Learning Representations
+2114: ,
+2115: Vol.
+2116: 2024
+2117: ,
+2118: pp. 28446–28463
+2119: .
+2120: Cited by:
+2121: §1
+2122: ,
+2123: §2.1
+2124: .
+2125: [31]
+2126: D. Rolnick, A. Ahuja, J. Schwarz, T. Lillicrap, and G. Wayne
+2127: (2019)
+2128: Experience replay for continual learning
+2129: .
+2130: Advances in neural information processing systems
+2131: 32
+2132: .
+2133: Cited by:
+2134: §1
+2135: .
+2136: [32]
+2137: J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov
+2138: (2017)
+2139: Proximal policy optimization algorithms
+2140: .
+2141: arXiv preprint arXiv:1707.06347
+2142: .
+2143: Cited by:
+2144: §2.2
+2145: ,
+2146: §4.2
+2147: .
+2148: [33]
+2149: J. Song, C. Meng, and S. Ermon
+2150: (2021)
+2151: Denoising diffusion implicit models
+2152: .
+2153: In
+2154: International Conference on Learning Representations (ICLR)
+2155: ,
+2156: Cited by:
+2157: Table 3
+2158: .
+2159: [34]
+2160: Z. Sun and S. Song
+2161: (2026)
+2162: From prior to pro: efficient skill mastery via distribution contractive rl finetuning
+2163: .
+2164: arXiv preprint arXiv:2603.10263
+2165: .
+2166: Cited by:
+2167: §A.2
+2168: ,
+2169: §A.3
+2170: ,
+2171: §1
+2172: ,
+2173: §2.2
+2174: ,
+2175: §4.2
+2176: ,
+2177: §5
+2178: .
+2179: [35]
+2180: R. S. Sutton A. G. Barto
+2181: et al.
+2182: (1998)
+2183: Introduction to reinforcement learning
+2184: .
+2185: Cited by:
+2186: §3
+2187: .
+2188: [36]
+2189: H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co,
+2190: et al.
+2191: (2025)
+2192: Robo-dopamine: general process reward modeling for high-precision robotic manipulation
+2193: .
+2194: arXiv preprint arXiv:2512.23703
+2195: .
+2196: Cited by:
+2197: §1
+2198: ,
+2199: §2.1
+2200: .
+2201: [37]
+2202: M. Tschannen, A. Gritsenko, X. Wang, M. F. Naeem, I. Alabdulmohsin, N. Parthasarathy, T. Evans, L. Beyer, Y. Xia, B. Mustafa,
+2203: et al.
+2204: (2025)
+2205: Siglip 2: multilingual vision-language encoders with improved semantic understanding, localization, and dense features
+2206: .
+2207: arXiv preprint arXiv:2502.14786
+2208: .
+2209: Cited by:
+2210: §C.1
+2211: ,
+2212: §1
+2213: ,
+2214: §1
+2215: ,
+2216: §5
+2217: .
+2218: [38]
+2219: A. Wagenmaker, Y. Zhang, M. Nakamoto, S. Park, W. Yagoub, A. Nagabandi, A. Gupta, and S. Levine
+2220: (2025)
+2221: Steering your diffusion policy with latent space reinforcement learning
+2222: .
+2223: In
+2224: Conference on Robot Learning
+2225: ,
+2226: pp. 258–282
+2227: .
+2228: Cited by:
+2229: §2.2
+2230: .
+2231: [39]
+2232: C. Xu, J. T. Springenberg, M. Equi, A. Amin, A. Esmail, S. Levine, and L. Ke
+2233: (2026)
+2234: RL token: bootstrapping online rl with vision-language-action models
+2235: .
+2236: arXiv preprint arXiv:2604.23073
+2237: .
+2238: Cited by:
+2239: §1
+2240: ,
+2241: §2.2
+2242: .
+2243: [40]
+2244: D. Yang, D. Tjia, J. Berg, D. Damen, P. Agrawal, and A. Gupta
+2245: (2024)
+2246: Rank2reward: learning shaped reward functions from passive video
+2247: .
+2248: In
+2249: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+2250: ,
+2251: pp. 2806–2813
+2252: .
+2253: Cited by:
+2254: §2.1
+2255: .
+2256: [41]
+2257: X. Yuan, T. Mu, S. Tao, Y. Fang, M. Zhang, and H. Su
+2258: (2025)
+2259: Policy decorator: model-agnostic online refinement for large policy model
+2260: .
+2261: In
+2262: The Thirteenth International Conference on Learning Representations
+2263: ,
+2264: External Links:
+2265: Link
+2266: Cited by:
+2267: §2.2
+2268: .
+2269: [42]
+2270: Y. Zhu, J. Wong, A. Mandlekar, R. Martín-Martín, A. Joshi, S. Nasiriany, and Y. Zhu
+2271: (2020)
+2272: Robosuite: a modular simulation framework and benchmark for robot learning
+2273: .
+2274: arXiv preprint arXiv:2009.12293
+2275: .
+2276: Cited by:
+2277: §A.1
+2278: .
+2279: [43]
+2280: B. D. Ziebart, A. L. Maas, J. A. Bagnell, A. K. Dey,
+2281: et al.
+2282: (2008)
+2283: Maximum entropy inverse reinforcement learning.
+2284: .
+2285: In
+2286: Aaai
+2287: ,
+2288: Vol.
+2289: 8
+2290: ,
+2291: pp. 1433–1438
+2292: .
+2293: Cited by:
+2294: §4
+2295: .
+2296: Appendix
+2297: Appendix A
+2298: Implementation Details
+2299: This section provides the implementation details for the main experimental
+2300: comparison in Fig.
+2301: 1
+2302: . We first describe the
+2303: common setup, and then detail the reward implementation for HiRE and all the baselines in
+2304: Section
+2305: A.3
+2306: .
+2307: A.1
+2308: Benchmark and Policy Setup
+2309: Benchmarks.
+2310: We use the standard RoboMimic
+2311: [
+2312: 22
+2313: ]
+2314: and
+2315: MimicGen
+2316: [
+2317: 21
+2318: ]
+2319: simulation environments built on
+2320: Robosuite v1.4.1
+2321: [
+2322: 42
+2323: ]
+2324: . The main experiments include
+2325: Tool_Hang
+2326: from RoboMimic,
+2327: Threading
+2328: ,
+2329: Stack_Three
+2330: , and
+2331: Three_Piece_Assembly
+2332: from MimicGen. All environments use an
+2333: OSC_POSE
+2334: controller at 20 Hz and a 7-D action space, consisting of 6-DoF end-effector
+2335: pose deltas and a gripper command. Task completion is evaluated with the
+2336: environment-provided binary success signal.
+2337: Since the simulation environments provide no failure detection mechanism, an episode is labeled as failed only if it reaches a sufficiently long timeout horizon without completing the task. Reaching this limit implies the robot either failed outright or got stuck in a local trap state, both of which are undesirable behaviors that warrant penalization.
+2338: Storing only the final failure frame in
+2339: ℬ
+2340: −
+2341: \mathcal{B}^{-}
+2342: is a concise and effective implementation that performs well in our experiments as in Fig.
+2343: 1
+2344: . This design can also be extended to retain the last few frames of failed episodes when buffer capacity and computation permit. However, including the entire failed trajectory would mistakenly penalize valid intermediate states that also appear in successful data, which would unnecessarily suppress good behaviors.
+2345: Observation.
+2346: The policy observation contains two RGB camera
+2347: (wrist-view and base-view) and 9-D proprioception
+2348: (end-effector position, quaternion, and gripper state). The trainable policy
+2349: encoder fuses the two camera views into a 128-D visual embedding, which is
+2350: concatenated with proprioception to form the state input for the residual actor
+2351: and critic during RL finetuning.
+2352: Behavior-cloning pretraining.
+2353: Before online finetuning, we train one behavior-cloning policy per task from
+2354: the corresponding offline demonstrations. Each policy is optimized with Adam
+2355: (learning rate
+2356: 10
+2357: −
+2358: 4
+2359: 10^{-4}
+2360: , weight decay
+2361: 10
+2362: −
+2363: 6
+2364: 10^{-6}
+2365: ) and a cosine schedule. We
+2366: maintain an exponential moving average of the weights with decay 0.995 and use
+2367: the EMA checkpoint as the initial policy for all reward baselines. Thus sparse
+2368: reward, RoboMeter, and HiRE start from exactly the same pretrained policy in
+2369: each task and seed.
+2370: Policy architecture.
+2371: All baselines share the end-to-end trainable policy architecture summarized in
+2372: Table
+2373: 1
+2374: : a ResNet-18 with spatial softmax for visual encoding
+2375: and a 1D UNet action head. The MimicGen tasks use a diffusion policy
+2376: [
+2377: 8
+2378: ]
+2379: with
+2380: ϵ
+2381: \epsilon
+2382: -prediction with 50 DDPM steps;
+2383: RoboMimic
+2384: Tool_Hang
+2385: uses a flow-matching policy with velocity prediction and
+2386: 20-step Euler integration.
+2387: Table 1:
+2388: Policy architecture.
+2389: Component
+2390: Value
+2391: Visual encoder
+2392: ResNet-18 + spatial-softmax, trained end-to-end
+2393: Keypoints / fusion
+2394: 32 keypoints/cam, 64-D/cam
+2395: →
+2396: \rightarrow
+2397: fused 128-D
+2398: Action head
+2399: 1D UNet, base 128, multipliers
+2400: [
+2401: 1
+2402: ,
+2403: 2
+2404: ,
+2405: 2
+2406: ]
+2407: [1,2,2]
+2408: Horizons
+2409: T
+2410: a
+2411: =
+2412: 8
+2413: T_{a}=8
+2414: ,
+2415: T
+2416: o
+2417: =
+2418: 1
+2419: T_{o}=1
+2420: ,
+2421: T
+2422: img
+2423: =
+2424: 1
+2425: T_{\mathrm{img}}=1
+2426: A.2
+2427: Real-Robot Implementations, Setups, and Results
+2428: Hardware setup.
+2429: Our real-robot experiments are conducted on the I2RT YAM arm, a 6-DoF manipulator equipped with a parallel linear4310 gripper.
+2430: We adopt the teleoperation workstation configuration, which ships with a leader–follower system that allows a human operator to collect expert demonstrations through teleoperation.
+2431: Visual observations are captured by two Intel RealSense cameras, with a base-view camera providing a global top view of the workspace (base camera) and a wrist-view camera mounted on the end-effector providing a close-up egocentric view of the gripper and manipulated objects (wrist camera), as shown in Fig.
+2432: 7
+2433: that use
+2434: Bottle_Pick-and-Place
+2435: as an example. On real hardware, successes and failures are directly judged by human operators.
+2436: Task descriptions.
+2437: Bottle_Pick-and-Place
+2438: requires the robot to localize a bottle, grasp it reliably, transport it to a target plate, and release it accurately.
+2439: The complexities of this task are two-fold:
+2440: (1)
+2441: Coarse-to-fine compliance and precision:
+2442: The task demands a seamless integration of large-scale macro-movements (e.g., reaching for the bottle or transporting it toward the plate) and high-precision micro-manipulation (e.g., at the moments of grasping and placing). Crucially, because both the plastic bottle and the paper plate are highly deformable, the policy must maintain compliant control during grasping and releasing to prevent the objects from bouncing away or slipping.
+2443: (2)
+2444: Spatial generalization:
+2445: We evaluate the policies across six different bottle initial positions spanning a wide tabletop workspace (as shown in Fig.
+2446: 6
+2447: ), testing the robust generalization of HiRE rewards. We randomize the initial bottle positions within a small range approximately of
+2448: ±
+2449: 10
+2450: \pm 10
+2451: cm on the table.
+2452: We elaborate on the performance of HiRE on each initial position in Tab.
+2453: 2
+2454: .
+2455: Towers_of_Hanoi
+2456: requires the robot to move the green disk from the rightmost rod to the middle rod of a Hanoi platform, demanding a sequence of high-precision manipulations. Although the initial setup is standardized across trials for reproducibility, the Hanoi base is not anchored to the tabletop.
+2457: Consequently, execution uncertainties often cause the main platform to shift relative to the workspace, while the removable top cover can independently slide relative to the base.
+2458: These unconstrained spatial shifts introduce severe dynamic perturbations and non-recoverable error states, where even a minor contact alignment error can render the task physically unrecoverable, imposing strict demands on real-time policy precision and feedback robustness.
+2459: Policy training and evaluation.
+2460: We collect diverse 117 teleoperated expert demonstrations for
+2461: Bottle_Pick-and-Place
+2462: (the distribution density is visualized in Fig.
+2463: 7
+2464: with colors) and 50 for
+2465: Towers_of_Hanoi
+2466: to initialize base diffusion policies, following the exact implementation recipe of DICE-RL
+2467: [
+2468: 34
+2469: ]
+2470: . For online finetuning, the pre-trained diffusion policy first executes 20 warmup episodes distributed evenly across the designated initial positions. We then conduct policy optimization for 2,000 training steps with a batch size of 256. To maintain a stable update-to-data (UTD) ratio during interaction, the policy samples 10 new episodes after every 1,000 training steps in subsequent training loops, ensuring a consistent training stability and data exploitation.
+2471: We evaluate HiRE, sparse-reward and RoboMeter baselines on the YAM robot arms under the same setup.
+2472: All methods start from the same pre-trained policy and 20 warmup episodes; the only difference is the reward signal used during finetuning.
+2473: For all methods, a human annotator labels each episode as success or failure during execution.
+2474: For HiRE, we set positive buffer size to 4096 and negative buffer size to 320. We add all the online successful episodes into the positive buffer.
+2475: We add the last 16 frames of online failed episodes into the negative buffer.
+2476: We set
+2477: κ
+2478: +
+2479: =
+2480: 10
+2481: \kappa^{+}=10
+2482: ,
+2483: κ
+2484: −
+2485: =
+2486: 1
+2487: \kappa^{-}=1
+2488: ,
+2489: λ
+2490: =
+2491: 0.1
+2492: \lambda=0.1
+2493: , and batch size 256. All real-robot experiments are conducted on a single NVIDIA RTX 5090 GPU.
+2494: In Fig.
+2495: 3
+2496: , the reported success rates are evaluated across 30/15 trials for each checkpoint on
+2497: Bottle_Pick-and-Place
+2498: /
+2499: Towers_of_Hanoi
+2500: .
+2501: Table 2:
+2502: Detailed Real-robot evaluation rollout success rates (HiRE) on
+2503: Bottle_Pick-and-Place
+2504: .
+2505: Each policy is evaluated at six fixed initial positions (P1–P6) with five trials per
+2506: position, for
+2507: 30
+2508: 30
+2509: trials in total. Each cell reports the number of successful attempts out of five, and the last two columns report the overall
+2510: success count and success rate. BC denoted the pre-trained base policy; the remaining rows are checkpoints taken at increasing numbers of
+2511: online finetuning episodes.
+2512: Policy
+2513: P1
+2514: P2
+2515: P3
+2516: P4
+2517: P5
+2518: P6
+2519: Success
+2520: Rate
+2521: BC
+2522: 2
+2523: 0
+2524: 0
+2525: 2
+2526: 0
+2527: 2
+2528: 6/30
+2529: 20.0%
+2530: Online ep. 30
+2531: 1
+2532: 2
+2533: 1
+2534: 0
+2535: 1
+2536: 1
+2537: 6/30
+2538: 20.0%
+2539: Online ep. 40
+2540: 4
+2541: 4
+2542: 2
+2543: 1
+2544: 1
+2545: 0
+2546: 12/30
+2547: 40.0%
+2548: Online ep. 50
+2549: 3
+2550: 5
+2551: 2
+2552: 1
+2553: 2
+2554: 3
+2555: 16/30
+2556: 53.3%
+2557: Online ep. 60
+2558: 3
+2559: 5
+2560: 3
+2561: 3
+2562: 3
+2563: 3
+2564: 20/30
+2565: 66.7%
+2566: Online ep. 70
+2567: 4
+2568: 3
+2569: 3
+2570: 4
+2571: 3
+2572: 3
+2573: 20/30
+2574: 66.7%
+2575: Figure 6:
+2576: Six fixed initial bottle positions (P1–P6) used for real-robot evaluation.
+2577: Each panel shows the base-view camera observation at the start of an episode, with the bottle placed at one of the six predefined table positions.
+2578: Figure 7:
+2579: Wrist view, base view, and visualization of offline expert data.
+2580: Table 3:
+2581: DICE-RL finetuning hyperparameters.
+2582: Setting
+2583: Value
+2584: Residual actor
+2585: 3-layer MLP, hidden 1 024, GELU, LayerNorm; 56-D noise
+2586: Action decoding
+2587: DDIM
+2588: [
+2589: 33
+2590: ]
+2591: , 10 steps
+2592: Critic
+2593: ensemble of 10; 16 candidates,
+2594: max_q_min
+2595: selection
+2596: Collection
+2597: 100 steps/iter
+2598: ×
+2599: \times
+2600: 8 parallel envs
+2601: Updates per iter
+2602: 20, batch 256
+2603: Actor : critic updates
+2604: 1 : 2; target soft update
+2605: τ
+2606: =
+2607: 0.01
+2608: \tau=0.01
+2609: Optimizer
+2610: Adam, lr
+2611: 10
+2612: −
+2613: 4
+2614: 10^{-4}
+2615: , weight decay
+2616: 10
+2617: −
+2618: 5
+2619: 10^{-5}
+2620: , cosine warm-up
+2621: Returns
+2622: 5-step,
+2623: γ
+2624: =
+2625: 0.99
+2626: \gamma=0.99
+2627: Replay buffer
+2628: up to
+2629: 2
+2630: ×
+2631: 10
+2632: 6
+2633: 2{\times}10^{6}
+2634: transitions
+2635: Evaluation
+2636: every 200 steps, 10 episodes
+2637: ×
+2638: \times
+2639: 10 envs
+2640: A.3
+2641: Method Implementations
+2642: The main comparison in Fig.
+2643: 1
+2644: evaluates HiRE against four
+2645: reward baselines: sparse reward, RoboMeter, TOPReward, and GCR.
+2646: All reward methods are integrated into the same DICE-RL
+2647: backbone
+2648: [
+2649: 34
+2650: ]
+2651: ; only the reward computation
+2652: differs across methods.
+2653: DICE-RL freezes the pretrained generative policy
+2654: as an action proposal model and learns a residual actor together with an
+2655: ensemble critic. We keep all optimization, replay, exploration, and evaluation
+2656: settings fixed across reward baselines; only the scalar reward stored for each
+2657: transition changes. Table
+2658: 3
+2659: lists the hyperparameters.
+2660: For visibility, curves with zero success throughout
+2661: their recorded evaluations are extended at
+2662: 0
+2663: %
+2664: 0\%
+2665: to the midpoint of the
+2666: displayed training range.
+2667: HiRE reward.
+2668: HiRE keeps the same sparse success signal as the sparse baseline and
+2669: augments it with the control-aware potential
+2670: Φ
+2671: HiRE
+2672: \Phi_{\text{HiRE}}
+2673: of
+2674: Eq.
+2675: 5
+2676: , edited online from hindsight rollouts. The potential
+2677: is built on a frozen DINOv2
+2678: [
+2679: 28
+2680: ]
+2681: (
+2682: dinov2_vits14
+2683: ,
+2684: ViT-S/14) encoder
+2685: ϕ
+2686: \phi
+2687: , which we evaluate inside the main training process on
+2688: both camera views. Each image is resized to
+2689: 224
+2690: ×
+2691: 224
+2692: 224{\times}224
+2693: , normalized with
+2694: ImageNet statistics, and encoded into
+2695: P
+2696: P
+2697: normalized patch tokens. The
+2698: state–reference similarity
+2699: sim
+2700: ϕ
+2701: \text{sim}_{\phi}
+2702: in Eq.
+2703: 5
+2704: is
+2705: the patch-averaged cosine similarity which is averaged across the two cameras.
+2706: sim
+2707: ϕ
+2708: ​
+2709: (
+2710: s
+2711: ,
+2712: g
+2713: )
+2714: =
+2715: 1
+2716: P
+2717: ​
+2718: ∑
+2719: p
+2720: =
+2721: 1
+2722: P
+2723: ϕ
+2724: p
+2725: ​
+2726: (
+2727: s
+2728: )
+2729: ⊤
+2730: ​
+2731: ϕ
+2732: p
+2733: ​
+2734: (
+2735: g
+2736: )
+2737: ‖
+2738: ϕ
+2739: p
+2740: ​
+2741: (
+2742: s
+2743: )
+2744: ‖
+2745: ​
+2746: ‖
+2747: ϕ
+2748: p
+2749: ​
+2750: (
+2751: g
+2752: )
+2753: ‖
+2754: ,
+2755: \text{sim}_{\phi}(s,\,g)=\frac{1}{P}\sum_{p=1}^{P}\frac{\phi_{p}(s)^{\top}\phi_{p}(g)}{\|\phi_{p}(s)\|\,\|\phi_{p}(g)\|},
+2756: (9)
+2757: The positive buffer
+2758: ℬ
+2759: +
+2760: \mathcal{B}^{+}
+2761: and negative buffer
+2762: ℬ
+2763: −
+2764: \mathcal{B}^{-}
+2765: of
+2766: Eq.
+2767: 5
+2768: are instantiated as follows. The positive buffer
+2769: ℬ
+2770: +
+2771: \mathcal{B}^{+}
+2772: combines an offline component, constructed once from the expert
+2773: demonstrations with frame stride 5, and an online FIFO component of capacity 128
+2774: that stores terminal frames from online successful rollouts; the two components are mixed
+2775: with ratio 0.5 when sampling. The negative buffer
+2776: ℬ
+2777: −
+2778: \mathcal{B}^{-}
+2779: is an online
+2780: FIFO buffer of capacity 128, populated only with the terminal frames of failed
+2781: rollouts. For online positives, retaining only the successful terminal frame
+2782: avoids reinforcing exploratory or suboptimal intermediate behaviors, while
+2783: offline expert demonstrations provide positive references along the task
+2784: trajectory. For online negatives, retaining only the failed terminal frame
+2785: avoids penalizing valid intermediate behaviors that may precede failure.
+2786: Finally,
+2787: Φ
+2788: HiRE
+2789: \Phi_{\text{HiRE}}
+2790: is integrated with the sparse reward through the
+2791: potential-based reward shaping (PBRS) form of Eq.
+2792: 6
+2793: :
+2794: R
+2795: HiRE
+2796: ​
+2797: (
+2798: s
+2799: ,
+2800: a
+2801: ,
+2802: s
+2803: ′
+2804: )
+2805: =
+2806: R
+2807: sparse
+2808: ​
+2809: (
+2810: s
+2811: ,
+2812: a
+2813: ,
+2814: s
+2815: ′
+2816: )
+2817: +
+2818: w
+2819: dense
+2820: ​
+2821: (
+2822: t
+2823: )
+2824: T
+2825: a
+2826: ​
+2827: (
+2828: γ
+2829: ​
+2830: Φ
+2831: HiRE
+2832: ​
+2833: (
+2834: s
+2835: ′
+2836: )
+2837: −
+2838: Φ
+2839: HiRE
+2840: ​
+2841: (
+2842: s
+2843: )
+2844: )
+2845: .
+2846: R_{\text{HiRE}}(s,a,s^{\prime})=R_{\text{sparse}}(s,a,s^{\prime})+\frac{w_{\text{dense}}(t)}{T_{a}}\bigl(\gamma\Phi_{\text{HiRE}}(s^{\prime})-\Phi_{\text{HiRE}}(s)\bigr).
+2847: (10)
+2848: We use shaping discount
+2849: γ
+2850: =
+2851: 0.99
+2852: \gamma=0.99
+2853: and normalize the shaping term by the
+2854: action-chunk length
+2855: T
+2856: a
+2857: =
+2858: 8
+2859: T_{a}=8
+2860: . To keep the dense signal from
+2861: interfering with an already competent policy, we down-weight the shaping term by
+2862: a sliding-window weight
+2863: w
+2864: dense
+2865: ​
+2866: (
+2867: t
+2868: )
+2869: =
+2870: 1
+2871: −
+2872: SR
+2873: recent
+2874: ​
+2875: (
+2876: t
+2877: )
+2878: w_{\text{dense}}(t)=1-\mathrm{SR}_{\text{recent}}(t)
+2879: ,
+2880: where
+2881: SR
+2882: recent
+2883: ​
+2884: (
+2885: t
+2886: )
+2887: \mathrm{SR}_{\text{recent}}(t)
+2888: is the success rate over the most recent
+2889: completed episodes. As the success rate rises,
+2890: w
+2891: dense
+2892: w_{\text{dense}}
+2893: decays toward
+2894: 0
+2895: 0
+2896: , so HiRE shapes the reward most strongly early in finetuning and gradually
+2897: hands control back to the sparse task signal. Following RLPD
+2898: [
+2899: 2
+2900: ]
+2901: , replayed expert
+2902: demonstrations keep the sparse environment reward only and are not relabeled with
+2903: the online contrastive reward, which keeps the learning signal clean.
+2904: Sparse reward.
+2905: The sparse baseline uses the native binary success signal from the benchmark:
+2906: R
+2907: sparse
+2908: ​
+2909: (
+2910: s
+2911: ,
+2912: a
+2913: ,
+2914: s
+2915: ′
+2916: )
+2917: =
+2918: 𝟙
+2919: ​
+2920: {
+2921: s
+2922: ′
+2923: ​
+2924: is successful
+2925: }
+2926: .
+2927: R_{\text{sparse}}(s,a,s^{\prime})=\mathds{1}\{s^{\prime}\ \text{is successful}\}.
+2928: (11)
+2929: All non-terminal and failed terminal transitions receive
+2930: R
+2931: =
+2932: 0
+2933: R=0
+2934: , and a
+2935: successful terminal transition receives
+2936: R
+2937: =
+2938: 1
+2939: R=1
+2940: .
+2941: RoboMeter.
+2942: The RoboMeter
+2943: [
+2944: 18
+2945: ]
+2946: baseline uses the publicly released
+2947: RoboMeter-4B
+2948: checkpoint as a frozen vision–language dense reward
+2949: model. Following the official LIBERO-style inference wrapper, we run RoboMeter
+2950: as a separate GPU service and query it from the RL trainer through batched HTTP
+2951: requests. This decouples VLM inference from policy optimization and keeps the
+2952: reward model fixed throughout finetuning. For each parallel environment, we
+2953: maintain an online RGB frame buffer from base-view camera for
+2954: reward inference.
+2955: The episode prefix is
+2956: evenly subsampled along time to at most 16 frames, always retaining the first
+2957: and most recent frames. The resulting clip is conditioned on the corresponding
+2958: natural-language task instruction.
+2959: The reward signal is obtained from RoboMeter’s progress head. Given the progress
+2960: curve
+2961: p
+2962: ^
+2963: ​
+2964: (
+2965: s
+2966: ′
+2967: )
+2968: \hat{p}(s^{\prime})
+2969: predicted from the episode prefix ending at the next
+2970: state
+2971: s
+2972: ′
+2973: s^{\prime}
+2974: , we take its final prediction and clip it to
+2975: [
+2976: 0
+2977: ,
+2978: 1
+2979: ]
+2980: [0,1]
+2981: :
+2982: p
+2983: ⁡
+2984: (
+2985: s
+2986: ′
+2987: )
+2988: =
+2989: clip
+2990: ⁡
+2991: (
+2992: p
+2993: ^
+2994: ​
+2995: (
+2996: s
+2997: ′
+2998: )
+2999: ​
+3000: [
+3001: −
+3002: 1
+3003: ]
+3004: ,
+3005: 0
+3006: ,
+3007: 1
+3008: )
+3009: ,
+3010: p(s^{\prime})=\mathrm{clip}\bigl(\hat{p}(s^{\prime})[-1],\,0,\,1\bigr),
+3011: (12)
+3012: Throughout this paper, RoboMeter denotes the relative-progress reward, which
+3013: adds the change in predicted progress to the sparse success signal:
+3014: R
+3015: RM
+3016: ​
+3017: (
+3018: s
+3019: ,
+3020: a
+3021: ,
+3022: s
+3023: ′
+3024: )
+3025: =
+3026: R
+3027: sparse
+3028: ​
+3029: (
+3030: s
+3031: ,
+3032: a
+3033: ,
+3034: s
+3035: ′
+3036: )
+3037: +
+3038: (
+3039: p
+3040: ⁡
+3041: (
+3042: s
+3043: ′
+3044: )
+3045: −
+3046: p
+3047: ⁡
+3048: (
+3049: s
+3050: )
+3051: )
+3052: .
+3053: R_{\text{RM}}(s,a,s^{\prime})=R_{\text{sparse}}(s,a,s^{\prime})+\bigl(p(s^{\prime})-p(s)\bigr).
+3054: (13)
+3055: Here
+3056: p
+3057: ⁡
+3058: (
+3059: s
+3060: )
+3061: p(s)
+3062: and
+3063: p
+3064: ⁡
+3065: (
+3066: s
+3067: ′
+3068: )
+3069: p(s^{\prime})
+3070: denote the cached progress estimates before and
+3071: after the transition, respectively. We reset the progress estimate to zero at
+3072: the initial state of every episode. We query RoboMeter every
+3073: N
+3074: =
+3075: 4
+3076: N=4
+3077: action chunks
+3078: and cache the most recent progress estimate between queries. This reward
+3079: therefore measures progress increments rather than repeatedly rewarding the
+3080: same absolute progress level.
+3081: TOPReward
+3082: [
+3083: 7
+3084: ]
+3085: .
+3086: The TOPReward baseline uses the frozen
+3087: Qwen3-VL-8B-Instruct
+3088: model and follows the official scoring
+3089: implementation. At each action chunk, we uniformly sample at most 16 base-view
+3090: frames from the current episode prefix, preserving their temporal order, and
+3091: condition the resulting clip on the natural-language task instruction.
+3092: The model scores the log-probability of an affirmative task-completion
+3093: judgment without first generating a trajectory description. Let
+3094: ℓ
+3095: ⁡
+3096: (
+3097: s
+3098: )
+3099: \ell(s)
+3100: denote the raw score for the episode prefix ending at state
+3101: s
+3102: s
+3103: , computed with
+3104: mean token reduction. We
+3105: convert successive scores into a clipped difference reward:
+3106: R
+3107: TOPReward
+3108: ​
+3109: (
+3110: s
+3111: ,
+3112: a
+3113: ,
+3114: s
+3115: ′
+3116: )
+3117: =
+3118: clip
+3119: ⁡
+3120: (
+3121: 2
+3122: ​
+3123: (
+3124: ℓ
+3125: ⁡
+3126: (
+3127: s
+3128: ′
+3129: )
+3130: −
+3131: ℓ
+3132: ⁡
+3133: (
+3134: s
+3135: )
+3136: )
+3137: ,
+3138: −
+3139: 1
+3140: ,
+3141: 1
+3142: )
+3143: .
+3144: R_{\text{TOPReward}}(s,a,s^{\prime})=\mathrm{clip}\bigl(2(\ell(s^{\prime})-\ell(s)),\,-1,\,1\bigr).
+3145: (14)
+3146: The first query of each episode receives zero reward. This signal replaces the
+3147: sparse environment reward for online rollouts. We apply the difference directly
+3148: to raw scores, without min–max normalization across trajectory prefixes.
+3149: GCR
+3150: [
+3151: 3
+3152: ]
+3153: .
+3154: We implement the simple-contrastive variant
+3155: GCR(SC)
+3156: [
+3157: 3
+3158: ]
+3159: following the method and implementation details in the original paper and its
+3160: appendix, as no official implementation was publicly available to us.
+3161: The reward model is initialized from the pretrained LIV
+3162: [
+3163: 19
+3164: ]
+3165: ResNet-50 checkpoint, with the full visual backbone finetuned during reward
+3166: learning. We use RGB observations from the base-view camera.
+3167: The training objective combines the VIP temporal loss with simple goal
+3168: contrastive learning: it increases similarity between successful goals from
+3169: different demonstrations and decreases similarity between successful goals
+3170: and online failure states. Successful goals and negative examples are sampled
+3171: from the terminal segments of offline successful demonstrations and online
+3172: failed episodes, respectively. The model is first finetuned on offline
+3173: demonstrations and then updated online as the policy collects new experience.
+3174: For each episode, we sample a successful goal frame
+3175: g
+3176: g
+3177: and keep it fixed.
+3178: Let
+3179: c
+3180: θ
+3181: ​
+3182: (
+3183: s
+3184: ,
+3185: g
+3186: )
+3187: c_{\theta}(s,g)
+3188: denote cosine similarity in the learned representation
+3189: space, and define
+3190: Φ
+3191: GCR
+3192: ​
+3193: (
+3194: s
+3195: ,
+3196: g
+3197: )
+3198: =
+3199: (
+3200: c
+3201: θ
+3202: ​
+3203: (
+3204: s
+3205: ,
+3206: g
+3207: )
+3208: +
+3209: 1
+3210: )
+3211: /
+3212: 2
+3213: \Phi_{\text{GCR}}(s;g)=(c_{\theta}(s,g)+1)/2
+3214: . The online
+3215: reward follows the difference form and reward scaling described in the paper:
+3216: R
+3217: GCR
+3218: ​
+3219: (
+3220: s
+3221: ,
+3222: a
+3223: ,
+3224: s
+3225: ′
+3226: )
+3227: =
+3228: 10
+3229: ​
+3230: (
+3231: R
+3232: sparse
+3233: ​
+3234: (
+3235: s
+3236: ,
+3237: a
+3238: ,
+3239: s
+3240: ′
+3241: )
+3242: +
+3243: Φ
+3244: GCR
+3245: ​
+3246: (
+3247: s
+3248: ′
+3249: ,
+3250: g
+3251: )
+3252: −
+3253: Φ
+3254: GCR
+3255: ​
+3256: (
+3257: s
+3258: ,
+3259: g
+3260: )
+3261: )
+3262: .
+3263: R_{\text{GCR}}(s,a,s^{\prime})=10\bigl(R_{\text{sparse}}(s,a,s^{\prime})+\Phi_{\text{GCR}}(s^{\prime};g)-\Phi_{\text{GCR}}(s;g)\bigr).
+3264: (15)
+3265: We score the current and next observations with the same predictor snapshot.
+3266: Replayed expert demonstrations retain only the sparse environment reward,
+3267: scaled by the same factor of 10.
+3268: Appendix B
+3269: Additional Mathematical Interpretations
+3270: Mathematically, the precise landscape topography across these situations is regulated by the concentration parameter
+3271: κ
+3272: \kappa
+3273: . The parameter
+3274: κ
+3275: \kappa
+3276: functions exactly as the inverse temperature in the standard LogSumExp operator
+3277: [
+3278: 4
+3279: ]
+3280: , which controls the smoothness of the maximum operator over the support sets. Under the hard-assignment limit where the representation distributions become highly concentrated (
+3281: κ
+3282: →
+3283: ∞
+3284: \kappa\to\infty
+3285: ), the smooth expectation is dominated entirely by the single nearest neighbor in each buffer, simplifying HiRE into a clear geometric subtraction:
+3286: lim
+3287: κ
+3288: →
+3289: ∞
+3290: Φ
+3291: HiRE
+3292: ​
+3293: (
+3294: s
+3295: )
+3296: =
+3297: max
+3298: g
+3299: +
+3300: ∈
+3301: ℬ
+3302: +
+3303: ⁡
+3304: sim
+3305: ϕ
+3306: ​
+3307: (
+3308: s
+3309: ,
+3310: g
+3311: +
+3312: )
+3313: −
+3314: λ
+3315: ​
+3316: max
+3317: g
+3318: −
+3319: ∈
+3320: ℬ
+3321: −
+3322: ​
+3323: sim
+3324: ϕ
+3325: ​
+3326: (
+3327: s
+3328: ,
+3329: g
+3330: −
+3331: )
+3332: \lim_{\kappa\to\infty}\Phi_{\text{HiRE}}(s)=\max_{g^{+}\in\mathcal{B}^{+}}\text{sim}_{\phi}(s,g^{+})-\lambda\max_{g^{-}\in\mathcal{B}^{-}}\text{sim}_{\phi}(s,g^{-})
+3333: .
+3334: While this hard limit provides an intuitive visualization of the underlying boundary subtraction, our final implementation utilizes the smooth version (
+3335: κ
+3336: <
+3337: ∞
+3338: \kappa<\infty
+3339: ). This choice delivers denser, continuous gradients and leverages the full empirical data distribution within the interaction history to stabilize policy finetuning.
+3340: Appendix C
+3341: Additional Results
+3342: C.1
+3343: Ablation Results
+3344: We organize the ablations into four groups:
+3345: (i)
+3346: foundation representation
+3347: , swapping the encoder to evaluate HiRE
+3348: with different foundation representations; (ii)
+3349: hyperparameter sensitivity
+3350: , varying the
+3351: contrastive weight
+3352: λ
+3353: \lambda
+3354: and negative-buffer capacity to examine HiRE’s
+3355: insensitivity to changes in these settings;
+3356: (iii)
+3357: reward composition
+3358: , comparing full HiRE with direct addition of
+3359: the edited potential (without PBRS) and direct addition of raw goal similarity
+3360: (without hindsight editing or PBRS);
+3361: (iv)
+3362: buffer design
+3363: , disabling the negative buffer to measure how much
+3364: the failure data contributes to reward correction on top of the success data.
+3365: Figure 8:
+3366: Foundation representation ablations.
+3367: We compare HiRE with frozen DINOv2 and SigLIP encoders.
+3368: Curves show mean success rates, with shaded regions denoting variability
+3369: across available random seeds.
+3370: Foundation Representation Model.
+3371: HiRE only requires a frozen encoder
+3372: ϕ
+3373: \phi
+3374: that maps visual observations to
+3375: patch-level features, so it can accommodate different foundation
+3376: representations. We replace the default DINOv2 encoder with the SigLIP visual
+3377: encoder
+3378: [
+3379: 37
+3380: ]
+3381: (ViT-B/16), retaining patch-averaged cosine
+3382: similarity and hindsight contrastive editing.
+3383: As shown in Fig.
+3384: 8
+3385: ,
+3386: both encoders provide
+3387: useful dense guidance across all four tasks
+3388: , while DINOv2 consistently achieves
+3389: higher success rates. The difference
+3390: is task-dependent: SigLIP approaches DINOv2 on
+3391: Tool_Hang
+3392: and
+3393: Three_Piece_Assembly
+3394: , but exhibits slower improvement on
+3395: Stack_Three
+3396: and particularly
+3397: Threading
+3398: , where its variability
+3399: across seeds is also larger. These results suggest that HiRE is versatile across
+3400: foundation representations, while the choice of encoder still affects sample
+3401: efficiency and the reliability of the resulting reward landscape.
+3402: Figure 9:
+3403: Hyperparameter sensitivity across four simulation tasks.
+3404: We compare contrastive weights
+3405: λ
+3406: ∈
+3407: {
+3408: 0.1
+3409: ,
+3410: 0.3
+3411: ,
+3412: 0.7
+3413: ,
+3414: 0.9
+3415: }
+3416: \lambda\in\{0.1,0.3,0.7,0.9\}
+3417: and an
+3418: additional configuration with negative-buffer capacity 512
+3419: (
+3420: buffer=512
+3421: ). Curves are averaged over three random
+3422: seeds, with shaded regions denoting variability across seeds.
+3423: Hyperparameter Sensitivity.
+3424: We evaluate sensitivity by varying the contrastive weight
+3425: λ
+3426: ∈
+3427: {
+3428: 0.1
+3429: ,
+3430: 0.3
+3431: ,
+3432: 0.7
+3433: ,
+3434: 0.9
+3435: }
+3436: \lambda\in\{0.1,0.3,0.7,0.9\}
+3437: and testing a negative-buffer capacity of 512.
+3438: As shown in Fig.
+3439: 9
+3440: ,
+3441: HiRE retains effective
+3442: learning across a broad range of settings
+3443: on
+3444: Stack_Three
+3445: and
+3446: Three_Piece_Assembly
+3447: . The variants perform similarly on
+3448: Stack_Three
+3449: , while all configurations achieve substantial performance improvment on
+3450: Three_Piece_Assembly
+3451: , only with some differences in learning speed and
+3452: asymptotic performance. The high-precision
+3453: Threading
+3454: task shows greater
+3455: sensitivity: reducing
+3456: λ
+3457: \lambda
+3458: or using the larger buffer slows improvement
+3459: relative to the default setting. A larger buffer can retain outdated failures
+3460: and weaken the focus on current traps, while a smaller
+3461: λ
+3462: \lambda
+3463: may provide
+3464: insufficient repulsion when the failure distribution is broad.
+3465: The
+3466: Tool_Hang
+3467: sweep reveals a complementary regime:
+3468: λ
+3469: =
+3470: 0.1
+3471: \lambda=0.1
+3472: and
+3473: 0.3
+3474: 0.3
+3475: provide stronger guidance, whereas
+3476: λ
+3477: =
+3478: 0.9
+3479: \lambda=0.9
+3480: fails to
+3481: sustain improvement.
+3482: Here, it echoes what we reveal in Fig.
+3483: 5
+3484: : the positive distribution remains highly concentrated, whereas the negative one is much wider and scattered, probably because the failure cases vary, but the successful paradigm is very unique. This empirical finding confirms assigning an even larger concentration factor
+3485: κ
+3486: +
+3487: \kappa^{+}
+3488: than to
+3489: κ
+3490: −
+3491: \kappa^{-}
+3492: , which we discuss in Sec.
+3493: 4.1
+3494: .
+3495: Overall, the results support broad parameter
+3496: insensitivity on the multi-stage tasks, while highlighting the need for
+3497: appropriate failure-based correction on precision-critical tasks.
+3498: Figure 10:
+3499: Reward-composition comparisons on
+3500: Stack_Three
+3501: and
+3502: Tool_Hang
+3503: .
+3504: We compare full HiRE, direct addition of the HiRE potential
+3505: (w/o PBRS), and direct addition of raw goal similarity
+3506: (Raw similarity). Curves are averaged over three random
+3507: seeds, with shaded regions denoting variability across seeds.
+3508: Reward Composition.
+3509: The full HiRE reward combines hindsight contrastive editing
+3510: (Eq.
+3511: 5
+3512: ) with potential-based reward shaping
+3513: (Eq.
+3514: 6
+3515: ). Fig.
+3516: 10
+3517: compares this
+3518: composition with two alternative reward forms:
+3519: •
+3520: HiRE without PBRS.
+3521: We add the edited potential directly to the sparse success reward:
+3522: R
+3523: ⁡
+3524: (
+3525: s
+3526: ,
+3527: a
+3528: ,
+3529: s
+3530: ′
+3531: )
+3532: =
+3533: R
+3534: sparse
+3535: ​
+3536: (
+3537: s
+3538: ,
+3539: a
+3540: ,
+3541: s
+3542: ′
+3543: )
+3544: +
+3545: w
+3546: ⋅
+3547: Φ
+3548: HiRE
+3549: ​
+3550: (
+3551: s
+3552: ′
+3553: )
+3554: .
+3555: R(s,a,s^{\prime})=R_{\text{sparse}}(s,a,s^{\prime})+w\cdot\Phi_{\text{HiRE}}(s^{\prime}).
+3556: (16)
+3557: This retains hindsight contrastive editing but removes the
+3558: temporal-difference structure of PBRS.
+3559: •
+3560: Raw similarity.
+3561: We replace the edited potential with the raw goal-similarity potential
+3562: Φ
+3563: raw
+3564: ​
+3565: (
+3566: s
+3567: )
+3568: =
+3569: sim
+3570: ϕ
+3571: ​
+3572: (
+3573: s
+3574: ,
+3575: g
+3576: ⋆
+3577: +
+3578: )
+3579: \Phi_{\text{raw}}(s)=\text{sim}_{\phi}(s,g^{+}_{\star})
+3580: , where
+3581: g
+3582: ⋆
+3583: +
+3584: g^{+}_{\star}
+3585: is the
+3586: final successful frame of an expert demonstration, and add it directly
+3587: to the sparse reward:
+3588: R
+3589: ⁡
+3590: (
+3591: s
+3592: ,
+3593: a
+3594: ,
+3595: s
+3596: ′
+3597: )
+3598: =
+3599: R
+3600: sparse
+3601: ​
+3602: (
+3603: s
+3604: ,
+3605: a
+3606: ,
+3607: s
+3608: ′
+3609: )
+3610: +
+3611: w
+3612: ⋅
+3613: Φ
+3614: raw
+3615: ​
+3616: (
+3617: s
+3618: ′
+3619: )
+3620: .
+3621: R(s,a,s^{\prime})=R_{\text{sparse}}(s,a,s^{\prime})+w\cdot\Phi_{\text{raw}}(s^{\prime}).
+3622: (17)
+3623: This uses a fixed visual goal without hindsight correction from successful
+3624: and failed rollouts or the temporal-difference structure of PBRS.
+3625: Here
+3626: w
+3627: w
+3628: denotes the dense-reward coefficient; the equations summarize the
+3629: reward forms. The compared runs also differ in reward scaling and replay
+3630: settings, so these results compare the resulting reward configurations rather
+3631: than isolating a single implementation change.
+3632: On
+3633: Stack_Three
+3634: ,
+3635: full HiRE achieves both faster improvement
+3636: and higher success rates
+3637: than the two alternatives. Removing PBRS leads to
+3638: slower improvement and an earlier plateau, while raw similarity provides
+3639: little learning progress.
+3640: The advantage of the variant without PBRS over raw similarity suggests that
+3641: hindsight editing provides useful guidance even with direct reward addition.
+3642: The further gain from full HiRE is consistent with the benefit of integrating
+3643: the edited potential through temporal differences that cancels intermediate terms during intrinsic reward accumulation.
+3644: The distinction is sharper on
+3645: Tool_Hang
+3646: , where both alternative
+3647: configurations remain near zero while full HiRE continues to improve.
+3648: These results suggest that
+3649: combining hindsight editing with PBRS is
+3650: especially valuable for contact-rich, high-precision manipulation
+3651: : direct
+3652: addition of either the edited potential or raw goal similarity does not
+3653: reproduce the learning progress achieved by full HiRE.
+3654: Figure 11:
+3655: Buffer-design ablations on
+3656: Stack_Three
+3657: and
+3658: Tool_Hang
+3659: .
+3660: We compare full HiRE with the positive-buffer-only variant, which removes
+3661: the negative buffer and keeps only success-manifold attraction. Curves are averaged over three random
+3662: seeds, with shaded regions denoting variability across seeds.
+3663: Buffer Design.
+3664: Section
+3665: 4.1
+3666: interprets HiRE as a contrast between two empirical
+3667: manifolds:
+3668: ℬ
+3669: +
+3670: \mathcal{B}^{+}
+3671: provides success-dominated attraction that rescues
+3672: false negatives, whereas
+3673: ℬ
+3674: −
+3675: \mathcal{B}^{-}
+3676: provides failure-dominated repulsion
+3677: against false-positive trap states. To isolate the role of the latter, we
+3678: evaluate a
+3679: positive-buffer-only
+3680: variant that removes the negative buffer
+3681: and keeps only attraction toward the success manifold:
+3682: Φ
+3683: ⁡
+3684: (
+3685: s
+3686: )
+3687: =
+3688: 𝕃
+3689: ℬ
+3690: +
+3691: κ
+3692: +
+3693: ​
+3694: (
+3695: sim
+3696: ϕ
+3697: ​
+3698: (
+3699: s
+3700: ,
+3701: g
+3702: +
+3703: )
+3704: )
+3705: .
+3706: \Phi(s)=\mathbb{L}^{\kappa^{+}}_{\mathcal{B}^{+}}\left(\text{sim}_{\phi}(s,g^{+})\right).
+3707: (18)
+3708: This ablation tests whether the success manifold alone is sufficient, and how
+3709: much additional benefit comes from explicit failure awareness.
+3710: As shown in Fig.
+3711: 11
+3712: , the positive-buffer-only
+3713: variant closely tracks full HiRE on
+3714: Stack_Three
+3715: , and finishes
+3716: slightly higher with overlapping variability bands. This suggests that
+3717: success-manifold attraction supplies much of the dense guidance on this task.
+3718: The benefit of the full contrastive reward is clearer on
+3719: Tool_Hang
+3720: . This task is
+3721: contact-rich, high-precision, and multi-stage, so it produces many near-goal
+3722: failures that appear visually successful. Such states are exactly the
+3723: false-positive traps that attraction to
+3724: ℬ
+3725: +
+3726: \mathcal{B}^{+}
+3727: cannot distinguish, but
+3728: that repulsion from
+3729: ℬ
+3730: −
+3731: \mathcal{B}^{-}
+3732: can suppress. Full HiRE improves faster
+3733: and reaches above
+3734: 90
+3735: %
+3736: 90\%
+3737: , while the positive-only variant improves more slowly
+3738: and achieves a lower final success rate. This difference across
+3739: the two tasks suggests that the value of the negative buffer grows with task
+3740: difficulty and the prevalence of visually deceptive failures.
+3741: Overall, the ablation is
+3742: consistent with the interpretation in Section
+3743: 4.1
+3744: : the positive buffer
+3745: supplies attraction toward successful states, while the negative buffer provides
+3746: the complementary correction needed to suppress visually deceptive failures.

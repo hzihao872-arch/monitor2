@@ -1,0 +1,9 @@
+import hashlib,json,pathlib,zipfile
+H=pathlib.Path(__file__).resolve().parent;S=H.parent/'fullframe_scale_20261009'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+(H/'native_encoder.py').write_bytes((H.parent/'native_prefix_20261009/native_runner.py').read_bytes())
+queries=json.loads((H.parent/'atomic_state_20261009/source_core/model_input/pilot_v5/queries.json').read_text())['queries'];cfg={'parent':{'path':'/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_fullframe_scale_20261009_v1/run/requests.jsonl','sha256':sha(S/'download/run/requests.jsonl')},'queries':queries,'source_commit':'4877a0ee5098cbec18485125466631b1dcc4a573','protocol':'author goal-agnostic video description (256cap) and raw last True token scoring with/without generated description; honest metadata fps1, no secondary sampling, no final normalization; natural cost comparison, task completion is not readiness or utility'}
+(H/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8');(H/'freeze.json').write_text(json.dumps({'files':{n:sha(H/n) for n in ('config.json','context_runner.py','native_encoder.py')}},indent=2),encoding='utf-8')
+with zipfile.ZipFile(H/'context_v1.zip','w') as z:
+ for n in ('config.json','freeze.json','context_runner.py','native_encoder.py','test_context.py'):z.write(H/n,n)
+t=(S/'remote_ops.py').read_text().replace('change_first_fullframe_scale_20261009_v1','change_first_author_context_20261009_v1').replace('scale_v1.zip','context_v1.zip').replace('test_scale.py','test_context.py').replace('scale_runner.py','context_runner.py').replace('scale_FINAL.tar.gz','context_FINAL.tar.gz');(H/'remote_ops.py').write_text(t,encoding='utf-8');t=(S/'seal_remote.py').read_text().replace('scale_runner.py','context_runner.py').replace('scale_FINAL.tar.gz','context_FINAL.tar.gz');(H/'seal_remote.py').write_text(t,encoding='utf-8');print(json.dumps({'requests':24,'zip_sha256':sha(H/'context_v1.zip')}))

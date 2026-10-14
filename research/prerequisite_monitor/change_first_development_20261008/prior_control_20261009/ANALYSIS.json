@@ -1,0 +1,143 @@
+{
+  "issued": 16,
+  "completed": 16,
+  "failed": 0,
+  "unknown": 16,
+  "both_true_pairs": 0,
+  "pairs": [
+    {
+      "probe": "opening_00",
+      "reference_ai": "False",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": 0.4949431387296881,
+      "rgb_margin": -0.0003834089315246848,
+      "prior_direction": "True",
+      "rgb_direction": "False",
+      "adjusted_margin": -0.49532654766121276,
+      "adjusted_direction": "False",
+      "adjusted_correct_ai": true,
+      "same_direction_as_prior": false
+    },
+    {
+      "probe": "opening_14",
+      "reference_ai": "True",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": 0.02041351169363481,
+      "rgb_margin": 0.00028486191370926815,
+      "prior_direction": "True",
+      "rgb_direction": "True",
+      "adjusted_margin": -0.020128649779925543,
+      "adjusted_direction": "False",
+      "adjusted_correct_ai": false,
+      "same_direction_as_prior": true
+    },
+    {
+      "probe": "plate_00",
+      "reference_ai": "True",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": -3.2056152804794347,
+      "rgb_margin": 0.01260417127537799,
+      "prior_direction": "False",
+      "rgb_direction": "True",
+      "adjusted_margin": 3.2182194517548126,
+      "adjusted_direction": "True",
+      "adjusted_correct_ai": true,
+      "same_direction_as_prior": false
+    },
+    {
+      "probe": "plate_14",
+      "reference_ai": "False",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": -1.4991760186001928,
+      "rgb_margin": -0.0031751766712827664,
+      "prior_direction": "False",
+      "rgb_direction": "False",
+      "adjusted_margin": 1.49600084192891,
+      "adjusted_direction": "True",
+      "adjusted_correct_ai": false,
+      "same_direction_as_prior": true
+    },
+    {
+      "probe": "grasp_07",
+      "reference_ai": "True",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": -3.6239032665157507,
+      "rgb_margin": 0.12781167284061135,
+      "prior_direction": "False",
+      "rgb_direction": "True",
+      "adjusted_margin": 3.7517149393563622,
+      "adjusted_direction": "True",
+      "adjusted_correct_ai": true,
+      "same_direction_as_prior": false
+    },
+    {
+      "probe": "grasp_14",
+      "reference_ai": "False",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": -4.293070425205773,
+      "rgb_margin": -12.75190090825574,
+      "prior_direction": "False",
+      "rgb_direction": "False",
+      "adjusted_margin": -8.458830483049967,
+      "adjusted_direction": "False",
+      "adjusted_correct_ai": true,
+      "same_direction_as_prior": true
+    },
+    {
+      "probe": "inside_07",
+      "reference_ai": "False",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": 0.49880504608155274,
+      "rgb_margin": -12.749655831068903,
+      "prior_direction": "True",
+      "rgb_direction": "False",
+      "adjusted_margin": -13.248460877150457,
+      "adjusted_direction": "False",
+      "adjusted_correct_ai": true,
+      "same_direction_as_prior": false
+    },
+    {
+      "probe": "inside_14",
+      "reference_ai": "True",
+      "prior_values": [
+        "Unknown",
+        "Unknown"
+      ],
+      "prior_margin": 0.2503328309426962,
+      "rgb_margin": 13.000663054932083,
+      "prior_direction": "True",
+      "rgb_direction": "True",
+      "adjusted_margin": 12.750330223989387,
+      "adjusted_direction": "True",
+      "adjusted_correct_ai": true,
+      "same_direction_as_prior": true
+    }
+  ],
+  "cumulative": 204,
+  "wall_seconds": 9.12186942435801,
+  "adapter_seconds": 1.1071348236873746,
+  "input_tokens": 1126,
+  "peak_vram_gib": 16.368667125701904,
+  "adjustment_status": "posthoc exploratory subtraction; no calibrated threshold or main method validation"
+}

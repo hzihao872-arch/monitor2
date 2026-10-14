@@ -1,0 +1,937 @@
+        RoboFailRing: Retrieval-Augmented and Language Grounding Failure
+                 Detection for VLM-enabled Robotic Manipulation
+
+                        Chenduo Ying1 , Linkang Du2 , Yuanchao Shu1 * , Peng Cheng1
+                                  1                            2
+                                      Zhejiang University          Xi’an Jiaotong University
+
+
+
+                            Abstract                                                  w/ RoboFailRing
+
+         Reliable failure detection and causal reason-                     Task      Failure    Report        VLMs      Success
+                                                                         Execution   Occur     Generation   Reasoning    Repair
+         ing are critical in robotic manipulation, as their
+         absence risks robot damage and endangers hu-
+         man safety. Although recent Vision–Language
+         Models (VLMs) are employed to attempt fail-
+         ure detection and causality reasoning, they typ-
+         ically make retrospective assessment only after
+         task completion, and their reasoning accuracy                               w/o RoboFailRing
+         is often limited. To address these issues, we
+         introduce RoboFailRing, which enables timely                      Task
+                                                                         Execution
+                                                                                     Failure
+                                                                                     Occur
+                                                                                                Execution
+                                                                                                Continue
+                                                                                                            Hardware VLMs
+                                                                                                            Damage Reasoning
+         failure detection during task execution and en-
+         hances the reasoning accuracy of VLMs. It
+         achieves rapid failure detection by retrieving a
+         pre-constructed failure memory and returning
+         a similarity-based decision. In addition, by pro-
+         viding grounded failure report to VLMs, it im-
+         proves the accuracy of their reasoning about the
+         failure causes and repair strategies. We evalu-             Figure 1: VLM-based failure detection. RoboFail-
+         ate RoboFailRing on two large-scale simulated               Ring enables successful repair via proactive warnings
+         datasets comprising over 6,000 failure trajec-              (top), avoiding the hardware damage caused by retro-
+         tories and covering 81 distinct manipulation                spective analysis (bottom).
+         tasks. The results show that the average suc-
+         cess rate of out-of-distribution failure detection
+         reaches 80%, while the mean detection time                  and generate complex task policies (Octo Model
+         is cut to roughly 50% of the baseline. More-                Team et al., 2024; Chi et al., 2025) as well as exe-
+         over, evaluations on real-world systems show                cutable code (Liang et al., 2023; Huang et al., 2023)
+         an average 35% gain in VLM failure-reasoning                across a wide range of tasks. However, an essential
+         accuracy. We make our code publicly avail-
+                                                                     requirement for robots to successfully execute and
+         able at: https://github.com/DynamicPoet/
+         RoboFailRing.                                               complete tasks is their capability to monitor and
+                                                                     detect task states. A reliable robot can not only
+    1    Introduction                                                detect failures but also reason about their causes.
+                                                                     Currently, VLMs serve as the core responsible for
+    Accompanied by the substantial advances in foun-                 detecting failures, due to their proficiency in multi-
+    dation models (Firoozi et al., 2025; Zheng et al.,               modal perception and reasoning among other com-
+    2025) in recent years, integrating Large Language                ponents.
+    Models (LLMs) and Vision–Language Models                            Despite their advantages in detection and reason-
+    (VLMs) into embodied agents such as robots fun-                  ing, VLMs still face challenges when performing
+    damentally reshapes the landscape of robotic ma-                 failure detection in practice. The main limitation
+    nipulation. By harnessing the understanding and                  is the time of detection. Most VLMs-based failure
+    reasoning capabilities of LLMs and VLMs, robots                  detection waits for task completion because failure
+    are now able to execute open-ended instructions                  is defined by the final outcome and VLMs require
+        * Corresponding author.                                      full task semantic context to assess. Therefore,
+                                                              13188
+Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 13188–13202
+                                 July 2-7, 2026 ©2026 Association for Computational Linguistics
+regardless of whether the task has already failed           In summary, our contributions are three-fold:
+during execution, the VLM is unable to perform
+detection while executing. As indicated by the red          • We introduce RoboFailRing, a generic frame-
+box in Figure 1, this paradigm of retrospective anal-         work that builds a failure memory by embed-
+ysis may lead to irreversible hardware damage and             ding failure trajectories and associating them
+may even pose risks to human safety. Moreover,                with task metadata, thereby enabling rapid
+VLMs exhibit inadequate reasoning capabilities                failure detection.
+for the failures in robotic manipulation. In the
+                                                            • We propose a mechanism to generate and ex-
+absence of task-specific context, VLMs struggle
+                                                              ploit failure reports, which supply grounded
+to distinguish between two visually similar failure
+                                                              failure context and reference images. Lever-
+modes (e.g., "rotation error" and "translation er-
+                                                              aging this information enables the VLM to
+ror"), which can lead to reasoning outcomes that ap-
+                                                              reason about failures more accurately.
+pear plausible but are incorrect. These challenges
+stimulate the research community’s attention to             • We conduct comprehensive evaluations on
+reliable failure detection and safety in LLM/VLM-             two large-scale simulation datasets and real-
+enabled robotic manipulation (Duan et al., 2024;              world systems. Our framework attains an aver-
+Ma et al., 2023; Ha et al., 2023; Ying et al., 2025).         age failure-detection success rate of 80% and
+While these studies acknowledge the critical role             reduces detection time by 50% relative to the
+of failure detection and safety in robotic manip-             baseline. In addition, it improves the average
+ulation, practical methods with specific technical            reasoning accuracy of VLM by 35%.
+details are still absent. Recent works (Kim et al.,
+2023; Yoo et al., 2024; Zhu et al., 2024) employ        2     Related Work
+retrieval augmentation or memory construction to
+enhance models’ perception and planning capabil-        2.1    VLMs for Robotic Manipulation
+ities, but they do not focus on failure detection.      Significant progress in vision-language models has
+In practice, we should move from a retrospective        opened new possibilities for robotic manipulation
+analysis failure-detection paradigm to a proactive      (Firoozi et al., 2025). These foundation models in-
+warning framework and improve VLM reasoning             tegrate visual perception and language understand-
+accuracy by supplying grounded task-specific con-       ing, endowing robots with open-vocabulary under-
+text.                                                   standing and cross-task generalization (Gao et al.,
+   In this paper, we present RoboFailRing, a            2024; Din et al., 2025). Recent representative sys-
+generic framework designed to enable rapid failure      tems (e.g., RT-1 (Brohan et al., 2023), PaLM-E
+detection and generate grounded failure report for      (Driess et al., 2023), RoboPoint (Yuan et al., 2024)
+VLM-enabled robotic manipulation. Specifically,         and Pelican-VL (Zhang et al., 2025)) integrate vi-
+RoboFailRing achieves rapid failure detection by        sual and language encoders into a unified controller.
+retrieving a pre-constructed failure memory and         These approaches build upon the ability of VLMs
+returning a similarity-based decision. However,         to provide high-level commonsense reasoning and
+building a failure memory from large-scale failure      use visual inputs as the foundation for task-relevant
+trajectories is challenging. Failure trajectories are   representations, enabling robots to execute a wide
+often diverse and sparse, and the contextual states     range of tasks specified by image and text prompts.
+vary across different tasks. We construct failure       Existing works that incorporate VLMs into robotic
+memory by encoding failure trajectory images as         manipulation can be broadly categorized into two
+concatenated embeddings of an initial task context      lines of work. One line of work treats VLMs as
+frame and final failure state frame. In addition, we    frozen or lightly adapted visual reasoning engines.
+introduce a neuro-symbolic grounding mechanism          By converting manipulation problems into visual
+that grounds concise and abstract task metadata into    question answering or conditional reasoning tasks,
+natural language useful for VLM reasoning. The          these approaches (Huang et al., 2023; Liu et al.,
+resulting natural language forms part of the failure    2024, 2025; Muttaqien et al., 2025) exploit the
+report. By providing grounded failure report to         pretrained semantic and spatial priors of VLMs
+VLMs, it improves the accuracy of their reasoning       without requiring end-to-end retraining. A second
+about the causes of failures and the corresponding      line of work fine-tunes or instruction-tunes VLMs
+repair strategies.                                      on robotics-specific data. Here, a general VLMs is
+                                                   13189
+specialized to output manipulation affordances or         3.1   Workflow Overview
+reasoning given imagery (Yuan et al., 2024). Simi-
+                                                          As illustrated in Figure 2, RoboFailRing is a frame-
+larly, specialized VLMs have been trained for tac-
+                                                          work designed to detect failed manipulations and
+tile and physical reasoning (Yu et al., 2024). Other
+                                                          reason potential errors through failure report. The
+tuned VLMs include A3VLM (Huang et al., 2024),
+                                                          workflow begins with the task execution, where the
+which learns affordances from video and gesture.
+                                                          robot manipulates under natural language task in-
+The underlying idea of our framework is similar
+                                                          structions. During execution, we continuously cap-
+to the first line, but we use historical images and
+                                                          ture multi-view observations and employ a frozen
+grounded languages to prompt VLMs.
+                                                          encoder such as CLIP (Radford et al., 2021) to per-
+                                                          form dual-frame fusion embedding for each view-
+2.2    Failure Detection in Robotic Manipulation
+                                                          point. These real-time embeddings retrieve our pre-
+Despite their demonstrated effectiveness in exe-          constructed failure memory, a database storing his-
+cuting manipulation tasks, existing VLM-enabled           torical failure trajectories indexed with grounded
+robotic manipulation methods exhibit notable lim-         metadata. A failure detector then evaluates the
+itations in detecting, interpreting, and recovering       similarity between the current state and retrieved
+from failures. Most current models are optimized          failure instances. If the similarity exceeds a certain
+to predict successful actions under idealized as-         threshold, the system anticipates an imminent error
+sumptions, yet real-world robotic manipulation is         and triggers task termination, while if it does not,
+inherently stochastic and error-prone. Failures such      the system continues to monitor execution and per-
+as object slippage, missed grasps, unintended colli-      forms retrieval on newly captured frames. In the
+sions, or spatial misalignment frequently occur, es-      end, the system generates a structured and retrieval-
+pecially in long-horizon or dynamic environments.         augmented failure report containing relevant image
+A predominant line of work (Ma et al., 2023; Wang         frames and textual context, prompting the VLMs
+et al., 2024; Duan et al., 2024) leverages readily        to do the failure reasoning. The results obtained
+available LLMs or VLMs as components to assess            from the reasoning of VLMs are used to guide the
+whether a task has been completed, and some stud-         user or robot in performing repairs.
+ies (Du et al., 2023; Ma et al., 2025) further adapt         In the following sections, we delve into the de-
+these models through finetuning or value estimation       tailed design of each module.
+to identify unsuccessful executions. While effec-
+tive in practice, such approaches usually frame the       3.2   Failure Memory Construction
+problem as a binary or numerical decision and stop
+short of offering textual justifications, thereby fail-   The core of RoboFailRing is to construct a spatio-
+ing to explain the specific reasons behind observed       temporal Failure Memory (M). The construction
+failures. Latest research (Duan et al., 2025) begin       process is an offline pipeline consisting of four
+to address this limitation by finetuning VLMs on          stages. The objective of this pipeline is to trans-
+failure data, enabling them to determine whether a        form raw failure trajectories into a semantically
+task has failed, analyze the underlying causes, and       grounded vector space to enable rapid retrieval.
+provide semantic-level explanations. However, em-            First, we address the collection of failure trajec-
+ploying such fine-tuned VLMs for failure detection        tory data. We adopt FailGen from the recent work
+poses challenges in terms of timeliness and reason-       of (Duan et al., 2025), an extensible simulation
+ing accuracy. Our work introduces failure detec-          framework designed for the programmatic gener-
+tion based on retrieval augmentation and language         ation of failure trajectories. Its failure trajectory
+grounding, aiming to address these two challenges.        data generation offers high flexibility and meets our
+                                                          requirements for large-scale generation. FailGen
+3     Methodology                                         is a custom environment wrapper designed for RL-
+                                                          Bench (James et al., 2020) that modifies task trajec-
+In this section, we present RoboFailRing in de-           tories by perturbing keyframes, replacing objects,
+tail. The implementation of the framework consists        and reordering keyframe sequences. This wrapper
+of three key components: (1) the construction of          systematically generates 7 categories of failure tra-
+failure memory; (2) the realization of failure de-        jectories, namely incomplete grasp (N o_Grasp)
+tection; and (3) the generation and utilization of        failure, inadequate grip retention (Slip) failure,
+failure reports.                                          misaligned keyframe (T ranslation) failure, incor-
+                                                     13190
+  Our Pipeline
+
+
+
+                                             Task Executing
+                                                                           Obs. Capture                                               Failure Memory
+                                                                                  Front view
+                                                                                                                                          Image Encoder
+         Task Instruction                                                                                 Dualframe
+           “Put basketball                                                                                 Fusion
+             in the hoop”                                                      Overhead view              Embedding retrieve
+
+
+                                                                                  Wrist view                     CLIP                [ Start frame + End frame ]
+                                                                                                              (ViT-B/32)
+                                                                                                                                        Metadata Process
+                                                                                                                                             "current task":
+                                                                                                                                         "basketball_in_hoop",
+         VLM Reasoning                                   Task Termination                                                             "failure" : "rotation_x_wp1",
+                                                                                                                     < threshold           "view": "overhead",
+             Prompt Template                                     Failure Report                                                    "start_img": ".../overhead_0.png",
+     "content": Robot stopped now                   "current task": "<     Task Name>",                                             "end_img": ".../overhead_3.png"
+     because the current scene is
+     similar to the failure memory.                 "failure":"<    Failure Description>",
+     Details of Failure Report as follows:
+                                                                                                ≥ threshold                             Language Grounding
+                                                    "view": "<   Viewpoint>",                                    Failure
+                                                     "ref_start_img": "ref_end_img":                            Detector
+     "report":                                      "view_startframe.png" "view_endframe.png"
+
+                                                                                                                                               Memory Bank
+     "content": Based on this report,                                                                                                             Faiss        Meta
+     please reasoning why it failed and                                                                                                           Index        Data
+     how should it be repaired?
+
+
+
+
+Figure 2: Overview of RoboFailRing. The yellow block represents the construction of failure memory (Section 3.2).
+The gray blocks denote the task workspace for robot manipulation and the failure detector (Section 3.3). The red
+and green blocks respectively indicate the generated failure report and the prompt template used for VLM reasoning
+(Section 3.4). Task instructions can be adjusted to the requirements.
+
+
+rect rotation (Rotation) failure, missing rotation                                         hibitive for real-time retrieval. We observe that the
+(N o_Rotation) failure, wrong action sequence                                              causality of a failure is sufficiently encapsulated
+(W rong_Sequence) failure, and wrong target ob-                                            by the contrast between the initial task content and
+ject (W rong_Object) failure. These procedurally                                           the deviation in the end of failure. Similar empir-
+generated large-scale robot manipulation failure                                           ical observations are also discussed in (Liu et al.,
+trajectory datasets, spanning multiple distinct cate-                                      2023). Therefore, for each failure trajectory Ei , we
+gories, ensure diversity and complexity in failure                                         extract a set of keyframe pairs. To mitigate occlu-
+modes, and we use them as the primary source of                                            sion and maximize retrieval recall, we treat each
+failure memory. Let Draw denote the source dataset                                         camera view as an independent memory entry. For
+containing N manipulation trajectories across                                              a specific view v ∈ Vi , we define the memory unit
+                                                                                                         (v)    (v)            (v)
+different task types (e.g., basketball_in_hoop,                                            as Ui,v = (Istart , Iend ), where Istart is the frame
+open_microwave, etc.). Unlike standard datasets                                                                                             (v)
+                                                                                           at t = 0 representing the task context and Iend is
+that prioritize successful demonstrations, FailGen                                         the frame at t = Tf ail representing the failure state.
+provides a rich distribution of failures caused by                                         Formally, a failure state is a terminal state in which
+subtle deviations or physical interactions (e.g.,                                          the object configuration or robot pose deviates from
+collision-induced slippage). We perform an initial                                         task goal constraints (e.g., the target object outside
+filtering operation to construct our failure corpus                                        the designated area or an empty gripper in a pick-
+Df ail ⊂ Draw :                                                                            and-place task), as determined automatically by
+                                                                                           the simulator via pre-defined goal checking algo-
+    Df ail = {Ei | Outcome(Ei ) ̸= Success}N      i=1 .                                    rithms. The above multi-view independent strategy
+                                                       (1)                                 ensures that, even if a failure is visible from only
+Each trajectory Ei is a tuple (Ii , Vi , Mi ), con-                                        one of the three cameras, it can still be effectively
+taining a temporal sequence of RGB images                                                  indexed and retrieved. For example, in the task of
+Ii , a set of synchronized camera views Vi =                                               “basketball_in_hoop”, images captured by the
+{vf ront , voverhead , vwrist }, and a structured failure                                  front-view camera are easily completely occluded
+metadata Mi .                                                                              by the large backboard, thereby providing no use-
+    Second, we perform keyframe selection and han-                                         ful information, while images captured by the over-
+dle multi-view independence. A critical design                                             head camera are occluded by the robotic arm. Only
+choice in our framework is the representation of                                           images from the wrist-view camera can be used to
+time. While video transformers can process full                                            determine whether the task succeeds or fails. To
+temporal sequences, they are computationally pro-
+                                                                                  13191
+bridge the modality gap between visual observa-           as a compressed, unambiguous ground truth label.
+tions and semantic reasoning, we employ CLIP as           We define a deterministic semantic mapping func-
+our visual encoder. We utilize the ViT-B/32 vari-         tion G : Y → L that operates at runtime (See Ap-
+ant, denoted as Φ(·), which projects images into          pendix C for details). This function dynamically ex-
+a 512-dimensional space. We explicitly reject the         pands the discrete symbol ysym into a coherent nat-
+strategy of averaging features, which tends to wash       ural language explanation Ldesc : Ldesc = G(ysym ).
+out fine-grained failure details. Instead, we propose     For example, G(‘rotation_x_wp1’) → “The fail-
+a dual-frame concatenated normalization scheme.           ure was caused by incorrect gripper rotation along
+For a given pair (Istart , Iend ), we first extract and   the X-axis at the initial stage (Waypoint1)”. This
+independently normalize the feature vectors:              neuro-symbolic design effectively decouples the
+                                                          precision of symbolic storage from the expressive-
+             Φ(Istart )             Φ(Iend )              ness of natural language. It allows users to refine
+ fstart =                 , fend =             . (2)
+            ∥Φ(Istart )∥2          ∥Φ(Iend )∥2            prompt engineering for VLMs without reconstruct-
+                                                          ing the underlying vector index of failure memories,
+This independent normalization preserves the mag-
+                                                          thereby ensuring both the flexibility of the frame-
+nitude of features in both states, preventing one
+                                                          work and the consistency of the data.
+frame from dominating the representation. The fi-
+                                                             Finally, the collection of memory vectors {vk }
+nal spatio-temporal memory vector vmem ∈ R1024
+                                                          and their associated metadata {Mk } are stored
+is obtained by concatenating and re-projecting onto
+                                                          efficiently. We utilize Faiss (Facebook AI Simi-
+the high-dimensional space:
+                                                          larity Search) (Douze et al., 2026) as our vector
+                         fstart ⊕ fend                    database because of its efficiency and broad sup-
+             vmem =                      .         (3)    port. Since all vectors vmem are L2 -normalized,
+                       ∥fstart ⊕ fend ∥2
+                                                          the inner product search is mathematically equiv-
+Here, ⊕ denotes vector concatenation. This result-        alent to cosine similarity. This ensures that the
+ing vector space R1024 effectively clusters failures      retrieval metric aligns perfectly with the underly-
+that share both initial task context and final fail-      ing CLIP model. The resulting memory contains
+ure state (See Appendix D for pseudocode of the           thousands of embedding data from distinct failure
+construction algorithm).                                  trajectories, covers dozens manipulation tasks, and
+   Third, we perform language grounding. A purely         supports millisecond-level queries.
+vector-based memory is opaque to human users
+and VLMs reasoner. To bridge the gap between              3.3   Failure Detection Mechanism
+high-dimensional vectors and interpretable seman-         We first configure the failure memory, after which
+tics, we introduce a neuro-symbolic grounding             we implement the failure detection mechanism.
+mechanism. The failure trajectories generated by          During execution of a new task, the RoboFailRing
+FailGen are annotated with concise and abstract           functions as a high-frequency failure detector. The
+labels, such as "rotation_x_wp1_episode0", which          role of this detector is to determine whether the
+denotes an x-axis rotational failure occurring at a       manipulation results in a failure.
+specific waypoint (wp1) in episode 0 of the current          Let Istream = {I0 , I1 , . . . , It } be the continuous
+task. While such compact and abstract labels facil-       image stream captured by the cameras. At any time
+itate the construction of large-scale datasets, they      step t, the framework maintains a buffer containing
+are not well suited for the generalization reason-        the initial state frame Istart = I0 and the current
+ing required by VLMs. A naive approach would              observation Icurr = It . To ensure strict alignment
+store natural language failure descriptions directly      with the offline memory M, the online query vector
+in the metadata. However, natural language is in-         qt is constructed using the identical concatenated
+herently ambiguous and difficult to index precisely.      normalization scheme defined in Section 3.2
+In view of the aforementioned problems, we adopt                            Φ(Istart ) ⊕ Φ(Icurr )
+a neuro-symbolic grounding approach. For each                       qt =                             .          (4)
+                                                                           ∥Φ(Istart ) ⊕ Φ(Icurr )∥2
+indexed vector vk , we store a structured metadata
+tuple Mk = (τk , ysym ), where τk is the task identi-     This formulation ensures that the query lies on the
+fier, used for task-constrained search space pruning,     same high-dimensional space as the stored memory
+ysym is the raw failure symbol derived from the           vectors, making the inner product a valid metric
+FailGen (e.g., rotation_x_wp1). This symbol acts          for similarity. Crucially, by including Istart in the
+                                                     13192
+query, we condition the retrieval on the initial envi-    the failure using the retrieved and grounded meta-
+ronmental affordance, thereby filtering out irrele-       data. Formally, R is defined as an aggregation of
+vant failure modes that may look visually similar         structured tuples derived from the K nearest neigh-
+but are causally impossible given the starting state.     bors in NK :
+Direct searching of the entire memory M can cause                      n
+                                                                                (k)             (k)      (k)
+                                                                 R = (τ, G(ysym     ), ω (k) , Istart , Iend )
+cross-task interference, as a failure in one task may                                o                         (8)
+visually resemble a failure in another. To mitigate                      | vk ∈ NK .
+this, we treat retrieval as a constrained optimization
+problem. We first define the task-specific subset         Here, each tuple encapsulates the essential compo-
+Mτ = {(vk , Mk ) ∈ M | Mk .τ = τcurr }. For-              nents required for VLMs, namely the task identifier
+mally, the retrieval of the K nearest neighbors is        τ , the grounded failure description G(ysym ), the
+defined as finding an optimal subset S ⊆ Mτ of            camera viewpoint ω, and the reference pair images
+cardinality K that maximizes the cumulative se-           Istart , Iend . This structured design is rigorously
+mantic alignment with the query qt :                      formulated to stimulate comparative reasoning by
+                                  X                       moving beyond static image analysis.
+          NK (qt ) = arg max           qTt vk .     (5)       By pairing the initial affordance Istart with the
+                       S⊆Mτ
+                       |S|=K
+                                vk ∈S                     failure state Iend , we enable VLMs to track the tra-
+                                                          jectory of deviation. This allows them to analyze
+Here, |S| denotes the cardinality of the subset.          how the state drifted from its intended path. To
+This formulation ensures that our retrieval satisfies     further constrain the reasoning space, the explicit
+the task constraint, effectively reducing the search      inclusion of task τ and viewpoint ω establishes
+space complexity while guaranteeing that the re-          a semantic boundary that mitigates hallucinations
+trieved metadata are relevant to the ongoing task.        regarding spatial perspectives or goals, while the
+The retrieval result obtained by our framework is         grounded description G(ysym ) functions as a cog-
+binary failure determination. We define a similarity      nitive core, precisely directing the VLM’s attention
+score St as the maximum cosine similarity in the          to the specific failure modes (See Appendix B for
+retrieved set:                                            details).
+
+               St = max (qTt vk ).                 (6)    4    Experiments
+                      vk ∈NK
+                                                          In this section, we evaluate the failure detection
+A failure is detected if St exceeds a sensitivity
+                                                          effectiveness of RoboFailRing, its detection time-
+threshold δ:
+                     (                                    liness, and its impact on VLMs reasoning accuracy.
+                      1, if St ≥ δ                        We conduct these evaluations across two distinct
+            Statet =                ,         (7)         large-scale datasets covering 81 robotic manipu-
+                      0, otherwise
+                                                          lation tasks, including in-distribution and out-of-
+where 1 represents failure and 0 represents normal.       distribution settings and diverse simulation envi-
+Upon triggering (Statet = 1), the framework is-           ronments. In addition, we perform evaluations on
+sues an immediate termination signal to the robot         real-world systems. Lastly, we present ablation
+controller. This detection mechanism bypasses the         studies for the core components and analyze the
+heavy inference of VLMs, providing a rapid reflex         framework’s latency. Our experiments are designed
+to prevent hardware damage.                               to answer three core questions:
+
+3.4   Failure Report Generation and Utilization               Q1: Does RoboFailRing effectively prevent fail-
+                                                                  ures in manipulation tasks, even when the
+Another role of RoboFailRing is to function as a                  tasks are out of domain?
+consultant that provides grounded failure report to
+a Vision-Language Model for reasoning.                        Q2: Does failure memory retrieval enable the
+   Once a failure is intercepted, the framework                   timely detection of failures, and specifi-
+leverages the neuro-symbolic grounding mecha-                     cally how much time does it save?
+nism to generate a failure report R for VLMs.                 Q3: To what extent can the framework’s gener-
+Instead of feeding the VLM raw images with a                      ated failure reports enhance the reasoning
+generic prompt which often leads to hallucination,                accuracy of VLMs, and what is the magni-
+we construct a structured spatio-temporal report of               tude of this improvement?
+                                                     13193
+                                                       Recall (Detection Rate %) ↑                                     False Positive Rate (%) ↓
+     Benchmark          Threshold δ
+                                      Dataset 1   Dataset 2 Dataset 3 Dataset 4 Dataset 5   Avg.    Dataset 1   Dataset 2 Dataset 3 Dataset 4 Dataset 5   Avg.
+                           0.85        92.11       93.01       90.95      93.05    91.05    92.03    15.64       16.89       13.21      17.10    14.50    15.47
+    In-Distribution
+                           0.90        90.97       89.54       89.80      89.90    88.98    89.84     9.64       10.08        8.08      11.79     7.90     9.50
+  (FailGen Test Set
+                           0.92        88.63       86.95       85.51      87.53    86.52    87.03     5.36        7.12        3.79       6.23     4.08     5.32
+  Duan et al., 2025)
+                           0.95        69.68       71.98       67.17      70.83    68.72    69.68     1.13        2.44        2.28       3.00     1.41     2.05
+                           0.85        84.56       86.42       82.33      86.15    85.02    84.90    18.78       20.15       16.94      19.34    17.88    18.62
+  Out-of-Distribution
+                           0.90        83.12       83.74       80.25      83.56    82.09    82.55    12.98       14.33       10.59      14.65    11.35    12.78
+ (ManiSkill-failgen
+                           0.92        80.88       81.41       79.64      80.12    79.95    80.40     9.22        9.89        6.90       9.75     7.12     8.58
+   wpumacay, 2024)
+                           0.95        62.15       65.55       64.32      62.90    63.18    63.62     4.25        5.98        5.14       7.11     5.45     5.59
+
+
+Table 1: Effectiveness of failure detection. Higher is better for Recall, and lower is better for False Positive
+Rate. Bold values indicate the best performance within the same benchmark. Gray row is considered the optimal
+threshold. Different datasets use different random seeds.
+
+
+       Datasets                       Metrics                 Avg. Value (%)        overfitting to specific simulator artifacts.
+                           Average Detection Progress ↓            44.55
+   In-Distribution
+ (FailGen Test Set)
+                            Median Detection Progress              41.33           4.1.3 Evaluation Metrics
+                            Temporal Saving Ratio Ts ↑             55.45
+                           Average Detection Progress ↓            55.59
+                                                                                   We propose two aspects of key metrics to assess
+  Out-of-Distribution
+                            Median Detection Progress              52.36           RoboFailRing performance.
+(ManiSkill-failgen)
+                            Temporal Saving Ratio Ts ↑             44.41
+                                                                                    Binary Failure Detection. We treat failure de-
+Table 2: Time-to-detection efficiency. Higher is better                             tection as a binary classification problem. Let T P
+for Temporal Saving Ratio and lower is better for Aver-                             (True Positives) denote the number of correctly
+age Detection Progress.                                                             identified failure trajectories, and F N (False Nega-
+                                                                                    tives) denote the missed failure trajectories. Simi-
+4.1 Experimental Setup                                                              larly, F P (False Positives) represents false alarms
+                                                                                    on successful trajectories, while T N (True Nega-
+4.1.1 Datasets                                                                      tives) denotes correctly ignored successes. We use
+The retrieval memory base is constructed exclu-                                     Recall: R = T PT+F  P
+                                                                                                           N measures the proportion of
+sively using the FailGen dataset. This dataset pro-                                 ground-truth failures that are successfully detected.
+vides high-fidelity, procedurally generated failure                                 And False Positive Rate: F = F PF+T    P
+                                                                                                                             N evaluates
+trajectories across diverse manipulation tasks (e.g.,                               the frequency of false interruptions during normal
+basketball_in_hoop, open_microwave, etc.),                                          execution.
+serving as the main memory for our framework.
+                                                                                    Time-to-Detection Efficiency. Beyond binary
+Specifically, the failure memory we use contains
+                                                                                    classification, the timeliness of detection is
+5,137 failure trajectories.
+                                                                                    paramount for damage prevention. For a given
+4.1.2 Evaluation Benchmarks                                                         failure trajectory of total duration L frames, let tdet
+                                                                                    be the frame index where the framework first trig-
+To verify performance across different distributions,
+                                                                                    gers the alarm. We define the Temporal Saving
+we evaluate on two distinct benchmarks compris-
+                                                                                    Ratio (Ts ) as:
+ing over 6,000 failure trajectories and covering 81
+                                                                                                                  
+distinct robotic manipulation tasks (See Appendix                                                             tdet
+E.1 and E.2 for details). We first establish an in-                                              Ts = 1 −            × 100%.            (9)
+                                                                                                                L
+distribution test set using FailGen with different
+random seeds, enabling us to evaluate the frame-                                    A higher Ts indicates that the framework inter-
+work’s ability to handle varying object spatial con-                                cepts the failure earlier in the trajectory, providing
+figurations within the same tasks and rendering                                     a larger safety margin for the robot to terminate
+environment.                                                                        before irreversible consequences occur.
+   To assess cross-domain generalization, we use
+                                                                                    4.2      Experimental Results
+the ManiSkill-failgen dataset as the out-of-
+distribution test set. ManiSkill-failgen intro-                                    4.2.1 Effectiveness of Failure Detection
+duces different object assets, visual textures, and                                We first evaluate the effectiveness of the retrieval
+physics parameters compared to FailGen. Evaluat-                                   mechanism to answer Q1. As shown in Table 1, we
+ing on this disjoint domain allows us to determine                                 evaluate the average Recall and average False Posi-
+whether our failure memory have successfully cap-                                  tive Rate of RoboFailRing under different similar-
+tured universal failure semantics rather than merely                               ity thresholds. For both the In-Distribution dataset
+                                                                             13194
+                           100%                                                                                                  100%
+                                                                                 Mean                                                                                             Mean
+                           90%                                                   Median                                          90%                                              Median
+Detection Progress Ratio
+
+
+
+
+                                                                                                      Detection Progress Ratio
+                           80%                                                                                                   80%
+
+                           70%                                                                                                   70%
+
+                           60%                                                                                                   60%
+
+                           50%                                                                                                   50%
+
+                           40%                                                                                                   40%
+
+                           30%                                                                                                   30%
+
+                           20%                                                                                                   20%
+                                  Dataset 1 Dataset 2 Dataset 3 Dataset 4 Dataset 5                                                     Dataset 1 Dataset 2 Dataset 3 Dataset 4 Dataset 5
+
+
+       Figure 3: Distribution of detection progress on different datasets. Left is In-Distribution (FailGen Test Set).
+       Right is Out-of-Distribution (ManiSkill-failgen).
+
+                                                                     Experiments on VLM Reasoning Accuracy
+                                  Deployment of real-world systems                        Wrong_Sequence
+                                                                       Wrong_Object
+                                      6DoF              RGB-D
+                                      Robot             Camera
+                                    Arm with
+                                     Gripper
+
+
+
+
+                                                                        Translation            Slip
+
+
+
+
+                                       Task Workspace
+
+
+
+
+                                   Figure 4: Real-world deployment and the reasoning performance of RoboFailRing-assisted VLMs.
+
+
+      (FailGen Test Set) and the Out-of-Distribution                                              imately 70% of failures are detected at an early
+      dataset (ManiSkill-failgen), the threshold δ =                                              stage of the manipulation task, while the remain-
+      0.92 achieves the best balance. Specifically, the                                           ing 25% are sparsely distributed across different
+      results are an average Recall of R = 87.03% and                                             time points. It is noteworthy that about 5% of fail-
+      an average False Positive Rate of F = 5.32% on                                              ures are not detected until the final stage of the
+      FailGen, and an average Recall of R = 80.40%                                                manipulation task, and this proportion is higher on
+      and an average False Positive Rate of F = 8.58%                                             out-of-distribution datasets.
+      on ManiSkill.
+                                                                                                  4.2.3                                 VLM Reasoning Improvement
+       4.2.2 Time-to-Detection Efficiency
+                                                                                                  We assess the impact of our structured failure re-
+      Next, we evaluate the detection time of the Robo-                                           port on VLMs reasoning to answer Q3. To bridge
+      FailRing to answer Q2. As shown in Table 2, we                                              the Sim-to-Real gap, we deploy RoboFailRing on
+      evaluate the average detection progress, median                                             the real-world system shown in Figure 4 (See Ap-
+      detection progress, and temporal saving ratio of                                            pendix E.3 for details). We manually replicate in
+      RoboFailRing. Our framework consistently identi-                                            real-world systems, as closely as possible, the 7
+      fies anomalies in the intermediate stages of robotic                                        failure modes previously defined in simulation, and
+      manipulation on different datasets. Specifically, the                                       we let the VLM reason about these failure modes
+      framework achieves an average temporal saving ra-                                           with and without RoboFailRing support. If the
+      tio of Ts = 55.45% on FailGen and Ts = 44.41%                                               VLM’s inferred failure mode matches the ground-
+      on ManiSkill. This means that, in a circumstances                                           truth, the reasoning is counted as correct. We use
+      where the manipulation task requires 10 seconds to                                          Gemini-2.5-flash as a representative VLM for the
+      complete the full failure process, the robot termi-                                         experiments, and each failure mode undergoes 100
+      nates at approximately 4 or 5 seconds. Additionally,                                        reasoning attempts. As shown in the right panel
+      as shown in Figure 3, the numerical distribution of                                         of Figure 4, the average reasoning accuracy of the
+      detection progress ratios is not uniform. Approx-                                           VLMs increases by 35%.
+                                                                                            13195
+  Ablation Aspect                    Variant               Detection Recall (%)    Reasoning Acc. (%)    Latency (∼ms)
+                              raw symbolic labels                   —                    32.04                —
+      Grounding
+                            neuro-symbolic (Ours)                   —                    68.14                —
+                            single view (Front-only)               41.62                   —                  —
+                          single view (Overhead-only)              56.18                   —                  —
+ View Independence
+                            single view (Wrist-only)               74.12                   —                  —
+                           multi-view fusion (Ours)                88.63                   —                  —
+                                    ViT-L/14                       90.30                   —                  37
+   Visual Encoder
+                                    ViT-B/32                       88.63                   —                  14
+
+Table 3: Ablation studies of key components in RoboFailRing. Recall is failure detection rate, Reasoning Acc.
+is VLM failure reasoning accuracy, Latency is average detection completion time. “—” indicates the metric is not
+applicable to that ablation dimension.
+
+
+  Component                Operation           Time Cost (∼ms)      constraint of our deployment scenario, we select
+                        image processing             4
+ Detection Part    CLIP encoding (ViT-B/32)          10             ViT-B/32 as the default for its superior efficiency
+  (Cascaded)        failure memory retrieval         1              and accuracy tradeoff.
+                   Total Detection Latency           15
+  Reasoning Part                                                    4.2.5   Latency Analysis
+                    VLM report generation           3000
+ (Asynchronous)
+                                                                    A critical requirement for deployment in physical
+    Table 4: Latency Breakdown of RoboFailRing.                     robotic systems is that the failure detection loop
+                                                                    must operate within the real-time control budget.
+4.2.4 Ablation Studies                                              Table 4 provides a component-level breakdown of
+                                                                    the framework latency, measured on a local server
+To validate the contribution of each core com-                      (See Appendix A for details). The total detection la-
+ponent, we conduct ablation experiments on the                      tency is approximately 15ms, allowing the system
+FailGen test set. Results are summarized in Table                   to run at ∼66Hz. This is well within the require-
+3.                                                                  ments for robotic manipulation control loops. The
+Neuro-symbolic grounding. As shown in the                           computationally expensive VLM generation (∼3s)
+first part of Table 3, replacing our neuro-symbolic                 runs asynchronously and is only triggered after the
+grounding mechanism with raw symbolic labels                        robot has already been safely stopped by the detec-
+fed directly to the VLM causes reasoning accu-                      tion loop, thus it does not hinder real-time safety.
+racy to drop sharply from 68.14% to 32.04%. The                        In addition, we conduct an experimental evalu-
+VLM struggles to map abstract symbols to the spe-                   ation of how detection performance and runtime
+cific visual context without the report provided by                 scale as the failure memory grows. The results
+our neuro-symbolic grounding mechanism, which                       show that, with current approximately 5k trajecto-
+translates symbols into descriptive natural language                ries dataset, the retrieval time is around 1 ms. Even
+prompts.                                                            when scaling up to 50k trajectories, the retrieval
+                                                                    time remains below 10 ms. The main bottleneck is
+Multi-view independence. The second part high-                      image encoding, which is still sufficiently fast for
+lights the necessity of our multi-view strategy. Re-                real-time detection.
+lying on a single view causes a significant drop
+(Front-only: 41.62%) in Recall due to occlusions                    5    Conclusion
+inherent in manipulation tasks. Our fusion mecha-
+nism effectively utilizes complementary informa-                    In this paper, we introduce RoboFailRing, an effi-
+tion from different views and is essential for robust               cient and interpretable framework for robotic ma-
+failure detection.                                                  nipulation that builds a language-grounded fail-
+                                                                    ure memory that enables rapid failure detection
+Visual encoder sensitivity. In the third part, we                   and supports accurate VLM reasoning. Through
+compared different visual backbones. Substitut-                     large-scale simulation and real-world evaluation,
+ing ViT-B/32 with the larger ViT-L/14 yields only                   it achieves high detection accuracy, reduces detec-
+a marginal recall improvement of +1.67%, while                      tion time, and improves reasoning accuracy. This
+nearly tripling the detection completion time from                  demonstrates the value of our framework as a core
+∼14ms to ∼37ms. Since latency is the primary                        component for more reliable robotic systems.
+                                                                 13196
+Limitations                                                  policy learning via action diffusion. The Interna-
+                                                             tional Journal of Robotics Research, 44(10-11):1684–
+RoboFailRing focuses on visually grounded,                   1704.
+outcome-oriented failure states, and its dual-frame
+                                                          Muhayy Ud Din, Waseem Akram, Lyes Saad Saoud,
+representation may not capture failure modes de-           Jan Rosell, and Irfan Hussain. 2025. Vision language
+fined primarily by execution dynamics whose di-            action models in robotic manipulation: A systematic
+agnostic signal lies in temporal evolution rather          review. Preprint, arXiv:2507.10672.
+than terminal appearance. Furthermore, while our
+                                                          Matthijs Douze, Alexandr Guzhva, Chengqi Deng, Jeff
+grounded failure reports improve VLM reasoning             Johnson, Gergely Szilvasy, Pierre-Emmanuel Mazaré,
+accuracy, translating the reasoned repair strategy         Maria Lomeli, Lucas Hosseini, and Hervé Jégou.
+into closed-loop recovery execution involves ad-           2026. The faiss library. IEEE Transactions on Big
+ditional challenges in motion replanning and con-          Data, 12(2):346–361.
+troller design that are outside the scope of this work,   Danny Driess, Fei Xia, Mehdi S. M. Sajjadi, Corey
+and we identify an end-to-end detect, reason, and           Lynch, Aakanksha Chowdhery, Brian Ichter, Ayzaan
+recover pipeline as an important direction for fu-          Wahid, Jonathan Tompson, Quan Vuong, Tianhe
+ture work. Finally, the current evaluation is limited       Yu, Wenlong Huang, Yevgen Chebotar, Pierre Ser-
+                                                            manet, Daniel Duckworth, Sergey Levine, Vincent
+to single-arm manipulation benchmarks, extending            Vanhoucke, Karol Hausman, Marc Toussaint, Klaus
+the framework to dual-arm or mobile-base config-            Greff, Andy Zeng, Igor Mordatch, and Pete Florence.
+urations introduces new challenges that remain to           2023. Palm-e: an embodied multimodal language
+be addressed.                                               model. In Proceedings of the 40th International Con-
+                                                            ference on Machine Learning.
+Acknowledgments                                           Yuqing Du, Ksenia Konyushkova, Misha Denil, Akhil
+                                                            Raju, Jessica Landon, Felix Hill, Nando de Freitas,
+This work is partially supported by Fundamen-               and Serkan Cabi. 2023. Vision-language models as
+tal and Interdisciplinary Disciplines Breakthrough          success detectors. In Proceedings of the 2nd Confer-
+Plan of the Ministry of Education of China                  ence on Lifelong Learning Agents, pages 120–136.
+JYB2025XDXM103, Key Research and Devel-
+                                                          Jiafei Duan, Wilbert Pumacay, Nishanth Kumar, Yi Ru
+opment Program of Zhejiang Province (Grant                   Wang, Shulin Tian, Wentao Yuan, Ranjay Krishna,
+No: 2025C01012), Mobile Information Networks                 Dieter Fox, Ajay Mandlekar, and Yijie Guo. 2025.
+National Science and Technology Major Project                Aha: A vision-language-model for detecting and rea-
+2026ZD1306000, and NSFC under Grants No.                     soning over failures in robotic manipulation. In The
+                                                             13th International Conference on Learning Represen-
+92467301, 62293511.                                          tations.
+
+                                                          Jiafei Duan, Wentao Yuan, Wilbert Pumacay, Yi Ru
+References                                                   Wang, Kiana Ehsani, Dieter Fox, and Ranjay Krishna.
+                                                             2024. Manipulate-anything: Automating real-world
+Anthony Brohan, Noah Brown, Justice Carbajal, Yev-           robots using vision-language models. In 8th Annual
+  gen Chebotar, Joseph Dabis, Chelsea Finn, Keerthana        Conference on Robot Learning, pages 5326–5350.
+  Gopalakrishnan, Karol Hausman, Alex Herzog, Jas-
+  mine Hsu, Julian Ibarz, Brian Ichter, Alex Irpan,       Roya Firoozi, Johnathan Tucker, Stephen Tian,
+  Tomas Jackson, Sally Jesmonth, Nikhil J Joshi, Ryan       Anirudha Majumdar, Jiankai Sun, Weiyu Liu, Yuke
+  Julian, Dmitry Kalashnikov, Yuheng Kuang, Isabel          Zhu, Shuran Song, Ashish Kapoor, Karol Hausman,
+  Leal, Kuang-Huei Lee, Sergey Levine, Yao Lu, Ut-          Brian Ichter, Danny Driess, Jiajun Wu, Cewu Lu, and
+  sav Malla, Deeksha Manjunath, Igor Mordatch, Ofir         Mac Schwager. 2025. Foundation models in robotics:
+  Nachum, Carolina Parada, Jodilyn Peralta, Emily           Applications, challenges, and the future. The Interna-
+  Perez, Karl Pertsch, Jornell Quiambao, Kanishka           tional Journal of Robotics Research, 44(5):701–739.
+  Rao, Michael Ryoo, Grecia Salazar, Pannag San-
+  keti, Kevin Sayed, Jaspiar Singh, Sumedh Sontakke,      Jensen Gao, Bidipta Sarkar, Fei Xia, Ted Xiao, Jiajun
+  Austin Stone, Clayton Tan, Huong Tran, Vincent            Wu, Brian Ichter, Anirudha Majumdar, and Dorsa
+  Vanhoucke, Steve Vega, Quan Vuong, Fei Xia, Ted           Sadigh. 2024. Physically grounded vision-language
+  Xiao, Peng Xu, Sichun Xu, Tianhe Yu, and Brianna          models for robotic manipulation. In 2024 IEEE In-
+  Zitkovich. 2023. Rt-1: Robotics transformer for real-     ternational Conference on Robotics and Automation,
+  world control at scale. In Proceedings of Robotics:       pages 12462–12469.
+  Science and Systems.
+                                                          Huy Ha, Pete Florence, and Shuran Song. 2023. Scal-
+Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau,         ing up and distilling down: Language-guided robot
+  Yilun Du, Benjamin Burchfiel, Russ Tedrake, and           skill acquisition. In 7th Annual Conference on Robot
+  Shuran Song. 2025. Diffusion policy: Visuomotor           Learning.
+                                                     13197
+Siyuan Huang, Haonan Chang, Yuhan Liu, Yimeng             Muhammad A Muttaqien, Tomohiro Motoda, Ryo
+  Zhu, Hao Dong, Abdeslam Boularias, Peng Gao,             Hanai, and Yukiyasu Domae. 2025. Visual prompt-
+  and Hongsheng Li. 2024. A3vlm: Actionable                ing for robotic manipulation with annotation-guided
+  articulation-aware vision language model. In 8th         pick-and-place using act. In 2025 IEEE 21st Interna-
+  Annual Conference on Robot Learning, pages 1675–         tional Conference on Automation Science and Engi-
+  1690.                                                    neering, pages 2642–2649.
+
+Wenlong Huang, Chen Wang, Ruohan Zhang, Yun-              Octo Model Team, Dibya Ghosh, Homer Walke,
+ zhu Li, Jiajun Wu, and Li Fei-Fei. 2023. Voxposer:         Karl Pertsch, Kevin Black, Oier Mees, Sudeep
+ Composable 3d value maps for robotic manipulation          Dasari, Joey Hejna, Charles Xu, Jianlan Luo, To-
+ with language models. In 7th Annual Conference on          bias Kreiman, You Liang Tan, Lawrence Yunliang
+ Robot Learning.                                            Chen, Pannag Sanketi, Quan Vuong, Ted Xiao, Dorsa
+                                                            Sadigh, Chelsea Finn, and Sergey Levine. 2024.
+Stephen James, Zicong Ma, David Rovick Arrojo, and          Octo: An open-source generalist robot policy. In
+  Andrew J Davison. 2020. Rlbench: The robot                Proceedings of Robotics: Science and Systems.
+   learning benchmark & learning environment. IEEE
+  Robotics and Automation Letters, 5(2):3019–3026.        Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+                                                            Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sas-
+                                                            try, Amanda Askell, Pamela Mishkin, Jack Clark,
+Byeonghwi Kim, Jinyeon Kim, Yuyeong Kim, Cheol-             Gretchen Krueger, and Ilya Sutskever. 2021. Learn-
+  hong Min, and Jonghyun Choi. 2023. Context-aware          ing transferable visual models from natural language
+  planning and environment-aware memory for instruc-        supervision. In Proceedings of the 38th International
+  tion following embodied agents. In Proceedings of         Conference on Machine Learning, pages 8748–8763.
+  the IEEE/CVF International Conference on Com-
+  puter Vision, pages 10936–10946.                        Lirui Wang, Yiyang Ling, Zhecheng Yuan, Mohit Shrid-
+                                                             har, Chen Bao, Yuzhe Qin, Bailin Wang, Huazhe
+Jacky Liang, Wenlong Huang, Fei Xia, Peng Xu, Karol          Xu, and Xiaolong Wang. 2024. Gensim: Generating
+   Hausman, Brian Ichter, Pete Florence, and Andy            robotic simulation tasks via large language models.
+   Zeng. 2023. Code as policies: Language model pro-         In The 12th International Conference on Learning
+   grams for embodied control. In 2023 IEEE Inter-           Representations.
+   national Conference on Robotics and Automation,
+   pages 9493–9500.                                       wpumacay. 2024. maniskill-failgen: A implementation
+                                                            of failgen in maniskill.
+Fangchen Liu, Kuan Fang, Pieter Abbeel, and Sergey
+  Levine. 2024. Moka: Open-vocabulary robotic ma-         Chenduo Ying, Linkang Du, Peng Cheng, and Yuanchao
+  nipulation through mark-based visual prompting. In        Shu. 2025. Roboinspector: Unveiling the unreliabil-
+  First Workshop on Vision-Language Models for Navi-        ity of policy code for llm-enabled robotic manipula-
+  gation and Manipulation at ICRA 2024.                     tion. Preprint, arXiv:2508.21378.
+
+Zeyi Liu, Arpit Bahety, and Shuran Song. 2023. Reflect:   Minjong Yoo, Jinwoo Jang, Wei-Jin Park, and Honguk
+  Summarizing robot experiences for failure explana-        Woo. 2024. Exploratory retrieval-augmented plan-
+  tion and correction. In 7th Annual Conference on          ning for continual embodied instruction following. In
+  Robot Learning.                                           The 39th Annual Conference on Neural Information
+                                                            Processing Systems, pages 67034–67060.
+Zixian Liu, Mingtong Zhang, and Yunzhu Li. 2025.          Samson Yu, Kelvin Lin, Anxing Xiao, Jiafei Duan, and
+  Kuda: Keypoints to unify dynamics learning and            Harold Soh. 2024. Octopi: Object property reasoning
+  visual prompting for open-vocabulary robotic manip-       with large tactile-language models. In Proceedings
+  ulation. In 2025 IEEE International Conference on         of Robotics: Science and Systems.
+  Robotics and Automation, pages 10561–10569.
+                                                          Wentao Yuan, Jiafei Duan, Valts Blukis, Wilbert
+Yecheng Jason Ma, Joey Hejna, Chuyuan Fu, Dhruv            Pumacay, Ranjay Krishna, Adithyavairavan Murali,
+  Shah, Jacky Liang, Zhuo Xu, Sean Kirmani, Peng           Arsalan Mousavian, and Dieter Fox. 2024. Robo-
+  Xu, Danny Driess, Ted Xiao, Osbert Bastani, Di-          point: A vision-language model for spatial affordance
+  nesh Jayaraman, Wenhao Yu, Tingnan Zhang, Dorsa          prediction in robotics. In 8th Conference on Robot
+  Sadigh, and Fei Xia. 2025. Vision language models        Learning, volume 270, pages 4005–4020.
+  are in-context value learners. In The 13th Interna-
+  tional Conference on Learning Representations.          Yi Zhang, Che Liu, Xiancong Ren, Hanchu Ni, Shuai
+                                                            Zhang, Zeyuan Ding, Jiayu Hu, Hanzhe Shan, Zhen-
+Yecheng Jason Ma, Shagun Sodhani, Dinesh Jayara-            wei Niu, Zhaoyang Liu, Shuang Liu, Yue Zhao,
+  man, Osbert Bastani, Vikash Kumar, and Amy Zhang.         Junbo Qi, Qinfan Zhang, Dengjie Li, Yidong Wang,
+  2023. Vip: Towards universal visual reward and rep-       Jiachen Luo, Yong Dai, Zenglin Xu, Bin Shen, Qifan
+  resentation via value-implicit pre-training. In The       Wang, Jian Tang, and Xiaozhu Ju. 2025. Pelican-vl
+  11th International Conference on Learning Represen-       1.0: A foundation brain model for embodied intelli-
+  tations.                                                  gence. Preprint, arXiv:2511.00108.
+                                                     13198
+Yue Zheng, Yuhao Chen, Bin Qian, Xiufang Shi, Yuan-
+  chao Shu, and Jiming Chen. 2025. A review on edge             "reference_start_img":
+  large language models: Design, execution, and appli-          os.path.abspath(start_img_path),
+  cations. ACM Computing Surveys, 57(8):1–35.               "Reference End Frame (Failure State):",
+Yichen Zhu, Zhicai Ou, Xiaofeng Mou, and Jian Tang.             "reference_end_img":
+  2024. Retrieval-augmented embodied agents. In                 os.path.abspath(end_img_path),
+  2024 IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition, pages 17985–17995.
+
+Appendix                                                    "role": "user", "content":
+                                                            "Now, look at the current robot observa-
+A    Platform                                               tion:",
+Our experiments in simulation are conducted on              "Current Frame:",
+a server running a 64-bit Ubuntu 20.04.6LTS sys-                 "current_img":
+tem with 48 AMD(R) Epyc 7402 @2.8GHz 24-                         os.path.abspath(current_img_path),
+core processors, 128GB memory, and four Nvidia
+RTX3090 GPUs, each with 24GB memory. The ex-
+                                                            "role": "user", "content":
+periments are performed using the Python3.10.18.
+                                                            "Based on this report, please reasoning
+Our experiments on the real-world systems are con-
+                                                            why it failed and how should it be
+ducted on a 6-DoF myCobot robot arm with my-
+                                                            repaired? You tasks are:
+Cobot gripper from Elephant Robotics. In addition,
+                                                            1. Compare the Current Observation with
+we employ a compact Femto Bolt camera equipped
+                                                            the Reference End Frame.
+with multi-modal depth and RGB sensors. It is
+                                                            2. Confirm if the failure mode described
+manufactured by Orbbec.
+                                                            in the report matches the visual evidence.
+B   Prompt Template                                         3. Provide a reasoning for the failure
+                                                            cause.
+    Prompt for VLM reasoning                                4. Suggest a concrete repair action."
+
+    "role": "system", "content":
+    "You are an expert robotic failure analyst.             "role": "assistant", "content":
+    Use the provided Failure Report and Ref-                "Got it. Here’s the analysis of the current
+    erence Images to diagnose the Current Sit-              situation:"
+    uation."
+
+    "role": "user", "content":                              Example output of VLM
+    "Robot stopped now because the current
+    scene is similar to the failure memory. I               "role": "assistant", "content":
+    have retrieved a similar historical failure             "1. Comparison of Current Observation
+    case from memory. Details of Failure Re-                with Reference End Frame:
+    port as follows:                                        The Current Robot Observation is visually
+          report = {                                        identical to the Reference End Frame. In
+         "current_task": task_name,                         both images, the robot’s gripper is posi-
+         "failure": grounded failure                        tioned horizontally, parallel to the ground,
+         description,                                       and is very close to the microwave’s front
+         "view": viewpoint,                                 panel. The gripper’s opening is facing
+         "similarity_score": f"r_score:.2f",                downwards or slightly inwards, making it
+         }."                                                impossible to grasp the vertical microwave
+                                                            handle. The robot arm is bent, indicating
+    "role": "user", "content":                              it has attempted to reach the target but is
+    "Below are the reference images from this               in an incorrect final pose.
+    historical failure memory:",                            2. Confirmation of Failure Mode:
+    "Reference Start Frame (Task Context):",                Yes, the failure mode described in the re-
+
+
+                                                    13199
+                                                    C     Neuro-Symbolic Grounding Rules
+port ("The failure was caused by incor-
+rect gripper rotation along the Z-axis at           To enable interpretable neuro-symbolic grounding,
+the initial approach stage (Waypoint 1)")           we map discrete symbolic failure labels to human-
+matches the visual evidence. The grip-              readable natural language semantics. Specifically,
+per is clearly misoriented. For opening a           we define three mapping groups: (1) error-type
+microwave handle, the gripper typically             grounding, which explains the physical cause of
+needs to be oriented vertically to grasp the        failure; (2) axis grounding, which specifies the spa-
+handle. In the observed state, the gripper          tial dimension involved; and (3) execution-stage
+is horizontally oriented, which is an incor-        grounding, which situates the failure temporally
+rect rotation. Assuming "Z-axis" refers to          within the task procedure. The complete mapping
+the gripper’s forward axis (tool-Z), then           rules are summarized in Table 5.
+rotation along this axis is a roll motion,           Symbolic Token      Grounded Natural Language Description
+which is precisely what appears to be in-            (a) Error-Type Grounding
+correct here. The gripper is "rolled" 90             rotation         incorrect gripper rotation
+                                                     no_rotation      gripper translates to the correct pose but fails to rotate
+degrees from its expected upright orienta-           translation      positional deviation of the end-effector
+tion.                                                slip             object slippage from the gripper
+                                                     grasp            gripper reaches target pose but fails to close
+3. Reasoning for the Failure Cause:                  wrong_sequence robot executes actions in an incorrect order
+The task is to "open_microwave". This                wrong_object     robot operates on an unintended object
+                                                     (b) Axis Grounding
+requires the robot to grasp the microwave            _x               along the X-axis
+handle, which is typically a vertical bar.           _y               along the Y-axis
+                                                     _z               along the Z-axis
+For a successful grasp, the gripper must
+                                                     (c) Execution-Stage Grounding
+approach with an orientation that allows             wp1               initial stage (Waypoint 1)
+its fingers to encompass the handle. The             wp2               interaction / grasping stage (Waypoint 2)
+                                                     wp3               manipulation / movement stage (Waypoint 3)
+observed failure state shows the gripper             wp4               near-goal placement stage (Waypoint 4)
+oriented horizontally, with its opening fac-         wp5               final completion / retraction stage (Waypoint 5)
+                                                     (d) Episode Grounding
+ing downwards. This incorrect orientation,           episode          ignored for linguistic grounding
+likely a roll error (rotation around the grip-
+per’s forward axis, which the report refers         Table 5: Unified symbolic-to-language grounding table.
+to as Z-axis rotation), prevents the gripper
+from aligning with and grasping the verti-
+cal handle. The error occurring at an "ini-         Algorithm 1 Pseudo code for constructing failure
+tial approach stage (Waypoint 1)" means             memory
+this fundamental orientation mistake was            Require: Dataset D, CLIP encoder f , camera views V
+                                                    Ensure: Faiss index I and metadata list M
+made early in the trajectory, leading to             1: Initialize empty index I and metadata M
+the observed unrecoverable final approach            2: for each failure trajectory (task, f ailure) in D do
+pose.                                                3:     for each view v ∈ V do
+                                                     4:          Extract ordered image sequence Sv
+4. Suggested Concrete Recovery Action:               5:          if |Sv | < 2 then continue
+1. Retract: Move the gripper back to a               6:          end if
+safe, pre-defined waypoint (e.g., the ini-           7:          Is ← initial frame of Sv ; Ie ← end frame of Sv
+                                                     8:          Encode and normalize CLIP embeddings:
+tial approach waypoint or slightly further
+back from the microwave). 2. Correct                                   zs =
+                                                                                f (Is )
+                                                                                         ,     ze =
+                                                                                                        f (Ie )
+Gripper Orientation: Rotate the gripper by                                     ∥f (Is )∥               ∥f (Ie )∥
+approximately 90 degrees around its end-             9:           Concatenate start/end representations:
+effector’s forward (Z) axis (i.e., perform
+a roll adjustment) to orient it vertically.                                         z = [zs ∥ ze ]
+3. Re-approach and Grasp: Re-execute                10:        Normalize joint embedding: z = ∥z∥   z
+the approach trajectory towards the mi-             11:        Add z to index I
+crowave handle with the corrected gripper           12:        Append (task, f ailure, v, Is , Ie ) to M
+orientation, and then attempt the grasping          13:    end for
+                                                    14: end for
+action."                                            15: Save I and M
+
+
+                                                 13200
+    (a) basketball_in_hoop.      (b) beat_the_buzz.              (c) close_box.     (d) hang_frame_on_hanger.
+
+
+
+
+(e) insert_onto_square_peg.        (f) open_door.             (g) open_microwave.   (h) place_shape_in_sorter.
+
+                                 Figure 5: Eight Experiment tasks in FailGen.
+
+
+D     Failed Memory Construction
+We construct the failure memory by extracting em-
+beddings from the keyframes of each failure trajec-
+tory (Algorithm 1), concatenating them into joint
+vectors, and storing them with metadata in Faiss.
+
+E     Experiment scene
+E.1     Experiment tasks in FailGen
+FailGen contains a total of 78 robotic manipula-
+tion tasks, and a selection of these tasks is presented
+in Figure 5.
+
+E.2     Experiment tasks in ManiSkill
+ManiSkill includes a total of three robotic manip-
+ulation tasks, all of which are presented here in
+Figure 6.
+
+E.3     Experiment scene in real-world system
+We manually replicate the seven failure modes de-
+fined in the simulation dataset as much as possible
+in the real-world system, and we display all of them
+in Figure 7.
+
+
+
+
+                                                      13201
+                                          (a) FailPegInsertionSide.
+
+
+
+
+                                              (b) FailPickCube.
+
+
+
+
+                                             (c) FailPushCube.
+
+                           Figure 6: Three Experiment tasks in ManiSkill.
+
+
+
+
+(a) No_Grasp.                  (b) No_Rotation.                   (c) Rotation.                     (d) Slip.
+
+
+
+
+            (e) Translation.                 (f) Wrong_Object.                    (g) Wrong_Sequence.
+
+                  Figure 7: Seven different failure modes in the real-world system.
+
+                                                   13202
+

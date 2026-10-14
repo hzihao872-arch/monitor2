@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="description"
+      content="ROVER: Recursive Reasoning Over Videos with Vision-Language Models for Embodied Tasks"
+    />
+    <meta
+      name="keywords"
+      content="GVL, value learning, vision language models, VLM, robotics, reinforcement learning"
+    />
+    <!-- <meta
+      property="og:image"
+      content="https://generative-value-learning.github.io/static/images/icv/method.png"
+    /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      ROVER: Recursive Reasoning Over Videos with Vision-Language Models for Embodied Tasks
+    </title>
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ROVER" />
+    <meta
+      name="twitter:description"
+      content="Recursive Reasoning Over Videos with Vision-Language Models for Embodied Tasks"
+    />
+    <!-- <meta
+      name="twitter:image"
+      content="https://generative-value-learning.github.io/static/images/icv/method.png"
+    /> -->
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./static/css/bulma.min.css" />
+    <link rel="stylesheet" href="./static/css/bulma-carousel.min.css" />
+    <link rel="stylesheet" href="./static/css/bulma-slider.min.css" />
+    <link rel="stylesheet" href="./static/css/fontawesome.all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css"
+    />
+    <link rel="stylesheet" href="./static/css/index.css" />
+    <!-- <link rel="icon" href="./static/images/favicon.svg" /> -->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script defer src="./static/js/fontawesome.all.min.js"></script>
+    <script src="./static/js/bulma-carousel.min.js"></script>
+    <script src="./static/js/bulma-slider.min.js"></script>
+    <style>
+      * {
+        font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 15px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      
+      th {
+        border-top: 1.5px solid #000;
+        border-bottom: 1.5px solid #000;
+        padding: 12px 24px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 16px;
+      }
+      
+      td {
+        padding: 12px 24px;
+      }
+      
+      tr:last-child td {
+        border-bottom: 1.5px solid #000;
+      }
+      
+      tr:hover {
+        background-color: #f5f5f5;
+      }
+      
+      .method-group {
+        border-bottom: 1.5px solid #000;
+      }
+      
+      .dataset-name, .method-name {
+        font-weight: 500;
+      }
+      
+      .citation {
+        color: #FF69B4;
+      }
+      
+      .metric {
+        text-align: right;
+        font-feature-settings: "tnum";
+        font-variant-numeric: tabular-nums;
+      }
+      
+      .bold-metric {
+        font-weight: bold;
+      }
+      
+      .year {
+        color: #666;
+      }
+      
+      .sub-method {
+        padding-left: 24px;
+      }
+
+      .demo-container {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .task-select {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #000;
+        background: white;
+        appearance: none;
+        position: relative;
+        cursor: pointer;
+        box-shadow: 2px 2px 0px 0px #000;
+      }
+      
+      .status-container {
+        flex: 1;
+        border: 2px solid #000;
+        display: flex;
+        overflow: hidden;
+      }
+      
+      .status {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+      }
+      
+      .success {
+        background: #000;
+        color: white;
+      }
+      
+      .fail {
+        background: white;
+        color: black;
+      }
+      
+      .video-area {
+        width: 80%;
+        margin: 0 auto;
+        background: #e0e0e0;
+        border: 2px solid #000;
+        position: relative;
+      }
+      .video-overlay {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .audio-button {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .audio-progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .audio-progress-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transition: width 0.1s linear;
+      }
+
+      .audio-controls {
+        display: inline-flex;
+        gap: 8px;
+      }
+      .publication-title {
+        white-space: normal;
+        word-wrap: break-word;
+        max-width: 100%;
+        }
+        .container.is-max-desktop {
+        max-width: 1000px; /* or more */
+        }
+
+        video {
+  background: #000;
+}
+
+/* video {
+  filter: invert(1) hue-rotate(180deg);
+} */
+video::-webkit-media-controls-panel {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container is-max-desktop">
+          <div class="columns is-centered">
+            <div class="column has-text-centered" style="max-width: 100%;">
+              <h1 class="title is-1 publication-title" style="max-width: 100%;">
+                ROVER: Recursive Reasoning Over Videos with 
+                 Vision-Language Models for Embodied Tasks
+              </h1>
+              <div class="is-size-5 publication-authors" style="font-size: 22px !important;">
+                <span class="author-block">
+                  <a href="https://people.csail.mit.edu/pschro/" target="_blank">Philip Schroeder</a
+                  ><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+                <span class="author-block">
+                  <a href="https://ondrejbiza.com/" target="_blank">Ondrej Biza</a
+                  ><sup>2</sup>&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+                <span class="author-block">
+                  <a href="https://thomasweng.com/"  target="_blank">Thomas Weng</a
+                  ><sup>2</sup>&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+                <span class="author-block">
+                  <a href="https://luohongyin.github.io/" target="_blank">Hongyin Luo</a
+                  ><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+                <span class="author-block"></span>
+                  <a href="https://people.csail.mit.edu/jrg/" target="_blank">James Glass</a
+                  ><sup>1</sup>&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+                <!-- <span class="author-block"></span>
+                  <a href="">Jacky Liang</a
+                  ><sup>1</sup>,</span
+                >
+                <span class="author-block"></span>
+                  <a href="">Zhuo Xu</a
+                  ><sup>1</sup>,</span
+                >
+                <span class="author-block"></span>
+                  <a href="https://kirmani.ai/">Sean Kirmani</a
+                  ><sup>1</sup>,</span
+                >
+                <span class="author-block"></span>
+                  <a href="">Peng Xu</a
+                  ><sup>1</sup>,</span
+                >
+                <span class="author-block">
+                  <a href="https://dannydriess.github.io/">Danny Driess</a
+                  ><sup>1</sup>,
+                </span>
+                <span class="author-block"></span>
+                  <a href="https://tedxiao.me/">Ted Xiao</a
+                  ><sup>1</sup>,
+                </span>
+                <span class="author-block"></span>
+                  <a href="https://jonathantompson.github.io/">Jonathan Tompson</a
+                  ><sup>1</sup>,
+                </span>
+                <span class="author-block"></span>
+                  <a href="https://obastani.github.io/">Osbert Bastani</a
+                  ><sup>2</sup>,
+                </span>
+                <span class="author-block"></span>
+                  <a href="https://www.seas.upenn.edu/~dineshj/">Dinesh Jayaraman</a
+                  ><sup>2</sup>,
+                </span>
+                <span class="author-block"></span>
+                  <a href="#">Wenhao Yu</a
+                  ><sup>1</sup>,
+                </span>
+                <span class="author-block"></span>
+                  <a href="#">Tingnan Zhang</a
+                  ><sup>1</sup>,
+                </span>
+                <span class="author-block">
+                  <a href="https://dorsa.fyi/">Dorsa Sadigh</a><sup>1,3</sup>,
+                </span>
+                <span class="author-block">
+                  <a href="https://fxia22.github.io/">Fei Xia</a><sup>1</sup>
+                </span> -->
+              </div>
+              <!-- <div>
+                <sup>†</sup> Work done while interning at Google DeepMind.
+              </div> -->
+
+              <!-- <div class="is-size-5">
+                <em>Accepted at ICLR 2025</em>
+              </div> -->
+
+              <br />
+              <div class="is-size-5 publication-authors">
+                <ul class="affiliation-list">
+                  <li class="affiliation">
+                    <img
+                      src="./static/mit.png"
+                      style="height: 50px; width: auto;"
+                    />
+                    <span class="author-block" style = "font-size: 1.2em;"
+                      ><sup>1</sup>MIT</span
+                    >
+                  </li>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  <li class="affiliation">
+                    <img
+                      src="./static/rai_cropped.png"
+                      style="height: 35px; width: auto; margin-right: 10px; margin-top: -5px;"
+                    />
+                    <span class="author-block" style = "font-size: 1.2em;"><sup>2</sup>RAI Institute</span>
+                  </li>
+                  <!-- <li class="affiliation">
+                    <img
+                      src="./static/images/stanford.jpg"
+                      alt="Stanford Logo"
+                      class="logo"
+                    />
+                    <span class="author-block"
+                      ><sup>3</sup>Stanford University</span
+                    >
+                  </li> -->
+                </ul>
+                <br>
+              </div>
+              <br />
+              <div class="column has-text-centered">
+                <div class="publication-links">
+                  <span class="link-block">
+                    <a target="_blank" href="https://arxiv.org/abs/2508.01943"
+                        class="external-link button is-normal is-rounded is-dark">
+                        <span class="icon">
+                            <i class="ai ai-arxiv"></i>
+                        </span>
+                        <span>arXiv</span>
+                    </a>
+                </span>
+                  <span class="link-block">
+                    <a
+                      href="https://github.com/rover-vlm/a"
+                      target="_blank"
+                      class="external-link button is-normal is-rounded is-dark"
+                    >
+                      <span class="icon">
+                        <i class="fab fa-github"></i>
+                      </span>
+                      <span>Code</span>
+                    </a>
+                  </span>
+                  <!-- <span class="link-block">
+                    <a
+                    href="https://github.com/rover-vlm/a"
+                      target="_blank"
+                      class="external-link button is-normal is-rounded is-dark"
+                    >
+                      <span class="icon">
+                        <i class="fas fa-database"></i>
+                      </span>
+                      <span>Data</span>
+                    </a>
+                  </span> -->
+                  <!-- <span class="link-block">
+                    <a
+                    href="https://huggingface.co/your-model"
+                    class="external-link button is-normal is-rounded is-dark"
+                  >
+                    <span class="icon">
+                      <img
+                        src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg"
+                        alt="Hugging Face"
+                        style="height: 1.2em; vertical-align: middle;"
+                      />
+                    </span>
+                    <span>Data</span>
+                  </a>
+                  </span> -->
+                  <!-- <span class="link-block">
+                    <a
+                      href="#online-demo"
+                      class="external-link button is-normal is-rounded is-dark"
+                    >
+                      <span class="icon">
+                        <i class="fas fa-robot"></i>
+                      </span>
+                      <span>Online Demo</span>
+                    </a>
+                  </span> -->
+                  <!-- <span class="link-block">
+                    <div class="audio-controls">
+                      <a
+                        id="audio-button"
+                        class="external-link button is-normal is-rounded is-dark audio-button"
+                      >
+                        <div class="audio-progress">
+                          <div class="audio-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="icon">
+                          <i class="fas fa-headphones"></i>
+                        </span>
+                        <span>Listen to this paper</span>
+                      </a>
+                      <a
+                        id="audio-play-button" 
+                        class="external-link button is-normal is-rounded is-dark"
+                        style="display: none;"
+                      >
+                        <span class="icon">
+                          <i class="fas fa-play"></i>
+                          <i class="fas fa-pause" style="display: none;"></i>
+                        </span>
+                      </a>
+                    </div>
+                  </span> -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div> 
+
+
+    </div>
+
+
+
+
+
+
+    <section id="json-frame-viewer" class="container">
+        <h2 class="title is-3 has-text-centered">Interactive Visualization of ROVER Reasoning</h2>
+        <p class="has-text-centered">Select below to see ROVER versus <a href="https://generative-value-learning.github.io/" target="_blank">GVL</a> Zero-Shot progress prediction and frame-level reasoning on videos from succcessful and unsuccessful trajectories across single-stage and multi-stage tasks. 
+            For the tasks from simulation, the videos are separated into levels based on the amount of the task completed during the video. The amount of non-expert behavior in the video increases as the level decreases. The highest-level trajectories for each task show full task completion with near-expert behavior. The level 1 trajectories do not achieve any part of the task.
+          The task progress values generated by ROVER and GVL are shown in yellow and blue, respectively. The ground-truth progress values are shown in gray. 
+            <!-- Explore task completion predictions and frame-by-frame reasoning across diverse robotic manipulation tasks. -->
+        </p>
+
+        <!-- <h3>Example videos showing ROVER frame-level reasoning and task progress prediction.</h3>
+        <h4 style="font-weight: normal">The baseline method is the best existing in-context learning framework for video reasoning in embodied settings, <a href="https://generative-value-learning.github.io" target="_blank">GVL (https://generative-value-learning.github.io)</a>.</h4>
+        <h4 style="font-weight: normal">There are a total of 142 example videos across 27 tasks. The videos are separated into levels based on the amount of the task completed during the video. The amount of non-expert behavior in the video increases as the level decreases. The highest-level trajectories for each task show full task completion with near-expert behavior. The level 1 trajectories do not achieve any part of the task.
+          The task progress values generated by ROVER and GVL are shown in yellow and blue, respectively. The ground-truth progress values are shown in gray. 
+          <br><br>
+          The performance metrics for the task progress prediction include the Pearson correlation coefficient (higher is better) and the L2 distance (lower is better) between the ground-truth progress values and the progress values generated by each method (ROVER vs GVL). These metrics are shown as "Corr." and "Dist." on the right in each video.
+        </h4> -->
+        <br>
+        <label for="task-select" style="font-size: 1em;">Select task/dataset:</label>
+          <select id="task-select" style="font-size: 1em;" onchange="updateLevelOptions(); filterVideos();">
+  
+          <!-- <option value="All">All</option> -->
+          <!-- <option value="PnPCounterToCab">PnPCounterToCab</option> -->
+          <!-- <option value="PnPCounterToMicrowave">PnPCounterToMicrowave</option> -->
+          <option value="PnPCounterToSink">PnPCounterToSink</option>
+        </select>
+  
+        <label for="lev-select" style="font-size: 1em;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Select trajectory level:</label>
+        <select id="lev-select"  style="font-size: 1em;" onchange="filterVideos()">
+          <!-- <option value="lev3">lev3</option> -->
+          <!-- <option value="All">All</option> -->
+          <option value="lev7">All</option>
+        </select>
+        <br><br>
+  
+        <div id="video-container"></div>
+      </section>
+
+
+
+      <script>
+        // const videoDescriptions = {'TurnOffStove_demo_41_nonexpert_lev1.mp4': 'turn off the front right burner of the stove', 'OpenDrawer_demo_11_nonexpert_lev1.mp4': 'open the right drawer', 'CoffeeServeMug_demo_27_nonexpert_lev5.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPCounterToMicrowave_demo_25_nonexpert_lev5.mp4': 'pick the potato from the counter and place it in the microwave', 'PnPSinkToCounter_demo_30_nonexpert_lev7.mp4': 'pick the fish from the sink and place it on the plate located on the counter', 'PnPCabToCounter_demo_25_nonexpert_lev5.mp4': 'pick the tomato from the cabinet and place it on the counter', 'TurnOffMicrowave_demo_28_nonexpert_lev3.mp4': 'press the stop button on the microwave', 'PrepareCoffee_demo_6_nonexpert_lev1.mp4': 'pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button', 'CoffeeSetupMug_demo_29_nonexpert_lev7.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'CoffeePressButton_demo_24_nonexpert_lev3.mp4': 'press the button on the coffee machine to serve coffee', 'PnPCounterToCab_demo_17_nonexpert_lev3.mp4': 'pick the water bottle from the counter and place it in the cabinet', 'TurnOnMicrowave_demo_11_nonexpert_lev1.mp4': 'press the start button on the microwave', 'PnPSinkToCounter_demo_22_nonexpert_lev4.mp4': 'pick the pear from the sink and place it on the plate located on the counter', 'PnPSinkToCounter_demo_13_nonexpert_lev1.mp4': 'pick the mushroom from the sink and place it on the plate located on the counter', 'PnPCounterToCab_demo_26_nonexpert_lev6.mp4': 'pick the mug from the counter and place it in the cabinet', 'PrepareCoffee_demo_5_nonexpert_lev3.mp4': 'pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button', 'TurnOffSinkFaucet_demo_44_nonexpert_lev7.mp4': 'turn off the sink faucet', 'PrepareCoffee_demo_49_nonexpert_lev2.mp4': 'pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button', 'CoffeeServeMug_demo_50_nonexpert_lev2.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPCounterToCab_demo_22_nonexpert_lev4.mp4': 'pick the tomato from the counter and place it in the cabinet', 'CloseDrawer_demo_11_nonexpert_lev1.mp4': 'close the left drawer', 'TurnOffStove_demo_18_nonexpert_lev3.mp4': 'turn off the front left burner of the stove', 'PnPSinkToCounter_demo_17_nonexpert_lev3.mp4': 'pick the banana from the sink and place it on the plate located on the counter', 'PnPSinkToCounter_demo_26_nonexpert_lev6.mp4': 'pick the corn from the sink and place it on the plate located on the counter', 'TurnSinkSpout_demo_43_nonexpert_lev3.mp4': 'turn the sink spout to the right', 'PnPCounterToCab_demo_13_nonexpert_lev1.mp4': 'pick the mushroom from the counter and place it in the cabinet', 'MicrowaveThawing_demo_26_nonexpert_lev1.mp4': 'Pick the cheese from the counter and place it in the microwave. Then turn on the microwave.', 'CloseSingleDoor_demo_34_nonexpert_lev6.mp4': 'close the cabinet door', 'TurnOnStove_demo_44_nonexpert_lev7.mp4': 'turn on the rear left burner of the stove', 'TurnOffMicrowave_demo_12_nonexpert_lev1.mp4': 'press the stop button on the microwave', 'OpenDrawer_demo_45_nonexpert_lev7.mp4': 'open the left drawer', 'CloseDrawer_demo_43_nonexpert_lev3.mp4': 'close the right drawer', 'CoffeeServeMug_demo_13_nonexpert_lev1.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPCounterToStove_demo_18_nonexpert_lev3.mp4': 'pick the apple from the plate and place it in the pan', 'PnPCounterToCab_demo_30_nonexpert_lev7.mp4': 'pick the cheese from the counter and place it in the cabinet', 'TurnOnStove_demo_43_nonexpert_lev6.mp4': 'turn on the rear center burner of the stove', 'TurnOnMicrowave_demo_20_nonexpert_lev2.mp4': 'press the start button on the microwave', 'PnPCounterToSink_demo_14_nonexpert_lev2.mp4': 'pick the lemon from the counter and place it in the sink', 'PnPCabToCounter_demo_26_nonexpert_lev6.mp4': 'pick the cucumber from the cabinet and place it on the counter', 'PnPCounterToMicrowave_demo_17_nonexpert_lev3.mp4': 'pick the mushroom from the counter and place it in the microwave', 'PnPCounterToMicrowave_demo_26_nonexpert_lev6.mp4': 'pick the tomato from the counter and place it in the microwave', 'TurnOnStove_demo_13_nonexpert_lev2.mp4': 'turn on the rear left burner of the stove', 'PnPCabToCounter_demo_17_nonexpert_lev3.mp4': 'pick the bell pepper from the cabinet and place it on the counter', 'PreSoakPan_demo_3_nonexpert_lev1.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.', 'TurnOffStove_demo_42_nonexpert_lev2.mp4': 'turn off the rear left burner of the stove', 'PreSoakPan_demo_40_nonexpert_lev2.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.', 'PnPCounterToStove_demo_23_nonexpert_lev4.mp4': 'pick the mango from the plate and place it in the pan', 'PnPCounterToCab_demo_25_nonexpert_lev5.mp4': 'pick the jam from the counter and place it in the cabinet', 'CloseDrawer_demo_26_nonexpert_lev6.mp4': 'close the right drawer', 'PnPCounterToSink_demo_27_nonexpert_lev6.mp4': 'pick the carrot from the counter and place it in the sink', 'PnPCounterToSink_demo_26_nonexpert_lev5.mp4': 'pick the can from the counter and place it in the sink', 'TurnOnSinkFaucet_demo_43_nonexpert_lev3.mp4': 'turn on the sink faucet', 'CoffeeSetupMug_demo_24_nonexpert_lev5.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'PnPStoveToCounter_demo_14_nonexpert_lev2.mp4': 'pick the lemon from the pan and place it on the plate', 'OpenSingleDoor_demo_26_nonexpert_lev6.mp4': 'open the cabinet door', 'MicrowaveThawing_demo_9_nonexpert_lev2.mp4': 'Pick the corn from the counter and place it in the microwave. Then turn on the microwave.', 'PnPMicrowaveToCounter_demo_14_nonexpert_lev2.mp4': 'pick the potato from the microwave and place it on plate located on the counter', 'CoffeeServeMug_demo_19_nonexpert_lev3.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPCounterToStove_demo_26_nonexpert_lev5.mp4': 'pick the tomato from the plate and place it in the pan', 'PnPCabToCounter_demo_30_nonexpert_lev7.mp4': 'pick the onion from the cabinet and place it on the counter', 'TurnOffSinkFaucet_demo_13_nonexpert_lev2.mp4': 'turn off the sink faucet', 'ArrangeVegetables_demo_3_nonexpert_lev1.mp4': 'pick the vegetables from the sink and place them on the cutting board', 'TurnOnSinkFaucet_demo_47_nonexpert_lev1.mp4': 'turn on the sink faucet', 'PnPSinkToCounter_demo_25_nonexpert_lev5.mp4': 'pick the milk from the sink and place it on the plate located on the counter', 'PnPCounterToMicrowave_demo_30_nonexpert_lev7.mp4': 'pick the sweet potato from the counter and place it in the microwave', 'MicrowaveThawing_demo_34_nonexpert_lev3.mp4': 'Pick the eggplant from the counter and place it in the microwave. Then turn on the microwave.', 'PnPCounterToStove_demo_27_nonexpert_lev6.mp4': 'pick the apple from the plate and place it in the pan', 'TurnOffStove_demo_27_nonexpert_lev6.mp4': 'turn off the front left burner of the stove', 'OpenDrawer_demo_26_nonexpert_lev6.mp4': 'open the right drawer', 'PnPCounterToSink_demo_31_nonexpert_lev7.mp4': 'pick the sponge from the counter and place it in the sink', 'PnPCabToCounter_demo_13_nonexpert_lev1.mp4': 'pick the jug from the cabinet and place it on the counter', 'PnPCounterToMicrowave_demo_22_nonexpert_lev4.mp4': 'pick the corn from the counter and place it in the microwave', 'PnPCounterToMicrowave_demo_13_nonexpert_lev1.mp4': 'pick the steak from the counter and place it in the microwave', 'ArrangeVegetables_demo_50_nonexpert_lev2.mp4': 'pick the vegetables from the sink and place them on the cutting board', 'PnPCabToCounter_demo_22_nonexpert_lev4.mp4': 'pick the onion from the cabinet and place it on the counter', 'OpenDrawer_demo_46_nonexpert_lev3.mp4': 'open the left drawer', 'CloseSingleDoor_demo_27_nonexpert_lev7.mp4': 'close the microwave door', 'PnPCounterToStove_demo_14_nonexpert_lev2.mp4': 'pick the mango from the plate and place it in the pan', 'TurnOnMicrowave_demo_28_nonexpert_lev3.mp4': 'press the start button on the microwave', 'PnPStoveToCounter_demo_30_nonexpert_lev7.mp4': 'pick the egg from the pan and place it on the plate', 'PnPCounterToSink_demo_22_nonexpert_lev4.mp4': 'pick the bar soap from the counter and place it in the sink', 'CloseDrawer_demo_42_nonexpert_lev2.mp4': 'close the right drawer', 'PnPMicrowaveToCounter_demo_30_nonexpert_lev7.mp4': 'pick the steak from the microwave and place it on plate located on the counter', 'ArrangeVegetables_demo_23_nonexpert_lev3.mp4': 'pick the vegetables from the sink and place them on the cutting board', 'PnPCounterToSink_demo_13_nonexpert_lev1.mp4': 'pick the rolling pin from the counter and place it in the sink', 'TurnOnStove_demo_17_nonexpert_lev3.mp4': 'turn on the center burner of the stove', 'PnPStoveToCounter_demo_13_nonexpert_lev1.mp4': 'pick the cheese from the pan and place it on the plate', 'CloseSingleDoor_demo_38_nonexpert_lev3.mp4': 'close the microwave door', 'PnPMicrowaveToCounter_demo_13_nonexpert_lev1.mp4': 'pick the corn from the microwave and place it on plate located on the counter', 'CloseDrawer_demo_31_nonexpert_lev7.mp4': 'close the right drawer', 'PnPStoveToCounter_demo_22_nonexpert_lev4.mp4': 'pick the tomato from the pan and place it on the plate', 'CoffeePressButton_demo_11_nonexpert_lev1.mp4': 'press the button on the coffee machine to serve coffee', 'PnPStoveToCounter_demo_26_nonexpert_lev6.mp4': 'pick the steak from the pan and place it in the bowl', 'CoffeeServeMug_demo_44_nonexpert_lev7.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPMicrowaveToCounter_demo_26_nonexpert_lev6.mp4': 'pick the broccoli from the microwave and place it on plate located on the counter', 'RestockPantry_demo_20_nonexpert_lev2.mp4': 'pick the cans from the counter and place them in their designated side in the cabinet', 'PnPMicrowaveToCounter_demo_17_nonexpert_lev3.mp4': 'pick the carrot from the microwave and place it on plate located on the counter', 'MicrowaveThawing_demo_32_nonexpert_lev4.mp4': 'Pick the corn from the counter and place it in the microwave. Then turn on the microwave.', 'PnPStoveToCounter_demo_17_nonexpert_lev3.mp4': 'pick the garlic from the pan and place it in the bowl', 'PnPCounterToMicrowave_demo_14_nonexpert_lev2.mp4': 'pick the onion from the counter and place it in the microwave', 'TurnSinkSpout_demo_14_nonexpert_lev2.mp4': 'turn the sink spout to the right', 'PnPCounterToSink_demo_17_nonexpert_lev3.mp4': 'pick the corn from the counter and place it in the sink', 'TurnOffSinkFaucet_demo_49_nonexpert_lev6.mp4': 'turn off the sink faucet', 'CoffeeServeMug_demo_49_nonexpert_lev4.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPCounterToStove_demo_13_nonexpert_lev1.mp4': 'pick the lime from the plate and place it in the pan', 'TurnSinkSpout_demo_44_nonexpert_lev6.mp4': 'turn the sink spout to the right', 'TurnOffMicrowave_demo_17_nonexpert_lev2.mp4': 'press the stop button on the microwave', 'TurnOffStove_demo_30_nonexpert_lev7.mp4': 'turn off the rear center burner of the stove', 'CloseSingleDoor_demo_11_nonexpert_lev1.mp4': 'close the microwave door', 'PreSoakPan_demo_12_nonexpert_lev3.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.', 'RestockPantry_demo_42_nonexpert_lev1.mp4': 'pick the cans from the counter and place them in their designated side in the cabinet', 'CloseSingleDoor_demo_31_nonexpert_lev2.mp4': 'close the microwave door', 'PnPCabToCounter_demo_14_nonexpert_lev2.mp4': 'pick the bread from the cabinet and place it on the counter', 'OpenSingleDoor_demo_49_nonexpert_lev2.mp4': 'open the cabinet door', 'TurnOffSinkFaucet_demo_40_nonexpert_lev1.mp4': 'turn off the sink faucet', 'CoffeeSetupMug_demo_22_nonexpert_lev4.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'OpenSingleDoor_demo_41_nonexpert_lev1.mp4': 'open the microwave door', 'CoffeePressButton_demo_20_nonexpert_lev2.mp4': 'press the button on the coffee machine to serve coffee', 'OpenDrawer_demo_16_nonexpert_lev2.mp4': 'open the right drawer', 'TurnOnSinkFaucet_demo_44_nonexpert_lev6.mp4': 'turn on the sink faucet', 'MicrowaveThawing_demo_49_nonexpert_lev5.mp4': 'Pick the potato from the counter and place it in the microwave. Then turn on the microwave.', 'CoffeeSetupMug_demo_13_nonexpert_lev1.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'CoffeeSetupMug_demo_50_nonexpert_lev2.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'PnPSinkToCounter_demo_14_nonexpert_lev2.mp4': 'pick the fish from the sink and place it on the plate located on the counter', 'TurnSinkSpout_demo_41_nonexpert_lev1.mp4': 'turn the sink spout to the right', 'TurnOnSinkFaucet_demo_29_nonexpert_lev7.mp4': 'turn on the sink faucet', 'TurnSinkSpout_demo_50_nonexpert_lev7.mp4': 'turn the sink spout to the right', 'PnPMicrowaveToCounter_demo_20_nonexpert_lev4.mp4': 'pick the onion from the microwave and place it on plate located on the counter', 'OpenSingleDoor_demo_18_nonexpert_lev3.mp4': 'open the microwave door', 'RestockPantry_demo_7_nonexpert_lev3.mp4': 'pick the cans from the counter and place them in their designated side in the cabinet', 'PnPCounterToCab_demo_14_nonexpert_lev2.mp4': 'pick the shaker from the counter and place it in the cabinet', 'CoffeeServeMug_demo_48_nonexpert_lev6.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter', 'PnPCounterToStove_demo_32_nonexpert_lev7.mp4': 'pick the corn from the plate and place it in the pan', 'TurnOffSinkFaucet_demo_48_nonexpert_lev3.mp4': 'turn off the sink faucet', 'OpenSingleDoor_demo_48_nonexpert_lev7.mp4': 'open the cabinet door', 'PnPMicrowaveToCounter_demo_25_nonexpert_lev5.mp4': 'pick the sweet potato from the microwave and place it on plate located on the counter', 'PnPStoveToCounter_demo_25_nonexpert_lev5.mp4': 'pick the mushroom from the pan and place it on the plate', 'TurnOnSinkFaucet_demo_42_nonexpert_lev2.mp4': 'turn on the sink faucet', 'TurnOnStove_demo_40_nonexpert_lev1.mp4': 'turn on the front right burner of the stove', 'CoffeeSetupMug_demo_17_nonexpert_lev3.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'CoffeeSetupMug_demo_26_nonexpert_lev6.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser', 'PreSoakPan_demo_10_nonexpert_lev4.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.'}
+        const videoDescriptions2 = {
+  "fractal20220817_data_ep0_final.mp4": "pick rxbar chocolate from bottom drawer and place on counter",
+  "bridge_ep8_final.mp4": "pick up the eggplant and place it in the pot or pan",
+  "nyu_door_opening_surprising_effectiveness_ep1_final.mp4": "open the door",
+  "berkeley_autolab_ur5_ep2_final.mp4": 'put the ranch bottle in the pot',
+};
+        const videoDescriptions = {'TurnOffStove_demo_41_nonexpert_lev1.mp4': 'turn off the front right burner of the stove',
+    'OpenDrawer_demo_11_nonexpert_lev1.mp4': 'open the right drawer',
+    'CoffeeServeMug_demo_27_nonexpert_lev5.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPCounterToMicrowave_demo_25_nonexpert_lev5.mp4': 'pick the potato from the counter and place it in the microwave',
+    'PnPSinkToCounter_demo_30_nonexpert_lev7.mp4': 'pick the fish from the sink and place it on the plate located on the counter',
+    'PnPCabToCounter_demo_25_nonexpert_lev5.mp4': 'pick the tomato from the cabinet and place it on the counter',
+    'TurnOffMicrowave_demo_28_nonexpert_lev3.mp4': 'press the stop button on the microwave',
+    'PrepareCoffee_demo_6_nonexpert_lev1.mp4': 'pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button',
+    'CoffeeSetupMug_demo_29_nonexpert_lev7.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'CoffeePressButton_demo_24_nonexpert_lev3.mp4': 'press the button on the coffee machine to serve coffee',
+    'PnPCounterToCab_demo_17_nonexpert_lev3.mp4': 'pick the water bottle from the counter and place it in the cabinet',
+    'TurnOnMicrowave_demo_11_nonexpert_lev1.mp4': 'press the start button on the microwave',
+    'PnPSinkToCounter_demo_22_nonexpert_lev4.mp4': 'pick the pear from the sink and place it on the plate located on the counter',
+    'PnPSinkToCounter_demo_13_nonexpert_lev1.mp4': 'pick the mushroom from the sink and place it on the plate located on the counter',
+    'PnPCounterToCab_demo_26_nonexpert_lev6.mp4': 'pick the mug from the counter and place it in the cabinet',
+    'PrepareCoffee_demo_5_nonexpert_lev3.mp4': 'pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button',
+    'TurnOffSinkFaucet_demo_44_nonexpert_lev5.mp4': 'turn off the sink faucet',
+    'PrepareCoffee_demo_49_nonexpert_lev2.mp4': 'pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button',
+    'CoffeeServeMug_demo_50_nonexpert_lev2.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPCounterToCab_demo_22_nonexpert_lev4.mp4': 'pick the tomato from the counter and place it in the cabinet',
+    'CloseDrawer_demo_11_nonexpert_lev1.mp4': 'close the left drawer',
+    'TurnOffStove_demo_18_nonexpert_lev3.mp4': 'turn off the front left burner of the stove',
+    'PnPSinkToCounter_demo_17_nonexpert_lev3.mp4': 'pick the banana from the sink and place it on the plate located on the counter',
+    'PnPSinkToCounter_demo_26_nonexpert_lev6.mp4': 'pick the corn from the sink and place it on the plate located on the counter',
+    'TurnSinkSpout_demo_43_nonexpert_lev3.mp4': 'turn the sink spout to the right',
+    'PnPCounterToCab_demo_13_nonexpert_lev1.mp4': 'pick the mushroom from the counter and place it in the cabinet',
+    'MicrowaveThawing_demo_26_nonexpert_lev1.mp4': 'Pick the cheese from the counter and place it in the microwave. Then turn on the microwave.',
+    'CloseSingleDoor_demo_34_nonexpert_lev4.mp4': 'close the cabinet door',
+    'TurnOnStove_demo_44_nonexpert_lev5.mp4': 'turn on the rear left burner of the stove',
+    'TurnOffMicrowave_demo_12_nonexpert_lev1.mp4': 'press the stop button on the microwave',
+    'OpenDrawer_demo_45_nonexpert_lev5.mp4': 'open the left drawer',
+    'CloseDrawer_demo_43_nonexpert_lev3.mp4': 'close the right drawer',
+    'CoffeeServeMug_demo_13_nonexpert_lev1.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPCounterToStove_demo_18_nonexpert_lev3.mp4': 'pick the apple from the plate and place it in the pan',
+    'PnPCounterToCab_demo_30_nonexpert_lev7.mp4': 'pick the cheese from the counter and place it in the cabinet',
+    'TurnOnStove_demo_43_nonexpert_lev4.mp4': 'turn on the rear center burner of the stove',
+    'TurnOnMicrowave_demo_20_nonexpert_lev2.mp4': 'press the start button on the microwave',
+    'PnPCounterToSink_demo_14_nonexpert_lev2.mp4': 'pick the lemon from the counter and place it in the sink',
+    'PnPCabToCounter_demo_26_nonexpert_lev6.mp4': 'pick the cucumber from the cabinet and place it on the counter',
+    'PnPCounterToMicrowave_demo_17_nonexpert_lev3.mp4': 'pick the mushroom from the counter and place it in the microwave',
+    'PnPCounterToMicrowave_demo_26_nonexpert_lev6.mp4': 'pick the tomato from the counter and place it in the microwave',
+    'TurnOnStove_demo_13_nonexpert_lev2.mp4': 'turn on the rear left burner of the stove',
+    'PnPCabToCounter_demo_17_nonexpert_lev3.mp4': 'pick the bell pepper from the cabinet and place it on the counter',
+    'PreSoakPan_demo_3_nonexpert_lev1.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.',
+    'TurnOffStove_demo_42_nonexpert_lev2.mp4': 'turn off the rear left burner of the stove',
+    'PreSoakPan_demo_40_nonexpert_lev2.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.',
+    'PnPCounterToStove_demo_23_nonexpert_lev4.mp4': 'pick the mango from the plate and place it in the pan',
+    'PnPCounterToCab_demo_25_nonexpert_lev5.mp4': 'pick the jam from the counter and place it in the cabinet',
+    'CloseDrawer_demo_26_nonexpert_lev4.mp4': 'close the right drawer',
+    'PnPCounterToSink_demo_27_nonexpert_lev6.mp4': 'pick the carrot from the counter and place it in the sink',
+    'PnPCounterToSink_demo_26_nonexpert_lev5.mp4': 'pick the can from the counter and place it in the sink',
+    'TurnOnSinkFaucet_demo_43_nonexpert_lev3.mp4': 'turn on the sink faucet',
+    'CoffeeSetupMug_demo_24_nonexpert_lev5.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'PnPStoveToCounter_demo_14_nonexpert_lev2.mp4': 'pick the lemon from the pan and place it on the plate',
+    'OpenSingleDoor_demo_26_nonexpert_lev4.mp4': 'open the cabinet door',
+    'MicrowaveThawing_demo_9_nonexpert_lev2.mp4': 'Pick the corn from the counter and place it in the microwave. Then turn on the microwave.',
+    'PnPMicrowaveToCounter_demo_14_nonexpert_lev2.mp4': 'pick the potato from the microwave and place it on plate located on the counter',
+    'CoffeeServeMug_demo_19_nonexpert_lev3.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPCounterToStove_demo_26_nonexpert_lev5.mp4': 'pick the tomato from the plate and place it in the pan',
+    'PnPCabToCounter_demo_30_nonexpert_lev7.mp4': 'pick the onion from the cabinet and place it on the counter',
+    'TurnOffSinkFaucet_demo_13_nonexpert_lev2.mp4': 'turn off the sink faucet',
+    'ArrangeVegetables_demo_3_nonexpert_lev1.mp4': 'pick the vegetables from the sink and place them on the cutting board',
+    'TurnOnSinkFaucet_demo_47_nonexpert_lev1.mp4': 'turn on the sink faucet',
+    'PnPSinkToCounter_demo_25_nonexpert_lev5.mp4': 'pick the milk from the sink and place it on the plate located on the counter',
+    'PnPCounterToMicrowave_demo_30_nonexpert_lev7.mp4': 'pick the sweet potato from the counter and place it in the microwave',
+    'MicrowaveThawing_demo_34_nonexpert_lev3.mp4': 'Pick the eggplant from the counter and place it in the microwave. Then turn on the microwave.',
+    'PnPCounterToStove_demo_27_nonexpert_lev6.mp4': 'pick the apple from the plate and place it in the pan',
+    'TurnOffStove_demo_27_nonexpert_lev4.mp4': 'turn off the front left burner of the stove',
+    'OpenDrawer_demo_26_nonexpert_lev4.mp4': 'open the right drawer',
+    'PnPCounterToSink_demo_31_nonexpert_lev7.mp4': 'pick the sponge from the counter and place it in the sink',
+    'PnPCabToCounter_demo_13_nonexpert_lev1.mp4': 'pick the jug from the cabinet and place it on the counter',
+    'PnPCounterToMicrowave_demo_22_nonexpert_lev4.mp4': 'pick the corn from the counter and place it in the microwave',
+    'PnPCounterToMicrowave_demo_13_nonexpert_lev1.mp4': 'pick the steak from the counter and place it in the microwave',
+    'ArrangeVegetables_demo_50_nonexpert_lev2.mp4': 'pick the vegetables from the sink and place them on the cutting board',
+    'PnPCabToCounter_demo_22_nonexpert_lev4.mp4': 'pick the onion from the cabinet and place it on the counter',
+    'OpenDrawer_demo_46_nonexpert_lev3.mp4': 'open the left drawer',
+    'CloseSingleDoor_demo_27_nonexpert_lev5.mp4': 'close the microwave door',
+    'PnPCounterToStove_demo_14_nonexpert_lev2.mp4': 'pick the mango from the plate and place it in the pan',
+    'TurnOnMicrowave_demo_28_nonexpert_lev3.mp4': 'press the start button on the microwave',
+    'PnPStoveToCounter_demo_30_nonexpert_lev7.mp4': 'pick the egg from the pan and place it on the plate',
+    'PnPCounterToSink_demo_22_nonexpert_lev4.mp4': 'pick the bar soap from the counter and place it in the sink',
+    'CloseDrawer_demo_42_nonexpert_lev2.mp4': 'close the right drawer',
+    'PnPMicrowaveToCounter_demo_30_nonexpert_lev7.mp4': 'pick the steak from the microwave and place it on plate located on the counter',
+    'ArrangeVegetables_demo_23_nonexpert_lev3.mp4': 'pick the vegetables from the sink and place them on the cutting board',
+    'PnPCounterToSink_demo_13_nonexpert_lev1.mp4': 'pick the rolling pin from the counter and place it in the sink',
+    'TurnOnStove_demo_17_nonexpert_lev3.mp4': 'turn on the center burner of the stove',
+    'PnPStoveToCounter_demo_13_nonexpert_lev1.mp4': 'pick the cheese from the pan and place it on the plate',
+    'CloseSingleDoor_demo_38_nonexpert_lev3.mp4': 'close the microwave door',
+    'PnPMicrowaveToCounter_demo_13_nonexpert_lev1.mp4': 'pick the corn from the microwave and place it on plate located on the counter',
+    'CloseDrawer_demo_31_nonexpert_lev5.mp4': 'close the right drawer',
+    'PnPStoveToCounter_demo_22_nonexpert_lev4.mp4': 'pick the tomato from the pan and place it on the plate',
+    'CoffeePressButton_demo_11_nonexpert_lev1.mp4': 'press the button on the coffee machine to serve coffee',
+    'PnPStoveToCounter_demo_26_nonexpert_lev6.mp4': 'pick the steak from the pan and place it in the bowl',
+    'CoffeeServeMug_demo_44_nonexpert_lev7.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPMicrowaveToCounter_demo_26_nonexpert_lev6.mp4': 'pick the broccoli from the microwave and place it on plate located on the counter',
+    'RestockPantry_demo_20_nonexpert_lev2.mp4': 'pick the cans from the counter and place them in their designated side in the cabinet',
+    'PnPMicrowaveToCounter_demo_17_nonexpert_lev3.mp4': 'pick the carrot from the microwave and place it on plate located on the counter',
+    'MicrowaveThawing_demo_32_nonexpert_lev4.mp4': 'Pick the corn from the counter and place it in the microwave. Then turn on the microwave.',
+    'PnPStoveToCounter_demo_17_nonexpert_lev3.mp4': 'pick the garlic from the pan and place it in the bowl',
+    'PnPCounterToMicrowave_demo_14_nonexpert_lev2.mp4': 'pick the onion from the counter and place it in the microwave',
+    'TurnSinkSpout_demo_14_nonexpert_lev2.mp4': 'turn the sink spout to the right',
+    'PnPCounterToSink_demo_17_nonexpert_lev3.mp4': 'pick the corn from the counter and place it in the sink',
+    'TurnOffSinkFaucet_demo_49_nonexpert_lev4.mp4': 'turn off the sink faucet',
+    'CoffeeServeMug_demo_49_nonexpert_lev4.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPCounterToStove_demo_13_nonexpert_lev1.mp4': 'pick the lime from the plate and place it in the pan',
+    'TurnSinkSpout_demo_44_nonexpert_lev4.mp4': 'turn the sink spout to the right',
+    'TurnOffMicrowave_demo_17_nonexpert_lev2.mp4': 'press the stop button on the microwave',
+    'TurnOffStove_demo_30_nonexpert_lev5.mp4': 'turn off the rear center burner of the stove',
+    'CloseSingleDoor_demo_11_nonexpert_lev1.mp4': 'close the microwave door',
+    'PreSoakPan_demo_12_nonexpert_lev3.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.',
+    'RestockPantry_demo_42_nonexpert_lev1.mp4': 'pick the cans from the counter and place them in their designated side in the cabinet',
+    'CloseSingleDoor_demo_31_nonexpert_lev2.mp4': 'close the microwave door',
+    'PnPCabToCounter_demo_14_nonexpert_lev2.mp4': 'pick the bread from the cabinet and place it on the counter',
+    'OpenSingleDoor_demo_49_nonexpert_lev2.mp4': 'open the cabinet door',
+    'TurnOffSinkFaucet_demo_40_nonexpert_lev1.mp4': 'turn off the sink faucet',
+    'CoffeeSetupMug_demo_22_nonexpert_lev4.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'OpenSingleDoor_demo_41_nonexpert_lev1.mp4': 'open the microwave door',
+    'CoffeePressButton_demo_20_nonexpert_lev2.mp4': 'press the button on the coffee machine to serve coffee',
+    'OpenDrawer_demo_16_nonexpert_lev2.mp4': 'open the right drawer',
+    'TurnOnSinkFaucet_demo_44_nonexpert_lev4.mp4': 'turn on the sink faucet',
+    'MicrowaveThawing_demo_49_nonexpert_lev5.mp4': 'Pick the potato from the counter and place it in the microwave. Then turn on the microwave.',
+    'CoffeeSetupMug_demo_13_nonexpert_lev1.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'CoffeeSetupMug_demo_50_nonexpert_lev2.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'PnPSinkToCounter_demo_14_nonexpert_lev2.mp4': 'pick the fish from the sink and place it on the plate located on the counter',
+    'TurnSinkSpout_demo_41_nonexpert_lev1.mp4': 'turn the sink spout to the right',
+    'TurnOnSinkFaucet_demo_29_nonexpert_lev5.mp4': 'turn on the sink faucet',
+    'TurnSinkSpout_demo_50_nonexpert_lev5.mp4': 'turn the sink spout to the right',
+    'PnPMicrowaveToCounter_demo_20_nonexpert_lev4.mp4': 'pick the onion from the microwave and place it on plate located on the counter',
+    'OpenSingleDoor_demo_18_nonexpert_lev3.mp4': 'open the microwave door',
+    'RestockPantry_demo_7_nonexpert_lev3.mp4': 'pick the cans from the counter and place them in their designated side in the cabinet',
+    'PnPCounterToCab_demo_14_nonexpert_lev2.mp4': 'pick the shaker from the counter and place it in the cabinet',
+    'CoffeeServeMug_demo_48_nonexpert_lev6.mp4': 'pick the mug from under the coffee machine dispenser and place it on the counter',
+    'PnPCounterToStove_demo_32_nonexpert_lev7.mp4': 'pick the corn from the plate and place it in the pan',
+    'TurnOffSinkFaucet_demo_48_nonexpert_lev3.mp4': 'turn off the sink faucet',
+    'OpenSingleDoor_demo_48_nonexpert_lev5.mp4': 'open the cabinet door',
+    'PnPMicrowaveToCounter_demo_25_nonexpert_lev5.mp4': 'pick the sweet potato from the microwave and place it on plate located on the counter',
+    'PnPStoveToCounter_demo_25_nonexpert_lev5.mp4': 'pick the mushroom from the pan and place it on the plate',
+    'TurnOnSinkFaucet_demo_42_nonexpert_lev2.mp4': 'turn on the sink faucet',
+    'TurnOnStove_demo_40_nonexpert_lev1.mp4': 'turn on the front right burner of the stove',
+    'CoffeeSetupMug_demo_17_nonexpert_lev3.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'CoffeeSetupMug_demo_26_nonexpert_lev6.mp4': 'pick the mug from the counter and place it under the coffee machine dispenser',
+    'PreSoakPan_demo_10_nonexpert_lev4.mp4': 'Pick the pan and sponge and place them into the sink. Then turn on the sink.'}
+    const realWorldDatasets = {
+  "RT-1": "fractal20220817_data_ep0_final.mp4",
+  "NYU Door Opening": "nyu_door_opening_surprising_effectiveness_ep1_final.mp4",
+  "Berkeley Autolab UR5": "berkeley_autolab_ur5_ep2_final.mp4",
+  "Bridge": "bridge_ep8_final.mp4",
+};
+            const videoFiles = ['TurnOffStove_demo_30_nonexpert_lev5.mp4', 'OpenDrawer_demo_45_nonexpert_lev5.mp4', 'PnPCounterToMicrowave_demo_22_nonexpert_lev4.mp4', 'PnPStoveToCounter_demo_26_nonexpert_lev6.mp4', 'PnPCounterToSink_demo_22_nonexpert_lev4.mp4', 'CoffeeSetupMug_demo_17_nonexpert_lev3.mp4', 'CloseDrawer_demo_11_nonexpert_lev1.mp4', 'PnPCabToCounter_demo_26_nonexpert_lev6.mp4', 'PnPCounterToSink_demo_31_nonexpert_lev7.mp4', 'PnPSinkToCounter_demo_30_nonexpert_lev7.mp4', 'CloseSingleDoor_demo_31_nonexpert_lev2.mp4', 'CloseDrawer_demo_31_nonexpert_lev5.mp4', 'CloseSingleDoor_demo_38_nonexpert_lev3.mp4', 'PrepareCoffee_demo_5_nonexpert_lev3.mp4', 'PnPCounterToCab_demo_25_nonexpert_lev5.mp4', 'CoffeeServeMug_demo_27_nonexpert_lev5.mp4', 'PnPCounterToCab_demo_13_nonexpert_lev1.mp4', 'TurnOffSinkFaucet_demo_48_nonexpert_lev3.mp4', 'TurnOnSinkFaucet_demo_29_nonexpert_lev5.mp4', 'PnPCounterToStove_demo_14_nonexpert_lev2.mp4', 'PnPCounterToCab_demo_26_nonexpert_lev6.mp4', 'TurnSinkSpout_demo_43_nonexpert_lev3.mp4', 'PnPCounterToMicrowave_demo_14_nonexpert_lev2.mp4', 'PnPCounterToSink_demo_14_nonexpert_lev2.mp4', 'MicrowaveThawing_demo_34_nonexpert_lev3.mp4', 'PnPCabToCounter_demo_13_nonexpert_lev1.mp4', 'PnPStoveToCounter_demo_25_nonexpert_lev5.mp4', 'CoffeeSetupMug_demo_22_nonexpert_lev4.mp4', 'OpenDrawer_demo_11_nonexpert_lev1.mp4', 'PnPCounterToMicrowave_demo_17_nonexpert_lev3.mp4', 'PnPCounterToSink_demo_17_nonexpert_lev3.mp4', 'PnPStoveToCounter_demo_13_nonexpert_lev1.mp4', 'PreSoakPan_demo_40_nonexpert_lev2.mp4', 'PnPCabToCounter_demo_25_nonexpert_lev5.mp4', 'TurnOnStove_demo_40_nonexpert_lev1.mp4', 'OpenSingleDoor_demo_48_nonexpert_lev5.mp4', 'TurnOnSinkFaucet_demo_44_nonexpert_lev4.mp4', 'PnPMicrowaveToCounter_demo_20_nonexpert_lev4.mp4', 'TurnOnStove_demo_43_nonexpert_lev4.mp4', 'CoffeeServeMug_demo_50_nonexpert_lev2.mp4', 'TurnOnSinkFaucet_demo_47_nonexpert_lev1.mp4', 'RestockPantry_demo_7_nonexpert_lev3.mp4', 'TurnOffSinkFaucet_demo_13_nonexpert_lev2.mp4', 'PnPCounterToMicrowave_demo_30_nonexpert_lev7.mp4', 'TurnOffSinkFaucet_demo_44_nonexpert_lev5.mp4', 'PnPCounterToStove_demo_23_nonexpert_lev4.mp4', 'CoffeePressButton_demo_11_nonexpert_lev1.mp4', 'PnPMicrowaveToCounter_demo_13_nonexpert_lev1.mp4', 'PnPCounterToStove_demo_26_nonexpert_lev5.mp4', 'PnPMicrowaveToCounter_demo_25_nonexpert_lev5.mp4', 'PnPCounterToSink_demo_26_nonexpert_lev5.mp4', 'PnPSinkToCounter_demo_22_nonexpert_lev4.mp4', 'ArrangeVegetables_demo_50_nonexpert_lev2.mp4', 'PreSoakPan_demo_3_nonexpert_lev1.mp4', 'PnPSinkToCounter_demo_17_nonexpert_lev3.mp4', 'TurnSinkSpout_demo_14_nonexpert_lev2.mp4', 'CoffeeServeMug_demo_44_nonexpert_lev7.mp4', 'PnPMicrowaveToCounter_demo_26_nonexpert_lev6.mp4', 'PnPSinkToCounter_demo_14_nonexpert_lev2.mp4', 'CloseDrawer_demo_43_nonexpert_lev3.mp4', 'CoffeeSetupMug_demo_50_nonexpert_lev2.mp4', 'TurnOnSinkFaucet_demo_42_nonexpert_lev2.mp4', 'TurnOnMicrowave_demo_11_nonexpert_lev1.mp4', 'RestockPantry_demo_42_nonexpert_lev1.mp4', 'TurnOffMicrowave_demo_17_nonexpert_lev2.mp4', 'OpenDrawer_demo_46_nonexpert_lev3.mp4', 'PnPCounterToCab_demo_22_nonexpert_lev4.mp4', 'PnPMicrowaveToCounter_demo_30_nonexpert_lev7.mp4', 'PreSoakPan_demo_10_nonexpert_lev4.mp4', 'TurnOnStove_demo_17_nonexpert_lev3.mp4', 'PnPCabToCounter_demo_14_nonexpert_lev2.mp4', 'MicrowaveThawing_demo_9_nonexpert_lev2.mp4', 'TurnOnMicrowave_demo_20_nonexpert_lev2.mp4', 'TurnSinkSpout_demo_41_nonexpert_lev1.mp4', 'OpenDrawer_demo_16_nonexpert_lev2.mp4', 'OpenSingleDoor_demo_41_nonexpert_lev1.mp4', 'OpenDrawer_demo_26_nonexpert_lev4.mp4', 'TurnOffStove_demo_41_nonexpert_lev1.mp4', 'PnPStoveToCounter_demo_14_nonexpert_lev2.mp4', 'RestockPantry_demo_20_nonexpert_lev2.mp4', 'MicrowaveThawing_demo_32_nonexpert_lev4.mp4', 'PnPCabToCounter_demo_17_nonexpert_lev3.mp4', 'CoffeeSetupMug_demo_26_nonexpert_lev6.mp4', 'PnPCounterToStove_demo_13_nonexpert_lev1.mp4', 'PnPCounterToMicrowave_demo_25_nonexpert_lev5.mp4', 'CoffeeSetupMug_demo_29_nonexpert_lev7.mp4', 'PnPCounterToMicrowave_demo_13_nonexpert_lev1.mp4', 'PnPStoveToCounter_demo_17_nonexpert_lev3.mp4', 'PnPCounterToSink_demo_13_nonexpert_lev1.mp4', 'CloseSingleDoor_demo_11_nonexpert_lev1.mp4', 'CoffeeServeMug_demo_13_nonexpert_lev1.mp4', 'TurnSinkSpout_demo_50_nonexpert_lev5.mp4', 'CloseSingleDoor_demo_34_nonexpert_lev4.mp4', 'PrepareCoffee_demo_49_nonexpert_lev2.mp4', 'TurnOffSinkFaucet_demo_40_nonexpert_lev1.mp4', 'CoffeePressButton_demo_20_nonexpert_lev2.mp4', 'PnPCounterToMicrowave_demo_26_nonexpert_lev6.mp4', 'TurnOffStove_demo_18_nonexpert_lev3.mp4', 'OpenSingleDoor_demo_18_nonexpert_lev3.mp4', 'PnPStoveToCounter_demo_22_nonexpert_lev4.mp4', 'CoffeeServeMug_demo_48_nonexpert_lev6.mp4', 'TurnOffStove_demo_27_nonexpert_lev4.mp4', 'CoffeeSetupMug_demo_13_nonexpert_lev1.mp4', 'CoffeeServeMug_demo_19_nonexpert_lev3.mp4', 'PnPCounterToCab_demo_14_nonexpert_lev2.mp4', 'PnPCabToCounter_demo_22_nonexpert_lev4.mp4', 'CloseSingleDoor_demo_27_nonexpert_lev5.mp4', 'CloseDrawer_demo_26_nonexpert_lev4.mp4', 'PnPCounterToCab_demo_17_nonexpert_lev3.mp4', 'MicrowaveThawing_demo_26_nonexpert_lev1.mp4', 'MicrowaveThawing_demo_49_nonexpert_lev5.mp4', 'TurnOffStove_demo_42_nonexpert_lev2.mp4', 'PreSoakPan_demo_12_nonexpert_lev3.mp4', 'TurnOffMicrowave_demo_12_nonexpert_lev1.mp4', 'PnPSinkToCounter_demo_13_nonexpert_lev1.mp4', 'TurnOffMicrowave_demo_28_nonexpert_lev3.mp4', 'ArrangeVegetables_demo_3_nonexpert_lev1.mp4', 'PnPCounterToCab_demo_30_nonexpert_lev7.mp4', 'CoffeeServeMug_demo_49_nonexpert_lev4.mp4', 'TurnOffSinkFaucet_demo_49_nonexpert_lev4.mp4', 'PnPCounterToStove_demo_32_nonexpert_lev7.mp4', 'PnPSinkToCounter_demo_25_nonexpert_lev5.mp4', 'TurnOnMicrowave_demo_28_nonexpert_lev3.mp4', 'TurnOnStove_demo_44_nonexpert_lev5.mp4', 'TurnOnStove_demo_13_nonexpert_lev2.mp4', 'CoffeeSetupMug_demo_24_nonexpert_lev5.mp4', 'TurnOnSinkFaucet_demo_43_nonexpert_lev3.mp4', 'PnPCabToCounter_demo_30_nonexpert_lev7.mp4', 'PnPCounterToStove_demo_18_nonexpert_lev3.mp4', 'PnPCounterToSink_demo_27_nonexpert_lev6.mp4', 'PnPMicrowaveToCounter_demo_14_nonexpert_lev2.mp4', 'CloseDrawer_demo_42_nonexpert_lev2.mp4', 'PnPStoveToCounter_demo_30_nonexpert_lev7.mp4', 'ArrangeVegetables_demo_23_nonexpert_lev3.mp4', 'OpenSingleDoor_demo_49_nonexpert_lev2.mp4', 'PnPCounterToStove_demo_27_nonexpert_lev6.mp4', 'OpenSingleDoor_demo_26_nonexpert_lev4.mp4', 'PnPMicrowaveToCounter_demo_17_nonexpert_lev3.mp4', 'TurnSinkSpout_demo_44_nonexpert_lev4.mp4', 'PrepareCoffee_demo_6_nonexpert_lev1.mp4', 'PnPSinkToCounter_demo_26_nonexpert_lev6.mp4', 'CoffeePressButton_demo_24_nonexpert_lev3.mp4'];
+        const taskList = ['PnPStoveToCounter', 'PnPCounterToSink', 'PnPCounterToStove', 'PnPCounterToCab', 'PnPCabToCounter', 'PnPCounterToMicrowave', 'PnPSinkToCounter', 'PnPMicrowaveToCounter', 'CoffeeServeMug', 'CoffeeSetupMug', 
+        'OpenSingleDoor', 'CloseSingleDoor', 'OpenDrawer', 'CloseDrawer', 'TurnOnSinkFaucet', 'TurnOffSinkFaucet', 'TurnOnStove', 'TurnOffStove', 'TurnSinkSpout', 
+        'TurnOnMicrowave', 'TurnOffMicrowave', 'CoffeePressButton', 'MicrowaveThawing', 'RestockPantry', 'ArrangeVegetables', 'PrepareCoffee', 'PreSoakPan']
+        const levelsByTask = {'PnPStoveToCounter': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'], 
+        'PnPCounterToSink': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'], 
+        'PnPCounterToStove': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'PnPCounterToCab': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'PnPCabToCounter': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'PnPCounterToMicrowave': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'PnPSinkToCounter': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'PnPMicrowaveToCounter': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'CoffeeServeMug': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'CoffeeSetupMug': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5', 'lev6', 'lev7 (near expert)'],
+    'OpenSingleDoor': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'CloseSingleDoor': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'OpenDrawer': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'CloseDrawer': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'TurnOnSinkFaucet': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'TurnOffSinkFaucet': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'TurnOnStove': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'TurnOffStove': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'TurnSinkSpout': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'TurnOnMicrowave': ['lev1 (mostly random actions)', 'lev2', 'lev3 (near expert)'],
+    'TurnOffMicrowave': ['lev1 (mostly random actions)', 'lev2', 'lev3 (near expert)'],
+    'CoffeePressButton': ['lev1 (mostly random actions)', 'lev2', 'lev3 (near expert)'],
+    'MicrowaveThawing': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4', 'lev5 (near expert)'],
+    'RestockPantry': ['lev1 (mostly random actions)', 'lev2', 'lev3 (near expert)'],
+    'ArrangeVegetables': ['lev1 (mostly random actions)', 'lev2', 'lev3 (near expert)'],
+    'PrepareCoffee': ['lev1 (mostly random actions)', 'lev2', 'lev3 (near expert)'],
+    'PreSoakPan': ['lev1 (mostly random actions)', 'lev2', 'lev3', 'lev4 (near expert)']}
+    
+        const taskSet = new Set();
+        const levSet = new Set();
+    
+        videoFiles.forEach(file => {
+          const taskMatch = file.match(/(.*?)_demo/);
+          const levMatch = file.match(/lev(\d+)/);
+    
+          if (taskMatch) taskSet.add(taskMatch[1]);
+          if (levMatch) levSet.add(`lev${levMatch[1]}`);
+        });
+    
+        const taskSelect = document.getElementById("task-select");
+        const levSelect = document.getElementById("lev-select");
+    
+    // Clear existing options first
+  taskSelect.innerHTML = "";
+
+  // Add Real-world option at top
+  const realOption = document.createElement("option");
+  realOption.value = "REAL_WORLD";
+  realOption.textContent = "Real-world OXE videos";
+  taskSelect.appendChild(realOption);
+
+  // Add normal tasks
+  taskList.forEach(task => {
+    if (taskSet.has(task)) {
+      const option = document.createElement("option");
+      option.value = task;
+      option.textContent = task;
+      taskSelect.appendChild(option);
+    }
+  });
+    
+    
+    // // Optionally add an "All" option at the top
+    // const allOption = document.createElement("option");
+    // // allOption.value = "All";
+    // // allOption.textContent = "All";
+    // // allOption.value = "PnPCounterToMicrowave";
+    // // allOption.textContent = "PnPCounterToMicrowave";
+    // allOption.value = "PnPCounterToSink";
+    // allOption.textContent = "PnPCounterToSink";
+    // taskSelect.appendChild(allOption);
+    
+    // // Then add the tasks in the specified order, avoiding duplicates
+    // const added = new Set();
+    
+    // taskList.forEach(task => {
+    //   if (taskSet.has(task) && !added.has(task)) {
+    //     const option = document.createElement("option");
+    //     option.value = task;
+    //     option.textContent = task;
+    //     taskSelect.appendChild(option);
+    //     added.add(task);
+    //   }
+    // });
+    
+        [...levSet].sort((a, b) => parseInt(a.replace('lev', '')) - parseInt(b.replace('lev', ''))).forEach(lev => {
+          const option = document.createElement("option");
+          option.value = lev;
+          option.textContent = lev;
+          levSelect.appendChild(option);
+        });
+    
+    
+    //     function filterVideos() {
+    //   const selectedTask = taskSelect.value;
+    // //   const selectedLev = levSelect.value;
+    //   const selectedLev = levSelect.value.split(' ')[0]; // get part before the first space
+    //   const container = document.getElementById("video-container");
+    //   container.innerHTML = "";
+    
+    //   const filtered = videoFiles.filter(file => {
+    //     const taskMatch = file.includes(`${selectedTask}_demo`) || selectedTask === "All";
+    //     const levMatch = file.includes(selectedLev) || selectedLev === "All";
+    //     return taskMatch && levMatch;
+    //   });
+    
+    //   filtered
+    //   .sort((a, b) => {
+    //     const levA = parseInt((a.match(/lev(\d+)/) || [])[1]) || 0;
+    //     const levB = parseInt((b.match(/lev(\d+)/) || [])[1]) || 0;
+    //     return levB - levA; // Sort descending
+    //   })
+    //   .forEach(file => {
+    //     const wrapper = document.createElement("div");
+    
+    //     const description = videoDescriptions[file] || "No description available.";
+    //     const descriptionElement = document.createElement("p");
+    //     let formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
+    //     if (!formattedDescription.endsWith(".")) {
+    //       formattedDescription += ".";
+    //     }
+    //     descriptionElement.textContent = `Task description: "${formattedDescription}"`;
+    //     descriptionElement.style.fontSize = "1.2em";
+    //     descriptionElement.style.marginTop = "0.2em";
+    //     // descriptionElement.style.marginTop = "0.6em";
+    //     // descriptionElement.style.marginBottom = "-0.9em";
+    
+    //     const levMatch = file.match(/lev(\d+)/);
+    //     const levelText = levMatch ? `Trajectory level: lev${levMatch[1]}` : "Video level: Unknown";
+    //     const levelElement = document.createElement("p");
+    //     levelElement.textContent = levelText;
+    //     levelElement.style.fontSize = "1.2em";
+    //     // levelElement.style.marginBottom = "-0.3em";
+    
+    //     const videoElement = document.createElement("video");
+    //     videoElement.controls = true;
+    //     videoElement.width = 1200;
+    //     const sourceElement = document.createElement("source");
+    //     // sourceElement.src = file;
+    //     sourceElement.src = `final_web4/${file}`
+    //     sourceElement.type = "video/mp4";
+    //     videoElement.appendChild(sourceElement);
+    
+    //     wrapper.appendChild(descriptionElement);
+    //     wrapper.appendChild(levelElement);
+    //     wrapper.appendChild(videoElement);
+    //     container.appendChild(wrapper);
+    //   });
+    // }
+
+    function filterVideos() {
+  const selectedTask = taskSelect.value;
+  const selectedLev = levSelect.value;
+  const container = document.getElementById("video-container");
+  container.innerHTML = "";
+
+  // === REAL WORLD MODE ===
+  if (selectedTask === "REAL_WORLD") {
+    const file = selectedLev; // direct filename mapping
+
+    const wrapper = document.createElement("div");
+
+    const descriptionElement = document.createElement("p");
+    // descriptionElement.textContent = `Dataset: ${file}`;
+    const description2 = videoDescriptions2[file] || "";
+    let formattedDescription2 = description2.charAt(0).toUpperCase() + description2.slice(1);
+    descriptionElement.textContent = `Task description: "${formattedDescription2}"`;
+    descriptionElement.style.fontSize = "1.2em";
+
+    const videoElement = document.createElement("video");
+    videoElement.controls = true;
+    videoElement.width = 1200;
+
+    const sourceElement = document.createElement("source");
+    sourceElement.src = `final_web4/${file}`;
+    sourceElement.type = "video/mp4";
+    videoElement.appendChild(sourceElement);
+
+    wrapper.appendChild(descriptionElement);
+    wrapper.appendChild(videoElement);
+    container.appendChild(wrapper);
+
+    return;
+  }
+
+  // === NORMAL TRAJECTORY MODE ===
+  const levKey = selectedLev.split(" ")[0];
+
+  const filtered = videoFiles.filter(file => {
+    const taskMatch = file.includes(`${selectedTask}_demo`);
+    const levMatch = file.includes(levKey) || levKey === "All";
+    return taskMatch && levMatch;
+  });
+    
+      filtered
+      .sort((a, b) => {
+        const levA = parseInt((a.match(/lev(\d+)/) || [])[1]) || 0;
+        const levB = parseInt((b.match(/lev(\d+)/) || [])[1]) || 0;
+        return levB - levA; // Sort descending
+      })
+      .forEach(file => {
+        const wrapper = document.createElement("div");
+    
+        const description = videoDescriptions[file] || "No description available.";
+        const description2 = videoDescriptions2[file] || "";
+        const descriptionElement = document.createElement("p");
+        let formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
+        let formattedDescription2 = description2.charAt(0).toUpperCase() + description2.slice(1);
+        if (!formattedDescription.endsWith(".")) {
+          formattedDescription += ".";
+        }
+        if (!formattedDescription2.endsWith(".")) {
+          formattedDescription2 += ".";
+        }
+        descriptionElement.textContent = `Task description: "${formattedDescription}"`;
+        descriptionElement.style.fontSize = "1.2em";
+        descriptionElement.style.marginTop = "0.2em";
+        // descriptionElement.style.marginTop = "0.6em";
+        // descriptionElement.style.marginBottom = "-0.9em";
+    
+        const levMatch = file.match(/lev(\d+)/);
+        const levelText = levMatch ? `Trajectory level: lev${levMatch[1]}` : "Video level: Unknown";
+        const levelElement = document.createElement("p");
+        levelElement.textContent = levelText;
+        levelElement.style.fontSize = "1.2em";
+        // levelElement.style.marginBottom = "-0.3em";
+    
+        const videoElement = document.createElement("video");
+        videoElement.controls = true;
+        videoElement.width = 1200;
+        const sourceElement = document.createElement("source");
+        // sourceElement.src = file;
+        sourceElement.src = `final_web4/${file}`
+        sourceElement.type = "video/mp4";
+        videoElement.appendChild(sourceElement);
+    
+        wrapper.appendChild(descriptionElement);
+        wrapper.appendChild(levelElement);
+        wrapper.appendChild(videoElement);
+        container.appendChild(wrapper);
+      });
+    }
+    
+    
+//     function updateLevelOptions() {
+//   const selectedTask = taskSelect.value;
+//   const levels = levelsByTask[selectedTask] || [];
+
+//   // Clear existing level options
+//   levSelect.innerHTML = '';
+
+//   // Add "All" option
+//   const allOption = document.createElement("option");
+//   allOption.value = "All";
+//   allOption.textContent = "All";
+//   levSelect.appendChild(allOption);
+
+//   // Add task-specific levels
+//   levels.forEach(lev => {
+//     const option = document.createElement("option");
+//     option.value = lev;
+//     option.textContent = lev;
+//     levSelect.appendChild(option);
+//   });
+
+//   // Select the maximum level by default (last one in the array)
+//   if (levels.length > 0) {
+//     levSelect.value = levels[levels.length - 1];
+//   }
+// }
+
+function updateLevelOptions() {
+  const selectedTask = taskSelect.value;
+
+  // Reference to the label
+  const levLabel = document.querySelector('label[for="lev-select"]');
+
+  levSelect.innerHTML = "";
+
+  // === REAL WORLD MODE ===
+  if (selectedTask === "REAL_WORLD") {
+    levLabel.textContent = "Select dataset:";
+
+    Object.entries(realWorldDatasets).forEach(([key, filename]) => {
+      const option = document.createElement("option");
+      option.value = filename;
+      option.textContent = key;
+      levSelect.appendChild(option);
+    });
+
+    return;
+  }
+
+  // === NORMAL TRAJECTORY MODE ===
+  levLabel.textContent = "Select trajectory level:";
+
+  const levels = levelsByTask[selectedTask] || [];
+
+  const allOption = document.createElement("option");
+  allOption.value = "All";
+  allOption.textContent = "All";
+  levSelect.appendChild(allOption);
+
+  levels.forEach(lev => {
+    const option = document.createElement("option");
+    option.value = lev;
+    option.textContent = lev;
+    levSelect.appendChild(option);
+  });
+
+  if (levels.length > 0) {
+    levSelect.value = levels[levels.length - 1];
+  }
+}
+
+    window.onload = () => {
+      updateLevelOptions();
+      filterVideos();
+    };
+    
+    
+    function checkKeyword() {
+      const input = document.getElementById("keyword-input").value.trim();
+    
+      const encodedInput = btoa(input);
+    
+      const allowedEncoded = ["R2l2ZW4=", "Z2l2ZW4="]; 
+    
+      if (allowedEncoded.includes(encodedInput)) {
+        document.getElementById("access-gate").style.display = "none";
+        document.querySelector("main").style.display = "block";
+      } else {
+        document.getElementById("error-msg").textContent = "Incorrect keyword. Please try again.";
+      }
+    }
+    
+      </script>
+
+
+
+    <section id="json-frame-viewer" class="container">
+    <!-- <h2 class="title is-3 has-text-centered">Interactive Illustration</h2> -->
+    <!-- <p class="has-text-centered">ROVER versus <a href="https://generative-value-learning.github.io/" target="_blank">GVL</a> Zero-Shot progress prediction results on video trajectories from succcessful and unsuccessful trajectories across 27 single-stage and multi-stage tasks.  -->
+      <!-- Explore task completion predictions and frame-by-frame reasoning across diverse robotic manipulation tasks.</p> -->
+    <head>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            #json-frame-viewer {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                /* background-color: #f5f5f5; */
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            #json-frame-viewer .upload-container {
+                text-align: center;
+                padding: 20px;
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+            }
+            #json-frame-viewer .viewer-container {
+                display: none;
+                background-color: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            #json-frame-viewer .frame-container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                margin-bottom: 20px;
+            }
+            @media (min-width: 768px) {
+                #json-frame-viewer .frame-container {
+                    flex-direction: row;
+                }
+            }
+            #json-frame-viewer .frame-navigation {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+                width: 100%;
+                max-width: 600px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            #json-frame-viewer .frame-info {
+                flex: 1;
+            }
+            #json-frame-viewer .frame-image {
+                flex: 2;
+                text-align: center;
+            }
+            #json-frame-viewer .frame-image img {
+                max-width: 100%;
+                max-height: 500px;
+            }
+            #json-frame-viewer .plot-container {
+                flex: 1;
+                min-height: 400px;
+            }
+            #json-frame-viewer button {
+                padding: 8px 16px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            #json-frame-viewer button:disabled {
+                background-color: #ccc;
+                cursor: not-allowed;
+            }
+            #json-frame-viewer button:hover:not(:disabled) {
+                background-color: #0056b3;
+            }
+            #json-frame-viewer .error {
+                color: red;
+                padding: 10px;
+                display: none;
+            }
+            #json-frame-viewer .frame-slider {
+                flex-grow: 1;
+                margin: 0 10px;
+            }
+            #json-frame-viewer input[type="range"] {
+                width: 100%;
+            }
+            #json-frame-viewer #json-frame-counter {
+                min-width: 100px;
+                text-align: center;
+            }
+            #json-frame-viewer select {
+                padding: 8px;
+                font-size: 16px;
+                /* width: 80%; */
+                /* max-width: 800px; */
+                width:40%;
+                max-width: 300px;
+                margin: 10px 0;
+            }
+            #json-frame-viewer .variant-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin: 10px 0;
+            }
+        </style>
+    </head>
+    <body>
+
+    
+        <div id="json-frame-viewer-container" class="viewer-container">
+            <div class="frame-navigation">
+                <span id="json-frame-counter"></span>
+                <div class="frame-slider">
+                    <input type="range" id="json-frame-slider" min="0" max="0" value="0">
+                </div>
+                <button id="json-frame-playButton">Play</button>
+            </div>
+    
+            <div class="frame-container">
+                <div class="frame-info">
+                    <p style="display: none;"><strong>Frame ID:</strong> <span id="json-frame-id"></span></p>
+                    <p style="display: none;"><strong>Number:</strong> <span id="json-frame-number"></span></p>
+                    <p style="display: none;"><strong>Order:</strong> <span id="json-frame-order"></span></p>
+                    <p style="height: 3em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.height='auto'; this.style.overflow='visible'; this.style['-webkit-line-clamp']='none'; this.style.backgroundColor='#f0f0f0';" onmouseout="this.style.height='3em'; this.style.overflow='hidden'; this.style['-webkit-line-clamp']='2'; this.style.backgroundColor='transparent';"><strong>Description:</strong> <span id="json-frame-description"></span></p>
+                    <div class="frame-image">
+                        <img id="json-frame-image" alt="Frame">
+                    </div>
+                </div>
+                <div id="json-frame-plotContainer" class="plot-container"></div>
+            </div>
+        </div>
+
+  <script>
+  function isSafari() {
+    const ua = navigator.userAgent;
+    return /^((?!chrome|android).)*safari/i.test(ua);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const img = document.getElementById("method-visual");
+    if (!img) return;
+
+    if (isSafari()) {
+      img.src = "./static/fig1_final.png";
+    } else {
+      img.src = "./static/rover_gif3_v3.gif";
+    }
+  });
+</script>
+    </body>
+  </section>
+
+    <section class="section">
+      <div class="container is-max-desktop">
+        <!-- Abstract. -->
+        <div class="columns is-centered has-text-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3">Abstract</h2>
+            <div class="content has-text-justified">
+              Vision-language models (VLMs) have exhibited impressive capabilities across diverse image understanding tasks, but still struggle in settings that require reasoning over extended sequences of camera frames from a video. This limits their utility in embodied settings, which require reasoning over long frame sequences from a continuous stream of visual input at each moment of a task attempt. To address this limitation, we propose ROVER (Reasoning Over VidEo Recursively), a framework that enables the model to recursively decompose long-horizon video trajectories into segments corresponding to shorter subtasks within the trajectory. In doing so, ROVER facilitates more focused and accurate reasoning over temporally localized frame sequences without losing global context.
+              We evaluate ROVER, implemented using an in-context learning approach, on diverse OpenX Embodiment videos and on a new dataset derived from RoboCasa that consists of 543 videos showing both expert and perturbed non-expert trajectories across 27 robotic manipulation tasks. ROVER outperforms strong baselines across three video reasoning tasks: task progress estimation, frame-level natural language reasoning, and video question answering. 
+              We observe that, by reducing the number of frames the model reasons over at each timestep, ROVER mitigates hallucinations, especially during unexpected or non-optimal moments of a trajectory.
+              In addition, by enabling the implementation of a subtask-specific sliding context window, ROVER's time complexity scales linearly with video length, an asymptotic improvement over baselines. 
+
+              <!--/ Abstract. -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="hr"></div>
+
+    <section class="section">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-full-width has-text-justified">
+            <h2 class="title is-3 has-text-centered">Method Overview</h2>
+
+            <h3 class="title is-4">Reasoning Over VidEo Recursively (ROVER). </h3>
+            <div class="content has-text-justified">
+              <p>
+                ROVER is a recursive framework for reasoning over camera video that decomposes a task into subtasks to maintain a compact temporal context, improving reasoning accuracy and efficiency.
+
+          <!-- ROVER is a framework that enables the model to recursively decompose the task corresponding to the given video input, reducing the number of camera frames the VLM must reason over at any given moment during the trajectory (Figure ~\ref{fig:fig1}).  -->
+              Instead of generating a long, single line of reasoning spanning all timesteps of the video input for a task attempt (e.g., opening a microwave door), 
+                ROVER decomposes the task and generates a separate line of reasoning for each subtask (e.g., grasping the microwave door handle). 
+                When a subtask is complete, the corresponding line of reasoning terminates and a new one is created for the video input for the next subtask (e.g., pulling the door open). 
+                We show that the decomposition not only improves accuracy by focusing the reasoning on relevant temporal segments, but also enables the implementation of a subtask-specific sliding context window, which further reduces the number of frames the model must reason over at each moment of a trajectory.
+              </p>
+            </div>
+            <div class="content has-text-centered">
+                <!-- <img src="./static/rover_gif3_v2.gif"  /> -->
+                <!-- <img src="./static/rover_gif3_v3.gif"  /> -->
+                 <img id="method-visual" src="./static/rover_gif3_v3.gif" />
+                <!-- <video
+                class="inline-figure-six"
+                autoplay
+                loop
+                muted
+                >
+                <source src="./static/videos/concept.mp4" type="video/mp4">
+              </video> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="hr"></div>
+
+    <section class="section" style="margin-top:-40px">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-full-width has-text-justified">
+            <h2 class="title is-3 has-text-centered">Experiments</h2>
+
+            <div class="content has-text-justified" >
+              <p>
+                We evaluate ROVER, implemented using an in-context learning approach, in the setting of robotic manipulation tasks using a large-scale dataset of videos collected from robot-mounted and third-person camera viewpoints during both successful and unsuccessful task attempts. 
+                We create this dataset by automatically perturbing expert demonstrations collected in RoboCasa to produce diverse trajectories, ranging from near-optimal to fully random action sequences. 
+                In addition, we compute ground-truth task progress estimates at each timestep based on geometric distance to goal states. 
+                The generated dataset includes 543 videos across 27 tasks, each collected in a random kitchen scene. 
+                <br><br>
+                We leverage this dataset to evaluate ROVER across three benchmarks for embodied reasoning over camera video:
+              </p>
+                <ol style="display: inline-block; text-align: left; margin: 0 40px;">
+                    <li>Frame-level task progress estimation</li>
+                    <li>Frame-level natural language reasoning</li>
+                    <li>Video question answering (QA)</li>
+                </ol>
+                <!-- <br><br>
+                <p>
+                    We also test ROVER on previous benchmarks based on diverse real-world OpenX Embodiment videos.
+                </p> -->
+
+                <!-- Through extensive benchmark, we found our proposed framework can
+                significantly enhance the ability of visual language models in
+                performing different types of spatial reasoning like humans, as
+                well as unlocking novel downstream applications such as
+                robotics. -->
+              </p>
+            </div>
+            <br>
+            <h3 class="title is-4">1) ROVER improves frame-level progress prediction</h3>
+            <p>
+                <!-- ROVER shows higher correlation with ground-truth task progress estimates. -->
+                For videos that exhibit task completion with near-expert behavior (i.e., the highest level within each task group), ROVER, GVL, and TemporalConcat achieve a Pearson correlation with ground-truth progress estimates near or above 0.5 across most task groups. 
+                However, for videos with incomplete task execution, GVL and TemporalConcat deviate significantly from the ground truth. 
+                These deviations become more extreme as the trajectory level decreases (i.e., as the number of non-expert states in the video increases).  
+</p>
+            <div class="content has-text-justified">
+
+            </div>
+            <div class="content has-text-centered">
+              <img
+                src="./static/res_corr.png"
+                class="inline-figure-six"
+              />
+            </div>
+            <br>
+
+            <h3 class="title is-4">2) ROVER achieves lower error rate in frame-level reasoning</h3>
+
+            <div class="content has-text-justified">
+             <p>
+The reasoning error rate is similar for all methods for videos containing near-expert task completion. However, as videos deviates from expert behavior, the error rate increases significantly for GVL and TemporalConcat. These trends mirror the results of the progress prediction task, suggesting that errors in progress prediction result from errors in the natural language descriptions of the frame that precedes the progress prediction at each timestep. We further evaluate the nature of these errors in the video QA analysis below.
+</p>
+            </div>
+            <div class="content has-text-centered">
+              <img
+              src="./static/res_error_rate.png"
+              class="inline-figure-six"
+              />
+            </div>
+            <br>
+            <h3 class="title is-4">3) ROVER reduces hallucinations during videos exhibiting non-expert behavior</h3>
+
+            <div class="content has-text-justified">
+              <p>
+ROVER shows significantly higher accuracy than GVL and TemporalConcat on the video QA benchmark across all task groups. The video QA results reveal a hallucination problem with GVL and TemporalConcat, where the VLM is likely to state that an event occurred during a video, regardless of whether it actually occurs. This is illustrated by the low precision (20 to 50\%) and high recall values (near 100\%) across all task groups for GVL and TemporalConcat. The hallucination problem is also highlighted in the analysis of the distance between the time when something occurs in a video and the time when the VLM states that it occurred. We see that, even when GVL correctly states something occurs during a video, it is much more likely than ROVER to state this prematurely (as shown by the negative frame difference in the figure below).            
+</p>
+            </div>
+            <div class="content has-text-centered">
+                
+              <img
+                src="./static/res_qa_frame_diff_hist.png"
+                class="inline-figure-six"
+                style="max-width: 700px; width: 100%; height: auto;"
+                />
+            </div>
+
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="hr"></div>
+
+
+    <div class="hr"></div>
+    <section class="section" id="BibTeX">
+      <div class="container is-max-desktop content">
+        <h2 class="title has-text-centered">BibTeX</h2>
+        <!-- <a href="">[arxiv]</a> -->
+        <pre style="width: 100%;"><code>@inproceedings{schroeder2025rover,
+    author    = {Schroeder, Philip and Biza, Ondrej and Weng, Thomas and Luo, Hongyin and Glass, James},
+    title     = {ROVER: Recursive Reasoning Over Videos with Vision-Language Models for Embodied Tasks},
+    booktitle = {39th Conference on Neural Information Processing Systems},
+    year      = {2025}
+}</code></pre>
+        <div class="has-text-left mt-2">
+          <button class="button is-small is-light" onclick="navigator.clipboard.writeText(document.querySelector('#BibTeX pre code').textContent)">
+            <span class="icon is-small">
+              <i class="fas fa-copy"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- <footer class="footer">
+      <div class="container is-max-desktop">
+        <div class="content has-text-centered">
+          <p>
+            <span>©</span> Google DeepMind 2024
+          </p>
+        </div>
+      </div>
+    </footer> -->
+  </body>
+</html>

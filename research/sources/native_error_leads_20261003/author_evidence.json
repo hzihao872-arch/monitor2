@@ -1,0 +1,223 @@
+{
+  "source": "research/sources/native_gap_audit_20261003/robometer_v2.html",
+  "sha256": "4ab249e8ce26fc3f30ba4b96663d53789f44cc6821883bf38f12cebec768ac54",
+  "paper": "https://arxiv.org/html/2603.02115v2",
+  "items": [
+    {
+      "locator": "A3.SS1",
+      "text": "C-1 Preference Prediction RL-VLM-F RL-VLM-F [ 125 ] predicts trajectory preferences by prompting a\nclosed-source vision–language model to compare the final frame of two trajectories\nconditioned on a task description. In our experiments, we instantiate RL-VLM-F using the\nsame OpenAI GPT-5-mini model as for GVL.\nRL-VLM-F uses the following fixed prompt for preference prediction. Each frame comes from a robot trajectory.\n(Think causally and use image comparison to verify any confusion\nbetween the base of the robot and the end effector.) 1. What is shown in the first image (Image A)? 2. What is shown in the second image (Image B)? 3. For this question, here is the Goal Text: GOAL_TEXT Is the goal being better achieved in Image A or Image B? Reply with a single line containing 0 if the goal is better achieved in Image A,\nor 1 if the goal is better achieved in Image B.\nReply -1 if there is no discernible difference or progress. For RL-VLM-F, preferences are inferred using only the final frame\nof each trajectory, whereas Robometer applies a learned preference head that\ndirectly compares full video sequences.\nPreference accuracy is computed as the fraction of pairwise comparisons in\nwhich the predicted ordering matches the ground truth.\nTo evaluate preference quality, we construct trajectory pairs from the RBM-EVAL-OOD split along two axes: (i) differing task instructions and\n(ii) differing trajectory quality labels.\nFor each dataset, we randomly sample 500 pairwise trajectory comparisons\nand evaluate predicted preferences against ground-truth ordering labels.\nAs shown in Tables XIV and XV , Robometer consistently outperforms RL-VLM-F, improving average preference accuracy by 27.0% on different-quality pairs and by 32.4% on different-task pairs. Dataset RL-VLM-F (%) Robometer (%) USC  Franka 52.1 75.0 USC Koch 54.4 79.4 USC  Trossen 66.7 76.2 USC xArm 48.6 88.9 MIT Franka 54.4 85.4 UTD SO-101 56.7 90.0 Average 55.5 82.5 TABLE XIV: RL-VLM-F vs Robometer on Trajectory Quality . Different quality trajectory pairwise preference accuracy on 500 comparisons for each of the RBM-EVAL-OOD datasets. Dataset RL-VLM-F (%) Robometer (%) USC  Franka 70.7 100.0 USC Koch 54.7 89.8 USC  Trossen 64.0 99.0 USC xArm 73.3 98.2 MIT Franka 55.3 98.4 UTD SO-101 72.7 100.0 Average 65.1 97.6 TABLE XV: RL-VLM-F vs Robometer on Different Tasks . Different task trajectory pairwise preference accuracy on 500 comparisons for each of the RBM-EVAL-OOD datasets. VOC r ↑ r\\uparrow Kendall τ ↑ \\tau\\uparrow Succ–Fail Diff. ↑ \\uparrow Dataset Prog. Only +Preference Robometer Prog. Only +Preference Robometer Prog. Only +Preference Robometer USC Franka 0.913 0.974 0.949 0.083 0.542 0.625 0.039 0.428 0.326 USC Koch Arm 0.933 0.932 0.967 0.231 0.357 0.477 0.081 0.142 0.191 USC Trossen 0.199 0.902 0.910 0.333 0.423 0.569 0.052 0.231 0.312 USC xArm 0.890 0.973 0.980 0.389 0.597 0.750 0.079 0.154 0.345 MIT Franka 0.936 0.942 0.945 0.183 0.458 0.572 0.063 0.223 0.310 UTD SO101 0.964 0.899 0.916 0.533 0.667 0.867 0.134 0.244 0.438 Average 0.806 0.939 0.945 0.292 0.507 0.643 0.075 0.237 0.320 TABLE XVI: Per-dataset model ablation results. Reward alignment, trajectory ranking, and final reward difference between successful and failed trajectories on RBM-EVAL-OOD",
+      "tables": [
+        [
+          [
+            "Dataset",
+            "RL-VLM-F (%)",
+            "Robometer (%)"
+          ],
+          [
+            "USC  Franka",
+            "52.1",
+            "75.0"
+          ],
+          [
+            "USC Koch",
+            "54.4",
+            "79.4"
+          ],
+          [
+            "USC  Trossen",
+            "66.7",
+            "76.2"
+          ],
+          [
+            "USC xArm",
+            "48.6",
+            "88.9"
+          ],
+          [
+            "MIT Franka",
+            "54.4",
+            "85.4"
+          ],
+          [
+            "UTD SO-101",
+            "56.7",
+            "90.0"
+          ],
+          [
+            "Average",
+            "55.5",
+            "82.5"
+          ]
+        ],
+        [
+          [
+            "Dataset",
+            "RL-VLM-F (%)",
+            "Robometer (%)"
+          ],
+          [
+            "USC  Franka",
+            "70.7",
+            "100.0"
+          ],
+          [
+            "USC Koch",
+            "54.7",
+            "89.8"
+          ],
+          [
+            "USC  Trossen",
+            "64.0",
+            "99.0"
+          ],
+          [
+            "USC xArm",
+            "73.3",
+            "98.2"
+          ],
+          [
+            "MIT Franka",
+            "55.3",
+            "98.4"
+          ],
+          [
+            "UTD SO-101",
+            "72.7",
+            "100.0"
+          ],
+          [
+            "Average",
+            "65.1",
+            "97.6"
+          ]
+        ]
+      ]
+    },
+    {
+      "locator": "A3.SS2",
+      "text": "C-2 Robometer in Long Horizon Tasks Robometer ’s progress predictions are conditioned on the instruction , rather than simple geometric proximity; as long as the instruction is sufficiently detailed, it can assign increasing progress even when the robot temporarily moves away from intermediate objects to complete the task. We analyze this behavior in Figure 12 on the “Make coffee” task, which consists of multiple steps such as picking up the pod, closing the lid, and placing the cup correctly. When the task instruction is brief or underspecified, Robometer ’s predicted progress tends to stagnate or occasionally decrease. In contrast, with more detailed instructions, the model assigns consistently increasing rewards as the task progresses, shown on the right side of the figure. An alternative approach to handling long-horizon tasks is to decompose them into multiple stages, as demonstrated in our multi-stage Automatic Online RL experiments ( Section IV-Q3 ). Fig. 12 : Qualitative analysis of Robometer on a long-horizon task. With sufficiently detailed task instructions, Robometer correctly assigns increasing rewards across multiple stages of the task.",
+      "tables": []
+    },
+    {
+      "locator": "A5.SS4",
+      "text": "E-4 Data Filtering & Retrieval Procedure and Discussion We have 50 trajectories in our play dataset, where each trajectory consists of five tasks executed in random order: uncap the red pen , open the bottle , open the red drawer , stir the pot , and unzip the pencil case , collected using the Trossen Stationary AI bimanual setup. The dataset includes three camera views: one top-down view and one wrist-mounted camera for each end effector. Example images from all camera views are shown in Figure 13 . Following prior work [ 50 , 92 ] , we first segment each trajectory into subtrajectories based on end-effector velocities and changes in gripper states. In practice, we found that explicitly incorporating gripper state changes produces cleaner segmentation of different tasks. After segmentation, the play dataset yields a total of 615 subtrajectories. If subtrajectories were uniformly distributed across tasks, this would correspond to 123 relevant segments per task; to ensure conservative evaluation, we retrieve 100 subtrajectories per task. We compare our method against three baselines: RoboReward, pre-trained SigLIP [ 137 ] , a vision–language model trained with contrastive image–language supervision, and a retrieval-specific baseline, STRAP [ 92 ] .\nWe chose to include STRAP as it is one of the few viable approaches for zero-shot data filtering and retrieval; alternative methods either require policy rollouts [ 3 ] , larger amounts of task-specific data [ 126 ] , or training additional task-specific retrieval modules [ 141 , 46 , 30 , 79 ] . Fig. 13 : Data filtering & retrieval scene configuration from all cameras. Given a task language instruction, we perform retrieval using different reward models as follows. For RoboReward and Robometer -Prog, we first compute per-timestep reward predictions for each subtrajectory conditioned on the instruction. We then calculate the value-order correlation of each subtrajectory using the predicted rewards and select the top 100 subtrajectories with the highest VOC scores. When using the preference-based variant of our method ( Robometer -Pref), we construct pairwise comparisons between all subtrajectories, aggregate the results into a win matrix, and rank subtrajectories according to estimated pairwise preferences. The top 100-ranked subtrajectories are then selected. For SigLIP, we compute the average vision–language similarity between each subtrajectory and the instruction and select the top 100 subtrajectories with the highest average similarity scores. We use wrist-camera images for retrieval in all methods, as they yield the highest-quality retrievals for all methods. For π 0.5 \\pi_{0.5} policy fine-tuning via LoRA [ 82 , 78 ] , we directly use the retrieved 100 subtrajectories together with the corresponding task instruction. During fine-tuning, we include observations from all camera views, as well as states and actions.\nResults reported in Figure 8 (b) use a strict success metric: a trial is counted as successful only if the robot fully completes the task. This criterion partially explains the low success rates observed for the baselines. Qualitative inspection of learned behaviors reveals clear differences between retrieval methods. Policies trained on SigLIP-retrieved data often learn to approach task-relevant objects (e.g., reaching the drawer) but fail to complete the task. In contrast, policies trained on RoboReward-retrieved data frequently exhibit random or unstable behaviors, consistent with a higher proportion of unrelated subtrajectories in the retrieved set. Additional Experiments We additionally evaluate retrieval quality in a controlled setting where ground-truth trajectory labels are available. Instead of using the play dataset, we consider the Trossen subset of RBM-EVAL-OOD , which contains six tasks with known numbers of successful, suboptimal, and failed trajectories. We perform retrieval for two representative tasks— open the red drawer and unzip the pencil case —each of which contains three successful, two suboptimal, and two failure trajectories. Using the same retrieval procedures described above, we retrieve five trajectories per task and assess their quality. Results are shown in Table XXVI . Robometer consistently retrieves higher-quality trajectories, while baselines either fail to retrieve task-relevant trajectories or select failure cases. These results highlight Robometer ’s ability to both distinguish between tasks and differentiate levels of execution quality. Task Method #Succ #Subopt #Fail #Unrel Open the red drawer SigLIP 2 2 1 0 RoboReward 2 1 2 0 STRAP 2 2 1 0 Robometer –Prog 3 2 0 0 Robometer –Pref 3 2 0 0 Unzip the pencil case SigLIP 2 1 2 0 RoboReward 0 0 2 3 STRAP 2 2 1 0 Robometer –Prog 3 2 0 0 Robometer –Pref 2 2 1 0 TABLE XXVI : Trajectory retrieval analysis. Top-5 retrieval quality summary per task. Counts indicate how many of the top-5 retrieved trajectories are labeled as success (Succ), suboptimal (Subopt), failure (Fail), or unrelated (Unrel).",
+      "tables": []
+    },
+    {
+      "locator": "A5.SS5",
+      "text": "E-5 Failure Detection For failure detection, we evaluate our model on MIT Franka dataset. For quantitative analysis in Table XXVII and Figure 14 , we mark a trajectory as success if success probability is higher than or equal to 0.5, and failure based on our progress monitoring strategy explained in this section. Baselines In addition to RoboReward-4B, VLAC, and GPT-5-mini, we compare against an uncertainty-based baseline, following [ 42 , 54 ] . Token-Uncertainty baseline estimates predictive uncertainty by computing entropy over generated language tokens. We compute token uncertainty on evaluation trajectories using the π 0 \\pi_{0} -FAST DROID policy [ 103 ] . (a) RoboReward-4B (b) GPT-5-mini (c) Robometer (Ours) Fig. 14 : Failure Detection OOD confusion matrices with ternary ground truth and binary prediction.\nRows indicate ground-truth execution outcomes ( failure , suboptimal , success ), while columns indicate binary predictions ( predicted failure vs. predicted success ). Suboptimal trajectories correspond to executions that make partial progress but do not complete the task. Suboptimal trajectories are treated as failures in our quantitative evaluation, as emphasized with the horizontal orange divider in the above confusion matrices.\nColor intensity reflects the number of trajectories. Discussion Figure 14 visualizes out-of-distribution failure detection using an asymmetric 3 × 2 3{\\times}2 confusion matrix: ground-truth labels include failure , suboptimal , and success , while predictions are binary ( failure vs. success ).\nThis view separates two practically distinct error types: (i) missed failures/suboptimal executions (mass in the right column for the top two rows), and (ii) false alarms on successful executions (mass in the left column for the bottom row).\nAcross methods, Robometer allocates more mass to correctly flagging both failure and suboptimal trajectories as failures, while maintaining relatively few false alarms on success trajectories, consistent with its higher average F1 in Table IV .\nIn contrast, GPT-5-mini concentrates mass in the predicted success column for failure and suboptimal rows, indicating a conservative bias that avoids false positives but misses many non-success outcomes, whereas RoboReward-4B is intermediate with improved failure sensitivity but still more confusion between suboptimal and success than Robometer . Task Token-Unc. VLAC GPT-5-mini RoboReward -4B Robometer TPR TNR F1 TPR TNR F1 TPR TNR F1 TPR TNR F1 TPR TNR F1 move banana 0.00 1.00 0.53 0.89 0.35 0.45 0.31 1.00 0.48 1.00 0.62 0.91 1.00 0.75 0.94 move mouse 0.00 1.00 0.50 1.00 0.00 0.00 0.80 1.00 0.89 0.80 0.75 0.80 1.00 0.75 0.91 pour pebble 0.00 1.00 0.32 0.88 0.00 0.00 0.14 1.00 0.25 0.57 1.00 0.73 0.71 1.00 0.83 fold towel 0.00 1.00 0.58 0.95 0.10 0.16 0.15 1.00 0.27 0.31 0.67 0.40 0.54 0.56 0.58 pull tissue 0.00 1.00 0.43 1.00 0.00 0.00 0.00 1.00 0.00 0.55 0.00 0.57 0.73 0.50 0.76 put spoon 0.00 1.00 0.22 1.00 0.00 0.00 0.14 1.00 0.25 0.57 1.00 0.73 0.57 1.00 0.73 stir pot 0.00 1.00 0.47 0.94 0.00 0.00 0.09 1.00 0.17 0.91 1.00 0.95 0.82 1.00 0.90 Average 0.00 1.00 0.48 0.95 0.10 0.16 0.20 1.00 0.33 0.69 0.63 0.74 0.77 0.70 0.81 TABLE XXVII: Failure detection performance .\nWe report true positive rate (TPR; correctly detecting failures), true negative rate (TNR; correctly identifying successful executions), and F1 score. Failure Detection with Progress Monitoring Table XXVII compares our model against baselines on three evaluation metrics: true positive rate (TPR; correctly detecting failures), true negative rate (TNR; correctly identifying successful executions), and F1 score. Robometer consistently outperforms baselines, resulting in higher average F1 score. Token-Uncertainty and GPT-5-mini baselines attain perfect TNR but extremely low TPR, indicating a strong bias toward predicting success and missing failures. VLAC exhibits the opposite behavior: it frequently flags trajectories as failures, achieving high true positive rates but low true negative rates due to many false positives on successful executions, which results in lower F1 scores.\nRoboReward-4B lies between these extremes, with improved failure sensitivity over GPT-5-mini but more confusion between suboptimal and success trajectories than Robometer . We provide qualitative examples of failure detection using progress monitoring across different failure categories in Figures 15 – 9 .\nSpecifically, we compute the Pearson correlation between progress values and time over a sliding window, and flag a failure at the first timestep where this correlation becomes lower than a threshold. This captures both irreversible failures, where rewards sharply decrease after an error (e.g., object drops), and insufficient-progress failures, where rewards stagnate or regress over time. If no such failure is detected or if our model predicts success, the trajectory is classified as successful.\nOur failure evaluation dataset include both irreversible failures (e.g., object drops or spills) and insufficient-progress failures , where the robot stalls, oscillates, or terminates execution before completing the task.\nWe additionally highlight semantic failures , where the robot executes a physically plausible behavior that violates the task instruction. All qualitative examples use window size of 5 besides Figure 15 (b) which uses window size of 9. We use correlation threshold of -0.5 in all examples. Across all cases, our reward model identifies failures by detecting regressions or stagnation in predicted task progress.\nFor irreversible failures (see Figure 15 ), the predicted progress increases initially but drops sharply after the terminal event (e.g., dropping or spilling), leading to early failure detection.\nIn semantic failures (see Figure 16 ), progress remains consistently low despite smooth execution, reflecting instruction-level mismatch.\nFor insufficient-progress failures (see Figure 9 ), the progress signal plateaus or oscillates without converging to success, allowing the model to flag failure even in the absence of abrupt terminal events. (a) Dropped object during placement. (b) Spilled contents during pouring. Fig. 15 : Irreversible failures. Terminal events such as drops or spills cause a sharp regression in predicted task progress, which our model reliably flags as failures shortly after the event. (a) Wrong object grasped despite correct motion pattern. (b) Instruction-inconsistent action (placing the cup instead of pouring). Fig. 16 : Semantic failures. The robot executes smooth and physically plausible trajectories but violates the task instruction, resulting in persistently low predicted progress and failure detection without an abrupt terminal event.",
+      "tables": []
+    },
+    {
+      "locator": "A3.T14",
+      "text": "Dataset RL-VLM-F (%) Robometer (%) USC  Franka 52.1 75.0 USC Koch 54.4 79.4 USC  Trossen 66.7 76.2 USC xArm 48.6 88.9 MIT Franka 54.4 85.4 UTD SO-101 56.7 90.0 Average 55.5 82.5 TABLE XIV: RL-VLM-F vs Robometer on Trajectory Quality . Different quality trajectory pairwise preference accuracy on 500 comparisons for each of the RBM-EVAL-OOD datasets.",
+      "tables": [
+        [
+          [
+            "Dataset",
+            "RL-VLM-F (%)",
+            "Robometer (%)"
+          ],
+          [
+            "USC  Franka",
+            "52.1",
+            "75.0"
+          ],
+          [
+            "USC Koch",
+            "54.4",
+            "79.4"
+          ],
+          [
+            "USC  Trossen",
+            "66.7",
+            "76.2"
+          ],
+          [
+            "USC xArm",
+            "48.6",
+            "88.9"
+          ],
+          [
+            "MIT Franka",
+            "54.4",
+            "85.4"
+          ],
+          [
+            "UTD SO-101",
+            "56.7",
+            "90.0"
+          ],
+          [
+            "Average",
+            "55.5",
+            "82.5"
+          ]
+        ]
+      ]
+    },
+    {
+      "locator": "A3.T15",
+      "text": "Dataset RL-VLM-F (%) Robometer (%) USC  Franka 70.7 100.0 USC Koch 54.7 89.8 USC  Trossen 64.0 99.0 USC xArm 73.3 98.2 MIT Franka 55.3 98.4 UTD SO-101 72.7 100.0 Average 65.1 97.6 TABLE XV: RL-VLM-F vs Robometer on Different Tasks . Different task trajectory pairwise preference accuracy on 500 comparisons for each of the RBM-EVAL-OOD datasets.",
+      "tables": [
+        [
+          [
+            "Dataset",
+            "RL-VLM-F (%)",
+            "Robometer (%)"
+          ],
+          [
+            "USC  Franka",
+            "70.7",
+            "100.0"
+          ],
+          [
+            "USC Koch",
+            "54.7",
+            "89.8"
+          ],
+          [
+            "USC  Trossen",
+            "64.0",
+            "99.0"
+          ],
+          [
+            "USC xArm",
+            "73.3",
+            "98.2"
+          ],
+          [
+            "MIT Franka",
+            "55.3",
+            "98.4"
+          ],
+          [
+            "UTD SO-101",
+            "72.7",
+            "100.0"
+          ],
+          [
+            "Average",
+            "65.1",
+            "97.6"
+          ]
+        ]
+      ]
+    },
+    {
+      "locator": "A5.T26",
+      "text": "Task Method #Succ #Subopt #Fail #Unrel Open the red drawer SigLIP 2 2 1 0 RoboReward 2 1 2 0 STRAP 2 2 1 0 Robometer –Prog 3 2 0 0 Robometer –Pref 3 2 0 0 Unzip the pencil case SigLIP 2 1 2 0 RoboReward 0 0 2 3 STRAP 2 2 1 0 Robometer –Prog 3 2 0 0 Robometer –Pref 2 2 1 0 TABLE XXVI : Trajectory retrieval analysis. Top-5 retrieval quality summary per task. Counts indicate how many of the top-5 retrieved trajectories are labeled as success (Succ), suboptimal (Subopt), failure (Fail), or unrelated (Unrel).",
+      "tables": []
+    },
+    {
+      "locator": "A5.T27",
+      "text": "Task Token-Unc. VLAC GPT-5-mini RoboReward -4B Robometer TPR TNR F1 TPR TNR F1 TPR TNR F1 TPR TNR F1 TPR TNR F1 move banana 0.00 1.00 0.53 0.89 0.35 0.45 0.31 1.00 0.48 1.00 0.62 0.91 1.00 0.75 0.94 move mouse 0.00 1.00 0.50 1.00 0.00 0.00 0.80 1.00 0.89 0.80 0.75 0.80 1.00 0.75 0.91 pour pebble 0.00 1.00 0.32 0.88 0.00 0.00 0.14 1.00 0.25 0.57 1.00 0.73 0.71 1.00 0.83 fold towel 0.00 1.00 0.58 0.95 0.10 0.16 0.15 1.00 0.27 0.31 0.67 0.40 0.54 0.56 0.58 pull tissue 0.00 1.00 0.43 1.00 0.00 0.00 0.00 1.00 0.00 0.55 0.00 0.57 0.73 0.50 0.76 put spoon 0.00 1.00 0.22 1.00 0.00 0.00 0.14 1.00 0.25 0.57 1.00 0.73 0.57 1.00 0.73 stir pot 0.00 1.00 0.47 0.94 0.00 0.00 0.09 1.00 0.17 0.91 1.00 0.95 0.82 1.00 0.90 Average 0.00 1.00 0.48 0.95 0.10 0.16 0.20 1.00 0.33 0.69 0.63 0.74 0.77 0.70 0.81 TABLE XXVII: Failure detection performance .\nWe report true positive rate (TPR; correctly detecting failures), true negative rate (TNR; correctly identifying successful executions), and F1 score.",
+      "tables": []
+    },
+    {
+      "locator": "S5",
+      "text": "V Limitations and Future Work Robometer operates as a dense, per-frame reward model over subsampled video inputs, enabling scalable training but limiting its ability to memorize specific past key events for very long-horizon or partially observed tasks.\nIn addition, real-world robot executions exhibit a wide diversity of failure modes, many of which are rare, subtle, or task-specific, and the current training data may not fully capture this breadth.\nAs a result, Robometer may fail to recognize or correctly reward certain failure cases that fall outside the dominant patterns seen during training.\nWe hope that our training recipe enables future work to build upon larger reward modeling datasets. As a vision-language-based model, Robometer also lacks direct access to latent physical state such as contact forces, grasp stability, or compliance, and may fail to recognize or correctly reward failure cases driven by these factors until they become visually observable.\nFuture work could address these limitations by incorporating denser temporal modeling, VQA-style supervision to reason about task structure and completion criteria, and off-domain data for better generalization [ 77 , 138 ] , as well as by developing more systematically curated failure datasets that better reflect the diversity of real-world failure modes [ 120 ] .\nFinally, real-world executions may also contain safety-critical states (e.g., in a constrained MDP formulation) that Robometer is not pre-trained to predict. Future work can train Robometer with an additional safety head, similar to the success prediction head, on provided safety labels.",
+      "tables": []
+    }
+  ]
+}

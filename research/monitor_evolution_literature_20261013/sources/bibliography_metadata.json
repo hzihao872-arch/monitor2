@@ -1,0 +1,422 @@
+[
+  {
+    "key": "runtime",
+    "id": "2310.17552",
+    "url": "https://arxiv.org/abs/2310.17552",
+    "metadata": {
+      "citation_title": [
+        "Model-Based Runtime Monitoring with Interactive Imitation Learning"
+      ],
+      "citation_author": [
+        "Liu, Huihan",
+        "Dass, Shivin",
+        "Martín-Martín, Roberto",
+        "Zhu, Yuke"
+      ],
+      "citation_date": [
+        "2023/10/26"
+      ],
+      "citation_online_date": [
+        "2023/10/26"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2310.17552"
+      ],
+      "citation_arxiv_id": [
+        "2310.17552"
+      ],
+      "citation_abstract": [
+        "Robot learning methods have recently made great strides, but generalization and robustness challenges still hinder their widespread deployment. Failing to detect and address potential failures renders state-of-the-art learning systems not combat-ready for high-stakes tasks. Recent advances in interactive imitation learning have presented a promising framework for human-robot teaming, enabling the robots to operate safely and continually improve their performances over long-term deployments. Nonetheless, existing methods typically require constant human supervision and preemptive feedback, limiting their practicality in realistic domains. This work aims to endow a robot with the ability to monitor and detect errors during task execution. We introduce a model-based runtime monitoring algorithm that learns from deployment data to detect system anomalies and anticipate failures. Unlike prior work that cannot foresee future failures or requires failure experiences for training, our method learns a latent-space dynamics model and a failure classifier, enabling our method to simulate future action outcomes and detect out-of-distribution and high-risk states preemptively. We train our method within an interactive imitation learning framework, where it continually updates the model from the experiences of the human-robot team collected using trustworthy deployments. Consequently, our method reduces the human workload needed over time while ensuring reliable task execution. Our method outperforms the baselines across system-level and unit-test metrics, with 23% and 40% higher success rates in simulation and on physical hardware, respectively. More information at https://ut-austin-rpl.github.io/sirius-runtime-monitor/"
+      ]
+    },
+    "history": "Submission history From: Huihan Liu [ view email ] [v1] Thu, 26 Oct 2023 16:45:44 UTC (3,980 KB)"
+  },
+  {
+    "key": "sirius",
+    "id": "2410.22689",
+    "url": "https://arxiv.org/abs/2410.22689",
+    "metadata": {
+      "citation_title": [
+        "Multi-Task Interactive Robot Fleet Learning with Visual World Models"
+      ],
+      "citation_author": [
+        "Liu, Huihan",
+        "Zhang, Yu",
+        "Betala, Vaarij",
+        "Zhang, Evan",
+        "Liu, James",
+        "Ding, Crystal",
+        "Zhu, Yuke"
+      ],
+      "citation_date": [
+        "2024/10/30"
+      ],
+      "citation_online_date": [
+        "2024/10/30"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2410.22689"
+      ],
+      "citation_arxiv_id": [
+        "2410.22689"
+      ],
+      "citation_abstract": [
+        "Recent advancements in large-scale multi-task robot learning offer the potential for deploying robot fleets in household and industrial settings, enabling them to perform diverse tasks across various environments. However, AI-enabled robots often face challenges with generalization and robustness when exposed to real-world variability and uncertainty. We introduce Sirius-Fleet, a multi-task interactive robot fleet learning framework to address these challenges. Sirius-Fleet monitors robot performance during deployment and involves humans to correct the robot's actions when necessary. We employ a visual world model to predict the outcomes of future actions and build anomaly predictors to predict whether they will likely result in anomalies. As the robot autonomy improves, the anomaly predictors automatically adapt their prediction criteria, leading to fewer requests for human intervention and gradually reducing human workload over time. Evaluations on large-scale benchmarks demonstrate Sirius-Fleet's effectiveness in improving multi-task policy performance and monitoring accuracy. We demonstrate Sirius-Fleet's performance in both RoboCasa in simulation and Mutex in the real world, two diverse, large-scale multi-task benchmarks. More information is available on the project website: https://ut-austin-rpl.github.io/sirius-fleet"
+      ]
+    },
+    "history": "Submission history From: Huihan Liu [ view email ] [v1] Wed, 30 Oct 2024 04:49:39 UTC (6,569 KB)"
+  },
+  {
+    "key": "hierarchical",
+    "id": "2505.04565",
+    "url": "https://arxiv.org/abs/2505.04565",
+    "metadata": {
+      "citation_title": [
+        "Hierarchical Task Decomposition for Execution Monitoring and Error Recovery: Understanding the Rationale Behind Task Demonstrations"
+      ],
+      "citation_author": [
+        "Willibald, Christoph",
+        "Lee, Dongheui"
+      ],
+      "citation_date": [
+        "2025/05/07"
+      ],
+      "citation_online_date": [
+        "2025/05/07"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2505.04565"
+      ],
+      "citation_arxiv_id": [
+        "2505.04565"
+      ],
+      "citation_abstract": [
+        "Multi-step manipulation tasks where robots interact with their environment and must apply process forces based on the perceived situation remain challenging to learn and prone to execution errors. Accurately simulating these tasks is also difficult. Hence, it is crucial for robust task performance to learn how to coordinate end-effector pose and applied force, monitor execution, and react to deviations. To address these challenges, we propose a learning approach that directly infers both low- and high-level task representations from user demonstrations on the real system. We developed an unsupervised task segmentation algorithm that combines intention recognition and feature clustering to infer the skills of a task. We leverage the inferred characteristic features of each skill in a novel unsupervised anomaly detection approach to identify deviations from the intended task execution. Together, these components form a comprehensive framework capable of incrementally learning task decisions and new behaviors as new situations arise. Compared to state-of-the-art learning techniques, our approach significantly reduces the required amount of training data and computational complexity while efficiently learning complex in-contact behaviors and recovery strategies. Our proposed task segmentation and anomaly detection approaches outperform state-of-the-art methods on force-based tasks evaluated on two different robotic systems."
+      ]
+    },
+    "history": "Submission history From: Christoph Willibald [ view email ] [v1] Wed, 7 May 2025 16:57:51 UTC (11,689 KB)"
+  },
+  {
+    "key": "thrifty",
+    "id": "2109.08273",
+    "url": "https://arxiv.org/abs/2109.08273",
+    "metadata": {
+      "citation_title": [
+        "ThriftyDAgger: Budget-Aware Novelty and Risk Gating for Interactive Imitation Learning"
+      ],
+      "citation_author": [
+        "Hoque, Ryan",
+        "Balakrishna, Ashwin",
+        "Novoseller, Ellen",
+        "Wilcox, Albert",
+        "Brown, Daniel S.",
+        "Goldberg, Ken"
+      ],
+      "citation_date": [
+        "2021/09/17"
+      ],
+      "citation_online_date": [
+        "2021/09/17"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2109.08273"
+      ],
+      "citation_arxiv_id": [
+        "2109.08273"
+      ],
+      "citation_abstract": [
+        "Effective robot learning often requires online human feedback and interventions that can cost significant human time, giving rise to the central challenge in interactive imitation learning: is it possible to control the timing and length of interventions to both facilitate learning and limit burden on the human supervisor? This paper presents ThriftyDAgger, an algorithm for actively querying a human supervisor given a desired budget of human interventions. ThriftyDAgger uses a learned switching policy to solicit interventions only at states that are sufficiently (1) novel, where the robot policy has no reference behavior to imitate, or (2) risky, where the robot has low confidence in task completion. To detect the latter, we introduce a novel metric for estimating risk under the current robot policy. Experiments in simulation and on a physical cable routing experiment suggest that ThriftyDAgger's intervention criteria balances task performance and supervisor burden more effectively than prior algorithms. ThriftyDAgger can also be applied at execution time, where it achieves a 100% success rate on both the simulation and physical tasks. A user study (N=10) in which users control a three-robot fleet while also performing a concentration task suggests that ThriftyDAgger increases human and robot performance by 58% and 80% respectively compared to the next best algorithm while reducing supervisor burden."
+      ]
+    },
+    "history": "Submission history From: Ryan Hoque [ view email ] [v1] Fri, 17 Sep 2021 01:21:16 UTC (31,731 KB)"
+  },
+  {
+    "key": "gcr",
+    "id": "2410.19989",
+    "url": "https://arxiv.org/abs/2410.19989",
+    "metadata": {
+      "citation_title": [
+        "On-Robot Reinforcement Learning with Goal-Contrastive Rewards"
+      ],
+      "citation_author": [
+        "Biza, Ondrej",
+        "Weng, Thomas",
+        "Sun, Lingfeng",
+        "Schmeckpeper, Karl",
+        "Kelestemur, Tarik",
+        "Ma, Yecheng Jason",
+        "Platt, Robert",
+        "van de Meent, Jan-Willem",
+        "Wong, Lawson L. S."
+      ],
+      "citation_date": [
+        "2024/10/25"
+      ],
+      "citation_online_date": [
+        "2025/05/14"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2410.19989"
+      ],
+      "citation_arxiv_id": [
+        "2410.19989"
+      ],
+      "citation_abstract": [
+        "Reinforcement Learning (RL) has the potential to enable robots to learn from their own actions in the real world. Unfortunately, RL can be prohibitively expensive, in terms of on-robot runtime, due to inefficient exploration when learning from a sparse reward signal. Designing dense reward functions is labour-intensive and requires domain expertise. In our work, we propose GCR (Goal-Contrastive Rewards), a dense reward function learning method that can be trained on passive video demonstrations. By using videos without actions, our method is easier to scale, as we can use arbitrary videos. GCR combines two loss functions, an implicit value loss function that models how the reward increases when traversing a successful trajectory, and a goal-contrastive loss that discriminates between successful and failed trajectories. We perform experiments in simulated manipulation environments across RoboMimic and MimicGen tasks, as well as in the real world using a Franka arm and a Spot quadruped. We find that GCR leads to a more-sample efficient RL, enabling model-free RL to solve about twice as many tasks as our baseline reward learning methods. We also demonstrate positive cross-embodiment transfer from videos of people and of other robots performing a task. Website: https://gcr-robot.github.io/."
+      ]
+    },
+    "history": "Submission history From: Ondrej Biza [ view email ] [v1] Fri, 25 Oct 2024 22:11:54 UTC (28,182 KB) [v2] Wed, 14 May 2025 19:20:06 UTC (37,422 KB)"
+  },
+  {
+    "key": "robomonitor",
+    "id": "2609.30715",
+    "url": "https://arxiv.org/abs/2609.30715",
+    "metadata": {
+      "citation_title": [
+        "RoboMonitor: Label-Efficient Runtime Monitoring of Robot Task Execution via Predictive Representation Learning"
+      ],
+      "citation_author": [
+        "Ajith, Abhiroop",
+        "Narayanan, Gokul",
+        "Coelho, Kyle",
+        "Zhao, Tingji",
+        "Shahapurkar, Yash",
+        "Zhu, Brian",
+        "Erdogan, Melih",
+        "Krubasik, Ted",
+        "Chamzas, Constantinos",
+        "Solowjow, Eugen"
+      ],
+      "citation_date": [
+        "2026/09/25"
+      ],
+      "citation_online_date": [
+        "2026/09/25"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2609.30715"
+      ],
+      "citation_arxiv_id": [
+        "2609.30715"
+      ],
+      "citation_abstract": [
+        "Learned robot policies produce actions, but their outputs alone do not establish whether execution is progressing as intended. Robot execution monitoring requires identifying the current execution phase, detecting failures, and recognizing task completion from observations available during execution. Training such monitors requires annotations that are scarce in datasets collected for robot-policy learning. We present RoboMonitor, a label-efficient vision--language execution monitor that learns from these datasets before introducing monitoring supervision. We pre-train on 25 hours of multi-camera trajectories spanning 12 manipulation tasks and two robot embodiments, using action-conditioned future-feature prediction, inverse dynamics, and masked-present prediction. We then transfer the learned visual and context encoders to a causal monitor and apply temporal supervised fine-tuning (Temporal SFT), which combines supervision throughout each observation window with consistency objectives within and across overlapping windows. At deployment, RoboMonitor requires only the task instruction and camera observations. On a four-task monitoring benchmark, RoboMonitor trained with 52 labeled episodes achieves 93.1% mean phase accuracy and 85.9% macro recall over two fine-tuning seeds, exceeding Qwen3-VL and Robometer trained with the same monitoring supervision. Its phase accuracy also exceeds that of both Qwen3-VL and Robometer trained with 100 episodes. A Qwen3-VL ablation shows that Temporal SFT reduces mean spurious phase switching from 15.23% to 4.95%. In closed-loop deployment, the integrated system completes 39 of 40 simulated Toolbox Sorting trials and 35 of 40 real-world Reel Packing trials, with no false recovery triggers observed."
+      ]
+    },
+    "history": "Submission history From: Abhiroop Ajith [ view email ] [v1] Fri, 25 Sep 2026 02:43:24 UTC (4,331 KB)"
+  },
+  {
+    "key": "conditionnet",
+    "id": "2502.01167",
+    "url": "https://arxiv.org/abs/2502.01167",
+    "metadata": {
+      "citation_title": [
+        "ConditionNET: Learning Preconditions and Effects for Execution Monitoring"
+      ],
+      "citation_author": [
+        "Sliwowski, Daniel",
+        "Lee, Dongheui"
+      ],
+      "citation_doi": [
+        "10.1109/LRA.2024.3520916"
+      ],
+      "citation_date": [
+        "2025/02/03"
+      ],
+      "citation_online_date": [
+        "2025/02/03"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2502.01167"
+      ],
+      "citation_arxiv_id": [
+        "2502.01167"
+      ],
+      "citation_abstract": [
+        "The introduction of robots into everyday scenarios necessitates algorithms capable of monitoring the execution of tasks. In this paper, we propose ConditionNET, an approach for learning the preconditions and effects of actions in a fully data-driven manner. We develop an efficient vision-language model and introduce additional optimization objectives during training to optimize for consistent feature representations. ConditionNET explicitly models the dependencies between actions, preconditions, and effects, leading to improved performance. We evaluate our model on two robotic datasets, one of which we collected for this paper, containing 406 successful and 138 failed teleoperated demonstrations of a Franka Emika Panda robot performing tasks like pouring and cleaning the counter. We show in our experiments that ConditionNET outperforms all baselines on both anomaly detection and phase prediction tasks. Furthermore, we implement an action monitoring system on a real robot to demonstrate the practical applicability of the learned preconditions and effects. Our results highlight the potential of ConditionNET for enhancing the reliability and adaptability of robots in real-world environments. The data is available on the project website: https://dsliwowski1.github.io/ConditionNET_page."
+      ]
+    },
+    "history": "Submission history From: Daniel Sliwowski [ view email ] [v1] Mon, 3 Feb 2025 09:00:45 UTC (1,848 KB)"
+  },
+  {
+    "key": "ars",
+    "id": "2609.34484",
+    "url": "https://arxiv.org/abs/2609.34484",
+    "metadata": {
+      "citation_title": [
+        "ARS: Agentic Reward System for Robot Learning"
+      ],
+      "citation_author": [
+        "Hu, Sheng",
+        "Lu, Weiyi",
+        "Zeng, Lingbing",
+        "Weng, Gan",
+        "Zhang, Weiwei",
+        "Xie, Kai",
+        "Mou, Xiaofeng",
+        "Xu, Yi"
+      ],
+      "citation_date": [
+        "2026/09/28"
+      ],
+      "citation_online_date": [
+        "2026/09/28"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2609.34484"
+      ],
+      "citation_arxiv_id": [
+        "2609.34484"
+      ],
+      "citation_abstract": [
+        "Progress reward modeling is the problem of estimating how a robot's behavior changes task progress over time. Reliable estimation requires distinguishing meaningful state changes from failed attempts and task-irrelevant actions. We introduce the Agentic Reward System (ARS), an inference framework for progress reward modeling with general-purpose vision-language models (VLMs), without additional reward-model training. Given an offline trajectory and a task instruction, ARS uses adaptive visual inspection for both event proposal and verification. A subagent proposes a task-relevant event timeline, which a primary agent verifies and revises before estimating per-frame progress. ARS can incorporate optional terminal outcome labels and visual references to inform its judgments. It can also audit progress estimates from external reward models. We evaluate ARS with a 27B VLM on a controlled semantic-mismatch benchmark and downstream policy learning in simulation and on a real robot. The benchmark reveals that several evaluated reward baselines assign spurious progress to wrong-object manipulation even in simple pick-and-place scenes. ARS better suppresses these errors and outperforms these baselines in simulation policy learning. We further demonstrate that ARS supports long-horizon policy learning from mixed-quality offline experience on real-robot multi-screw fastening in a full-scale laboratory replica of an industrial washing-machine assembly line. These results suggest that structured inference and verification can improve the usefulness of general-purpose VLMs for robot reward modeling. Code is at https://github.com/midea-ai/ars"
+      ]
+    },
+    "history": "Submission history From: Sheng Hu [ view email ] [v1] Mon, 28 Sep 2026 07:37:09 UTC (2,080 KB)"
+  },
+  {
+    "key": "wvn",
+    "id": "2404.07110",
+    "url": "https://arxiv.org/abs/2404.07110",
+    "metadata": {
+      "citation_title": [
+        "Wild Visual Navigation: Fast Traversability Learning via Pre-Trained Models and Online Self-Supervision"
+      ],
+      "citation_author": [
+        "Mattamala, Matías",
+        "Frey, Jonas",
+        "Libera, Piotr",
+        "Chebrolu, Nived",
+        "Martius, Georg",
+        "Cadena, Cesar",
+        "Hutter, Marco",
+        "Fallon, Maurice"
+      ],
+      "citation_date": [
+        "2024/04/10"
+      ],
+      "citation_online_date": [
+        "2024/04/10"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2404.07110"
+      ],
+      "citation_arxiv_id": [
+        "2404.07110"
+      ],
+      "citation_abstract": [
+        "Natural environments such as forests and grasslands are challenging for robotic navigation because of the false perception of rigid obstacles from high grass, twigs, or bushes. In this work, we present Wild Visual Navigation (WVN), an online self-supervised learning system for visual traversability estimation. The system is able to continuously adapt from a short human demonstration in the field, only using onboard sensing and computing. One of the key ideas to achieve this is the use of high-dimensional features from pre-trained self-supervised models, which implicitly encode semantic information that massively simplifies the learning task. Further, the development of an online scheme for supervision generator enables concurrent training and inference of the learned model in the wild. We demonstrate our approach through diverse real-world deployments in forests, parks, and grasslands. Our system is able to bootstrap the traversable terrain segmentation in less than 5 min of in-field training time, enabling the robot to navigate in complex, previously unseen outdoor terrains. Code: https://bit.ly/498b0CV - Project page:https://bit.ly/3M6nMHH"
+      ]
+    },
+    "history": "Submission history From: Matías Mattamala [ view email ] [v1] Wed, 10 Apr 2024 15:47:35 UTC (11,419 KB)"
+  },
+  {
+    "key": "hire",
+    "id": "2609.27068",
+    "url": "https://arxiv.org/abs/2609.27068",
+    "metadata": {
+      "citation_title": [
+        "HiRE: Hindsight Reward Editing for Policy Finetuning"
+      ],
+      "citation_author": [
+        "Niu, Haoyi",
+        "Han, Zhengtao",
+        "Ji, Yufeng",
+        "Li, Zhongyu",
+        "Sreenath, Koushil"
+      ],
+      "citation_date": [
+        "2026/09/22"
+      ],
+      "citation_online_date": [
+        "2026/09/22"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2609.27068"
+      ],
+      "citation_arxiv_id": [
+        "2609.27068"
+      ],
+      "citation_abstract": [
+        "Pre-trained robot policies always require finetuning to adapt to specific environments. Reinforcement Learning (RL) offers high performance potential because it improves action optimality rather than simply mimicking data. However, such potential depends heavily on reward quality. Sparse rewards lack process feedback, human-designed rewards are costly and biased, and semantic rewards from foundation representations are often not control-centric. We propose Hindsight Reward Editing (HiRE), a training-free framework to break this reward bottleneck. HiRE bridges the broad knowledge of foundation representation models with physical control awareness, by contrasting successful and failed trajectories in hindsight. It calibrates foundation representation models by identifying \"trap states\" that are predicted as high-rewarding states yet eventually result in failure, and vice versa. HiRE explicitly penalizes these traps while boosting rewards for critical successful states. This approach can be flexibly compatible with any foundation representations and RL algorithms. Experiments show that HiRE consistently outperforms other reward recipes by delivering dense, control-aware feedback that prevents value function collapse and reward hacking, thereby achieving superior sample efficiency, stable policy updates, and higher performance ceilings, e.g., at least 3x performance of the base policies. Qualitative results are at https://hire-project.github.io ."
+      ]
+    },
+    "history": "Submission history From: Haoyi Niu [ view email ] [v1] Tue, 22 Sep 2026 21:04:10 UTC (5,662 KB)"
+  },
+  {
+    "key": "dopamine",
+    "id": "2608.15680",
+    "url": "https://arxiv.org/abs/2608.15680",
+    "metadata": {
+      "citation_title": [
+        "Robo-Dopamine 2.0: History-Conditioned and OOD-Aware Process Reward Modeling for Robotic Manipulation"
+      ],
+      "citation_author": [
+        "Xu, Yijie",
+        "Jin, Haopeng",
+        "Zhou, Run",
+        "Liu, Shengbang",
+        "Chen, Sixiang",
+        "Cheng, Hongyang",
+        "Hu, Sicheng",
+        "Co, Peterson",
+        "Luo, Jinwen",
+        "Tan, Huajie",
+        "Zhang, Shanghang"
+      ],
+      "citation_date": [
+        "2026/08/16"
+      ],
+      "citation_online_date": [
+        "2026/08/16"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2608.15680"
+      ],
+      "citation_arxiv_id": [
+        "2608.15680"
+      ],
+      "citation_abstract": [
+        "Vision-language-action (VLA) models improve robotic manipulation but remain vulnerable to compounding errors, scene changes, and off-trajectory states. Reinforcement learning can refine pretrained VLA policies, yet sparse success signals hinder exploration, while engineered dense rewards are costly and task-specific. Existing learned visual reward models often rely on static before-after observations, causing temporal ambiguity and weak discrimination between robustness-preserving variations and task-invalid failures under out-of-distribution (OOD) execution. We introduce Robo-Dopamine 2.0, a history- and OOD-aware process reward model with a pairwise prediction interface. It combines (1) history-conditioned pairwise rewards that use source-aligned reference panels for synthetic OOD queries and observed rollout history for online queries, while preserving the queried endpoints, and (2) an OOD-aware signed progress space that represents valid progress, robustness, failure, and recovery. A Signed-Hop Curriculum with transition-aware replay learns coarse execution ordering before fine-grained progress calibration. We also construct an OOD trajectory dataset and a five-family benchmark. Reference panels improve mean visual order consistency (VOC) from 0.967 to 0.986 and OOD-robust VOC from 0.906 to 0.958. With the same 400K pairwise-reward budget, Signed-Hop training with 25% replay reaches 0.9872 mean VOC, compared with 0.9858 for a matched-pool shuffled control. In downstream reinforcement learning, the full model achieves 86.8% mean RoboTwin success and 71/80 successful real-world insertions."
+      ]
+    },
+    "history": "Submission history From: Yijie Xu [ view email ] [v1] Sun, 16 Aug 2026 11:15:55 UTC (5,326 KB)"
+  },
+  {
+    "key": "video2stl",
+    "id": "2609.37519",
+    "url": "https://arxiv.org/abs/2609.37519",
+    "metadata": {
+      "citation_title": [
+        "Video2STL: Grounding VLM-Generated Temporal Specifications for Robot Learning"
+      ],
+      "citation_author": [
+        "Atasever, Merve",
+        "Azbijari, Keyan",
+        "Bakirci, Cagan",
+        "Huang, Bo-Ruei",
+        "Izdas, Tolga",
+        "Shahrooei, Zahra",
+        "Yang, Richard",
+        "Biyik, Erdem",
+        "Deshmukh, Jyotirmoy V."
+      ],
+      "citation_date": [
+        "2026/09/29"
+      ],
+      "citation_online_date": [
+        "2026/09/29"
+      ],
+      "citation_pdf_url": [
+        "https://arxiv.org/pdf/2609.37519"
+      ],
+      "citation_arxiv_id": [
+        "2609.37519"
+      ],
+      "citation_abstract": [
+        "Video-based policy learning is particularly promising, as it illustrates target behaviors without requiring action annotations or embodiment-matched demonstrations. A central challenge is deciding what information should be transferred from the video to the robot. Existing approaches commonly convert visual observations into scalar similarity or value signals, or ask foundation models to directly generate reward code. These approaches can make the temporal structure of a task difficult to inspect, ground, and reuse. We present Video2STL, a framework that converts observation-only videos into parametric Signal Temporal Logic (STL) specifications and uses the resulting formal representation for robot learning. A vision-language model extracts an embodiment-independent semantic event trace and constructs a bank of symbolic temporal specifications. The model determines the task structure, while numerical predicate thresholds and temporal bounds are grounded from successful robot trajectories. For policy learning, we separate short- and long-timescale temporal information: short-horizon specifications provide dense rewards through rolling-window quantitative robustness, while a causal monitor over a retained long-horizon specification provides one-time progress rewards for valid temporal prefixes. The same representation supports cross-embodiment transfer from human or animal videos to robot control. Across four manipulation tasks, Video2STL achieves $85.8\\%$ average success-once and $67.0\\%$ success-at-end, compared with $81.5\\%/59.5\\%$ for native dense PPO and $65.0\\%/42.3\\%$ for Text2Reward; in quadruped locomotion, Qwen-3.8 and GPT-5.6-based Video2STL policies achieve $100\\%$ success across velocities from $0.3$ to $2.1\\,\\mathrm{m/s}$ while remaining competitive in high-speed energy efficiency. Project webpage: \\href{https://video2stl.github.io/}{video2stl}."
+      ]
+    },
+    "history": "Submission history From: Merve Atasever [ view email ] [v1] Tue, 29 Sep 2026 13:10:14 UTC (1,610 KB)"
+  }
+]

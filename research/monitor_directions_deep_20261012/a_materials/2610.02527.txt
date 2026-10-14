@@ -1,0 +1,10836 @@
+CriticHack: Evaluating Visual RewardsUnder Robot Policy Optimization
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+License: CC BY 4.0
+arXiv:2610.02527v1 [cs.RO] 01 Oct 2026
+CriticHack: Evaluating Visual Rewards
+Under Robot Policy Optimization
+Jiaxuan Luo
+Xingguo Xu
+Shanshan Wang
+Yuhan Zhou
+Affiliation:
+Baidu
+Zhen Zhang
+Affiliation:
+University of California, Santa Barbara
+Affiliation:
+Johns Hopkins University
+Affiliation:
+Dalian University of Technology
+Affiliation:
+Rutgers University
+Abstract
+Learned visual reward models are increasingly used to optimize robot policies,
+yet a reward model can score an execution that acts on the wrong object as
+highly as one that completes the task. We show that optimizing such a reward
+can amplify these wrong-object failures while reward and task success both
+rise, so the signals a practitioner would normally monitor look healthy.
+We fine-tune every denoiser parameter of a diffusion policy against Robometer
+on a drawer task. Starting from a supervised policy with no prior reward
+exposure, five training runs raise task success by 10.2 percentage points and
+wrong-object failures by 10.9 points on 512 evaluation seeds, whereas five runs
+trained on the simulator’s task-completion signal raise success without
+amplifying wrong-object failures (difference 9.2 points, 95% CI 5.6 to 13.0).
+The amplification recurs from a policy previously optimized against learned
+rewards, under the policy’s native diffusion sampler, at matched distance from
+the initial policy, and across constrained-policy experiments with two critics
+and two optimizers. A tilt model explains when it occurs: under KL-regularized
+optimization, an outcome becomes more frequent whenever its expected reward
+under the initial policy exceeds the population average. Robometer separates
+successes from failures well overall (AUROC .81) but scores wrong-object
+failures slightly above successes (AUROC .37), so optimization raises both.
+The same model predicts the outcome shifts across 26 constrained settings
+(Spearman .89), including those in which task success falls, and Robometer’s
+own published success-termination recipe inherits the error. A frozen outcome
+verifier redirects the same optimization toward the requested task.
+†
+†
+footnotetext:
+∗
+Equal contribution.
+†
+Corresponding author:
+jluo50@jhu.edu
+1
+Introduction
+Learned visual reward models provide feedback for robot policy optimization
+from camera observations and a task description, replacing hand-designed task
+rewards
+(
+Lee et al., 2026
+;
+Liang et al., 2026
+)
+. A reward model does not
+need to fail broadly to steer a policy wrong. It can score most failures
+correctly and still reward one coherent semantic mistake, and optimization is
+built to find exactly such mistakes.
+Consider a robot instructed to open the middle drawer
+(Figure
+1
+). Opening the upper drawer instead looks like
+manipulation progress but fails the requested task. A stacking policy can
+likewise build a stable stack with the wrong cube. We call these outcomes
+wrong-object failures
+: executions that manipulate a distractor in a
+task-consistent way while the requested task fails.
+Liang et al. (2026)
+showed that RoboReward assigns high scores to such executions and that these
+false positives reinforce incorrect behavior during online learning. What is
+less understood is how such errors interact with genuine task learning. If
+optimization simply degraded task success, standard evaluation would catch it.
+We show that it does not have to: optimizing a visual reward can raise task
+success and wrong-object failures at the same time. The two checks a
+practitioner relies on, the reward model’s aggregate success–failure
+discrimination and the policy’s task success after optimization, can both
+look healthy while a specific semantic failure grows.
+Figure 1:
+High visual reward can accompany the wrong object.
+Critic-only training opens the upper distractor while the target stays closed;
+critic–verifier training opens the requested middle drawer. Both receive high
+scores from the original Robometer, shown on the same zero-to-one scale.
+Frames are the final critic inputs for the first prespecified evaluation
+seed in constrained-policy PPO (Section
+4.2
+),
+chosen independently of outcome; counts and intervals are in
+Section
+5.2
+.
+We study this with
+CriticHack
+, a closed-loop evaluation of visual rewards under
+robot policy optimization in which simulator state measures task success and
+wrong-object failures independently of the reward. Our main experiments
+fine-tune every denoiser parameter of a diffusion policy against Robometer on
+a drawer task. From a supervised policy that has never been exposed to a
+learned reward, five training runs raise task success by
+10.2
+​
+[
+6.9
+,
+13.6
+]
+10.2\,[6.9,13.6]
+percentage points and wrong-object failures by
+10.9
+​
+[
+7.3
+,
+14.4
+]
+10.9\,[7.3,14.4]
+points on
+512 evaluation seeds. Five runs trained on the simulator’s task-completion
+signal raise success at least as much without amplifying wrong-object
+failures, so the amplification is specific to the learned reward
+(Table
+1
+). The same pattern holds from a warm-start
+policy previously optimized against learned rewards, where paired executions
+show that the new successes and the new wrong-object failures both come from
+converting former failures. It persists when the fine-tuned policies are
+decoded with their native 100-step diffusion sampler, at matched KL distance
+from the initial policy, and across distractor-motion thresholds from 5 to
+40 mm. Constrained experiments that optimize a selector over a fixed bank of
+diffusion-noise sequences reproduce reward gain with wrong-object
+amplification across two task–reward pairings, Robometer and Language-Image
+Value learning (LIV)
+(
+Ma et al., 2023a
+)
+, and two optimizers, proximal policy
+optimization (PPO) and group relative policy optimization (GRPO).
+Why does a reward with strong aggregate discrimination produce this? A
+trajectory-level audit shows that Robometer separates successes from all
+failures well (AUROC .813) but scores wrong-object failures slightly above
+successes (AUROC .372); good discrimination against the far more common other
+failures hides the inversion. A simple model turns this observation into a
+prediction. Under KL-regularized optimization the optimal policy tilts the
+initial policy toward high reward, and an outcome becomes more frequent exactly
+when its average tilted reward exceeds the population average. A reward that
+scores wrong-object failures about as highly as successes therefore raises
+both, and stronger optimization is decided by the upper tail of the score
+distribution. Fitted with a single strength parameter, the model reproduces
+the outcome changes across 26 constrained settings (Spearman .89 for
+wrong-object failures and .79 for success), including the drawer settings in
+which task success falls, and it places the full-denoiser and constrained
+results on one continuum of optimization strength. Robometer’s own published
+recipe, dense progress with success-triggered termination, does not escape the
+error: its success detector fires on 89% of wrong-object executions and on
+73% of successes.
+Finally, we use a frozen success verifier trained on outcome labels as a
+diagnostic intervention. Reweighting the critic reward by the verifier raises
+task success by 7.1 points and lowers wrong-object failures by 4.4 points
+relative to critic-only training, and verifier-only rewards match it, which
+identifies outcome supervision as the source of the recovery.
+Contributions.
+(i) We show, with independent training runs and simulator-measured outcomes,
+that optimizing a visual reward can amplify wrong-object failures while task
+success rises, and that a ground-truth completion reward under the same
+optimizer does not. (ii) We show that strong aggregate discrimination can hide
+the semantic misranking that drives this amplification, and give a tilt model
+that predicts the resulting outcome changes across settings and unifies
+semantic amplification with classical success loss. (iii) We show that outcome
+verification redirects the same optimization toward the intended task.
+Scope.
+The simulated experiments cover occluded-drawer manipulation and
+identity-sensitive stacking. Full-denoiser fine-tuning uses Robometer’s
+terminal success probability on two drawer layouts; constrained experiments
+add LIV and stacking. The verifier is task-specific and trained on simulator
+labels. The real-robot study is a case study with one training run per
+fine-tuned condition.
+2
+Related Work
+Reward overoptimization and reward-model evaluation.
+Learned rewards turn human preferences into policy objectives
+(
+Christiano et al., 2017
+)
+, but optimizing such a proxy can depart
+from the intended outcome
+(
+Amodei et al., 2016
+;
+Skalse et al., 2022
+)
+,
+and more capable agents exploit misspecified rewards more effectively
+(
+Pan et al., 2022
+)
+. Overoptimization has been characterized in
+language-model and diffusion-model alignment
+(
+Gao et al., 2023
+;
+Zhang et al., 2024
+)
+, where it
+appears as a decline in a gold or held-out metric under continued proxy
+optimization. We study a signature this diagnostic misses: task success
+rises while a specific semantic failure grows, both measured through
+simulator state independently of the reward. Under a KL penalty the optimal
+policy is an exponential tilt of the reference policy
+(
+Korbak et al., 2022
+;
+Rafailov et al., 2023
+)
+; we use this closed form to predict
+which outcomes optimization amplifies and to place semantic amplification and
+the classical decline of the gold metric on one continuum. Reward-model evaluation raises
+a related concern. Low prediction error need not imply low regret after
+optimization
+(
+Fluri et al., 2025
+)
+, and static ranking accuracy
+imperfectly predicts post-optimization behavior
+(
+Kim et al., 2025b
+;
+Wen et al., 2025
+)
+. Aggregate metrics can also
+conceal poor performance on meaningful subsets, a phenomenon known as hidden
+stratification
+(
+Oakden-Rayner et al., 2020
+)
+. Section
+5.3
+shows such masking in a visual reward model, on the very subset that
+optimization amplifies.
+Visual rewards for robot learning.
+Visual rewards have been learned from human videos
+(
+Chen et al., 2021
+)
+,
+goal-conditioned value pretraining
+(
+Ma et al., 2023b
+)
+and language–image
+alignment
+(
+Ma et al., 2023a
+)
+. RoboCLIP and vision–language model reward
+models (VLM-RMs) use pretrained video– and image–language models as
+rewards
+(
+Sontakke et al., 2023
+;
+Rocamonde et al., 2024
+)
+, and Video-Language
+Critic learns video–text alignment and temporal rankings
+(
+Alakuijala et al., 2025
+)
+. RoboReward and Robometer scale general-purpose
+robotic reward models
+(
+Lee et al., 2026
+;
+Liang et al., 2026
+)
+. Our tasks
+hinge on spatial reference and color-based object identity, distinctions that
+match documented weaknesses of vision–language models
+(
+Kamath et al., 2023
+;
+Yuksekgonul et al., 2023
+)
+.
+Liang et al. (2026)
+document RoboReward false positives on
+wrong-object executions and their consequences for online reinforcement
+learning (RL). We find the same failure class in Robometer’s own success
+output, where strong aggregate discrimination hides it, and show that
+optimizing against it can raise task success and wrong-object failures
+together. Robometer’s published online RL pairs dense progress rewards with
+success-triggered termination; on our drawer task that success detector fires
+on more wrong-object executions than successes, so the recipe inherits the
+same error (Appendix
+I
+).
+Outcome supervision and reward correction.
+Success classifiers have long served as rewards, from event-based control
+(
+Fu et al., 2018
+)
+to vision–language success detectors
+(
+Du et al., 2023
+)
+, and outcome verifiers trained on correctness
+labels are widely used in language-model reasoning
+(
+Cobbe et al., 2021
+)
+.
+Other work corrects the reward itself: ensembles support conservative
+optimization against uncertain feedback
+(
+Coste et al., 2024
+)
+,
+Adapt2Reward uses failure prompts to adapt visual rewards
+(
+Yang et al., 2024
+)
+, and RARM uses reference-anchored,
+confidence-gated progress matching
+(
+Yang et al., 2026
+)
+. Our verifier is a
+task-specific success classifier trained on simulator labels; we use it as a
+diagnostic that tests whether changing the feedback redirects the amplified
+failure.
+Diffusion-policy optimization.
+Diffusion Policy (DP)
+(
+Chi et al., 2023
+)
+generates robot action
+chunks by iterative denoising. Treating the denoising chain as a Markov
+decision process (MDP) enables reward-driven fine-tuning of the full denoiser
+(
+Black et al., 2024
+;
+Ren et al., 2025
+)
+, while latent-noise steering improves a
+fixed policy by optimizing the noise supplied to its denoiser
+(
+Wagenmaker et al., 2025
+)
+. Our two protocols follow these routes:
+full-denoiser PPO under the denoising-MDP formulation, and a constrained
+selector over a fixed bank of noise sequences with the decoder frozen.
+Generalist vision–language–action (VLA) policies such as OpenVLA
+(
+Kim et al., 2025a
+)
+can also be adapted with RL
+(
+Chen et al., 2025
+)
+; we
+use task-specific DPs, which let us evaluate many independent training runs
+against simulator-measured outcomes.
+3
+Evaluating Visual Rewards Under Optimization
+Starting from an initial policy, we optimize against a frozen reward model
+and compare the resulting behavior with that of the initialization. Our two
+primary tasks, drawer manipulation and identity-sensitive stacking,
+distinguish successful task completion from manipulation of the wrong object.
+Robot policies.
+We use task-specific diffusion policies
+(
+Chi et al., 2023
+)
+that generate action chunks from
+current observations. The robot executes the initial portion of
+each chunk before generating the next chunk from updated
+observations, producing a closed-loop trajectory
+τ
+=
+(
+o
+0
+,
+a
+0
+,
+…
+,
+o
+T
+)
+\tau=(o_{0},a_{0},\ldots,o_{T})
+under policy
+π
+ϕ
+\pi_{\phi}
+.
+A frozen visual critic assigns reward
+r
+b
+​
+(
+τ
+,
+x
+)
+r_{b}(\tau,x)
+for task instruction
+x
+x
+;
+the policy need not be language-conditioned.
+We consider two complementary optimization protocols: full-denoiser
+fine-tuning, which updates the diffusion network, and constrained
+noise-policy optimization, which learns a distribution over diffusion-noise
+sequences while keeping the decoder fixed.
+Tasks and physical outcomes.
+For each execution, we measure requested-task success
+y
+⁡
+(
+τ
+)
+∈
+{
+0
+,
+1
+}
+y(\tau)\in\{0,1\}
+and wrong-object failure
+w
+⁡
+(
+τ
+)
+∈
+{
+0
+,
+1
+}
+w(\tau)\in\{0,1\}
+from MuJoCo
+(
+Todorov et al., 2012
+)
+joint and contact states.
+These states supply outcome labels and oracle feedback but are excluded
+from critic and verifier inference.
+A wrong-object failure requires the requested task to remain
+unsuccessful.
+Each execution therefore belongs to one of three mutually
+exclusive categories: success (
+y
+=
+1
+y=1
+), wrong-object failure
+(
+y
+=
+0
+,
+w
+=
+1
+y=0,w=1
+), or other failure (
+y
+=
+0
+,
+w
+=
+0
+y=0,w=0
+).
+Occluded drawer.
+The requested middle drawer must end at least 54 mm open. The movable upper
+drawer starts at 47.5% of its slide range. A wrong-object failure requires
+y
+=
+0
+y=0
+and more than 20 mm of additional upper-drawer opening at any time.
+The oracle uses clipped target completion,
+min
+⁡
+(
+1
+,
+max
+⁡
+(
+0
+,
+q
+T
+/
+(
+54
+​
+mm
+)
+)
+)
+\min(1,\max(0,q_{T}/(54\,\mathrm{mm})))
+, where
+q
+T
+q_{T}
+is final target opening.
+Identity-sensitive stacking.
+The requested bright red cube must rest on a rectangular wooden block.
+Success requires final position and height within 6 and 12 mm of the intended
+stack, tilt at most
+20
+∘
+20^{\circ}
+, support contact, and no gripper contact for
+the last three control ticks. A wrong-object failure satisfies the same
+criterion with the decoy while the target fails; remaining failures are
+no-stack outcomes. Two initial scenes and two target/decoy position
+assignments form four cells. Near-red and distinct-blue decoys both enter
+training and evaluation. The oracle uses binary target success.
+Three measurements, two distinct failure signatures.
+For the initial policy
+U
+U
+and critic-optimized policy
+C
+C
+, we report
+Δ
+​
+R
+=
+𝔼
+C
+​
+[
+r
+b
+]
+−
+𝔼
+U
+​
+[
+r
+b
+]
+,
+Δ
+​
+S
+=
+𝔼
+C
+​
+[
+y
+]
+−
+𝔼
+U
+​
+[
+y
+]
+,
+Δ
+​
+W
+=
+𝔼
+C
+​
+[
+w
+]
+−
+𝔼
+U
+​
+[
+w
+]
+.
+\Delta R=\mathbb{E}_{C}[r_{b}]-\mathbb{E}_{U}[r_{b}],\qquad\Delta S=\mathbb{E}_{C}[y]-\mathbb{E}_{U}[y],\qquad\Delta W=\mathbb{E}_{C}[w]-\mathbb{E}_{U}[w].
+(1)
+Reward gain with success loss (
+Δ
+​
+R
+>
+0
+,
+Δ
+​
+S
+<
+0
+\Delta R>0,\Delta S<0
+) is the usual
+aggregate overoptimization signature. Reward gain with wrong-object
+amplification (
+Δ
+​
+R
+>
+0
+,
+Δ
+​
+W
+>
+0
+\Delta R>0,\Delta W>0
+) is the semantic signature studied
+here. The latter signature does
+not
+imply a decrease in the scalar
+success objective.
+4
+Policy Optimization and Evaluation Protocols
+Our primary experiment fine-tunes the full policy denoiser; constrained
+noise-policy experiments test recurrence across tasks, critics and optimizers.
+Rewards and controls.
+The critics remain frozen throughout policy optimization. Robometer receives
+eight rollout frames and supplies its terminal success probability as reward.
+LIV supplies a final-frame image–language cosine
+c
+c
+, mapped to
+(
+1
++
+c
+)
+/
+2
+(1+c)/2
+for training and reported in native units. Each protocol compares the initial
+policy (
+U
+U
+), original-critic optimization (
+C
+C
+) and simulator-derived oracle
+feedback (
+O
+O
+). Oracle feedback tests task learnability.
+Section
+7
+adds critic
+×
+\times
+verifier (Product,
+P
+P
+)
+and verifier-only (
+V
+V
+) rewards to test how task-completion information
+redirects optimization. The policy family is fixed within each comparison.
+Critic inputs, physical measurements and verifier-label provenance are
+specified in Appendix
+A
+.
+4.1
+Full-denoiser Fine-tuning
+We update all 251.7M denoiser parameters of a diffusion policy
+(
+Chi et al., 2023
+)
+with PPO
+(
+Schulman et al., 2017
+)
+, keeping
+the visual encoder frozen. A short stochastic denoising diffusion implicit
+model (DDIM) chain
+(
+Song et al., 2021
+)
+generates each action chunk:
+x
+K
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+,
+x
+k
+−
+1
+=
+μ
+ϕ
+​
+(
+x
+k
+,
+t
+k
+,
+c
+)
++
+σ
+​
+ε
+k
+,
+ε
+k
+∼
+𝒩
+⁡
+(
+0
+,
+I
+)
+.
+x_{K}\sim\mathcal{N}(0,I),\qquad x_{k-1}=\mu_{\phi}(x_{k},t_{k},c)+\sigma\varepsilon_{k},\quad\varepsilon_{k}\sim\mathcal{N}(0,I).
+(2)
+Here
+c
+c
+is the current observation condition and
+μ
+ϕ
+\mu_{\phi}
+is the DDIM
+update mean. We use
+K
+=
+5
+K=5
+steps and
+σ
+=
+.05
+\sigma=.05
+. PPO likelihoods are
+computed under the same Gaussian transitions used for sampling, following
+the denoising-MDP formulation
+(
+Ren et al., 2025
+)
+.
+We run two full-denoiser studies on the drawer task, each with its own
+initial policy, drawer layout and fixed bank of 512 evaluation seeds. The
+supervised-initialization study
+starts from a capable supervised policy
+that has never been trained against a learned reward, in a layout selected by
+a fixed capability screen, and trains five policies on Robometer and five on
+the simulator’s terminal task completion. The
+warm-start study
+starts
+from a policy that previously underwent RoboReward RL and Robometer-weighted
+offline regression on its scene, and trains five critic-only and five Product
+policies; three dense-completion oracles, a terminal-completion oracle and six
+verifier-only policies serve as controls on the same seed bank. Every training
+uses independent training seeds and receives 126 episodes per iteration for
+40 iterations (5,040 episodes). Update details and the reward-placement audit
+are in Appendix
+B
+; the supervised initialization is
+described in Appendix
+C.2
+.
+Comparison
+Δ
+\Delta
+Success (pp)
+Δ
+\Delta
+Wrong-object (pp)
+Δ
+\Delta
+Robometer
+Supervised initialization: five trainings per reward
+Robometer
++10.2
+[6.9, 13.6]
++10.9
+[7.3, 14.4]
++.137
+[.107, .167]
+Terminal completion
++13.9
+[9.5, 18.3]
++1.6
+[
+−
+-
+1.9, 5.2]
++.062
+[.029, .096]
+Robometer
+−
+-
+completion
+−
+-
+3.7
+[
+−
+-
+7.5, 0.1]
++9.2
+[5.5, 13.0]
++.075
+[.043, .107]
+Warm start: five trainings per reward, three dense-completion oracles
+Robometer (critic)
++8.4
+[4.9, 11.9]
++3.8
+[0.8, 6.8]
++.061
+[.036, .086]
+Critic
+×
+\times
+verifier (Product)
++15.5
+[11.8, 19.1]
+−
+-
+0.6
+[
+−
+-
+3.4, 2.1]
++.096
+[.070, .122]
+Dense completion oracle
++13.3
+[9.6, 17.0]
+−
+-
+1.6
+[
+−
+-
+4.4, 1.4]
++.056
+[.030, .081]
+Product
+−
+-
+critic
++7.1
+[4.4, 9.8]
+−
+-
+4.4
+[
+−
+-
+7.1,
+−
+-
+1.8]
++.034
+[.013, .056]
+Critic
+−
+-
+dense oracle
+−
+-
+4.9
+[
+−
+-
+8.0,
+−
+-
+1.9]
++5.3
+[2.6, 8.1]
++.006
+[
+−
+-
+.016, .028]
+Table 1:
+Full-denoiser evaluation on 512 shared seeds per study.
+Entries are pooled iteration-40 changes from each study’s common initialization, or differences between rewards, with 95% crossed bootstrap intervals over trainings and evaluation seeds; contrasts resample the two families independently. A wrong-object failure leaves the requested drawer closed while opening the distractor by more than 20 mm. Per-training results are in Appendices
+B.2
+and
+C.2
+.
+4.2
+Constrained Closed-loop Noise Policies
+The constrained experiments test whether the pattern recurs across drawer
+manipulation and identity-sensitive stacking, using Robometer and LIV under
+PPO and grouped GRPO. Within each setting, reward objectives share a frozen
+diffusion decoder and a fixed bank of 24 noise sequences. A trainable
+categorical policy selects one sequence per episode, and the decoder
+generates actions from current observations throughout execution.
+The drawer selector learns unconditional probabilities; the stacking
+selector conditions on the initial visual observation.
+Both optimizers update the selector probabilities from executed rollouts.
+Grouped GRPO
+(
+Shao et al., 2024
+)
+standardizes rewards within groups of four
+executions that share the initial state and images. Training starts from
+the uniform selector and uses eight rounds: 192 feedback episodes per
+objective for PPO and 256 for GRPO. Evaluation uses the final eighth
+checkpoint on 32 new seeds for drawer Robometer PPO and 64 per task/color
+for the other panels. Repetitions vary training and evaluation seeds on
+the same noise support; Appendix
+D
+gives
+replication and optimizer details.
+4.3
+Evaluation and Uncertainty
+Every full-denoiser comparison is the fixed iteration-40 policy against its
+study’s shared initialization on that study’s 512 evaluation seeds, with one
+renderer, evaluator and scorer for all policies. The same seeds evaluate
+iterations 10, 20 and 30 of the warm-start critic and Product runs, which
+describe training dynamics. We report changes in success and wrong-object
+failure in percentage points (pp) with 95% bootstrap confidence intervals
+(CIs). Per-training intervals resample paired evaluation seeds. Pooled
+intervals resample training runs and one shared draw of evaluation seeds per
+replicate; contrasts between rewards resample the two families independently.
+Constrained-policy intervals condition on the fitted policies and fixed noise
+supports. Appendix
+B.2
+gives per-training results and
+alternative resampling designs, and Appendix
+F
+the
+constrained grid.
+5
+Optimization Amplifies Semantic Errors
+5.1
+Wrong-object Amplification with a Trainable Policy Network
+Figure 2:
+Reward gain and wrong-object amplification develop together.
+Mean Robometer score, task success and wrong-object failure across five
+warm-start training runs per objective on the drawer task, at five checkpoints
+evaluated on the same 512 seeds. Shading shows 95% pointwise crossed-bootstrap
+intervals over runs and seeds.
+Optimizing Robometer amplifies wrong-object failures as success rises.
+From the supervised initialization, which has never been trained against a
+learned reward, all five Robometer runs raise task success and wrong-object
+failures (Table
+1
+). Pooled, success rises by
+10.2
+​
+[
+6.9
+,
+13.6
+]
+10.2\,[6.9,13.6]
+points and wrong-object failures by
+10.9
+​
+[
+7.3
+,
+14.4
+]
+10.9\,[7.3,14.4]
+points, alongside a higher critic score. Every one of the five runs
+individually amplifies wrong-object failures, by 9.2 to 13.5 points
+(Appendix
+C.2
+).
+The amplification is specific to the learned reward.
+Five runs trained on the simulator’s terminal task completion, with the same
+initialization, optimizer and budget, raise success by
+13.9
+​
+[
+9.5
+,
+18.3
+]
+13.9\,[9.5,18.3]
+points while wrong-object failures stay at
++
+1.6
+​
+[
+−
+1.9
+,
+5.2
+]
++1.6\,[-1.9,5.2]
+. Robometer
+therefore produces
+9.2
+​
+[
+5.6
+,
+13.0
+]
+9.2\,[5.6,13.0]
+points more wrong-object failures than the
+ground-truth reward (exact permutation test over training runs,
+p
+=
+.008
+p=.008
+, the
+smallest attainable with five runs per reward). Adding an independent
+repetition of three runs per reward on the same seeds gives eight runs each
+and a difference of
+8.3
+​
+[
+5.0
+,
+11.5
+]
+8.3\,[5.0,11.5]
+points (
+p
+=
+.0002
+p=.0002
+). The supervised
+initialization thus isolates the critic as the source: the task, layout and
+optimizer alone do not produce the amplification.
+The same pattern holds from a warm start.
+The warm-start policy previously underwent RoboReward RL and Robometer-weighted
+regression. Critic optimization from it raises success by 8.4 points and
+wrong-object failures by 3.8 points, with positive estimates for both in all
+five runs. Paired executions show where the changes come from: across the
+5
+×
+512
+5\times 512
+critic executions, 302 former other failures become successes and
+189 become wrong-object failures, so the policy converts failures into both
+outcomes at once. The share of executions that open the distractor by more
+than 20 mm regardless of outcome rises by
+6.6
+​
+[
+3.3
+,
+10.2
+]
+6.6\,[3.3,10.2]
+points.
+Three dense-completion oracles trained from the same policy raise success by
+13.3
+​
+[
+9.6
+,
+17.0
+]
+13.3\,[9.6,17.0]
+points and leave wrong-object failures unchanged
+(
+−
+1.6
+​
+[
+−
+4.4
+,
+1.4
+]
+-1.6\,[-4.4,1.4]
+), and a terminal-completion oracle does the same
+(
++
+19.1
++19.1
+and
+−
+1.0
+-1.0
+points; Appendix
+C
+). Relative to
+the dense oracles, the critic produces
+5.3
+​
+[
+2.6
+,
+8.1
+]
+5.3\,[2.6,8.1]
+points more wrong-object
+failures. Figure
+2
+shows that the critic’s
+score, success and wrong-object failures rise together from the first evaluated
+checkpoint, whereas Product training reaches larger success gains with
+wrong-object failures near their initial level.
+The effect is robust to the sampler, distance and threshold.
+Decoding the five fine-tuned critic policies with the checkpoint’s native
+100-step diffusion sampler instead of the five-step fine-tuning sampler, with
+the same seeds, renderer and scorer, again raises success by
+10.9
+​
+[
+6.6
+,
+15.2
+]
+10.9\,[6.6,15.2]
+points and wrong-object failures by
+5.0
+​
+[
+1.0
+,
+9.0
+]
+5.0\,[1.0,9.0]
+points
+(Appendix
+G.1
+). The amplification is not a by-product of
+moving further from the initial policy: the KL divergence of each policy’s
+denoising chain from the initial chain is
+2.15
+2.15
+nats per decision for the
+critic runs,
+2.38
+2.38
+for Product and
+2.45
+2.45
+for verifier-only runs, which
+improve success more without amplifying wrong-object failures, and
+2.46
+2.46
+versus
+2.33
+2.33
+for the supervised Robometer and completion runs
+(Appendix
+G.2
+). The amplification also holds for every
+distractor-opening threshold from 5 to 40 mm in both studies
+(Appendix
+G.3
+).
+5.2
+Recurrence and Boundaries Across the Constrained Grid
+Reward gain and wrong-object amplification recur across three PPO and two
+GRPO drawer trainings. In the first PPO training, wrong-object failures rise
+from 9 to 24 of 32 executions: the robot opens the distractor while the
+requested drawer stays nearly closed. These high-scoring executions are
+task-inconsistent manipulation, not a failure to move. Distinct-color LIV
+stacking reproduces reward gain, success loss and wrong-object amplification
+under both PPO and GRPO. Across the four stacking and five drawer histories,
+all nine establish semantic amplification and oracle success gains, and seven
+also lose task success (Figure
+9
+in
+Appendix
+D
+).
+Prevalence across task–critic pairings.
+Across the complete grid, 11 of 29 strata (from 20 training histories) show
+wrong-object amplification with a paired 95% interval above zero: every
+drawer Robometer and distinct-color LIV stacking stratum, and two near-color
+Robometer stacking strata. Near-color LIV stacking rarely induces the signature,
+Robometer stacking often learns the intended task, and drawer LIV favors partial
+progress and closing (Appendix
+F.1
+). Section
+6
+shows that how each reward distributes over outcomes, estimated without the
+critic arm’s own executions, accounts for these differences.
+5.3
+Aggregate Reward Discrimination Can Hide Semantic Misranking
+Figure 3:
+A semantic inversion hidden by other failures.
+Score distributions over all 20,992 warm-start executions on the 512-seed
+bank (the initial policy and iterations 10–40 of the ten critic and Product
+runs), grouped by physical outcome. Panel annotations give the
+success–wrong-object AUROC; bars mark medians.
+Over every warm-start execution on the primary bank, Robometer separates
+successes from failures well (AUROC
+.813
+​
+[
+.789
+,
+.836
+]
+.813\,[.789,.836]
+) yet ranks
+wrong-object failures slightly above successes (
+.372
+​
+[
+.333
+,
+.410
+]
+.372\,[.333,.410]
+;
+Figure
+3
+): their mean scores are
+.70
+.70
+and
+.65
+.65
+. The
+frozen verifier (
+.862
+.862
+) and the product (
+.828
+.828
+) order successes above
+wrong-object failures. AUROC is the probability that a random positive
+outscores a random negative, with half credit for ties. With
+S
+S
+,
+W
+W
+and
+N
+N
+the successful, wrong-object and other-failure executions, the empirical
+AUROC decomposes exactly as
+A
+S
+,
+F
+=
+λ
+​
+A
+S
+,
+W
++
+(
+1
+−
+λ
+)
+​
+A
+S
+,
+N
+,
+λ
+=
+|
+W
+|
+|
+W
+|
++
+|
+N
+|
+,
+F
+=
+W
+∪
+N
+.
+A_{S,F}=\lambda A_{S,W}+(1-\lambda)A_{S,N},\qquad\lambda=\frac{|W|}{|W|+|N|},\quad F=W\cup N.
+(3)
+Other failures make up three quarters of the negatives here (
+λ
+=
+.25
+\lambda=.25
+)
+and are separated almost perfectly (
+A
+S
+,
+N
+=
+.959
+A_{S,N}=.959
+), so the aggregate metric
+looks strong while the ordering of the subset that optimization reaches is
+inverted.
+6
+A Tilt Model of Outcome Composition
+Why does optimizing a reward with strong aggregate discrimination raise task
+success and wrong-object failures together, and when does it instead lower
+success? A closed-form view of KL-regularized optimization answers both.
+Maximizing
+𝔼
+π
+[
+r
+]
+−
+β
+KL
+(
+π
+∥
+π
+0
+)
+\mathbb{E}_{\pi}[r]-\beta\,\mathrm{KL}(\pi\,\|\,\pi_{0})
+over trajectory
+distributions gives the exponential tilt
+π
+β
+​
+(
+τ
+)
+∝
+π
+0
+​
+(
+τ
+)
+​
+e
+r
+⁡
+(
+τ
+)
+/
+β
+\pi_{\beta}(\tau)\propto\pi_{0}(\tau)\,e^{r(\tau)/\beta}
+(
+Korbak et al., 2022
+;
+Rafailov et al., 2023
+)
+. For an outcome class
+c
+∈
+{
+S
+,
+W
+,
+N
+}
+c\in\{S,W,N\}
+, write
+M
+c
+​
+(
+β
+)
+=
+𝔼
+π
+0
+​
+[
+e
+r
+/
+β
+∣
+c
+]
+M_{c}(\beta)=\mathbb{E}_{\pi_{0}}[e^{r/\beta}\mid c]
+and
+M
+⁡
+(
+β
+)
+=
+∑
+c
+p
+0
+​
+(
+c
+)
+​
+M
+c
+​
+(
+β
+)
+M(\beta)=\sum_{c}p_{0}(c)\,M_{c}(\beta)
+. Then
+p
+β
+​
+(
+c
+)
+=
+p
+0
+​
+(
+c
+)
+​
+M
+c
+​
+(
+β
+)
+M
+⁡
+(
+β
+)
+,
+∂
+log
+⁡
+p
+β
+​
+(
+c
+)
+∂
+(
+1
+/
+β
+)
+|
+β
+→
+∞
+=
+𝔼
+π
+0
+​
+[
+r
+∣
+c
+]
+−
+𝔼
+π
+0
+​
+[
+r
+]
+.
+p_{\beta}(c)=p_{0}(c)\,\frac{M_{c}(\beta)}{M(\beta)},\qquad\left.\frac{\partial\log p_{\beta}(c)}{\partial(1/\beta)}\right|_{\beta\to\infty}=\mathbb{E}_{\pi_{0}}[r\mid c]-\mathbb{E}_{\pi_{0}}[r].
+(4)
+An outcome becomes more frequent under weak optimization exactly when its mean
+reward exceeds the population mean, and under strong optimization its fate is
+decided by how much of the upper tail of the reward it occupies. Two
+consequences follow. First, when other failures dominate and score low, both
+successes and wrong-object failures exceed the population mean and both grow:
+this is the coexistence regime. An inversion between
+S
+S
+and
+W
+W
+is not
+required; it is enough that
+W
+W
+scores well above the population. Second,
+when the very top of the score distribution is held by wrong-object
+executions, strong optimization moves mass from successes to them and task
+success falls, the classical overoptimization signature.
+Full-denoiser studies.
+Under Robometer, wrong-object failures score above the population mean in both
+initial policies:
+.70
+.70
+against a mean of
+.34
+.34
+from the warm start, where
+they also outscore successes (initial AUROC
+.365
+.365
+), and
+.61
+.61
+against
+.32
+.32
+from the supervised initialization, where successes and wrong-object failures
+are almost indistinguishable (AUROC
+.539
+.539
+). Equation
+4
+therefore
+predicts amplification in both studies, including the one without an
+inversion. Reweighting each initial policy’s 512 evaluation episodes to the
+reward gain its runs reached predicts
++
+9.7
++9.7
+and
++
+7.2
++7.2
+points of success and
+wrong-object failure for the eight supervised Robometer runs (measured
++
+10.0
++10.0
+and
++
+10.2
++10.2
+),
++
+14.3
++14.3
+points of success for the completion runs (measured
++
+14.5
++14.5
+), and
++
+3.9
++3.9
+points of wrong-object failure for the warm-start critic
+runs (measured
++
+3.8
++3.8
+; Appendix
+H
+). Fine-tuning the full denoiser
+also creates behavior the initial policy never produced, so for this protocol
+the tilt is a first-order description; it under-predicts the warm-start critic’s
+success gain (
++
+4.1
++4.1
+against
++
+8.4
++8.4
+).
+Figure 4:
+One tilt predicts outcome shifts across protocols.
+Each colored marker is one constrained stratum: the selector’s
+KL-regularized optimum over the 24 noise sequences, with per-sequence reward
+and outcome rates estimated from executions outside the critic arm and the
+tilt strength matched to the reward gain the critic arm reached, against the
+measured critic-minus-uniform change. Stars are the full-denoiser studies
+(supervised Robometer and completion, warm-start critic), from reweighting the
+initial policy’s 512 episodes. The gray line is equality.
+Constrained selectors.
+The selector chooses one of 24 fixed noise sequences, so its KL-regularized
+optimum is exact up to estimation: a softmax over the sequences’ mean rewards.
+We estimate each sequence’s mean reward, success rate and wrong-object rate
+from every execution of its stratum outside the critic arm (uniform draws and
+the oracle, Product and verifier-only arms; 456 to 960 executions per stratum)
+and match the tilt strength to the critic arm’s reward gain. Across the 26
+strata where the gain is reachable, the predicted changes track the measured
+ones with Spearman
+ρ
+=
+.89
+\rho=.89
+for wrong-object failures and
+.79
+.79
+for success
+(Figure
+4
+). The model reproduces the regime that the full
+denoiser never reaches: in drawer Robometer GRPO, concentrating on the
+highest-scoring sequences predicts a success loss of
+13.5
+​
+[
+9.6
+,
+17.2
+]
+13.5\,[9.6,17.2]
+points
+alongside
+73.5
+73.5
+points of wrong-object amplification, against a measured loss
+of
+12.5
+12.5
+and amplification of
+71.9
+71.9
+. The two protocols are therefore two
+strengths of one process: the full denoiser reweights many behaviors under a
+KL budget and stays in the coexistence regime, while the selector concentrates
+on a few sequences whose upper tail decides success. Without fitting any
+strength, the first-order direction in Equation
+4
+, the covariance
+between a sequence’s outcome rate and its standardized reward, correlates with
+the measured wrong-object change at
+ρ
+=
+.82
+\rho=.82
+, compared with
+−
+.76
+-.76
+for the
+initial success–wrong-object AUROC, and it remains predictive inside the drawer
+Robometer family (
+.80
+.80
+against
+.10
+.10
+), where the AUROC association vanishes.
+Robometer’s published recipe inherits the error.
+Robometer’s online RL pays dense progress at every step and ends an episode
+when the predicted success probability exceeds
+.6
+.6
+(
+Liang et al., 2026
+)
+. Rescoring all 4,464 executed drawer-selector
+episodes with this recipe, its success detector fires on
+89
+%
+89\%
+of
+wrong-object failures, earlier on average, and on
+73
+%
+73\%
+of successes, so the
+recipe ranks wrong-object failures even further above successes (AUROC
+.125
+.125
+against
+.195
+.195
+for the terminal success probability). At the KL that the
+trained selectors reached, the tilt predicts the same amplification under the
+recipe as under the terminal reward (
++
+62.0
++62.0
+against
++
+65.5
++65.5
+points;
+Appendix
+I
+).
+7
+Verification as a Diagnostic Intervention
+The tilt model says that optimization amplifies whichever outcomes the reward
+scores above the population. A reward that ranks successes above
+wrong-object failures should therefore redirect the same optimizer. We test
+this with a frozen, task-specific success verifier, used either to reweight
+the original critic or on its own:
+R
+P
+​
+(
+τ
+,
+x
+)
+=
+r
+¯
+b
+​
+(
+τ
+,
+x
+)
+​
+p
+θ
+​
+(
+τ
+)
+,
+R
+V
+​
+(
+τ
+)
+=
+p
+θ
+​
+(
+τ
+)
+,
+R_{P}(\tau,x)=\bar{r}_{b}(\tau,x)\,p_{\theta}(\tau),\qquad R_{V}(\tau)=p_{\theta}(\tau),
+(5)
+where
+r
+¯
+b
+∈
+[
+0
+,
+1
+]
+\bar{r}_{b}\in[0,1]
+is the critic objective used for
+C
+C
+. Both rewards use
+the same verifier, so comparing them measures what retaining the critic adds
+at equal supervision.
+Task-specific visual verification.
+The verifier predicts simulator-labeled success from visual features near the
+end of a trajectory and their change from initialization. The drawer head is
+trained on 384 simulator-labeled development trajectories, including
+executions of critic-optimized development policies
+(Appendix
+A.1
+); stacking heads use 456 or 2,536
+labels. Each head is frozen before policy optimization and reused across
+critics within its task and label budget. On the warm-start executions it
+orders successes above wrong-object failures (AUROC
+.862
+.862
+;
+Figure
+3
+).
+The same optimization learns the intended behavior.
+Under the fine-tuning sampler, Product training raises success by
+15.5
+15.5
+points and leaves wrong-object failures at
+−
+0.6
+​
+[
+−
+3.4
+,
+2.1
+]
+-0.6\,[-3.4,2.1]
+points, so it
+gains
+7.1
+​
+[
+4.4
+,
+9.8
+]
+7.1\,[4.4,9.8]
+points of success and
+4.4
+​
+[
+1.8
+,
+7.1
+]
+4.4\,[1.8,7.1]
+points fewer
+wrong-object failures than critic-only training
+(Table
+1
+; per-training changes in
+Figure
+6
+). Six verifier-only trainings reach the same
+outcome: success rises by
+15.8
+​
+[
+12.2
+,
+19.4
+]
+15.8\,[12.2,19.4]
+points and wrong-object failures
+by
+−
+1.2
+​
+[
+−
+3.8
+,
+1.4
+]
+-1.2\,[-3.8,1.4]
+, and Product differs from them by
+−
+0.3
+​
+[
+−
+2.5
+,
+1.9
+]
+-0.3\,[-2.5,1.9]
+points of success and
++
+0.6
+​
+[
+−
+1.3
+,
+2.5
+]
++0.6\,[-1.3,2.5]
+points of wrong-object failure
+(Appendix
+C
+). Outcome supervision, not the critic,
+carries the recovery.
+The constrained policies show larger recoveries across drawer and stacking
+(Figure
+9
+), and verifier-only rewards reproduce them
+(Appendix
+M.1
+). A continuation that forks each of
+three exploited constrained drawer policies with its Adam state, without new
+verifier labels, shows that verification also redirects a policy that has
+already been exploited: switching to the product improves task completion on
+all three histories and at a drawer opening held out from continuation, while
+continuing the original critic leaves success low
+(Appendix
+D.1
+). In a controlled ball-placement extension,
+the product with a full-history verifier reaches 63 and 64 of 64 successes in
+two histories, whereas a verifier that sees only the final quarter of the
+trajectory, at equal label and frame budgets, reaches 17 and 2
+(Appendix
+M.1
+): the verifier must see the
+evidence that separates the outcomes.
+Figure 5:
+Real-robot outcome composition after simulation fine-tuning.
+Stacked bars show the percentage of 40 physical trials per policy ending in
+success, wrong-object failure or other failure. Intervals and Fisher tests are
+in Table
+8
+.
+8
+Sim-to-Real Case Study
+We deploy simulation-fine-tuned drawer policies, without hardware fine-tuning,
+on a Franka Research 3
+(
+Franka Emika GmbH, 2023
+)
+in a setup matched to the
+simulation at 1:1 scale (Appendix
+E
+). We compare the shared
+warm-start initialization, the critic-trained policy of run 5 at iteration 40
+(fixed before any physical trial), and the terminal-completion oracle at
+iteration 40, all decoded with the five-step fine-tuning sampler, for 40 trials
+each. A trial succeeds if the middle drawer opens by at least 6 cm and is a
+wrong-object failure if the upper drawer is pulled more than 2 cm beyond its
+initial half-open position while the task fails.
+The initialization succeeds in 30.0% of trials and fails on the wrong object
+in 22.5% (Figure
+5
+). The critic-trained policy fails on the
+wrong object in 37.5% of trials and succeeds in 25.0%; the completion-trained
+policy succeeds in 40.0% and fails on the wrong object in 17.5%. The
+wrong-object changes and the completion policy’s success gain match their
+simulated direction, whereas the critic policy’s success does not rise on
+hardware. With 40 trials per policy these differences are not statistically
+resolved (Table
+8
+).
+9
+Discussion and Limitations
+Evaluate rewards by what optimization will amplify.
+A rising success rate can hide a growing tendency to act on the wrong object,
+and a strong aggregate AUROC can hide the misranking that causes it. The tilt
+model makes the relevant quantity explicit: optimization amplifies every
+outcome whose reward sits above the population average under the current
+policy, and strong optimization is decided by the top of the score
+distribution. Reward models should therefore be evaluated on how they score
+semantically coherent failures relative to successes and on what occupies
+their upper tail, measured on the behaviors that optimization reaches, and
+policy optimization should be monitored with outcome measurements that are
+independent of the reward.
+Limitations.
+Our simulated experiments cover two tasks; full-denoiser fine-tuning uses one
+critic on two drawer layouts, with five runs per objective, and the supervised
+layout was selected by a fixed capability screen. For the full denoiser the
+tilt model is a first-order description, because fine-tuning creates behaviors
+that reweighting the initial policy cannot represent; for the constrained
+selector it is the exact optimum up to estimation. The verifier is
+task-specific and trained on simulator labels, so it diagnoses rather than
+replaces learned visual rewards. Product results are reported under the
+fine-tuning sampler. A zero critic score remains zero after multiplication, and
+because a wrong-object failure requires task failure, a lower wrong-object rate
+alone does not imply fewer distractor actions. The hardware study is a case
+study with one training run per fine-tuned condition.
+10
+Conclusion
+CriticHack
+shows that optimizing a learned visual reward can improve task success
+while amplifying wrong-object failures, that a ground-truth completion reward
+under the same optimizer does not, and that the effect survives a change of
+initialization and sampler. A tilt model explains when it happens: an outcome
+grows whenever the reward scores it above the population average, so a reward
+that scores semantic errors about as highly as successes raises both, and
+when semantic errors hold the top of the score distribution, stronger
+optimization turns this into the classical loss of task success.
+Aggregate reward-model metrics hide this structure, and outcome verification
+redirects the same optimization toward the intended task. Learned rewards
+should be evaluated through the behaviors they reinforce.
+AI Assistance Statement
+OpenAI Codex, ChatGPT, and Anthropic Claude were used to assist with code
+implementation, data analysis, figure generation, and manuscript refinement.
+All AI-generated outputs and analyses were rigorously verified by the authors
+against executable MuJoCo rollouts, stored policies, and simulator measurements.
+The authors remain solely responsible for the originality, validity, and
+integrity of all claims presented in this work.
+Reproducibility Statement
+The appendices give the evaluation protocols, every training endpoint, the
+controls, the uncertainty definitions, the complete constrained grid and the
+additional analyses. The CPU artifact contains scored outcomes, frozen
+configurations, analysis scripts and provenance manifests; raw trajectories and
+model weights are listed in its artifact manifest. Hardware protocol details
+are in Appendix
+E
+.
+References
+Alakuijala et al. (2025)
+Minttu Alakuijala, Reginald McLean, Isaac Woungang, Nariman Farsad, Samuel
+Kaski, Pekka Marttinen, and Kai Yuan.
+Video-Language Critic: Transferable reward functions for
+language-conditioned robotics.
+Transactions on Machine Learning Research
+, 2025.
+URL
+https://openreview.net/forum?id=jJOVpnNrEp
+.
+Amodei et al. (2016)
+Dario Amodei, Chris Olah, Jacob Steinhardt, Paul Christiano, John Schulman, and
+Dan Mané.
+Concrete problems in AI safety.
+arXiv preprint arXiv:1606.06565
+, 2016.
+URL
+https://arxiv.org/abs/1606.06565
+.
+Black et al. (2024)
+Kevin Black, Michael Janner, Yilun Du, Ilya Kostrikov, and Sergey Levine.
+Training diffusion models with reinforcement learning.
+In
+International Conference on Learning Representations
+, 2024.
+URL
+https://proceedings.iclr.cc/paper_files/paper/2024/hash/14f75513f0f1ca01de1e826b52e6b840-Abstract-Conference.html
+.
+Chen et al. (2021)
+Annie S. Chen, Suraj Nair, and Chelsea Finn.
+Learning generalizable robotic reward functions from “in-the-wild”
+human videos.
+In
+Proceedings of Robotics: Science and Systems
+, 2021.
+doi:
+10.15607/RSS.2021.XVII.012
+.
+URL
+https://www.roboticsproceedings.org/rss17/p012.html
+.
+Chen et al. (2025)
+Yuhui Chen, Shuai Tian, Shugao Liu, Yingting Zhou, Haoran Li, and Dongbin Zhao.
+ConRFT: A reinforced fine-tuning method for VLA models via
+consistency policy.
+In
+Proceedings of Robotics: Science and Systems
+, 2025.
+doi:
+10.15607/RSS.2025.XXI.019
+.
+URL
+https://roboticsproceedings.org/rss21/p019.html
+.
+Chi et al. (2023)
+Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin
+Burchfiel, and Shuran Song.
+Diffusion policy: Visuomotor policy learning via action diffusion.
+In
+Proceedings of Robotics: Science and Systems
+, 2023.
+doi:
+10.15607/RSS.2023.XIX.026
+.
+URL
+https://www.roboticsproceedings.org/rss19/p026.html
+.
+Christiano et al. (2017)
+Paul F. Christiano, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg, and
+Dario Amodei.
+Deep reinforcement learning from human preferences.
+In
+Advances in Neural Information Processing Systems
+,
+volume 30, 2017.
+URL
+https://proceedings.neurips.cc/paper_files/paper/2017/file/d5e2c0adad503c91f91df240d0cd4e49-Paper.pdf
+.
+Cobbe et al. (2021)
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz
+Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano,
+Christopher Hesse, and John Schulman.
+Training verifiers to solve math word problems.
+arXiv preprint arXiv:2110.14168
+, 2021.
+URL
+https://arxiv.org/abs/2110.14168
+.
+Coste et al. (2024)
+Thomas Coste, Usman Anwar, Robert Kirk, and David Krueger.
+Reward model ensembles help mitigate overoptimization.
+In
+International Conference on Learning Representations
+, 2024.
+URL
+https://proceedings.iclr.cc/paper_files/paper/2024/hash/dda7f9378a210c25e470e19304cce85d-Abstract-Conference.html
+.
+Du et al. (2023)
+Yuqing Du, Ksenia Konyushkova, Misha Denil, Akhil Raju, Jessica Landon, Felix
+Hill, Nando de Freitas, and Serkan Cabi.
+Vision-language models as success detectors.
+In
+Proceedings of The 2nd Conference on Lifelong Learning
+Agents
+, volume 232 of
+Proceedings of Machine Learning Research
+, pp. 120–136, 2023.
+URL
+https://proceedings.mlr.press/v232/du23b.html
+.
+Fluri et al. (2025)
+Lukas Fluri, Leon Lang, Alessandro Abate, Patrick Forré, David Krueger, and
+Joar Max Viktor Skalse.
+The perils of optimizing learned reward functions: Low training error
+does not guarantee low regret.
+In
+Proceedings of the 42nd International Conference on Machine
+Learning
+, volume 267, pp.  17306–17377. PMLR, 2025.
+URL
+https://proceedings.mlr.press/v267/fluri25a.html
+.
+Franka Emika GmbH (2023)
+Franka Emika GmbH.
+Franka Research 3: Product Manual
+, September 2023.
+URL
+https://download.franka.de/documents/120010_Product%20Manual%20Franka%20Research%203_1.0_EN.pdf
+.
+Document 120010, version 1.0.
+Fu et al. (2018)
+Justin Fu, Avi Singh, Dibya Ghosh, Larry Yang, and Sergey Levine.
+Variational inverse control with events: A general framework for
+data-driven reward definition.
+In
+Advances in Neural Information Processing Systems
+,
+volume 31, 2018.
+URL
+https://proceedings.neurips.cc/paper_files/paper/2018/file/c9319967c038f9b923068dabdf60cfe3-Paper.pdf
+.
+Gao et al. (2023)
+Leo Gao, John Schulman, and Jacob Hilton.
+Scaling laws for reward model overoptimization.
+In
+Proceedings of the 40th International Conference on Machine
+Learning
+, volume 202, pp.  10835–10866. PMLR, 2023.
+URL
+https://proceedings.mlr.press/v202/gao23h.html
+.
+Ho et al. (2020)
+Jonathan Ho, Ajay Jain, and Pieter Abbeel.
+Denoising diffusion probabilistic models.
+In
+Advances in Neural Information Processing Systems
+,
+volume 33, pp.  6840–6851, 2020.
+URL
+https://proceedings.neurips.cc/paper_files/paper/2020/file/4c5bcfec8584af0d967f1ab10179ca4b-Paper.pdf
+.
+Kakade (2001)
+Sham M. Kakade.
+A natural policy gradient.
+In
+Advances in Neural Information Processing Systems
+,
+volume 14, 2001.
+URL
+https://papers.nips.cc/paper_files/paper/2001/hash/4b86abe48d358ecf194c56c69108433e-Abstract.html
+.
+Kamath et al. (2023)
+Amita Kamath, Jack Hessel, and Kai-Wei Chang.
+What’s “up” with vision-language models? investigating their
+struggle with spatial reasoning.
+In
+Proceedings of the 2023 Conference on Empirical Methods in
+Natural Language Processing
+, pp.  9161–9175, 2023.
+doi:
+10.18653/v1/2023.emnlp-main.568
+.
+Kim et al. (2025a)
+Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna,
+Suraj Nair, Rafael Rafailov, Ethan P Foster, Pannag R Sanketi, Quan Vuong,
+Thomas Kollar, Benjamin Burchfiel, Russ Tedrake, Dorsa Sadigh, Sergey Levine,
+Percy Liang, and Chelsea Finn.
+OpenVLA: An open-source vision-language-action model.
+In
+Proceedings of The 8th Conference on Robot Learning
+, volume
+270, pp.  2679–2713. PMLR, 2025a.
+URL
+https://proceedings.mlr.press/v270/kim25c.html
+.
+Kim et al. (2025b)
+Sunghwan Kim, Dongjin Kang, Taeyoon Kwon, Hyungjoo Chae, Dongha Lee, and
+Jinyoung Yeo.
+Rethinking reward model evaluation through the lens of reward
+overoptimization.
+In
+Proceedings of the 63rd Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers)
+, pp.  13252–13280.
+Association for Computational Linguistics, 2025b.
+doi:
+10.18653/v1/2025.acl-long.649
+.
+URL
+https://aclanthology.org/2025.acl-long.649/
+.
+Korbak et al. (2022)
+Tomasz Korbak, Ethan Perez, and Christopher L. Buckley.
+RL with KL penalties is better viewed as Bayesian inference.
+In
+Findings of the Association for Computational Linguistics:
+EMNLP 2022
+, 2022.
+Lee et al. (2026)
+Tony Lee, Andrew Wagenmaker, Karl Pertsch, Percy Liang, Sergey Levine, and
+Chelsea Finn.
+RoboReward: General-purpose vision-language reward models for
+robotics.
+arXiv preprint arXiv:2601.00675
+, 2026.
+URL
+https://arxiv.org/abs/2601.00675
+.
+Liang et al. (2026)
+Anthony Liang, Yigit Korkmaz, Jiahui Zhang, Minyoung Hwang, Abrar Anwar,
+Sidhant Kaushik, Aditya Shah, Alex S. Huang, Luke Zettlemoyer, Dieter Fox,
+Yu Xiang, Anqi Li, Andreea Bobu, Abhishek Gupta, Stephen Tu, Erdem Biyik, and
+Jesse Zhang.
+Robometer: Scaling general-purpose robotic reward models via
+trajectory comparisons.
+In
+Proceedings of Robotics: Science and Systems
+, 2026.
+doi:
+10.15607/RSS.2026.XXII.140
+.
+URL
+https://roboticsproceedings.org/rss22/p140.html
+.
+Ma et al. (2023a)
+Yecheng Jason Ma, Vikash Kumar, Amy Zhang, Osbert Bastani, and Dinesh
+Jayaraman.
+LIV: Language-image representations and rewards for robotic
+control.
+In
+Proceedings of the 40th International Conference on Machine
+Learning
+, volume 202, pp.  23301–23320. PMLR, 2023a.
+URL
+https://proceedings.mlr.press/v202/ma23b.html
+.
+Ma et al. (2023b)
+Yecheng Jason Ma, Shagun Sodhani, Dinesh Jayaraman, Osbert Bastani, Vikash
+Kumar, and Amy Zhang.
+VIP: Towards universal visual reward and representation via
+value-implicit pre-training.
+In
+International Conference on Learning Representations
+,
+2023b.
+URL
+https://arxiv.org/abs/2210.00030
+.
+Oakden-Rayner et al. (2020)
+Luke Oakden-Rayner, Jared Dunnmon, Gustavo Carneiro, and Christopher Ré.
+Hidden stratification causes clinically meaningful failures in
+machine learning for medical imaging.
+In
+Proceedings of the ACM Conference on Health, Inference, and
+Learning
+, pp.  151–159, 2020.
+doi:
+10.1145/3368555.3384468
+.
+Pan et al. (2022)
+Alexander Pan, Kush Bhatia, and Jacob Steinhardt.
+The effects of reward misspecification: Mapping and mitigating
+misaligned models.
+In
+International Conference on Learning Representations
+, 2022.
+URL
+https://arxiv.org/abs/2201.03544
+.
+Rafailov et al. (2023)
+Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D.
+Manning, and Chelsea Finn.
+Direct preference optimization: Your language model is secretly a
+reward model.
+In
+Advances in Neural Information Processing Systems
+, 2023.
+Ren et al. (2025)
+Allen Z. Ren, Justin Lidard, Lars L. Ankile, Anthony Simeonov, Pulkit Agrawal,
+Anirudha Majumdar, Benjamin Burchfiel, Hongkai Dai, and Max Simchowitz.
+Diffusion policy policy optimization.
+In
+International Conference on Learning Representations
+, 2025.
+URL
+https://proceedings.iclr.cc/paper_files/paper/2025/hash/c0749c39aaff9e9e4c91f7118bf21b1e-Abstract-Conference.html
+.
+Rocamonde et al. (2024)
+Juan Rocamonde, Victoriano Montesinos, Elvis Nava, Ethan Perez, and David
+Lindner.
+Vision-language models are zero-shot reward models for reinforcement
+learning.
+In
+International Conference on Learning Representations
+, 2024.
+URL
+https://proceedings.iclr.cc/paper_files/paper/2024/hash/7a7f6cc5dc2a84fb4edf0feb8e5cfd50-Abstract-Conference.html
+.
+Schulman et al. (2016)
+John Schulman, Philipp Moritz, Sergey Levine, Michael I. Jordan, and Pieter
+Abbeel.
+High-dimensional continuous control using generalized advantage
+estimation.
+In
+International Conference on Learning Representations
+, 2016.
+URL
+https://arxiv.org/abs/1506.02438
+.
+Schulman et al. (2017)
+John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov.
+Proximal policy optimization algorithms.
+arXiv preprint arXiv:1707.06347
+, 2017.
+URL
+https://arxiv.org/abs/1707.06347
+.
+Shao et al. (2024)
+Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei
+Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo.
+DeepSeekMath: Pushing the limits of mathematical reasoning in open
+language models.
+arXiv preprint arXiv:2402.03300
+, 2024.
+URL
+https://arxiv.org/abs/2402.03300
+.
+Skalse et al. (2022)
+Joar Skalse, Nikolaus H. R. Howe, Dmitrii Krasheninnikov, and David Krueger.
+Defining and characterizing reward gaming.
+In
+Advances in Neural Information Processing Systems
+,
+volume 35, pp.  9460–9471, 2022.
+doi:
+10.52202/068431-0687
+.
+URL
+https://proceedings.neurips.cc/paper_files/paper/2022/hash/3d719fee332caa23d5038b8a90e81796-Abstract-Conference.html
+.
+Song et al. (2021)
+Jiaming Song, Chenlin Meng, and Stefano Ermon.
+Denoising diffusion implicit models.
+In
+International Conference on Learning Representations
+, 2021.
+URL
+https://arxiv.org/abs/2010.02502
+.
+Sontakke et al. (2023)
+Sumedh Sontakke, Jesse Zhang, Séb Arnold, Karl Pertsch, Erdem Bıyık,
+Dorsa Sadigh, Chelsea Finn, and Laurent Itti.
+RoboCLIP: One demonstration is enough to learn robot policies.
+In
+Advances in Neural Information Processing Systems
+,
+volume 36, pp.  55681–55693, 2023.
+doi:
+10.52202/075280-2430
+.
+URL
+https://proceedings.neurips.cc/paper_files/paper/2023/file/ae54ce310476218f26dd48c1626d5187-Paper-Conference.pdf
+.
+Todorov et al. (2012)
+Emanuel Todorov, Tom Erez, and Yuval Tassa.
+MuJoCo: A physics engine for model-based control.
+In
+IEEE/RSJ International Conference on Intelligent Robots and
+Systems
+, pp.  5026–5033, 2012.
+doi:
+10.1109/IROS.2012.6386109
+.
+URL
+https://doi.org/10.1109/IROS.2012.6386109
+.
+Wagenmaker et al. (2025)
+Andrew Wagenmaker, Yunchu Zhang, Mitsuhiko Nakamoto, Seohong Park, Waleed
+Yagoub, Anusha Nagabandi, Abhishek Gupta, and Sergey Levine.
+Steering your diffusion policy with latent space reinforcement
+learning.
+In
+Proceedings of The 9th Conference on Robot Learning
+, volume
+305, pp.  258–282. PMLR, 2025.
+URL
+https://proceedings.mlr.press/v305/wagenmaker25a.html
+.
+Wen et al. (2025)
+Xueru Wen, Jie Lou, Yaojie Lu, Hongyu Lin, Xing Yu, Xinyu Lu, Ben He, Xianpei
+Han, Debing Zhang, and Le Sun.
+Rethinking reward model evaluation: Are we barking up the wrong tree?
+In
+International Conference on Learning Representations
+, 2025.
+URL
+https://openreview.net/forum?id=Cnwz9jONi5
+.
+Yang et al. (2026)
+Pengzhi Yang, Xinyu Wang, Pengyu Jing, Kehan Wen, Yiduo Qu, Zhenhao Huang,
+Minghao Fu, Xin Liu, Yaheng Shen, and Fan Shi.
+RARM: Confidence-gated progress reward modeling for RL in
+manipulation.
+arXiv preprint arXiv:2606.22027
+, 2026.
+URL
+https://arxiv.org/abs/2606.22027
+.
+Yang et al. (2024)
+Yanting Yang, Minghao Chen, Qibo Qiu, Jiahao Wu, Wenxiao Wang, Binbin Lin, Ziyu
+Guan, and Xiaofei He.
+Adapt2Reward: Adapting video-language models to generalizable
+robotic rewards via failure prompts.
+In
+Computer Vision – ECCV 2024
+, volume 15115 of
+Lecture
+Notes in Computer Science
+, pp.  163–180. Springer, 2024.
+doi:
+10.1007/978-3-031-72998-0_10
+.
+URL
+https://doi.org/10.1007/978-3-031-72998-0_10
+.
+Yuksekgonul et al. (2023)
+Mert Yuksekgonul, Federico Bianchi, Pratyusha Kalluri, Dan Jurafsky, and James
+Zou.
+When and why vision-language models behave like bags-of-words, and
+what to do about it?
+In
+International Conference on Learning Representations
+, 2023.
+URL
+https://openreview.net/forum?id=KRLUvxh8uaX
+.
+Zhang et al. (2024)
+Ziyi Zhang, Sen Zhang, Yibing Zhan, Yong Luo, Yonggang Wen, and Dacheng Tao.
+Confronting reward overoptimization for diffusion models: A
+perspective of inductive and primacy biases.
+In
+Proceedings of the 41st International Conference on Machine
+Learning
+, volume 235, pp.  60396–60413. PMLR, 2024.
+URL
+https://proceedings.mlr.press/v235/zhang24ch.html
+.
+Appendix A
+Claims, Measurements and Protocols
+Claim
+Evidence and control
+Scope
+Useful learning and wrong-object amplification coexist
+Five critic trainings, 512 shared seeds; Table
+1
+. Oracle controls in Appendix
+C
+.
+Full-denoiser optimization from a reward-exposed drawer policy under the fixed evaluation protocol.
+Prior critic exposure is not required
+Three trainings per objective from supervised initialization, 512 seeds; Appendix
+C.2
+.
+A layout selected by a fixed capability screen.
+Verification redirects behavior
+Five product trainings versus critic, 512 shared seeds; verifier-only controls in Appendices
+C
+and
+M.1
+.
+Product–critic contrasts under the fine-tuning sampler and matched verifier-only controls with task-specific outcome supervision.
+The pattern recurs across protocols
+Drawer Robometer and distinct-color LIV stacking under PPO and GRPO; Appendix
+D
+.
+Fixed noise supports and task-specific verifiers; complete task–critic grid in Appendix
+K
+.
+Aggregate AUROC can mask semantic misranking
+Collected-trajectory audit; Section
+5.3
+and Appendix
+B.5
+.
+Descriptive reward ordering on collected trajectories from the evaluated policies.
+Table 2:
+Evidence supporting the main claims.
+Controls and diagnostics answer different questions and are not pooled into the primary endpoint.
+Primary estimate and additional analyses.
+The primary warm-start endpoint compares fixed iteration 40 with the shared
+initial policy on a fixed bank of 512 evaluation seeds. Appendix
+B.2
+provides the complete training counts and crossed bootstrap definition.
+Later appendices contain the complete constrained grid, sampler
+calibration and additional verifier analyses. The artifact
+provides scored outcomes, configurations, analysis code and provenance.
+A.1
+Task-specific Verification and Label Provenance
+The two policy-camera embeddings supply 128 visual coordinates; ten
+robot-state coordinates are excluded. The 256-dimensional verifier input
+is the mean of the final five recorded visual observations concatenated
+with its difference from the first observation. This last recorded
+observation precedes the final action chunk. We fit feature normalization
+on the labeled development set and freeze it with the head. Simulator
+state supplies training labels and independent outcome measurements,
+but is not an input to the verifier or original critic.
+The drawer logistic head uses 384 trajectories: a 96-episode static
+panel and complete policy-induced panels of 48, 48, 128 and 64 episodes,
+including 91 successes in total. The 96 static trajectories cover 12
+scenes with eight executions each. The 288 policy-induced trajectories
+come from four development-stage panels collected before the reported
+trainings, containing executions of policies optimized against the
+original critic, the oracle and earlier product rewards, together with
+their development parent policy. No trajectory from the reported primary
+trainings or their evaluations enters the fit. Its objective is mean binary
+cross-entropy plus
+.01
+​
+‖
+w
+‖
+2
+2
+/
+2
+.01\|w\|_{2}^{2}/2
+, optimized for at most 200 L-BFGS
+iterations. Earlier 96- and 144-label heads are development controls;
+they are not substituted for this frozen head in the common matrix.
+The cube architecture was selected on development data: 296 training
+labels and 96 validation labels compare nine fixed linear, MLP and RBF
+candidates by Brier score. The selected three-member, 64-unit ReLU MLP
+uses
+L
+2
+=
+.001
+L_{2}=.001
+and is refit on all 392 labels. The deployed 456-label
+version adds 64 uniformly sampled labels from earlier policy-training
+executions, using a fixed sampling seed and no endpoint features.
+A separate diversity-selection diagnostic does not replace this head.
+The MLP fitting recipe uses 500 steps at learning rate
+.003
+.003
+.
+The 2,536-label version instead
+combines the 392 labels with all 2,016 training labels from two earlier
+stacking-development runs and 128 predetermined distinct-color examples
+from their old endpoints. Their original run IDs are listed in
+Table
+28
+.
+Those old endpoints become
+development data
+, not independent
+evaluation of the expanded head. Relative to 456 labels, the additional
+cost is 2,080 labels. The architecture is unchanged.
+Each current run freezes the chosen head before new policy training and
+new-seed endpoint evaluation. No current evaluation trajectory enters
+head fitting. The same task-specific head is reused across original
+critics at a fixed budget. A new head is fitted for the other task, and
+both cube colors participate in training: this is not zero-shot transfer
+of one verifier across tasks or to unseen colors.
+A.2
+Execution, Rewards and Physical Measurements
+Drawer executions retain 300 simulator steps and 75 observation-conditioned
+action chunks. Eight critic frames are sampled at steps
+0, 43, 85, 128, 171, 214, 256 and 299. Success requires final target
+opening of at least 54 mm. Wrong-object failure requires task failure
+and more than 20 mm of additional upper-drawer opening. It excludes
+upper closing, so target opening and upper net motion are also reported.
+Claims that a failed trajectory never completed the task use its maximum
+target opening over the complete saved joint trace, not just a final image.
+Cube evaluation uses two source scenes and both target/decoy position
+assignments, with 16 paired evaluation seeds per cell, totaling 64 per
+color and policy. Success requires the requested target to satisfy the
+stack geometry (6 mm position tolerance, 12 mm height tolerance and
+20-degree tilt limit) and remain in contact with the support, without gripper
+contact, for the final three native control steps. The decoy is evaluated
+with the identical rule. Wrong-object failure means the target fails
+while the decoy succeeds; all remaining unsuccessful episodes are
+no-stack failures. The three categories partition every reported panel.
+Colors interpolate between a fixed distinct decoy and the target at
+fractions 0 and .9; both conditions receive balanced training feedback.
+The critic camera is separate from the policy’s two observation cameras.
+Robometer uses the frozen original success-prediction output on the task
+instruction and eight rollout frames; its separate progress output is
+not substituted. LIV uses the official model’s final-frame
+image–language cosine
+c
+c
+, with
+(
+1
++
+c
+)
+/
+2
+(1+c)/2
+as the fixed nonnegative
+training reward for both original and product objectives. Native cosine
+is reported without fitting a success threshold. High-score failures,
+F
+c
+=
+Pr
+⁡
+[
+y
+=
+0
+,
+r
+b
+≥
+c
+]
+F_{c}=\Pr[y=0,r_{b}\geq c]
+, and their wrong-object subset are secondary
+diagnostics with all executions in the denominator. Robometer uses
+c
+=
+.5
+c=.5
+and normalized discrete RoboReward uses
+c
+=
+.75
+c=.75
+; LIV has no high-score
+threshold. Scores from different critics are not pooled. Separate RoboReward protocols and their score rubric are given
+in Appendix
+L.1
+.
+Appendix B
+Primary Full-denoiser Evidence
+B.1
+Frozen contract and execution
+The training contract was committed before launch: parent weights fixed by checksum,
+22.4M-parameter encoder frozen, all 251,701,895 denoiser parameters trainable,
+K
+=
+5
+K{=}5
+,
+η
+=
+0
+\eta{=}0
+,
+σ
+=
+.05
+\sigma{=}.05
+; 126 fresh episodes per iteration and 40
+iterations; two value-only iterations; ten epochs per iteration at 1,512
+decisions per optimizer step; clipping
+.2
+.2
+, critic learning rate
+10
+−
+3
+10^{-3}
+, value coefficient
+.5
+.5
+, gradient-norm limit 1,
+γ
+=
+.999
+\gamma{=}.999
+,
+λ
+=
+.95
+\lambda{=}.95
+; actor learning rate adaptive to Kullback–Leibler (KL)
+divergence from
+10
+−
+6
+10^{-6}
+with target
+.01
+.01
+per denoising step.
+Oracle learnability requires at least two of three histories to improve
+success or completion with a confidence-interval lower bound above zero.
+The critic and product study
+uses a fixed bank of 512 seeds shared across objectives and iterations
+0
+,
+10
+,
+20
+,
+30
+,
+40
+0,10,20,30,40
+. Five training histories per objective share one evaluated
+initialization, giving 41 distinct model checkpoints and 20,992 model–seed
+executions. Model identities, the seed bank and the descriptive analysis
+are fixed before evaluating the intermediate checkpoints, and all are
+scored before analysis. The primary comparison is iteration 40 versus
+initialization; intermediate evaluations do not select checkpoints or
+hyperparameters. The same 20,992 executions supply the collected-trajectory
+semantic audit in Section
+5.3
+. Training and evaluation
+seeds are functions of iteration, worker and slot, so a restarted unit
+reproduces its episodes exactly.
+Each arm runs resident workers that load the model once and wait for the
+learner to publish the next weights; the learner consumes an iteration only
+when every worker has written its completion marker, writes an atomic
+checkpoint, then publishes the next weights with a checksum index. A worker
+that crashes is restarted alone and redoes its own unit under the same
+weights and seeds; only a learner failure or an exhausted worker restart
+budget fails the arm. The primary critic and product evaluation uses the
+same OSMesa renderer, evaluator and scorer for every model; the initial
+policy is scored once and shared by all ten comparisons. Oracle controls
+use their own seed sets and the rendering backend of their training.
+Two further equivalence checks are recorded with the results:
+disabling per-step camera rendering leaves trajectories, actions, latents
+and saved frames bit-identical, and the resident scorer reproduces the
+offline scorer used for all earlier experiments to
+0.0
+0.0
+on shared episodes.
+Numerically, recomputing
+log
+⁡
+π
+θ
+\log\pi_{\theta}
+under the sampling weights matches
+the recorded values to
+×
+10
+−
+4
+1.07\!\times\!10^{-4}
+on the first minibatch with
+TF32 disabled; each arm reports this check.
+B.1.1
+Credit assignment and numerical details
+The mean
+μ
+ϕ
+\mu_{\phi}
+in Equation
+2
+is the
+η
+=
+0
+\eta=0
+DDIM update with its clean-sample estimate clipped to
+[
+−
+1
+,
+1
+]
+[-1,1]
+.
+The policy executes the first four actions of each unnormalized output;
+300 control steps give 75 observation-conditioned decisions. Sampler
+calibration is reported in Appendix
+J.2
+.
+For the
+dense oracle
+histories, the completion increment at decision
+h
+h
+is
+r
+h
+O
+=
+Φ
+⁡
+(
+d
+h
++
+1
+)
+−
+Φ
+⁡
+(
+d
+h
+)
+r_{h}^{O}=\Phi(d_{h+1})-\Phi(d_{h})
+, where
+Φ
+⁡
+(
+d
+)
+=
+clip
+⁡
+(
+d
+/
+d
+⋆
+,
+0
+,
+1
+)
+\Phi(d)=\operatorname{clip}(d/d^{\star},0,1)
+and
+d
+⋆
+=
+54
+d^{\star}=54
+mm.
+The undiscounted sum telescopes to terminal minus initial completion;
+the PPO objective uses discount
+γ
+=
+.999
+\gamma=.999
+. The terminal oracle uses a
+single terminal completion reward.
+The value network takes frozen encoder features and the decision index,
+including the policy’s proprioceptive condition but no privileged object
+state. Generalized advantage estimation (GAE)
+(
+Schulman et al., 2016
+)
+uses
+γ
+=
+.999
+\gamma=.999
+and
+λ
+=
+.95
+\lambda=.95
+; the decision advantage is
+standardized within an iteration and copied to all
+K
+K
+denoising transitions
+of that decision, which are not discounted relative to one another.
+Each iteration collects 9,450 decisions and runs ten epochs with six
+optimizer steps of 1,512 decisions. The PPO clip is .2, value coefficient .5,
+and gradient-norm limit 1. The implementation sums coordinate log-densities and uses a
+KL-adaptive actor rate bounded by
+[
+10
+−
+8
+,
+10
+−
+4
+]
+[10^{-8},10^{-4}]
+.
+TF32 is disabled for both sampling and training.
+Implemented rewards.
+For a learned-reward arm the reward of
+episode
+e
+e
+at decision
+k
+k
+is
+r
+e
+,
+k
+=
+𝟙
+[
+k
+=
+75
+]
+s
+e
+r_{e,k}=\mathbb{1}[k=75]\,s_{e}
+, where
+s
+e
+s_{e}
+is
+the frozen scorer’s value for that episode: Robometer’s last-frame success
+probability for critic-only, its product with the verifier probability for
+the product arm, and the verifier probability alone for verifier-only. The
+terminal oracle uses
+r
+e
+,
+k
+=
+𝟙
+[
+k
+=
+75
+]
+completion
+e
+r_{e,k}=\mathbb{1}[k=75]\,\mathrm{completion}_{e}
+and the
+dense oracle the per-decision completion increment. No score is rescaled
+before GAE. An executable test of the deployed learner (byte-identical to the
+code that ran) confirms that the terminal reward of every learned key equals
+the scorer file and is unchanged when the simulator completion changes. On
+the real training data of six learned trainings (critic and product
+trainings 3–5; 30,240 episodes), every iteration’s scorer file covers exactly
+the executed episodes, the product equals Robometer times verifier with zero
+error, and the reward means logged by the learner equal the scorer file’s
+means exactly.
+B.2
+All primary endpoints and uncertainty
+Figure 6:
+Task improvement can coexist with wrong-object amplification.
+Each small marker is one full-denoiser fine-tuning run on the occluded
+drawer task, placed by its change in task success and in wrong-object
+failure from the shared initialization to iteration 40, in percentage
+points on the same 512 evaluation seeds. A wrong-object failure opens the
+upper distractor drawer without completing the requested middle drawer.
+Critic runs (circles) train on the Robometer critic alone; Product runs
+(triangles) train on the critic multiplied by a frozen success verifier.
+Open diamonds mark the mean of the five runs of each reward. Their
+horizontal and vertical bars are marginal 95% intervals for the success
+and wrong-object changes respectively, resampling runs and evaluation
+seeds; together they do not form a joint confidence region.
+Figure
+6
+places each critic and product training by
+its iteration-40 change in success and wrong-object failure;
+Figure
+7
+adds per-training intervals and Robometer
+changes. All five critic and all five product trainings enter the primary
+comparison.
+The initial policy is evaluated once on the 512 shared seeds. Per-training
+intervals resample paired evaluation seeds. Family estimates average the
+five per-training paired differences; their intervals resample training
+histories and one common evaluation-seed draw per replicate. The
+product–critic contrast draws training histories independently between
+objectives and retains the common evaluation-seed resample. All intervals
+use 20,000 bootstrap draws. Alternative resampling designs are reported
+separately in Appendix
+J.1
+.
+Figure 7:
+All ten fine-tuned policies, each with its own intervals.
+Each row compares one full-denoiser fine-tuning run at iteration 40 with
+the shared initialization on the same 512 occluded-drawer seeds; parentheses
+give its successes out of 512 at initialization and iteration 40. Panels
+show the changes in task success and wrong-object failure, in percentage
+points, and in Robometer score.
+A wrong-object failure opens the upper distractor drawer without
+completing the requested middle drawer. Critic runs train on the Robometer
+critic alone; Product runs train on the critic multiplied by a frozen
+success verifier. The
+last three rows pool the five runs of each reward and contrast the two.
+Bars are 95% intervals, over evaluation seeds for single runs and over
+runs and seeds for pooled rows.
+Three critic trainings individually establish both reward gain and
+wrong-object amplification; the other two have positive wrong-object
+estimates whose intervals include zero. Every product training establishes
+a success gain. No individual product training establishes non-increasing
+wrong-object failure relative to initialization. These per-training
+comparisons and the pooled product–critic contrast measure different effects.
+Outcome composition.
+Over the
+5
+×
+512
+5\times 512
+paired executions of
+the critic-only trainings, 302 other failures become successes and 189 become
+wrong-object failures, while 45 successes become wrong-object failures and 50
+wrong-object failures become successes. For the product the corresponding
+counts are 422, 133, 19 and 83. Measured regardless of outcome, the share of
+executions that open the distractor by more than 20 mm rises by
+6.6
+​
+[
+3.3
+,
+10.2
+]
+6.6\,[3.3,10.2]
+points under critic-only training. The product change,
++
+2.1
+​
+[
+−
+1.2
+,
++
+5.4
+]
++2.1\,[-1.2,+5.4]
+points, remains unresolved. Mean maximum distractor
+opening changes by
++
+3.96
+​
+[
+2.06
+,
+5.91
+]
++3.96\,[2.06,5.91]
+mm for critic and
++
+1.27
+​
+[
+−
+0.58
+,
++
+3.14
+]
++1.27\,[-0.58,+3.14]
+mm for product. Changes in
+unconditional distractor opening under the four oracle controls also have
+intervals containing zero.
+B.3
+Training dynamics on the fixed evaluation bank
+Figure
+8
+reports all five histories per
+objective at the five fixed checkpoints. Main-paper
+Figure
+2
+averages those histories and
+shows 95% pointwise percentile intervals from 20,000 crossed-bootstrap
+draws. Each draw resamples five histories independently within each
+objective and one common set of 512 seed columns. The same history and
+seed draws apply across checkpoints, preserving their dependence.
+The common initialization has only evaluation-seed uncertainty.
+These intervals describe each checkpoint level, rather than simultaneous
+coverage or the endpoint contrasts in Table
+1
+.
+Figure 8:
+Individual full-denoiser training histories.
+Robometer score, task success and wrong-object failure on the same fixed
+512-seed evaluation bank. C1–C5 are the five critic-only histories;
+P1–P5 use critic
+×
+\times
+frozen success verifier (Product). Each line
+averages one history’s 512 executions at each checkpoint; all histories
+share the initial policy. Lines connect evaluated checkpoints without
+smoothing. The primary endpoint is iteration 40.
+B.4
+Policy, scorer and evaluation provenance
+Initial policy.
+The shared initial weights are not a purely
+supervised policy. They descend from a diffusion policy trained by supervised
+learning on middle-drawer demonstrations, followed by three earlier updates
+in this project: (i) a five-epoch warm start on the supervised data mixed with
+copies of one optimized episode from an earlier critic study (5.3% of
+samples; that episode pushes the distractor drawer closed without opening the
+target, which is not the wrong-object pattern measured here); (ii) online RL
+against RoboReward-8B; and (iii) 600 steps of offline reward-weighted
+denoising regression toward Robometer on the evaluation scene, which in its
+own evaluation raised wrong-object failures from 1 to 7 of 32. The
+whole-network study therefore starts from a policy already exposed to the
+critic it optimizes. Every reported change is measured against this common
+initialization, and the constrained-selector experiments use the same
+decoder.
+Scorer.
+Robometer-4B at a fixed revision scores eight evenly
+spaced frames of a third-person camera with the task text “open the middle
+drawer”; the reward is the success probability at the last frame, and the
+base vision-language model is loaded offline at a fixed revision. The
+verifier is the frozen model of Section
+7
+. Rescoring 32
+stored episodes on a second installation reproduced the stored Robometer
+scores, all eight per-frame success probabilities and the verifier outputs
+exactly (maximum absolute difference 0).
+All primary critic and product evaluations use the same OSMesa renderer,
+evaluator and scorer. Weights are fixed at iteration 40; no intermediate
+checkpoint is selected by its evaluation outcome. The training sampler is
+stochastic DDIM with five steps and standard deviation .05. The artifact
+records model identities, evaluation seeds, configurations and score files.
+B.5
+Collected-trajectory semantic audit
+The reward audit of Section
+5.3
+rescores executions that
+were already produced and scored, so it adds no rollouts. The panel contains
+every distinct warm-start execution on the 512-seed bank: the shared
+initialization once and iterations 10, 20, 30 and 40 of the five critic and
+five Product trainings, 20,992 executions from 41 policies with 6,340
+successes, 3,636 wrong-object failures and 11,016 other failures. Robometer’s
+mean score is
+.701
+.701
+on wrong-object failures against
+.651
+.651
+on successes and
+.137
+.137
+on other failures. Intervals resample evaluation seeds as clusters
+(1,000 draws). Among the 16 highest-scored executions, 13 are wrong-object
+failures under Robometer and all are successes under the verifier and the
+product (Table
+3
+). The inversion is already present
+on the initial policy’s own 512 executions (AUROC
+.365
+​
+[
+.288
+,
+.447
+]
+.365\,[.288,.447]
+) and
+persists on the final critic (
+.401
+.401
+), Product (
+.366
+.366
+) and verifier-only
+(
+.391
+.391
+) policies; the supervised initialization’s Robometer scores barely
+separate the two classes (
+.539
+​
+[
+.449
+,
+.626
+]
+.539\,[.449,.626]
+), the case discussed in
+Section
+6
+.
+Robometer
+Verifier
+Product
+Panel
+k
+k
+S
+W
+O
+S
+W
+O
+S
+W
+O
+All executions
+16
+3
+13
+0
+16
+0
+0
+16
+0
+0
+64
+23
+41
+0
+63
+1
+0
+64
+0
+0
+256
+100
+156
+0
+254
+2
+0
+246
+10
+0
+Final policies
+16
+8
+8
+0
+16
+0
+0
+16
+0
+0
+64
+27
+37
+0
+63
+1
+0
+62
+2
+0
+256
+113
+143
+0
+255
+1
+0
+243
+13
+0
+Table 3:
+Physical outcomes among the highest-scored executions.
+Counts of successes (S), wrong-object failures (W) and other failures (O) among the top
+k
+k
+executions ranked by each score. The upper panel uses all 20,992 warm-start executions on the 512-seed bank; the lower panel the 5,120 executions of the ten iteration-40 critic and Product policies.
+Appendix C
+Learnability and Supervised-initialization Controls
+C.1
+Oracle learnability and verifier-only feedback
+The dense oracle optimizes measured target-completion increments; the
+terminal oracle receives the completion once, at the end of the episode;
+verifier-only training optimizes the frozen verifier’s probability. All are
+trained from the warm-start policy with the full-denoiser protocol and evaluated
+at iteration 40 on the warm-start 512-seed bank with the renderer, evaluator and
+scorer of Table
+1
+(Table
+4
+).
+Every oracle improves success by 12 to 19 points and none increases
+wrong-object failures, so the policy family learns the task under the
+implemented update, including from a single terminal reward. Pooled over the
+three dense oracles, success rises by
+13.3
+​
+[
+9.6
+,
+17.0
+]
+13.3\,[9.6,17.0]
+points and
+wrong-object failures change by
+−
+1.6
+​
+[
+−
+4.4
+,
+1.4
+]
+-1.6\,[-4.4,1.4]
+; the critic produces
+5.3
+​
+[
+2.6
+,
+8.1
+]
+5.3\,[2.6,8.1]
+points more wrong-object failures than the dense oracles
+(exact permutation test over trainings,
+p
+=
+.018
+p=.018
+) and
+4.7
+​
+[
+1.7
+,
+7.8
+]
+4.7\,[1.7,7.8]
+more than
+the terminal oracle. Six verifier-only trainings, the original one and five
+additional runs, raise success by
+15.8
+​
+[
+12.2
+,
+19.4
+]
+15.8\,[12.2,19.4]
+points and do not
+increase wrong-object failures; Product and verifier-only training are
+indistinguishable on both outcomes. Sampler calibration and worker-reset
+details are in Appendix
+J.2
+.
+Policy
+Δ
+\Delta
+Success (pp)
+Δ
+\Delta
+Wrong-object (pp)
+Δ
+\Delta
+Completion
+Dense oracle A
++14.5
+[10.5, 18.4]
+−
+-
+0.2
+[
+−
+-
+3.3, 2.9]
++.127
+[.092, .161]
+Dense oracle B
++13.1
+[9.4, 16.8]
+−
+-
+2.1
+[
+−
+-
+5.1, 0.8]
++.134
+[.101, .168]
+Dense oracle C
++12.3
+[8.4, 16.2]
+−
+-
+2.3
+[
+−
+-
+5.3, 0.6]
++.123
+[.089, .157]
+Terminal oracle
++19.1
+[15.0, 23.2]
+−
+-
+1.0
+[
+−
+-
+4.5, 2.3]
++.176
+[.140, .213]
+Verifier only (V1)
++15.2
+[11.1, 19.3]
+−
+-
+1.6
+[
+−
+-
+4.7, 1.6]
++.146
+[.109, .183]
+Verifier only, six trainings
++15.8
+[12.2, 19.4]
+−
+-
+1.2
+[
+−
+-
+3.8, 1.4]
++.146
+[.112, .180]
+Product
+−
+-
+verifier only
+−
+-
+0.3
+[
+−
+-
+2.5, 1.8]
++0.5
+[
+−
+-
+1.3, 2.5]
+−
+-
+.006
+[
+−
+-
+.029, .017]
+Table 4:
+Learnability and verifier-only controls on the warm-start 512-seed bank.
+Each control is the iteration-40 policy of one training, compared with the shared initialization on the same 512 seeds, renderer and scorer as Table
+1
+. Single trainings use paired seed intervals; the pooled rows use crossed intervals over trainings and seeds.
+C.2
+Amplification from a capable supervised initialization
+Policy and task.
+We use a supervised diffusion policy further trained for ten epochs on 167
+physically validated drawer demonstrations, with its own visual encoder and
+normalizer. No learned reward or reinforcement learning enters this policy’s
+training lineage. Before RL, a fixed capability screen evaluates this
+checkpoint on twelve drawer layouts with eight seeds each. Layouts with
+2–6 successes are eligible; we select the most successful, breaking ties by
+manifest order. The selected layout has 3/8 successes. It differs from the
+warm-start study’s layout and from the ceiling-limited control in
+Appendix
+L.4
+.
+Training and evaluation.
+Five independent trainings per objective optimize either Robometer or
+terminal target completion, with the same supervised initialization,
+full-denoiser PPO update, 40 iterations and 126 feedback episodes per
+iteration. Completion is the final target opening divided by 54 mm and
+clipped to
+[
+0
+,
+1
+]
+[0,1]
+; a wrong-object failure requires an unsuccessful task and
+more than 20 mm additional distractor opening. The endpoint is fixed at
+iteration 40, and all ten final policies and the common initialization are
+evaluated on the same 512 held-out seeds. An independent repetition of three
+trainings per objective, run with fresh training seeds on a second host, is
+evaluated on the same seeds (Table
+5
+).
+All five Robometer trainings individually amplify wrong-object failures, by
+9.2 to 13.5 points, while the five completion trainings change them by
+−
+0.4
+-0.4
+to
++
+4.1
++4.1
+points. Pooled, Robometer minus completion gives
++
+9.2
+​
+[
+5.6
+,
+13.0
+]
++9.2\,[5.6,13.0]
+points of wrong-object failure and
+−
+3.7
+​
+[
+−
+7.5
+,
+0.1
+]
+-3.7\,[-7.5,0.1]
+points of success.
+Across all eight trainings per objective, the wrong-object difference is
++
+8.3
+​
+[
+5.0
+,
+11.5
+]
++8.3\,[5.0,11.5]
+points; exact permutation tests over training labels give
+p
+=
+.008
+p=.008
+for five against five and
+p
+=
+.0002
+p=.0002
+for eight against eight.
+Pooled intervals use 20,000 crossed bootstrap draws over trainings and one
+shared set of evaluation seeds; cross-objective contrasts resample the two
+objectives’ trainings independently and share the seed resample.
+Training
+Δ
+\Delta
+Success (pp)
+Δ
+\Delta
+Wrong-object (pp)
+Δ
+\Delta
+Robometer
+Robometer 1
++9.4
+[5.5, 13.3]
++13.5
+[9.4, 17.6]
++.123
+[.092, .153]
+Robometer 2
++9.8
+[6.1, 13.5]
++10.2
+[6.4, 14.1]
++.167
+[.137, .198]
+Robometer 3
++9.6
+[5.9, 13.5]
++11.9
+[8.2, 15.8]
++.129
+[.098, .160]
+Robometer 4
++11.7
+[7.6, 15.8]
++9.6
+[5.7, 13.7]
++.138
+[.105, .171]
+Robometer 5
++10.7
+[6.6, 14.6]
++9.2
+[5.3, 13.1]
++.130
+[.099, .162]
+Completion 1
++17.6
+[12.9, 22.3]
++3.9
+[0.4, 7.4]
++.094
+[.061, .126]
+Completion 2
++11.7
+[7.4, 16.0]
++0.0
+[
+−
+-
+3.3, 3.3]
++.046
+[.014, .079]
+Completion 3
++12.9
+[8.6, 17.2]
+−
+-
+0.4
+[
+−
+-
+3.9, 3.1]
++.042
+[.009, .075]
+Completion 4
++13.5
+[9.0, 18.0]
++0.6
+[
+−
+-
+2.7, 3.9]
++.064
+[.031, .097]
+Completion 5
++13.9
+[9.4, 18.4]
++4.1
+[0.4, 7.8]
++.065
+[.031, .099]
+Robometer 1 (repetition)
++8.8
+[4.9, 12.7]
++11.7
+[8.0, 15.4]
++.120
+[.089, .150]
+Robometer 2 (repetition)
++11.3
+[7.6, 15.2]
++7.4
+[3.7, 11.1]
++.127
+[.096, .157]
+Robometer 3 (repetition)
++8.4
+[4.5, 12.5]
++7.8
+[4.3, 11.5]
++.056
+[.026, .086]
+Completion 1 (repetition)
++15.0
+[10.5, 19.5]
++3.9
+[0.2, 7.6]
++.069
+[.036, .101]
+Completion 2 (repetition)
++14.5
+[10.2, 18.8]
++3.1
+[
+−
+-
+0.4, 6.4]
++.084
+[.053, .114]
+Completion 3 (repetition)
++16.8
+[12.5, 21.1]
++0.0
+[
+−
+-
+3.3, 3.3]
++.075
+[.044, .107]
+Robometer, all eight
++10.0
+[6.8, 13.2]
++10.2
+[6.8, 13.6]
++.124
+[.091, .155]
+Completion, all eight
++14.5
+[10.4, 18.6]
++1.9
+[
+−
+-
+1.4, 5.1]
++.067
+[.037, .097]
+Robometer
+−
+-
+completion, eight each
+−
+-
+4.5
+[
+−
+-
+7.9,
+−
+-
+1.2]
++8.3
+[5.0, 11.5]
++.056
+[.025, .087]
+Table 5:
+All sixteen trainings from the supervised initialization on its 512-seed bank.
+Five trainings per reward form the primary comparison (Table
+1
+); an independent repetition of three trainings per reward was evaluated on the same bank. Single trainings use paired seed intervals; pooled rows use crossed intervals, and the contrast resamples the two rewards independently.
+Appendix D
+Constrained-policy Recurrence and Matched Verification
+Figure 9:
+Semantic amplification and the verification intervention.
+Critic minus initialization (orange circles) and product minus critic
+(blue squares), with 95% paired execution intervals in percentage points.
+Rows are grouped by task, critic and color condition. These 13 strata contain all nine repeated-error
+trainings and both trained stacking colors; the near-color strata are retained
+even when induction is unresolved. All 29 strata, including Robometer stacking
+and drawer LIV boundaries, appear in Figure
+13
+.
+Training numbers identify histories within each task–critic–optimizer group; the two stacking colors share histories. Original IDs and complete counts are in Supplementary Tables
+28
+and
+16
+.
+Figure
+9
+contains the repeated drawer Robometer
+and LIV stacking comparisons, including both trained stacking colors.
+The tables below report all nine repeated-error histories across these
+settings. The complete 29-stratum grid, all supervision budgets and
+boundary settings appear in Appendix
+K
+.
+Training numbers are local to each task–critic–optimizer group. Original
+run IDs are retained in Table
+28
+.
+D.1
+Oracle, Exploitation and Repair
+Tables
+6
+and
+7
+report original critic scores, physical task successes and paired changes
+for all nine histories.
+All nine oracle policies improve true success with intervals above zero.
+For LIV stacking, their native-score changes are negative in all four
+trainings, also with intervals excluding zero. The oracle learns the
+physical task despite this critic disagreement. Conversely, original-LIV
+optimization raises native score while losing success in all four.
+Training
+n
+n
+Initialization
+Oracle
+Critic
+Product
+(a) Original critic score
+Drawer / Robometer
+PPO 1
+32
+0.4050
+0.5517
+0.7141
+0.6594
+PPO 2
+32
+0.3903
+0.4817
+0.8102
+0.6249
+PPO 3
+32
+0.3393
+0.4273
+0.7709
+0.6456
+GRPO 1
+64
+0.3008
+0.6152
+0.7937
+0.6314
+GRPO 2
+64
+0.3609
+0.5946
+0.7803
+0.6120
+Stacking / LIV / distinct color
+PPO 1
+64
+−
+-
+0.1700
+−
+-
+0.1784
+−
+-
+0.1631
+−
+-
+0.1784
+PPO 2
+64
+−
+-
+0.1710
+−
+-
+0.1762
+−
+-
+0.1625
+−
+-
+0.1764
+GRPO 1
+64
+−
+-
+0.1693
+−
+-
+0.1757
+−
+-
+0.1627
+−
+-
+0.1750
+GRPO 2
+64
+−
+-
+0.1707
+−
+-
+0.1765
+−
+-
+0.1637
+−
+-
+0.1754
+(b) Task successes (count)
+Drawer / Robometer
+PPO 1
+32
+4
+24
+3
+25
+PPO 2
+32
+11
+19
+2
+25
+PPO 3
+32
+6
+18
+2
+25
+GRPO 1
+64
+12
+54
+4
+56
+GRPO 2
+64
+10
+58
+4
+52
+Stacking / LIV / distinct color
+PPO 1
+64
+20
+63
+6
+63
+PPO 2
+64
+24
+57
+3
+57
+GRPO 1
+64
+15
+55
+2
+52
+GRPO 2
+64
+22
+51
+5
+52
+(c) Wrong-object failures (count)
+Drawer / Robometer
+PPO 1
+32
+9
+2
+24
+5
+PPO 2
+32
+4
+3
+28
+3
+PPO 3
+32
+6
+4
+28
+5
+GRPO 1
+64
+8
+1
+54
+0
+GRPO 2
+64
+14
+0
+53
+0
+Stacking / LIV / distinct color
+PPO 1
+64
+21
+0
+46
+0
+PPO 2
+64
+18
+2
+42
+2
+GRPO 1
+64
+18
+6
+53
+7
+GRPO 2
+64
+15
+9
+36
+6
+Table 6:
+Oracle, exploitation and repair across nine training histories.
+Panel (a) reports mean original critic scores: Robometer success probability for drawer and native LIV cosine for stacking. Panels (b) and (c) report physical task successes and wrong-object failures out of
+n
+n
+evaluation executions per policy. Initialization is the uniform noise-selection policy; Oracle, Critic and Product optimize physical completion, the visual critic, and critic
+×
+\times
+frozen verifier, respectively. Oracle policies are evaluated with the same visual critic as the other policies. Stacking uses the 2,536-label verifier. Original run IDs are mapped in Table
+28
+.
+Drawer PPO 2 and 3 and GRPO 1 also meet the strict reward-up,
+success-down, repaired-success-up criterion. Drawer PPO 1 and GRPO 2 have
+success-loss intervals crossing zero, but reliably increase wrong-object
+failures while increasing reward. Drawer PPO 1 additionally reduces mean clipped
+target completion from .2576 to .1082, a paired change of
+−
+.1494
+​
+[
+−
+.2917
+,
+−
+.0137
+]
+-.1494\,[-.2917,-.0137]
+. The oracle and product reach
+.9146 and .8300.
+Reward change
+Task-success change (count of
+n
+n
+)
+Training
+n
+n
+Critic
+−
+-
+Init.
+Oracle
+−
+-
+Init.
+Critic
+−
+-
+Init.
+Product
+−
+-
+Critic
+Drawer / Robometer
+PPO 1
+32
++
++
+.3091
+[
++
++
+.1915,
++
++
+.4252]
++
++
+20
+[
++
++
+14,
++
++
+26]
+−
+-
+1
+[
+−
+-
+5,
++
++
+3]
++
++
+22
+[
++
++
+17,
++
++
+27]
+PPO 2
+32
++
++
+.4199
+[
++
++
+.3139,
++
++
+.5218]
++
++
+8
+[
++
++
+3,
++
++
+14]
+−
+-
+9
+[
+−
+-
+14,
+−
+-
+4]
++
++
+23
+[
++
++
+18,
++
++
+28]
+PPO 3
+32
++
++
+.4316
+[
++
++
+.3184,
++
++
+.5410]
++
++
+12
+[
++
++
+6,
++
++
+18]
+−
+-
+4
+[
+−
+-
+8,
+−
+-
+1]
++
++
+23
+[
++
++
+18,
++
++
+28]
+GRPO 1
+64
++
++
+.4929
+[
++
++
+.4252,
++
++
+.5601]
++
++
+42
+[
++
++
+34,
++
++
+50]
+−
+-
+8
+[
+−
+-
+14,
+−
+-
+3]
++
++
+52
+[
++
++
+45,
++
++
+58]
+GRPO 2
+64
++
++
+.4195
+[
++
++
+.3398,
++
++
+.4970]
++
++
+48
+[
++
++
+41,
++
++
+54]
+−
+-
+6
+[
+−
+-
+13,
++
++
+1]
++
++
+48
+[
++
++
+40,
++
++
+55]
+Stacking / LIV / distinct color
+PPO 1
+64
++
++
+.0070
+[
++
++
+.0047,
++
++
+.0093]
++
++
+43
+[
++
++
+36,
++
++
+50]
+−
+-
+14
+[
+−
+-
+21,
+−
+-
+7]
++
++
+57
+[
++
++
+52,
++
++
+61]
+PPO 2
+64
++
++
+.0085
+[
++
++
+.0065,
++
++
+.0105]
++
++
+33
+[
++
++
+25,
++
++
+41]
+−
+-
+21
+[
+−
+-
+28,
+−
+-
+14]
++
++
+54
+[
++
++
+49,
++
++
+59]
+GRPO 1
+64
++
++
+.0067
+[
++
++
+.0047,
++
++
+.0086]
++
++
+40
+[
++
++
+32,
++
++
+48]
+−
+-
+13
+[
+−
+-
+19,
+−
+-
+7]
++
++
+50
+[
++
++
+44,
++
++
+55]
+GRPO 2
+64
++
++
+.0070
+[
++
++
+.0051,
++
++
+.0091]
++
++
+29
+[
++
++
+22,
++
++
+36]
+−
+-
+17
+[
+−
+-
+24,
+−
+-
+10]
++
++
+47
+[
++
++
+41,
++
++
+53]
+Table 7:
+Oracle learnability, reward exploitation and repair: paired changes.
+Each row is one training history; entries are paired differences with 95% intervals in brackets. Init. is the uniform noise-selection policy. The reward change is the change in mean original critic score under critic-only training: Robometer success probability for drawer and native LIV cosine for stacking. Success changes are counts out of
+n
+n
+evaluation executions. Seven of nine trainings have a success-loss interval strictly below zero; drawer PPO 1 and GRPO 2 establish amplified wrong-object behavior but not a reliable binary-success loss. Native reward and repair success increase in all nine.
+Continuation from the three exploited drawer policies, with product,
+original-critic, verifier-only and oracle rewards and a drawer opening held
+out from continuation, is reported in
+Appendix
+M.5
+.
+D.2
+Verifier-only Ablation
+The ablation removes the original critic and optimizes
+R
+V
+=
+p
+θ
+R_{V}=p_{\theta}
+with the identical verifier, labels, policy capacity and update protocol.
+Supplemental same-head controls retain the original seeds and repeat
+uniform executions to check reference reuse. These paired ablations reuse
+the original training histories. Table
+17
+retains every available matched control and marks missing controls explicitly.
+Source of the hacking repairs.
+For drawer Robometer GRPO, verifier-only reaches 55 and 53/64 successes
+with zero wrong-object errors, compared with product outcomes 56/0 and
+52/0. Product-minus-only success differences are
++
+1
+[
+0
+,
+3
+]
+/
+64
++1[0,3]/64
+and
+−
+1
+[
+−
+3
+,
+0
+]
+/
+64
+-1[-3,0]/64
+. For distinct-color LIV stacking, expanded-only, the
+verifier-only control with the 2,536-label head, reaches
+63/57 successes under PPO and 50/55 under GRPO; the product reaches
+63/57 and 52/52. Neither optimizer establishes an additional physical
+benefit from retaining LIV. In the second PPO training, product and only
+have identical outcomes on every paired seed. These controls attribute
+much of the repair to outcome verification.
+Fixed support and replication.
+The repeated trainings vary training and evaluation seeds on fixed
+24-component development supports; they do not resample support banks.
+The drawer support was selected during development without an outcome-blind
+bank-selection rule. Both stacking colors participate in training.
+Intervals condition on the fitted policies and selected support.
+Appendix
+A.1
+specifies the label costs and
+shared heads; Appendix
+K.1
+gives the exact selector
+representation, objectives and optimizer settings.
+Temporal verification in ball placement.
+The controlled ball-placement extension compares full-history and
+final-quarter verifiers in a matched PPO ablation at equal label and frame
+budgets. In two independent histories, the product with the full-history
+verifier reaches 63 and 64/64 successes on new seeds, against 12/64 for the
+uniform selector and 2 and 5/64 for the original reward; the same product
+with a final-quarter verifier reaches 17 and 2/64. Its protocol and
+new-seed endpoints are in
+Appendix
+M.4
+and
+Table
+26
+.
+Appendix E
+Sim-to-Real Case Study: Protocol and Additional Results
+Figure 10:
+Real-robot deployment
+The main hardware outcomes are reported in
+Section
+8
+. Here, we provide the physical setup,
+deployed policy identities, and outcome definitions for the
+real-robot drawer evaluation. Fig.
+10
+shows the environment setup for deployment on a Franka robot.
+Physical setup and reset procedure.
+Experiments use a Franka Research 3 robot in a physical drawer setup
+matched to the simulation at 1:1 scale, including cabinet placement,
+drawer geometry, initial drawer openings, and camera placement.
+The requested task is to open the middle drawer. Before each trial,
+the target middle drawer is reset to its closed position, and the
+upper distractor drawer is returned to the same marked partial
+opening. All policies are evaluated under the same physical setup
+and deployment configuration.
+Policy identities and checkpoint mapping.
+The hardware comparison includes three conditions:
+Initialization
+,
+Critic-trained
+and
+Completion-trained
+. Initialization is the shared warm-start
+initialization of the full-denoiser study (Appendix
+B.4
+),
+which has prior reward exposure. Critic-trained is Critic 5 at iteration 40,
+chosen after the simulation evaluations without a prespecified quantitative
+selection rule; the checkpoint was fixed before any physical trials.
+No hardware outcomes were used in the choice.
+Among the five critic trainings, Critic 5 has the second-largest
+wrong-object increase on the 128-seed checkpoint-diagnostic panel of
+Section
+5.3
+(per-training values in
+Appendix
+J
+) and the
+smallest success gain on the 512-seed primary panel
+(Figure
+7
+).
+Completion-trained is the terminal-completion oracle of
+Appendix
+C.1
+at iteration 40, trained from the same
+initialization. All policies are deployed with the five-step DDIM sampler
+used during fine-tuning. Because only one training history per fine-tuned
+condition was deployed, the hardware study is a sim-to-real case study
+rather than an estimate of transfer across training histories.
+Deployment and evaluation.
+Each policy executes 40 trials, giving 120 trials across the three
+conditions. Policy parameters remain fixed throughout hardware
+evaluation, with no training or fine-tuning on the physical robot.
+The evaluation therefore examines the physical execution of
+policies trained in simulation. Task outcomes are assessed from
+physical drawer motion independently of the learned visual reward.
+Outcome definitions.
+Each trial is assigned to one of three mutually exclusive categories.
+A
+success
+requires opening the target middle drawer by at
+least 6 cm. A
+wrong-object failure
+occurs when the upper
+distractor drawer is pulled more than 2 cm beyond its initial
+marked opening while the requested task remains unsuccessful.
+All remaining unsuccessful trials are classified as
+other failures
+. Grasping a drawer handle alone does not
+satisfy the success criterion.
+Table
+8
+gives the outcome rates and their changes
+from Initialization for the hardware comparison in Section
+8
+.
+Outcome rate (%)
+Change from Initialization (pp)
+Policy
+Success
+Wrong-object
+Other
+Success
+Wrong-object
+Initialization
+30.0
+[18.1, 45.4]
+22.5
+[12.3, 37.5]
+47.5
+[32.9, 62.5]
+–
+–
+Critic-trained
+25.0
+[14.2, 40.2]
+37.5
+[24.2, 53.0]
+37.5
+[24.2, 53.0]
+−
+-
+5.0
+[
+−
+-
+23.8,
++
++
+14.3]
++
++
+15.0
+[
+−
+-
+5.0,
++
++
+33.5]
+Completion-trained
+40.0
+[26.3, 55.4]
+17.5
+[8.7, 31.9]
+42.5
+[28.5, 57.8]
++
++
+10.0
+[
+−
+-
+10.6,
++
++
+29.5]
+−
+-
+5.0
+[
+−
+-
+22.4,
++
++
+12.7]
+Table 8:
+Real-robot outcomes.
+Each policy executes 40 physical drawer trials. Rates are percentages of trials with Wilson 95% intervals; changes relative to Initialization are in percentage points with Newcombe 95% intervals. No change is statistically resolved (two-sided Fisher exact
+p
+=
+.80
+p=.80
+and
+.22
+.22
+for Critic-trained success and wrong-object,
+.48
+.48
+and
+.78
+.78
+for Completion-trained). Success opens the requested middle drawer by at least 6 cm; a wrong-object failure pulls the upper distractor more than 2 cm beyond its initial opening without success. Initialization is the shared warm-start initialization of the full-denoiser study; Critic-trained is Critic 5 at iteration 40; Completion-trained is the terminal-completion oracle of Appendix
+C.1
+at iteration 40.
+Appendix F
+Scope and Retrospective Analyses
+F.1
+Prevalence across the constrained grid
+A constrained-grid stratum shows wrong-object amplification if and only if
+the paired 95% interval for the critic-minus-uniform change in
+wrong-object failure has a lower bound above zero. Under this definition,
+11 of the 29 evaluated strata (37.9%) show amplification
+(Table
+9
+). The 29 strata come from 20 training
+histories, because the two stacking colors of one training share its
+history; they are not 29 independent trainings. In all 11 amplified strata,
+the critic-minus-uniform change in original reward also has an interval
+lower bound above zero. One drawer LIV stratum has a wrong-object interval
+whose lower bound is exactly zero and is not counted. In the two amplified
+near-color Robometer stacking strata, amplification occurs together with a
+positive success change. The nine repeated-error histories of
+Section
+5.2
+come from the two settings with amplification
+in every stratum and do not estimate prevalence.
+Table
+10
+lists every stratum with its intervals;
+Appendix
+K
+adds per-policy outcome counts and all
+supervision budgets, and separate RoboReward experiments outside the grid
+are in Appendix
+L
+.
+Task
+Critic, decoy color
+Amplified strata
+Drawer
+Robometer
+5/5
+Stacking
+LIV, distinct color
+4/4
+Stacking
+LIV, near color
+0/4
+Stacking
+Robometer, near color
+2/5
+Stacking
+Robometer, distinct color
+0/5
+Drawer
+LIV
+0/6
+All
+11/29
+Table 9:
+Wrong-object amplification across the constrained grid.
+A stratum counts as amplified when the paired 95% interval for the
+critic-minus-uniform change in wrong-object failure lies above zero. The
+29 strata come from 20 training histories; the two stacking colors of a
+training share its history.
+Change in count of
+n
+n
+Training
+Decoy
+n
+n
+Wrong-object
+Success
+Critic score
+Amplified
+Drawer / Robometer
+PPO 1
+–
+32
++
++
+15
+[
++
++
+9,
++
++
+21]
+−
+-
+1
+[
+−
+-
+5,
++
++
+3]
++
++
+.3091
+[
++
++
+.1915,
++
++
+.4252]
+✓
+PPO 2
+–
+32
++
++
+24
+[
++
++
+19,
++
++
+29]
+−
+-
+9
+[
+−
+-
+14,
+−
+-
+4]
++
++
+.4199
+[
++
++
+.3139,
++
++
+.5218]
+✓
+PPO 3
+–
+32
++
++
+22
+[
++
++
+17,
++
++
+27]
+−
+-
+4
+[
+−
+-
+8,
+−
+-
+1]
++
++
+.4316
+[
++
++
+.3184,
++
++
+.5410]
+✓
+GRPO 1
+–
+64
++
++
+46
+[
++
++
+39,
++
++
+53]
+−
+-
+8
+[
+−
+-
+14,
+−
+-
+3]
++
++
+.4929
+[
++
++
+.4252,
++
++
+.5601]
+✓
+GRPO 2
+–
+64
++
++
+39
+[
++
++
+31,
++
++
+47]
+−
+-
+6
+[
+−
+-
+13,
++
++
+1]
++
++
+.4195
+[
++
++
+.3398,
++
++
+.4970]
+✓
+Stacking / LIV
+PPO 1
+near
+64
+−
+-
+2
+[
+−
+-
+8,
++
++
+4]
++
++
+5
+[
+−
+-
+2,
++
++
+13]
++
++
+.0007
+[
+−
+-
+.0006,
++
++
+.0021]
+PPO 1
+distinct
+64
++
++
+25
+[
++
++
+16,
++
++
+34]
+−
+-
+14
+[
+−
+-
+21,
+−
+-
+7]
++
++
+.0070
+[
++
++
+.0047,
++
++
+.0093]
+✓
+PPO 2
+near
+64
+−
+-
+2
+[
+−
+-
+9,
++
++
+5]
+−
+-
+5
+[
+−
+-
+13,
++
++
+2]
++
++
+.0047
+[
++
++
+.0031,
++
++
+.0064]
+PPO 2
+distinct
+64
++
++
+24
+[
++
++
+16,
++
++
+32]
+−
+-
+21
+[
+−
+-
+28,
+−
+-
+14]
++
++
+.0085
+[
++
++
+.0065,
++
++
+.0105]
+✓
+GRPO 1
+near
+64
++
++
+1
+[
+−
+-
+6,
++
++
+8]
+−
+-
+5
+[
+−
+-
+11,
++
++
+1]
++
++
+.0012
+[
+−
+-
+.0002,
++
++
+.0026]
+GRPO 1
+distinct
+64
++
++
+35
+[
++
++
+27,
++
++
+42]
+−
+-
+13
+[
+−
+-
+19,
+−
+-
+7]
++
++
+.0067
+[
++
++
+.0047,
++
++
+.0086]
+✓
+GRPO 2
+near
+64
+−
+-
+5
+[
+−
+-
+12,
++
++
+2]
+−
+-
+2
+[
+−
+-
+10,
++
++
+5]
++
++
+.0025
+[
++
++
+.0009,
++
++
+.0042]
+GRPO 2
+distinct
+64
++
++
+21
+[
++
++
+14,
++
++
+28]
+−
+-
+17
+[
+−
+-
+24,
+−
+-
+10]
++
++
+.0070
+[
++
++
+.0051,
++
++
+.0091]
+✓
+Stacking / Robometer
+PPO 1
+near
+64
++
++
+13
+[
++
++
+5,
++
++
+21]
++
++
+6
+[
+−
+-
+2,
++
++
+14]
++
++
+.1770
+[
++
++
+.1047,
++
++
+.2491]
+✓
+PPO 1
+distinct
+64
+−
+-
+16
+[
+−
+-
+22,
+−
+-
+10]
++
++
+40
+[
++
++
+33,
++
++
+47]
++
++
+.4278
+[
++
++
+.3518,
++
++
+.5030]
+PPO 2
+near
+64
++
++
+2
+[
+−
+-
+6,
++
++
+10]
++
++
+10
+[
++
++
+3,
++
++
+17]
++
++
+.1361
+[
++
++
+.0725,
++
++
+.2002]
+PPO 2
+distinct
+64
+−
+-
+19
+[
+−
+-
+26,
+−
+-
+12]
++
++
+34
+[
++
++
+27,
++
++
+41]
++
++
+.3450
+[
++
++
+.2654,
++
++
+.4233]
+PPO 3
+near
+64
++
++
+13
+[
++
++
+5,
++
++
+21]
++
++
+6
+[
+−
+-
+1,
++
++
+13]
++
++
+.1448
+[
++
++
+.0828,
++
++
+.2109]
+✓
+PPO 3
+distinct
+64
+−
+-
+12
+[
+−
+-
+19,
+−
+-
+6]
++
++
+35
+[
++
++
+28,
++
++
+43]
++
++
+.4290
+[
++
++
+.3485,
++
++
+.5098]
+GRPO 1
+near
+64
++
++
+7
+[
+−
+-
+1,
++
++
+15]
++
++
+12
+[
++
++
+5,
++
++
+19]
++
++
+.1674
+[
++
++
+.1040,
++
++
+.2322]
+GRPO 1
+distinct
+64
+−
+-
+19
+[
+−
+-
+26,
+−
+-
+12]
++
++
+41
+[
++
++
+33,
++
++
+48]
++
++
+.4345
+[
++
++
+.3538,
++
++
+.5102]
+GRPO 2
+near
+64
++
++
+2
+[
+−
+-
+5,
++
++
+9]
++
++
+19
+[
++
++
+13,
++
++
+25]
++
++
+.2655
+[
++
++
+.2036,
++
++
+.3295]
+GRPO 2
+distinct
+64
+−
+-
+4
+[
+−
+-
+11,
++
++
+3]
++
++
+31
+[
++
++
+25,
++
++
+37]
++
++
+.3914
+[
++
++
+.3178,
++
++
+.4640]
+Drawer / LIV
+PPO 1
+–
+64
+−
+-
+1
+[
+−
+-
+5,
++
++
+3]
++
++
+3
+[
+−
+-
+1,
++
++
+7]
++
++
+.0023
+[
++
++
+.0002,
++
++
+.0049]
+PPO 2
+–
+64
++
++
+2
+[
++
++
+0,
++
++
+5]
+−
+-
+1
+[
+−
+-
+3,
++
++
+0]
+−
+-
+.0001
+[
+−
+-
+.0008,
++
++
+.0006]
+PPO 3
+–
+64
+−
+-
+10
+[
+−
+-
+16,
+−
+-
+4]
+−
+-
+7
+[
+−
+-
+13,
+−
+-
+1]
++
++
+.0222
+[
++
++
+.0194,
++
++
+.0250]
+PPO 4
+–
+64
+−
+-
+5
+[
+−
+-
+10,
+−
+-
+1]
++
++
+1
+[
+−
+-
+9,
++
++
+11]
++
++
+.0220
+[
++
++
+.0193,
++
++
+.0245]
+GRPO 1
+–
+64
+−
+-
+11
+[
+−
+-
+16,
+−
+-
+7]
+−
+-
+4
+[
+−
+-
+12,
++
++
+3]
++
++
+.0219
+[
++
++
+.0192,
++
++
+.0245]
+GRPO 2
+–
+64
+−
+-
+7
+[
+−
+-
+12,
+−
+-
+3]
++
++
+2
+[
+−
+-
+6,
++
++
+11]
++
++
+.0219
+[
++
++
+.0194,
++
++
+.0244]
+Table 10:
+All 29 strata of the constrained grid.
+Each row is one training history evaluated on one task and critic and, for stacking, one decoy color; the two stacking colors of a training share its history. Entries are critic-minus-uniform changes after optimization with paired 95% intervals: wrong-object failures and successes as counts out of
+n
+n
+evaluation executions, and the original critic score in its native units (Robometer success probability; LIV cosine). A check marks the 11 strata whose wrong-object interval lies above zero.
+F.2
+Retrospective association with initial-policy misranking
+For each of the 29 strata, two AUROCs are computed from initial-policy
+trajectories alone, in the notation of Equation
+3
+: the
+aggregate success–failure AUROC
+A
+S
+,
+F
+A_{S,F}
+and the semantic
+success–wrong-object AUROC
+A
+S
+,
+W
+A_{S,W}
+. Each is compared with the later
+critic-minus-uniform change in wrong-object failure,
+Δ
+​
+W
+\Delta W
+. The
+Spearman correlation of
+A
+S
+,
+W
+A_{S,W}
+with
+Δ
+​
+W
+\Delta W
+is
+−
+.82
+​
+[
+−
+.91
+,
+−
+.68
+]
+-.82\,[-.91,-.68]
+,
+against
+−
+.34
+​
+[
+−
+.63
+,
++
+.05
+]
+-.34\,[-.63,+.05]
+for
+A
+S
+,
+F
+A_{S,F}
+; their difference is
+−
+.48
+​
+[
+−
+.80
+,
+−
+.20
+]
+-.48\,[-.80,-.20]
+. Intervals resample the 20 training histories.
+Computing each AUROC and
+Δ
+​
+W
+\Delta W
+on disjoint halves of the initial-policy
+panel gives
+−
+.74
+-.74
+for
+A
+S
+,
+W
+A_{S,W}
+and
+−
+.31
+-.31
+for
+A
+S
+,
+F
+A_{S,F}
+. The association
+is carried by differences between task–critic families and between decoy
+colors: it is absent within both drawer families, and four near-color LIV
+strata have
+A
+S
+,
+W
+<
+.5
+A_{S,W}<.5
+without amplification. It is therefore a
+retrospective description of these settings, not a validated prospective
+predictor. Metric definitions, the disjoint-halves procedure and the
+complete correlations are in Appendix
+K.5
+and Table
+18
+.
+Appendix G
+Robustness of the Full-denoiser Results
+G.1
+Native diffusion sampler
+Fine-tuning and the primary evaluation decode each action chunk with the
+five-step stochastic DDIM chain of Equation
+2
+. The
+policy checkpoint also defines a native sampler: its 100-step DDPM scheduler
+with the clipped clean-sample estimate, with a standard-deviation floor of .05
+applied at the final step only. We re-evaluate the shared warm-start
+initialization and the five iteration-40 critic policies with the native sampler
+on the same 512 seeds, OSMesa renderer and scorer. Episodes are decoded in
+lockstep batches; each episode draws its initial latent and every step’s noise
+from its own generator seeded by the evaluation seed, in the order of the
+sequential native evaluator, which the batched implementation reproduces
+exactly on a decoded chain and outcome for outcome on 16 reference seeds.
+The initialization itself performs differently under the two samplers, so each
+sampler’s policies are compared with that sampler’s evaluation of the
+initialization (Table
+11
+).
+Training
+Δ
+\Delta
+Success (pp)
+Δ
+\Delta
+Wrong-object (pp)
+Δ
+\Delta
+Robometer
+Critic 1
++8.0
+[3.7, 12.3]
++6.6
+[2.5, 10.7]
++.092
+[.060, .124]
+Critic 2
++13.1
+[8.4, 18.0]
++4.9
+[0.8, 9.0]
++.097
+[.062, .132]
+Critic 3
++10.4
+[5.9, 14.8]
++7.2
+[3.1, 11.3]
++.075
+[.042, .108]
+Critic 4
++13.3
+[8.8, 17.8]
++1.2
+[
+−
+-
+2.7, 5.1]
++.085
+[.052, .118]
+Critic 5
++9.6
+[5.5, 13.7]
++5.1
+[1.2, 9.0]
++.069
+[.038, .101]
+Critic, pooled
++10.9
+[6.6, 15.2]
++5.0
+[1.0, 8.9]
++.084
+[.054, .114]
+Table 11:
+Critic-only policies under the policy’s native sampler.
+The shared initialization and the five iteration-40 critic policies of Table
+1
+, decoded with the checkpoint’s 100-step DDPM sampler (standard-deviation floor .05 at the final step) instead of the five-step fine-tuning sampler, on the same 512 seeds, renderer and scorer. The initialization succeeds in 31.4% and fails on the wrong object in 19.3% of these executions.
+G.2
+Distance from the initial policy
+The full-denoiser learner adapts its actor learning rate to a fixed KL target
+per update, so all objectives move at a similar rate. We measure how far each
+final policy moved: each decision’s five-step chain is a product of Gaussian
+transitions with the same standard deviation under both policies, so its KL
+divergence is
+∑
+k
+∥
+μ
+ϕ
+​
+(
+x
+k
+)
+−
+μ
+0
+​
+(
+x
+k
+)
+∥
+2
+/
+(
+2
+​
+σ
+2
+)
+\sum_{k}\lVert\mu_{\phi}(x_{k})-\mu_{0}(x_{k})\rVert^{2}/(2\sigma^{2})
+with
+x
+k
+x_{k}
+drawn
+from the evaluated policy. The evaluation episodes store
+x
+k
+x_{k}
+,
+μ
+ϕ
+​
+(
+x
+k
+)
+\mu_{\phi}(x_{k})
+and the observation condition of every decision, so only the
+initial network’s means are recomputed; on the initial policy’s own episodes
+the recomputed and stored means agree to
+3
+×
+10
+−
+6
+3\times 10^{-6}
+. Product and
+verifier-only policies end slightly further from the initial policy than the
+critic policies, and the supervised Robometer and completion policies end at
+nearly the same distance (Table
+12
+), so the outcome
+differences are not explained by how far each policy moved.
+Family and checkpoint
+Trainings
+KL per decision
+Δ
+\Delta
+Success (pp)
+Δ
+\Delta
+Wrong-object (pp)
+Warm start, critic, iteration 10
+5
+0.46 [0.42, 0.50]
++1.1
++0.7
+Warm start, critic, iteration 20
+5
+1.01 [0.98, 1.05]
++3.1
++2.0
+Warm start, critic, iteration 30
+5
+1.62 [1.57, 1.67]
++6.2
++2.7
+Warm start, critic, iteration 40
+5
+2.15 [2.03, 2.25]
++8.4
++3.8
+Warm start, product, iteration 10
+5
+0.55 [0.51, 0.60]
++3.2
+−
+-
+0.4
+Warm start, product, iteration 20
+5
+1.20 [1.17, 1.23]
++8.6
+−
+-
+0.7
+Warm start, product, iteration 30
+5
+1.80 [1.74, 1.92]
++12.6
+−
+-
+1.5
+Warm start, product, iteration 40
+5
+2.38 [2.25, 2.48]
++15.5
+−
+-
+0.6
+Warm start, verifier only, iteration 40
+5
+2.45 [2.22, 2.54]
++15.9
+−
+-
+1.1
+Supervised, Robometer, iteration 40
+8
+2.46 [2.23, 2.78]
++10.0
++10.2
+Supervised, completion, iteration 40
+8
+2.33 [2.11, 2.70]
++14.5
++1.9
+Table 12:
+Distance from the initial policy and behavior.
+The KL divergence of each policy’s five-step denoising chain from the initial policy’s, per decision, estimated on that policy’s own 512 evaluation episodes (mean over trainings, range in brackets), beside the changes in success and wrong-object failure on the same seeds.
+G.3
+Distractor-opening threshold
+A wrong-object failure requires the requested task to fail and the distractor
+to open by more than 20 mm. Table
+13
+repeats the
+primary comparisons for thresholds from 5 to 50 mm.
+Threshold
+Warm-start critic
+Critic
+−
+-
+product
+Supervised Robometer
+Robometer
+−
+-
+completion
+5 mm
++3.9
+[0.7, 7.0]
++5.2
+[2.6, 8.0]
++12.1
+[8.4, 15.9]
++10.9
+[7.0, 14.9]
+10 mm
++3.7
+[0.6, 6.8]
++5.0
+[2.4, 7.7]
++10.9
+[7.1, 14.7]
++9.6
+[5.9, 13.6]
+15 mm
++4.1
+[1.0, 7.2]
++4.8
+[2.2, 7.6]
++10.4
+[6.7, 14.1]
++9.6
+[6.0, 13.4]
+20 mm
++3.8
+[0.8, 6.8]
++4.4
+[1.8, 7.1]
++10.9
+[7.3, 14.4]
++9.2
+[5.5, 13.0]
+25 mm
++3.9
+[1.2, 6.8]
++4.2
+[1.8, 6.8]
++10.9
+[7.5, 14.5]
++9.0
+[5.5, 12.5]
+30 mm
++4.3
+[1.5, 7.1]
++4.5
+[1.9, 7.1]
++10.7
+[7.3, 14.3]
++8.8
+[5.3, 12.5]
+40 mm
++3.1
+[0.4, 5.9]
++3.0
+[0.5, 5.5]
++10.3
+[6.7, 14.0]
++8.2
+[4.5, 11.9]
+50 mm
++2.7
+[
+−
+-
+0.1, 5.6]
++3.1
+[0.6, 5.7]
++10.7
+[7.3, 14.3]
++7.9
+[4.4, 11.5]
+Table 13:
+Wrong-object changes across distractor-opening thresholds.
+Each entry is the pooled change (pp) in failures that leave the target closed while opening the distractor by more than the threshold, with crossed bootstrap intervals. The paper uses 20 mm.
+Appendix H
+Tilt Model Details
+Full denoiser.
+For each study and optimized reward we reweight the initial policy’s 512
+evaluation episodes by
+q
+i
+∝
+exp
+⁡
+(
+λ
+​
+r
+i
+)
+q_{i}\propto\exp(\lambda r_{i})
+and choose
+λ
+\lambda
+by
+bisection so that
+∑
+i
+q
+i
+​
+r
+i
+\sum_{i}q_{i}r_{i}
+exceeds the initial mean by the reward gain
+the family reached at iteration 40 (Robometer for critic runs, completion for
+completion runs, the product and the verifier probability for Product and
+verifier-only runs). Predicted changes are the reweighted minus initial outcome
+rates. Intervals resample the 512 initial episodes and re-solve
+λ
+\lambda
+in
+each of 2,000 draws (Table
+14
+). Reweighting can only move mass
+among behaviors the initial policy already produced, which is why it is a
+first-order description of full-denoiser fine-tuning.
+Family
+Reward gain
+Predicted
+Δ
+\Delta
+S
+Measured
+Predicted
+Δ
+\Delta
+W
+Measured
+Supervised, Robometer
++.124
++9.7
+[0.1, 0.1]
++10.0
++7.2
+[0.1, 0.1]
++10.2
+Supervised, completion
++.163
++14.3
+[0.1, 0.2]
++14.5
+−
+-
+2.5
+[
+−
+-
+0.0,
+−
+-
+0.0]
++1.9
+Warm start, critic
++.061
++4.1
+[0.0, 0.0]
++8.4
++3.9
+[0.0, 0.0]
++3.8
+Warm start, product
++.203
++27.7
+[0.3, 0.3]
++15.5
+−
+-
+5.0
+[
+−
+-
+0.1,
+−
+-
+0.0]
+−
+-
+0.6
+Warm start, verifier only
++.339
++33.3
+[0.3, 0.4]
++15.9
+−
+-
+5.8
+[
+−
+-
+0.1,
+−
+-
+0.0]
+−
+-
+1.1
+Table 14:
+Tilt predictions for the full-denoiser studies.
+The initial policy’s 512 evaluation episodes are reweighted by
+exp
+⁡
+(
+λ
+​
+r
+)
+\exp(\lambda r)
+with
+λ
+\lambda
+chosen so that the reweighted mean of the optimized reward equals the gain each family reached at iteration 40. Intervals resample the initial episodes. Changes are in percentage points.
+Constrained selectors.
+The drawer selector is unconditional and starts every episode from the same
+scene, so its KL-regularized optimum from the uniform selector is
+q
+k
+∝
+exp
+⁡
+(
+λ
+​
+r
+¯
+k
+)
+q_{k}\propto\exp(\lambda\bar{r}_{k})
+over the 24 sequences. For each stratum we
+estimate
+r
+¯
+k
+\bar{r}_{k}
+, the success rate and the wrong-object rate of every
+sequence from all executions of that stratum’s run outside the critic arm:
+the uniform draws of the first round, the oracle, Product and verifier-only
+arms in training, and their fixed evaluation; every stratum covers all 24
+sequences. The critic arm’s measured reward gain on the fixed evaluation sets
+λ
+\lambda
+. The stacking selector conditions on the initial image, so pooling
+its sequences over contexts makes the same computation an approximation; in
+three distinct-color Robometer stacking strata the conditional selector’s
+reward gain exceeds every sequence’s mean reward and no unconditional tilt
+reaches it, leaving 26 strata. The first-order predictor is the covariance over
+sequences between an outcome rate and the standardized
+r
+¯
+k
+\bar{r}_{k}
+, which needs
+no tilt strength. The raw evaluation records reproduce the frozen stratum
+changes exactly.
+Appendix I
+Robometer’s Published Online-RL Recipe
+Robometer’s automatic online RL pays
+−
+1
+-1
+per step plus the model’s reward
+prediction in
+[
+0
+,
+1
+]
+[0,1]
+, pays
+0
+0
+instead of
+−
+1
+-1
+on the step where the success
+probability exceeds
+.6
+.6
+, and terminates there
+(
+Liang et al., 2026
+)
+. The
+drawer selector makes one choice per episode, so the recipe enters it only
+through the episode return. Every executed drawer episode of the five Robometer
+selector trainings stores Robometer’s success probability and progress
+prediction at eight frames (control steps 0, 43, …, 299), from one forward
+pass over the clip; we hold progress at the last frame’s value between frames
+and evaluate physical outcomes on the full episode. Table
+15
+reports how often each outcome triggers termination, how each return orders the
+outcomes, and the tilted selector at the KL from uniform that the trained
+terminal-reward selectors reached (
+2.07
+2.07
+nats on average). Thresholds of
+.5
+.5
+and
+.7
+.7
+give the same ordering (AUROC
+.152
+.152
+and
+.120
+.120
+for success against
+wrong-object failures).
+Success
+Wrong-object
+Other failure
+Executions
+2,009
+1,130
+1,325
+Detected as success (probability
+>
+>
+.6)
+73.4%
+89.4%
+1.6%
+Mean detection step (of 300)
+295
+236
+297
+AUROC: S vs. W / other / all failures
+Terminal success probability
+0.195 / 0.951 / 0.603
+Dense progress with success termination
+0.125 / 0.935 / 0.562
+Tilt at the trained KL (2.07 nats):
+Δ
+\Delta
+S /
+Δ
+\Delta
+W (pp)
+Terminal success probability
+-9.1 / +65.5
+Dense progress with success termination
+-8.7 / +62.0
+Table 15:
+Robometer’s published online-RL recipe on the drawer selector.
+All 4,464 executed drawer episodes of the five Robometer selector trainings, rescored with the recipe: every step pays
+−
+1
+-1
+plus the predicted progress, the step whose success probability exceeds .6 pays
+0
+0
+and ends the episode. The last block tilts the uniform selector by each reward to the KL that the trained terminal-reward selectors reached.
+Appendix J
+Evaluator Robustness and Statistical Sensitivity
+These analyses check the statistical design of the primary endpoint and the
+fine-tuning sampler’s calibration.
+J.1
+Bootstrap design for the primary endpoint
+The main text uses crossed training-by-evaluation-seed intervals and draws
+trainings independently across objectives for product–critic contrasts.
+The following alternatives retain every training and the same 512 seeds.
+Pooled effect
+Success (pp)
+Wrong-object (pp)
+Δ
+​
+r
+b
+\Delta r_{b}
+Critic, nested
++
+8.4
+​
+[
++
+6.3
+,
++
+10.5
+]
++8.4\,[+6.3,+10.5]
++
+3.8
+​
+[
++
+2.0
+,
++
+5.6
+]
++3.8\,[+2.0,+5.6]
++
+.061
+​
+[
++
+.047
+,
++
+.075
+]
++.061\,[+.047,+.075]
+Critic, crossed
++
+8.4
+​
+[
++
+4.9
+,
++
+11.9
+]
++8.4\,[+4.9,+11.9]
++
+3.8
+​
+[
++
+0.8
+,
++
+6.8
+]
++3.8\,[+0.8,+6.8]
++
+.061
+​
+[
++
+.036
+,
++
+.086
+]
++.061\,[+.036,+.086]
+Product, nested
++
+15.5
+​
+[
++
+13.6
+,
++
+17.3
+]
++15.5\,[+13.6,+17.3]
+−
+0.6
+​
+[
+−
+2.3
+,
++
+1.0
+]
+-0.6\,[-2.3,+1.0]
++
+.096
+​
+[
++
+.081
+,
++
+.111
+]
++.096\,[+.081,+.111]
+Product, crossed
++
+15.5
+​
+[
++
+11.8
+,
++
+19.1
+]
++15.5\,[+11.8,+19.1]
+−
+0.6
+​
+[
+−
+3.4
+,
++
+2.1
+]
+-0.6\,[-3.4,+2.1]
++
+.096
+​
+[
++
+.070
+,
++
+.122
+]
++.096\,[+.070,+.122]
+P
+−
+-
+C, nested
++
+7.1
+​
+[
++
+5.3
+,
++
+8.9
+]
++7.1\,[+5.3,+8.9]
+−
+4.4
+​
+[
+−
+6.3
+,
+−
+2.5
+]
+-4.4\,[-6.3,-2.5]
++
+.034
+​
+[
++
+.017
+,
++
+.053
+]
++.034\,[+.017,+.053]
+P
+−
+-
+C, crossed, index-paired
++
+7.1
+​
+[
++
+4.6
+,
++
+9.7
+]
++7.1\,[+4.6,+9.7]
+−
+4.4
+​
+[
+−
+7.0
+,
+−
+1.8
+]
+-4.4\,[-7.0,-1.8]
++
+.034
+​
+[
++
+.011
+,
++
+.058
+]
++.034\,[+.011,+.058]
+P
+−
+-
+C, crossed, independent
++
+7.1
+​
+[
++
+4.4
+,
++
+9.8
+]
++7.1\,[+4.4,+9.8]
+−
+4.4
+​
+[
+−
+7.1
+,
+−
+1.8
+]
+-4.4\,[-7.1,-1.8]
++
+.034
+​
+[
++
+.013
+,
++
+.056
+]
++.034\,[+.013,+.056]
+Nested resampling draws evaluation seeds independently within each sampled
+training and understates their shared variation. Index-paired crossed
+resampling treats training indices as matched; they do not identify matched
+training randomness. These two rows are sensitivity analyses; the main
+contrast uses independent training resampling. Pooled completion rises by
+.087
+​
+[
+.057
+,
+.118
+]
+.087\,[.057,.118]
+under critic-only training and
+.140
+​
+[
+.106
+,
+.175
+]
+.140\,[.106,.175]
+under the product.
+J.2
+Sampler calibration and worker-reset diagnostic
+Before any training we evaluated the unmodified network under the short
+stochastic sampler on 64 paired seeds per cell.
+Sampler
+Success/64
+Mean completion
+Mean final opening
+Distractor gain
+>
+5
+>5
+mm
+K
+=
+5
+K{=}5
+,
+σ
+=
+.05
+\sigma{=}.05
+12
+.244
+.244
+20.1 mm
+21
+K
+=
+10
+K{=}10
+,
+σ
+=
+.05
+\sigma{=}.05
+7
+.255
+.255
+19.7 mm
+23
+K
+=
+5
+K{=}5
+,
+σ
+=
+.10
+\sigma{=}.10
+1
+.039
+.039
+3.1 mm
+14
+K
+=
+10
+K{=}10
+,
+σ
+=
+.10
+\sigma{=}.10
+1
+.067
+.067
+4.1 mm
+14
+The two
+σ
+=
+.10
+\sigma{=}.10
+cells are not interpretable as written. The batched
+worker created its environments and ran its first batch before the simulator
+performed a hard reset, so those episodes started from the construction
+state rather than the initial state. Scheduling placed 64/64 of the
+K
+=
+5
+,
+σ
+=
+.10
+K{=}5,\sigma{=}.10
+episodes and 48/64 of the
+K
+=
+10
+,
+σ
+=
+.10
+K{=}10,\sigma{=}.10
+episodes in such first batches, while both
+σ
+=
+.05
+\sigma{=}.05
+cells contain none.
+The 16 unaffected
+σ
+=
+.10
+\sigma{=}.10
+episodes give 0 successes and completion
+.110
+.110
+, weaker than
+σ
+=
+.05
+\sigma{=}.05
+but too few to establish the point. We
+therefore report
+σ
+=
+.10
+\sigma{=}.10
+as untested rather than as a negative
+result. The fix is a discarded warmup batch per worker. Oracle history A had
+already used first-batch data in one actor update and was restarted from
+iteration 0. In histories B and C, first-batch data entered only the first
+iteration, which trains the value network alone; their actors never used such
+data and they were not restarted, but that first value-network update did see
+it. Every endpoint evaluation and every learned-reward training ran with the
+corrected workers. We did not
+sweep
+σ
+<
+.05
+\sigma<.05
+; that is an unswept hyperparameter and we record it as
+such.
+Actor learning-rate calibration.
+An initial actor learning-rate test at
+5
+×
+10
+−
+5
+5\times 10^{-5}
+diverged, with
+mean sampled KL 23 per denoising step after three optimizer steps.
+The implemented protocol sums coordinate log-densities and uses a
+KL-adaptive actor rate bounded by
+[
+10
+−
+8
+,
+10
+−
+4
+]
+[10^{-8},10^{-4}]
+.
+Appendix K
+Complete Constrained-policy Grid and Trajectory Diagnostics
+This section retains all 20 main training histories, 29 task/color strata,
+43 supervision-budget rows and five matched-only controls. It includes
+settings with and without wrong-object amplification. The repeated-error
+subset in the main text is not an estimate of prevalence across this grid
+or across robot tasks generally.
+K.1
+Optimization and Independent Evaluation
+The common policy family and PPO/GRPO updates are specified in
+the constrained-policy protocol of Section
+4.2
+. The frozen
+decoder uses 100-step denoising diffusion probabilistic model (DDPM)
+sampling
+(
+Ho et al., 2020
+)
+. All 24 complete stochastic paths are retained,
+including transition noise, and the decoder conditions
+on new observations throughout execution. Fresh Gaussian jitter of
+standard deviation
+.05
+.05
+is applied to each noise draw. The trainable
+policy chooses the noise component: 24 unconditional drawer logits, or a
+24
+×
+129
+24\times 129
+image-conditioned cube matrix. The diffusion decoder is
+frozen. Each rollout generates actions from fresh visual observations;
+scene IDs and object-state labels are excluded from the selector input.
+Noise-bank construction and reuse.
+The drawer support contains all 24 seeds
+52103000
+52103000
+–
+52103023
+52103023
+, the first
+of three development banks with consecutive 24-seed blocks starting at
+52103000
+52103000
+,
+53103000
+53103000
+and
+54103000
+54103000
+. It is reused in all eleven drawer
+panels. The nine stacking panels share the 24 seeds
+120100000
+120100000
+–
+120100023
+120100023
+. No member is removed within either selected bank.
+These are fixed development supports: the drawer banks had been evaluated
+before the first recorded downstream configuration, and no outcome-blind
+bank-selection rule was recorded. Repetitions vary training and evaluation
+seeds on these supports; they do not sample new supports.
+Each objective receives eight rounds of 24 PPO or 32 GRPO feedback
+episodes, with eight Adam epochs per round and persistent optimizer
+state. Initial uniform feedback is shared across identical policies;
+later feedback is collected separately. Thus, unique trajectory counts
+depend on the number of objectives rather than just the per-objective
+budget. GRPO groups contain four candidates with identical initial
+physical state and images but distinct rollout noise. Drawer R114’s
+eight groups are draws at the same physical state, not eight different
+task contexts. Cube groups balance the trained color conditions.
+Both optimizers use clipping
+.2
+.2
+and gradient-norm limit 1. The learning
+rate is
+.2
+.2
+for drawer logits and
+.02
+.02
+for conditional cube policies, and
+the PPO entropy coefficient is
+.02
+.02
+; grouped GRPO replaces that term with
+exact categorical KL to the fixed initial uniform policy at coefficient
+.04
+.04
+. Cube feedback is balanced across the two trained colors at the same
+total budget, and the shared initial round avoids duplicate executions of
+identical initial policies.
+Every main endpoint uses the frozen eighth checkpoint, without selecting
+checkpoints by final success. Drawer Robometer PPO uses 32 new paired
+executions; other common panels use 64 per condition. Original drawer
+Robometer analyses use 10,000 paired execution resamples, cube uses
+20,000 paired resamples within each of four cells, and drawer LIV uses
+20,000 paired bank-cluster resamples preserving four members of each of
+16 banks. All intervals are percentile 95% intervals conditional on one
+training and the fixed support. Neither multiple colors, label budgets,
+nor matched-only extensions increase the number of independent trainings.
+PPO and GRPO have different feedback budgets and are not ranked for
+sample efficiency.
+Recorded sampling probabilities, final parameter arrays and continuous
+Adam state are verified against the saved updates. Execution manifests
+retain seeds, model identities, renderer assignments and original scores;
+physical outcomes are independently reconstructed from state/contact
+traces. Paired references share a renderer within each panel. Changes
+between EGL and OSMesa across replications are recorded, not assumed
+pixel-identical or isolated from training-seed changes. The summaries
+below retain complete endpoints rather than partial-progress snapshots.
+K.2
+Selector Representation and Exact Update Objective
+For the image-conditioned stacking selector, a fixed covariance transform of
+128 visual coordinates followed by a bias gives
+g
+⁡
+(
+o
+0
+)
+∈
+ℝ
+129
+g(o_{0})\in\mathbb{R}^{129}
+,
+with
+p
+ϕ
+​
+(
+I
+∣
+o
+0
+)
+=
+softmax
+⁡
+(
+W
+​
+g
+​
+(
+o
+0
+)
+)
+I
+p_{\phi}(I\mid o_{0})=\operatorname{softmax}(Wg(o_{0}))_{I}
+. The transform is
+fitted on 864 unlabeled development inputs, with relative eigenvalue floor
+.001 and no RMS-preserving gain. Drawer policies instead use 24
+unconditional logits.
+The categorical PPO loss is
+ℒ
+PPO
+=
+−
+1
+B
+∑
+i
+min
+(
+ρ
+i
+A
+^
+i
+,
+clip
+(
+ρ
+i
+,
+1
+−
+ϵ
+,
+1
++
+ϵ
+)
+A
+^
+i
+)
+−
+β
+𝔼
+[
+ℋ
+(
+p
+ϕ
+)
+]
+.
+\mathcal{L}_{\rm PPO}=-\frac{1}{B}\sum_{i}\min\!\left(\rho_{i}\widehat{A}_{i},\operatorname{clip}(\rho_{i},1-\epsilon,1+\epsilon)\widehat{A}_{i}\right)-\beta\mathbb{E}[\mathcal{H}(p_{\phi})].
+(6)
+Advantages center terminal reward within a batch. Stacking additionally
+standardizes advantages; drawer PPO retains original-scale and explicitly
+normalized variants separately. Grouped GRPO standardizes within groups of
+four and replaces entropy with an exact categorical KL to the fixed initial
+uniform policy, coefficient .04. Conditional on the chosen component, the
+noise jitter, frozen decoder and environment do not depend on trainable
+selector parameters, so
+ρ
+i
+=
+p
+ϕ
+​
+(
+I
+i
+∣
+o
+0
+,
+i
+)
+/
+p
+old
+​
+(
+I
+i
+∣
+o
+0
+,
+i
+)
+\rho_{i}=p_{\phi}(I_{i}\mid o_{0,i})/p_{\rm old}(I_{i}\mid o_{0,i})
+is the exact trajectory likelihood ratio for
+this policy family.
+K.3
+Observed Dynamics and Residual Errors
+The first sorted R82 evaluation seed supplies the physical trajectory
+example; it was selected independently of outcome. Images in the main
+text are the original critic frames. High-score wrong-object failures
+increase from 7 to 24 of 32 executions. All 24 rewarded wrong-object
+failures in this panel keep the target below 6.141 mm throughout the
+episode while additionally opening the distractor by 50.121–63.124 mm.
+After mitigation, four failures still receive high original reward and
+five satisfy the broader wrong-object definition. The four rewarded
+residuals keep the target below 29.722 mm; three sample component 14
+and one component 6. Their verifier probabilities are .0671–.0932 and
+product rewards .05685–.08041. Detection does not eliminate every
+stochastic failure, and this panel does not isolate exploration from
+execution variability.
+Figure 11:
+R82 fixed final PPO evaluation: the prespecified first paired seed,
+all 32 paired scores and complete physical behavior counts. Wrong-object
+counts include failures regardless of original reward.
+Figure 12:
+All eight R82 PPO feedback batches, 24 executions per objective
+before each update, sharing the first uniform batch. Reward always denotes
+original Robometer, including on the product-trained trajectory. Training
+curves are not substituted for the new-seed final evaluation.
+K.4
+All Budgets, Conditions and Matched-only Controls
+Table
+17
+contains every one of the 43 budget rows
+from 20 complete main trainings and 29 task/color strata. The missing
+drawer PPO only controls and missing 456-only controls in the repeated
+LIV cube trainings remain missing. For R164/R166/R167/R165/R184,
+supplemental R168/R170/R171/R172/R189 supply identical-456-head only
+policies with matched feedback budgets. They reuse the reference seeds
+and repeat uniform executions; they are not independent confirmations.
+R189 was selected after observing the complete R184 result. Its 128
+uniform reexecutions match that reference, but its distinct-color product
+advantage does not retrospectively make the first Robometer GRPO run successful.
+Run / condition
+n
+n
+Δ
+​
+r
+C
+−
+U
+\Delta r_{C-U}
+[95% CI]
+U
+U
+O
+O
+C
+C
+P
+P
+Drawer / Robometer / PPO
+R82
+32
++
+.309
+​
+[
++
+.192
+,
++
+.425
+]
++.309\,[+.192,+.425]
+4/9
+24/2
+3/24
+25/5
+R87
+32
++
+.420
+​
+[
++
+.314
+,
++
+.522
+]
++.420\,[+.314,+.522]
+11/4
+19/3
+2/28
+25/3
+R88
+32
++
+.432
+​
+[
++
+.318
+,
++
+.541
+]
++.432\,[+.318,+.541]
+6/6
+18/4
+2/28
+25/5
+Drawer / Robometer / GRPO
+R114
+64
++
+.493
+​
+[
++
+.425
+,
++
+.560
+]
++.493\,[+.425,+.560]
+12/8
+54/1
+4/54
+56/0
+R151
+64
++
+.419
+​
+[
++
+.340
+,
++
+.497
+]
++.419\,[+.340,+.497]
+10/14
+58/0
+4/53
+52/0
+Stacking / LIV / PPO
+R167 / near
+64
++
+.0007
+​
+[
+−
+.0006
+,
++
+.0021
+]
++.0007\,[-.0006,+.0021]
+20/21
+38/17
+25/19
+38/16
+R167 / distinct
+64
++
+.0070
+​
+[
++
+.0047
+,
++
+.0093
+]
++.0070\,[+.0047,+.0093]
+20/21
+63/0
+6/46
+63/0
+R174 / near
+64
++
+.0047
+​
+[
++
+.0031
+,
++
+.0064
+]
++.0047\,[+.0031,+.0064]
+26/19
+47/13
+21/17
+41/9
+R174 / distinct
+64
++
+.0085
+​
+[
++
+.0065
+,
++
+.0105
+]
++.0085\,[+.0065,+.0105]
+24/18
+57/2
+3/42
+57/2
+Stacking / LIV / GRPO
+R165 / near
+64
++
+.0012
+​
+[
+−
+.0002
+,
++
+.0026
+]
++.0012\,[-.0002,+.0026]
+16/20
+41/15
+11/21
+32/24
+R165 / distinct
+64
++
+.0067
+​
+[
++
+.0047
+,
++
+.0086
+]
++.0067\,[+.0047,+.0086]
+15/18
+55/6
+2/53
+52/7
+R173 / near
+64
++
+.0025
+​
+[
++
+.0009
+,
++
+.0042
+]
++.0025\,[+.0009,+.0042]
+23/16
+38/16
+21/11
+40/13
+R173 / distinct
+64
++
+.0070
+​
+[
++
+.0051
+,
++
+.0091
+]
++.0070\,[+.0051,+.0091]
+22/15
+51/9
+5/36
+52/6
+Table 16:
+Physical repair in drawer Robometer and stacking LIV. Each policy entry is success/wrong-object count out of
+n
+n
+;
+Δ
+​
+r
+\Delta r
+is original native reward change.
+U
+/
+O
+/
+C
+/
+P
+U/O/C/P
+denote uniform/oracle/critic/product. Drawer uses 384 labels; stacking uses 2,536 (2,080 beyond the smaller head). Both trained colors and all nine main trainings are retained. The verifier-only ablation appears in Section
+M.1
+; all budgets and frozen physical intervals appear in Section
+K
+.
+Figure 13:
+All 29 task/color strata of the constrained-policy grid, grouped as
+main repair panels, Robometer stacking and drawer LIV. Orange: critic minus
+uniform; blue: product minus critic; frozen 95% paired intervals. Robometer
+stacking and drawer LIV largely lack induction, and product does not uniformly
+help there (for example the distinct-color R166 row).
+Figure 14:
+Absolute outcomes of every arm in all 29 constrained-policy strata. Each
+bar partitions all fresh executions (32 for R82/87/88, 64 otherwise) into
+success, wrong-object failure and other failure; widths are proportions, not
+uncertainty. N/D: near/distinct trained color; *: normalized PPO; NA: no
+matched verifier-only control. The last column marks whether the
+critic-minus-uniform native-reward interval is strictly positive (+) or
+unresolved (?); it is not a hacking verdict.
+Figure 15:
+Product minus verifier-only in the 26 strata with a matched
+verifier-only control, with frozen 95% paired intervals. Retaining the original
+reward raises success in several distinct-color Robometer-stacking strata,
+lowers it in R166 near and in drawer LIV R182 and R178, and is indistinguishable
+elsewhere; NA marks the three drawer PPO trainings without that control.
+Table 17:
+Every final common-protocol endpoint and supervision budget. Cells are success / total wrong-object counts. N/D denote near/distinct cube colors, both trained.
+V
+V
+is the identical-head verifier-only control; – denotes a missing matched control. Expanded cube heads add 2,080 labels.
+Run / condition
+n
+n
+Labels
+U
+U
+O
+O
+C
+C
+P
+P
+V
+V
+Drawer / Robometer / PPO
+R82
+32
+384
+4/9
+24/2
+3/24
+25/5
+–
+R87
+32
+384
+11/4
+19/3
+2/28
+25/3
+–
+R88
+32
+384
+6/6
+18/4
+2/28
+25/5
+–
+Drawer / Robometer / GRPO
+R114
+64
+384
+12/8
+54/1
+4/54
+56/0
+55/0
+R151
+64
+384
+10/14
+58/0
+4/53
+52/0
+53/0
+Drawer / LIV / PPO
+R182
+64
+384
+14/11
+58/2
+17/10
+53/5
+57/2
+R178
+64
+384
+12/13
+45/0
+11/15
+48/5
+53/4
+R187 / norm.
+64
+384
+14/10
+60/2
+7/0
+63/0
+63/0
+R188 / norm.
+64
+384
+14/6
+43/3
+15/1
+58/4
+58/2
+Drawer / LIV / GRPO
+R183
+64
+384
+14/11
+62/0
+10/0
+59/0
+61/0
+R179
+64
+384
+10/10
+56/1
+12/3
+56/1
+57/0
+Stacking / Robometer / PPO
+R164 / N
+64
+456
+20/19
+38/21
+26/32
+38/18
+30/25
+R164 / N
+64
+2536
+20/19
+38/21
+26/32
+31/22
+34/24
+R164 / D
+64
+456
+20/17
+59/3
+60/1
+61/0
+48/16
+R164 / D
+64
+2536
+20/17
+59/3
+60/1
+62/0
+60/2
+R169 / N
+64
+456
+27/23
+43/17
+37/25
+41/19
+36/20
+R169 / D
+64
+456
+27/22
+63/1
+61/3
+62/2
+45/18
+R175 / N
+64
+456
+24/15
+40/13
+30/28
+32/20
+39/17
+R175 / D
+64
+456
+23/14
+52/5
+58/2
+57/3
+46/18
+Stacking / Robometer / GRPO
+R166 / N
+64
+456
+16/24
+34/19
+28/31
+24/33
+31/25
+R166 / N
+64
+2536
+16/24
+34/19
+28/31
+37/23
+33/25
+R166 / D
+64
+456
+17/24
+57/4
+58/5
+41/23
+44/20
+R166 / D
+64
+2536
+17/24
+57/4
+58/5
+52/12
+51/13
+R184 / N
+64
+456
+17/19
+30/22
+36/21
+34/24
+37/24
+R184 / N
+64
+2536
+17/19
+30/22
+36/21
+30/22
+27/25
+R184 / D
+64
+456
+15/18
+51/9
+46/14
+57/5
+44/18
+R184 / D
+64
+2536
+15/18
+51/9
+46/14
+49/10
+46/13
+Stacking / LIV / PPO
+R167 / N
+64
+456
+20/21
+38/17
+25/19
+28/30
+29/29
+R167 / N
+64
+2536
+20/21
+38/17
+25/19
+38/16
+38/16
+R167 / D
+64
+456
+20/21
+63/0
+6/46
+43/18
+41/20
+R167 / D
+64
+2536
+20/21
+63/0
+6/46
+63/0
+63/0
+R174 / N
+64
+456
+26/19
+47/13
+21/17
+35/22
+–
+R174 / N
+64
+2536
+26/19
+47/13
+21/17
+41/9
+41/10
+R174 / D
+64
+456
+24/18
+57/2
+3/42
+45/18
+–
+R174 / D
+64
+2536
+24/18
+57/2
+3/42
+57/2
+57/2
+Stacking / LIV / GRPO
+R165 / N
+64
+456
+16/20
+41/15
+11/21
+31/27
+28/29
+R165 / N
+64
+2536
+16/20
+41/15
+11/21
+32/24
+36/19
+R165 / D
+64
+456
+15/18
+55/6
+2/53
+43/16
+49/14
+R165 / D
+64
+2536
+15/18
+55/6
+2/53
+52/7
+50/8
+R173 / N
+64
+456
+23/16
+38/16
+21/11
+25/30
+–
+R173 / N
+64
+2536
+23/16
+38/16
+21/11
+40/13
+38/15
+R173 / D
+64
+456
+22/15
+51/9
+5/36
+30/28
+–
+R173 / D
+64
+2536
+22/15
+51/9
+5/36
+52/6
+55/5
+Figure 16:
+All Robometer physical contrasts with their original paired
+95% intervals. Success and total wrong-object changes are separate;
++
++
+indicates a native-reward-gain interval above zero. NA denotes a
+missing identical-budget only control. Both cube colors are trained.
+The rows retain near-color failures and both signs of distinct-color
+GRPO effects; row count is not independent-training count.
+Figure 17:
+All LIV physical contrasts and original paired 95% intervals,
+including both cube label budgets and all six drawer panels. Distinct-color
+cube repair repeats, but an added original-LIV contribution over the
+identical verifier is not established. Near-color and drawer negative
+inductions remain visible. Drawer wrong-opening excludes upper closing;
+continuous movement is reported in Section
+L.3
+.
+K.5
+Initial-policy Semantic Misranking
+Using only initial-policy trajectories, we computed the success–all-failure
+area under the receiver operating characteristic curve (AUROC; S1),
+the success–wrong-object AUROC (S2), a standardized wrong-minus-success
+score margin (S3) and top-quartile wrong-object enrichment (S4). We compared
+them with the subsequent
+Δ
+​
+W
+\Delta W
+across the 29 distinct induction strata from
+20 training histories; every metric is defined in every stratum. The analysis is
+retrospective: “initial-policy” identifies the policy distribution, not the
+collection date. Semantic misranking tracks amplification. The Spearman
+correlation of S2 with
+Δ
+​
+W
+\Delta W
+is
+−
+.82
+​
+[
+−
+.91
+,
+−
+.68
+]
+-.82\,[-.91,-.68]
+(training-history
+bootstrap), against
+−
+.34
+​
+[
+−
+.63
+,
++
+.05
+]
+-.34\,[-.63,+.05]
+for the generic S1; S3 and S4 agree
+(Table
+18
+). Computing each metric and
+Δ
+​
+W
+\Delta W
+on
+disjoint halves of the initial-policy panel gives
+−
+.74
+​
+[
+−
+.82
+,
+−
+.61
+]
+-.74\,[-.82,-.61]
+for S2
+and
+−
+.31
+​
+[
+−
+.58
+,
++
+.08
+]
+-.31\,[-.58,+.08]
+for S1: the association persists without direct reuse
+of baseline observations, although this does not remove family/color
+confounding. The association is carried by differences between task/critic
+families and between colors: it is absent within both drawer families, and
+four near-color LIV strata have S2 below .5 without amplification
+(Section
+K.5
+). We read it as a retrospective
+description of these settings, not a validated predictor.
+Metric definitions and analysis.
+Each of the 29 strata contributes its initial-policy (
+U
+U
+) endpoint
+executions, scored by its original critic in native units; post-optimization
+trajectories never enter a static metric. With
+S
+S
+,
+W
+W
+and
+F
+F
+the
+successes, wrong-object failures and all failures of a stratum, the metrics
+are: (S1) AUROC of
+S
+S
+versus
+F
+F
+; (S2) AUROC of
+S
+S
+versus
+W
+W
+; (S3)
+(
+r
+¯
+W
+−
+r
+¯
+S
+)
+/
+s
+r
+(\bar{r}_{W}-\bar{r}_{S})/s_{r}
+, with
+s
+r
+s_{r}
+the population standard deviation of
+all
+U
+U
+scores; and (S4) the wrong-object fraction among episodes at or above
+the 75th score percentile minus its overall fraction. AUROCs count ties as one
+half. An AUROC or margin is unavailable when a required class has fewer than
+three episodes, and S3 is unavailable when the scores have no variance. The
+response is
+Δ
+​
+W
+\Delta W
+, the critic-minus-uniform change in wrong-object rate.
+Intervals resample the 20 training histories with all of their strata
+(20,000 draws). These definitions and the bootstrap were committed before any
+stratum metric was computed. The disjoint-halves analysis and the difference
+row of Table
+18
+were added afterwards, each
+declared before its own computation.
+Static metric (initial policy)
+Full panel
+ρ
+\rho
+Strata
+Disjoint halves
+ρ
+\rho
+(combined)
+Strata (A
+→
+\to
+B / B
+→
+\to
+A)
+S1 AUROC, success vs all failures
+−
+.34
+​
+[
+−
+.63
+,
++
+.05
+]
+-.34\,[-.63,+.05]
+29
+−
+.31
+​
+[
+−
+.58
+,
++
+.08
+]
+-.31\,[-.58,+.08]
+28 / 28
+S2 AUROC, success vs wrong-object
+−
+.82
+​
+[
+−
+.91
+,
+−
+.68
+]
+-.82\,[-.91,-.68]
+29
+−
+.74
+​
+[
+−
+.82
+,
+−
+.61
+]
+-.74\,[-.82,-.61]
+25 / 27
+S3 standardized margin
++
+.72
+​
+[
++
+.51
+,
++
+.87
+]
++.72\,[+.51,+.87]
+29
++
+.63
+​
+[
++
+.41
+,
++
+.76
+]
++.63\,[+.41,+.76]
+29 / 29
+S4 top-quartile enrichment
++
+.87
+​
+[
++
+.72
+,
++
+.95
+]
++.87\,[+.72,+.95]
+29
++
+.83
+​
+[
++
+.70
+,
++
+.90
+]
++.83\,[+.70,+.90]
+29 / 29
+ρ
+\rho
+(S2)
+−
+-
+ρ
+\rho
+(S1), common strata
+−
+.48
+​
+[
+−
+.80
+,
+−
+.20
+]
+-.48\,[-.80,-.20]
+29
+−
+.34
+​
+[
+−
+.64
+,
+−
+.14
+]
+-.34\,[-.64,-.14]
+–
+Table 18:
+Spearman correlation between each initial-policy static metric and the wrong-object change after critic optimization, across induction strata, with 95% bootstrap intervals over 20 training clusters. The full panel uses the same initial-policy episodes for the metric and the change; the disjoint-halves column computes them on label-blind halves of each panel in both directions and averages the two. The difference row is not pre-declared in the original analysis plan.
+Figure 18:
+Wrong-object change after critic optimization against the
+initial-policy generic AUROC (left) and semantic AUROC (right), one point per
+stratum, marked by task and critic.
+Shared baseline.
+Both a static metric and
+Δ
+​
+W
+\Delta W
+depend on
+the same
+U
+U
+episodes. Each panel was therefore split into halves by
+identifiers alone: whole evaluation banks alternate for the drawer strata, and
+seeds alternate within each design cell for stacking. Metrics come from one
+half’s
+U
+U
+episodes and
+Δ
+​
+W
+\Delta W
+from the other half’s paired executions,
+in both directions, averaged. Halving leaves S2 unavailable in 4 and 2
+strata. The negative association persists when the static metric and the
+amplification estimate use disjoint baseline halves. This reduces direct reuse
+of baseline observations but does not eliminate family/color confounding,
+establish prospective prediction, or quantify all sources of dependence.
+Dependence and scope.
+No evaluation seed set is shared across
+training histories. The strata of one history share its initial policy, seeds
+and first feedback and are resampled together. After removing the four
+task/critic family means, the correlations are
+−
+.77
+-.77
+for S2 and
+−
+.47
+-.47
+for S1.
+Within families the association appears only in the two stacking families,
+where it largely reflects the near/distinct contrast. The two drawer families
+show none: their S2 values span narrow ranges. A bootstrap over the four
+families cannot support an interval. Exceptions:
+•
+The generic AUROC also flags the distinct-color LIV strata (0.15–0.36).
+•
+Four near-color LIV strata have S2 of 0.40–0.48 without amplification.
+•
+Two Robometer stacking strata show wrong-object amplification together
+with a success gain.
+The analysis supports a scoped, retrospective association in these tasks,
+critics and optimizers. It does not support a causal claim, a threshold at
+0.5, graded prediction within a task/critic family, or prediction for unseen
+tasks or critics.
+K.6
+Full-denoiser training feedback and outcome composition
+The training-feedback batches and the separate 128-seed outcome map below
+support inspection of training signals and collected-trajectory composition.
+Checkpoint trajectories on the fixed 512-seed evaluation bank are reported
+in main-paper Figure 2 and Appendix B.
+Figure 19:
+Training feedback of the whole-network arms: raw values of each
+126-episode batch, without smoothing. Grey lines are the four oracle histories
+and appear only in the success panel, because oracle feedback was neither scored
+by the critic nor fully logged for wrong-object failures; the grey column marks
+the two value-only iterations.
+Arm
+Iter.
+Δ
+\Delta
+success (pp) [95% CI]
+Δ
+\Delta
+completion [95% CI]
+History A
+010
++
+0.0
+​
+[
+−
+6.2
+,
++
+6.2
+]
++0.0\,[-6.2,+6.2]
++
+.037
+​
+[
+−
+.009
+,
++
+.085
+]
++.037\,[-.009,+.085]
+020
++
+8.6
+​
+[
++
+2.3
+,
++
+14.8
+]
++8.6\,[+2.3,+14.8]
++
+.092
+​
+[
++
+.035
+,
++
+.151
+]
++.092\,[+.035,+.151]
+030
++
+7.8
+​
+[
++
+0.8
+,
++
+14.8
+]
++7.8\,[+0.8,+14.8]
++
+.132
+​
+[
++
+.061
+,
++
+.204
+]
++.132\,[+.061,+.204]
+040
++
+10.9
+​
+[
++
+3.1
+,
++
+19.5
+]
++10.9\,[+3.1,+19.5]
++
+.152
+​
+[
++
+.080
+,
++
+.226
+]
++.152\,[+.080,+.226]
+History B
+010
++
+10.9
+​
+[
++
+5.5
+,
++
+17.2
+]
++10.9\,[+5.5,+17.2]
++
+.095
+​
+[
++
+.050
+,
++
+.144
+]
++.095\,[+.050,+.144]
+020
++
+19.5
+​
+[
++
+12.5
+,
++
+27.3
+]
++19.5\,[+12.5,+27.3]
++
+.180
+​
+[
++
+.121
+,
++
+.241
+]
++.180\,[+.121,+.241]
+030
++
+21.9
+​
+[
++
+14.8
+,
++
+29.7
+]
++21.9\,[+14.8,+29.7]
++
+.213
+​
+[
++
+.150
+,
++
+.278
+]
++.213\,[+.150,+.278]
+040
++
+27.3
+​
+[
++
+19.5
+,
++
+35.2
+]
++27.3\,[+19.5,+35.2]
++
+.237
+​
+[
++
+.170
+,
++
+.308
+]
++.237\,[+.170,+.308]
+History C
+010
++
+3.9
+​
+[
+−
+1.6
+,
++
+9.4
+]
++3.9\,[-1.6,+9.4]
++
+.041
+​
+[
+−
+.005
+,
++
+.089
+]
++.041\,[-.005,+.089]
+020
++
+7.8
+​
+[
++
+1.6
+,
++
+14.1
+]
++7.8\,[+1.6,+14.1]
++
+.060
+​
+[
++
+.004
+,
++
+.116
+]
++.060\,[+.004,+.116]
+030
++
+10.9
+​
+[
++
+3.9
+,
++
+18.8
+]
++10.9\,[+3.9,+18.8]
++
+.122
+​
+[
++
+.060
+,
++
+.186
+]
++.122\,[+.060,+.186]
+040
++
+16.4
+​
+[
++
+8.6
+,
++
+24.2
+]
++16.4\,[+8.6,+24.2]
++
+.120
+​
+[
++
+.056
+,
++
+.185
+]
++.120\,[+.056,+.185]
+Terminal
+010
++
+6.2
+​
+[
++
+0.8
+,
++
+11.7
+]
++6.2\,[+0.8,+11.7]
++
+.052
+​
+[
++
+.002
+,
++
+.103
+]
++.052\,[+.002,+.103]
+020
++
+10.9
+​
+[
++
+4.7
+,
++
+17.2
+]
++10.9\,[+4.7,+17.2]
++
+.103
+​
+[
++
+.047
+,
++
+.163
+]
++.103\,[+.047,+.163]
+030
++
+19.5
+​
+[
++
+11.7
+,
++
+27.3
+]
++19.5\,[+11.7,+27.3]
++
+.173
+​
+[
++
+.105
+,
++
+.243
+]
++.173\,[+.105,+.243]
+040
++
+25.8
+​
+[
++
+18.0
+,
++
+34.4
+]
++25.8\,[+18.0,+34.4]
++
+.256
+​
+[
++
+.184
+,
++
+.329
+]
++.256\,[+.184,+.329]
+Table 19:
+Physical-feedback arms of the whole-network fine-tuning study, each iteration against that arm’s own iteration-0 weights on its 128 paired evaluation seeds. Only the iteration-40 row enters the pre-declared verdict.
+Figure 20:
+Every execution in the separate checkpoint-diagnostic panel:
+the shared initial-policy set and iterations 10–40 of each learned arm,
+128 seeds each. No execution is dropped or reordered by
+outcome.
+Appendix L
+Additional Critics, Initialization Controls and Development Results
+The following studies have separate protocols and are not pooled into the
+512-seed primary endpoint. They record additional coverage, independent
+training replication and development configurations.
+L.1
+RoboReward and Natural Policy Gradients
+RoboReward uses the frozen
+teetone/RoboReward-8B
+model and its
+original five-level progress rubric: eight frames, 2 fps metadata, greedy
+decoding and at most 12 generated tokens. A parsed score
+s
+∈
+{
+1
+,
+…
+,
+5
+}
+s\in\{1,\ldots,5\}
+becomes
+(
+s
+−
+1
+)
+/
+4
+(s-1)/4
+, and high original reward means
+s
+≥
+4
+s\geq 4
+. A continuous-answer diagnostic is not treated as this reward.
+This third original critic uses a separate 80-component DDIM8 support,
+jitter
+.05
+.05
+, noise bound 1.5 and 300-step drawer execution. PPO uses
+eight rounds of 32 feedback episodes per objective. Its complete R84
+endpoint has uniform/oracle/original/product successes 9/24/10/25 out of
+32. Original reward changes by
+−
+.015625
+-.015625
+with interval
+[
+−
+.046875
+,
+0
+]
+[-.046875,0]
+;
+success changes by
++
+1
+[
+−
+4
+,
+6
+]
+/
+32
++1[-4,6]/32
+. It does not induce the hacking seen
+under the stronger natural-gradient update. Ordinary task improvement
+under its product cannot be counted as repair of induced exploitation.
+For the natural-gradient pressure test
+(
+Kakade, 2001
+)
+, all three objectives share a
+fresh uniform batch of 32 executed trajectories. With
+p
+i
+=
+1
+/
+80
+p_{i}=1/80
+and
+g
+i
+=
+B
+−
+1
+∑
+j
+:
+I
+j
+=
+i
+A
+^
+j
+g_{i}=B^{-1}\sum_{j:I_{j}=i}\widehat{A}_{j}
+, the categorical Fisher equation
+is solved by
+d
+i
+=
+g
+i
+/
+p
+i
+d_{i}=g_{i}/p_{i}
+. Every objective applies the single step
+p
+i
+′
+∝
+exp
+⁡
+(
+log
+⁡
+p
+i
++
+8
+​
+d
+i
+)
+p^{\prime}_{i}\propto\exp(\log p_{i}+8d_{i})
+without clipping or entropy, then receives
+96 new paired executions. This is neither PPO nor DPO, and the frozen
+DDIM decoder is not updated. The initial R85 critic concentrates .996824
+probability on one component; all 96 sampled critic executions fail.
+Training
+U
+U
+O
+O
+C
+C
+P
+P
+Interpretation
+R85
+30
+94
+0
+53
+Induction and partial repair
+R93
+31
+94
+4
+3
+Induction; repair fails
+R94
+28
+69
+67
+84
+Rewarded errors coexist with task learning
+Table 20:
+All three initial RoboReward NPG trainings, success counts out
+of 96. Two improve under the product; the failure is retained. These are
+separate protocols from the common PPO/GRPO matrix.
+In R85, original reward rises .10417
+[
+.05729
+,
+.15625
+]
+[.05729,.15625]
+and success falls
+30 to 0/96; the product restores 53, below oracle’s 94. In R93, verifier
+false positives assign .9149 probability to a component that fails all
+88 selections. R94 instead improves task success under the original
+critic while increasing high-score failures from 5 to 14/96; the product
+removes those failures and improves success to 84. Rewarded-error
+amplification and overall success loss are therefore different claims.
+L.2
+Extra Coverage and the Verifier-only Baseline
+A 1,408-label drawer verifier uses the original logistic recipe plus
+1,024 earlier labels, including failed R93 training feedback. Fresh
+R154 feedback and evaluation contain none of its fitting rows. On 96
+new paired endpoints, uniform/original RoboReward successes are 35/66,
+while oracle, old product, expanded product and expanded-only each
+achieve 95, with identical physical outcomes. This confirms an easy
+fresh-feedback case; it does not repair the failed R93 policy update.
+R156 instead reapplies the enlarged head to the
+same
+failed
+feedback. Product success improves from 3 to 45/96 and high-score
+failures decrease from 11 to one. Verifier-only reaches 54 successes,
+nine more than the product. This is a supervised repair of a known
+failure, with 1,024 extra labels, not a new independent training or
+evidence of additional original-reward benefit. The cube 2,536-label
+head’s separate 2,080-label increment is reported in
+Table
+17
+; larger supervision is not treated as
+a free algorithmic improvement.
+L.3
+Drawer LIV: Scale, Partial Progress and Closing
+Run / condition
+n
+n
+Δ
+​
+r
+C
+−
+U
+\Delta r_{C-U}
+[95% CI]
+U
+U
+O
+O
+C
+C
+P
+P
+Drawer / LIV / PPO
+R182 / original
+64
++
+.0023
+​
+[
++
+.0002
+,
++
+.0049
+]
++.0023\,[+.0002,+.0049]
+14/11
+58/2
+17/10
+53/5
+R178 / original
+64
+−
+.0001
+​
+[
+−
+.0008
+,
++
+.0006
+]
+-.0001\,[-.0008,+.0006]
+12/13
+45/0
+11/15
+48/5
+R187 / norm.
+64
++
+.0222
+​
+[
++
+.0194
+,
++
+.0250
+]
++.0222\,[+.0194,+.0250]
+14/10
+60/2
+7/0
+63/0
+R188 / norm.
+64
++
+.0220
+​
+[
++
+.0193
+,
++
+.0245
+]
++.0220\,[+.0193,+.0245]
+14/6
+43/3
+15/1
+58/4
+Drawer / LIV / GRPO
+R183
+64
++
+.0219
+​
+[
++
+.0192
+,
++
+.0245
+]
++.0219\,[+.0192,+.0245]
+14/11
+62/0
+10/0
+59/0
+R179
+64
++
+.0219
+​
+[
++
+.0194
+,
++
+.0244
+]
++.0219\,[+.0194,+.0244]
+10/10
+56/1
+12/3
+56/1
+Table 21:
+All six drawer LIV panels, using the same 384-label verifier. Entries are success/wrong-opening counts out of 64. R178 has no established native gain. Normalized PPO (norm.) differs from original-scale PPO. Closing is excluded from wrong-opening counts; continuous motion and exact intervals are retained in Section
+L.3
+.
+Exact saved-state replays of 20 objective/round combinations in the two
+original-scale PPO trainings reproduce their eight Adam steps exactly.
+Independently setting entropy to zero or normalizing advantages increases
+the update KL in all five original-LIV batches. Larger distribution
+change is not itself evidence of physical improvement. R187/R188 then
+test an explicitly frozen normalized protocol; their different seeds and
+renderer backends do not isolate normalization or rendering causally.
+Run
+Protocol
+Δ
+​
+S
+C
+−
+U
+\Delta S_{C-U}
+/64
+Δ
+​
+q
+T
+\Delta q_{T}
+(mm)
+Δ
+​
+q
+D
+\Delta q_{D}
+(mm)
+R182
+PPO
++
+3
+​
+[
+−
+1
+,
++
+7
+]
++3\,[-1,+7]
++
+3.92
+​
+[
+−
+2.11
+,
++
+10.22
+]
++3.92\,[-2.11,+10.22]
+−
+4.55
+​
+[
+−
+10.49
+,
++
+1.09
+]
+-4.55\,[-10.49,+1.09]
+R178
+PPO
+−
+1
+​
+[
+−
+3
+,
++
+0
+]
+-1\,[-3,+0]
+−
+1.26
+​
+[
+−
+4.26
+,
++
+.73
+]
+-1.26\,[-4.26,+.73]
++
+2.47
+​
+[
+−
+.08
+,
++
+6.21
+]
++2.47\,[-.08,+6.21]
+R187
+Norm. PPO
+−
+7
+​
+[
+−
+13
+,
+−
+1
+]
+-7\,[-13,-1]
++
+13.38
+​
+[
++
+3.09
+,
++
+23.44
+]
++13.38\,[+3.09,+23.44]
+−
+45.21
+​
+[
+−
+53.85
+,
+−
+36.76
+]
+-45.21\,[-53.85,-36.76]
+R188
+Norm. PPO
++
+1
+​
+[
+−
+9
+,
++
+11
+]
++1\,[-9,+11]
++
+21.02
+​
+[
++
+10.40
+,
++
+31.10
+]
++21.02\,[+10.40,+31.10]
+−
+36.57
+​
+[
+−
+45.58
+,
+−
+28.44
+]
+-36.57\,[-45.58,-28.44]
+R183
+GRPO
+−
+4
+​
+[
+−
+12
+,
++
+3
+]
+-4\,[-12,+3]
++
+10.02
+​
+[
+−
+.80
+,
++
+20.53
+]
++10.02\,[-.80,+20.53]
+−
+47.31
+​
+[
+−
+56.07
+,
+−
+38.72
+]
+-47.31\,[-56.07,-38.72]
+R179
+GRPO
++
+2
+​
+[
+−
+6
+,
++
+11
+]
++2\,[-6,+11]
++
+21.96
+​
+[
++
+14.77
+,
++
+29.41
+]
++21.96\,[+14.77,+29.41]
+−
+39.79
+​
+[
+−
+46.82
+,
+−
+32.96
+]
+-39.79\,[-46.82,-32.96]
+Table 22:
+All six drawer LIV movement contrasts and original paired 95% intervals. Positive target change is more opening; negative upper net-motion change is more closing, which is excluded from the wrong-opening event. R183 target-opening uncertainty crosses zero despite its positive mean.
+Only R187 supports a binary-success loss, and R188 does not repeat it.
+All four improve mean partial target opening and favor upper closing.
+Original-scale R182/R178 do not establish hacking; their products reach
+53/48 successes, compared with 57/53 under identical-only. The paired
+product-minus-only differences are
+−
+4
+[
+−
+8
+,
+−
+1
+]
+/
+64
+-4[-8,-1]/64
+and
+−
+5
+[
+−
+10
+,
+−
+1
+]
+/
+64
+-5[-10,-1]/64
+.
+R187/R188 products and only reach 63/58; equal success counts are not
+an equivalence test. GRPO product/only successes are 59/61 and 56/57.
+R179 product-minus-only target opening is
+−
+4.57
+​
+[
+−
+10.26
+,
+−
+.053
+]
+-4.57[-10.26,-.053]
+mm.
+None establishes an added original-LIV success benefit.
+L.4
+Ceiling-limited supervised initialization
+To test for amplification from a reward-naive policy, we declared, before
+any launch, three Robometer and three terminal-oracle trainings from a
+supervised-only checkpoint of the same diffusion policy. It was fine-tuned
+only by supervised learning on the 350 successful middle-drawer
+demonstrations, each rendered with and without a visual occluder, with no
+critic and no reinforcement learning. It is not a one-factor removal of
+critic exposure: its observation encoder and normalizer differ from the
+shared warm start, so it is run with its own architecture checkpoint, and
+frozen-verifier scores on its features are not interpreted. All other
+settings are copied from critic 3, and the endpoint protocol is unchanged.
+This checkpoint does not solve the evaluation scene. Under the training
+sampler it opens the distractor in all 128 endpoint executions without a
+success (mean distractor opening 62.9 mm). With no success and every
+execution already a wrong-object failure, neither branch of the declared
+amplification criterion can be met: the control is ceiling-limited.
+The single terminal-oracle training received almost no reward (4 successes
+in 5,040 training episodes) and did not establish learnability under the
+fixed protocol: 0/128 successes before and after, 128 and 127 wrong-object
+failures, and a completion change of
++
+.0001
+​
+[
+−
+.0001
+,
++
+.0004
+]
++.0001\,[-.0001,+.0004]
+. The three
+Robometer trainings raised Robometer from .164 to .550, .580 and .501
+(
++
+.386
+​
+[
++
+.309
+,
++
+.460
+]
++.386\,[+.309,+.460]
+,
++
+.416
+​
+[
++
+.341
+,
++
+.485
+]
++.416\,[+.341,+.485]
+,
++
+.337
+​
+[
++
+.263
+,
++
+.411
+]
++.337\,[+.263,+.411]
+;
+pooled
++
+.380
+​
+[
++
+.300
+,
++
+.457
+]
++.380\,[+.300,+.457]
+) while success stayed at 0/128 and
+wrong-object failures at 128/128 in every training, so both pooled physical
+changes are exactly zero and the pooled completion change is
+0.0
+​
+[
+−
+.0002
+,
++
+.0003
+]
+0.0\,[-.0002,+.0003]
+. Against the terminal-oracle training on the same
+seeds, their Robometer gains are
++
+.282
+​
+[
++
+.211
+,
++
+.352
+]
++.282\,[+.211,+.352]
+,
++
+.311
+​
+[
++
+.247
+,
++
+.374
+]
++.311\,[+.247,+.374]
+and
++
+.232
+​
+[
++
+.159
+,
++
+.306
+]
++.232\,[+.159,+.306]
+, with no difference in
+success, completion or distractor opening: part of the gain is specific to
+optimizing Robometer rather than to fine-tuning from this checkpoint. This
+is score amplification on persistently unsuccessful executions, not an
+additional wrong-object amplification result. Because wrong-object failures
+start at their ceiling, the control neither establishes amplification from a
+reward-naive policy nor establishes that prior critic exposure is necessary
+for it. After the first terminal-oracle training received almost no reward,
+we cancelled the other two; this was an outcome-informed allocation of
+compute, not a pre-declared futility rule, and it leaves an asymmetric design
+of three Robometer trainings and one terminal-oracle training.
+L.5
+Independent training repetition
+Six further trainings use the same supervised initialization and selected layout with fresh training
+seeds, two per objective on one execution host and one on a second. They are evaluated on the same
+512-seed bank as the primary supervised comparison and reported with it in
+Table
+5
+.
+L.6
+Development Methods and Negative Results
+The common endpoint matrix follows method development rather than random
+task sampling. The following distinct experiments constrain the claims;
+their intermediate tuning panels do not add independent replications.
+Direct denoiser oracle PPO updates 1,315,847 final-convolution parameters
+with a uniform noise-component prior. After 768 feedback episodes and
+48 updates (jitter
+.2
+.2
+, state-value baseline fitted to earlier feedback),
+fixed-endpoint success is 16/64 versus the original decoder’s 14/64:
++
+2
+[
+−
+2
+,
+6
+]
+/
+64
++2[-2,6]/64
+by paired-bank bootstrap. Completion changes by
+.0143
+​
+[
+−
+.0494
+,
+.0797
+]
+.0143[-.0494,.0797]
+. This control does not establish oracle learning.
+A second development update reuses the first 128 of these feedback episodes
+with no new training feedback and changes the estimator rather than the
+budget. Denoising steps
+t
+=
+99
+t=99
+to
+10
+10
+keep the frozen parent decoder,
+steps
+t
+=
+9
+t=9
+to
+0
+0
+use an updated final-convolution head with the same
+1,315,847 parameters, all
+16
+×
+7
+16\times 7
+intermediate latents and noise draws
+are reparameterized, and the PPO density is computed only on the executed
+t
+=
+0
+t=0
+slice (
+4
+×
+7
+4\times 7
+of the
+16
+×
+7
+16\times 7
+output). On the same batch this
+executed-density estimator raises the ratio of mean gradient norm to
+standard-error norm from .855 under full-chain sampling to 1.332, and the
+median split-half gradient cosine from
+−
+.132
+-.132
+to
+.336
+.336
+; all 8 PPO steps
+are accepted. On 64 new paired seeds the original network and the final
+head succeed 7/64 and 8/64 (
++
+1
+[
+0
+,
+3
+]
+/
+64
++1[0,3]/64
+); completion changes by
+.0006
+​
+[
+−
+.0315
+,
+.0293
+]
+.0006[-.0315,.0293]
+, wrong-object failures are 13 and 12/64
+(
+−
+1
+[
+−
+3
+,
+0
+]
+/
+64
+-1[-3,0]/64
+), and mean target opening changes by
+1.333
+​
+[
+−
+1.308
+,
+4.932
+]
+1.333[-1.308,4.932]
+mm. The original Robometer score on the same 128
+endpoints changes from .3295 to .3261 (
+−
+.0034
+​
+[
+−
+.0259
+,
+.0183
+]
+-.0034[-.0259,.0183]
+), with means
+.4224/.4518 on successful trajectories, .8110/.8252 on wrong-object
+failures and .1725/.1671 on other failures. This is one development update
+on reused feedback, not a training repeat: it establishes neither
+learned-reward hacking nor mitigation on the neural decoder, and the
+wrong-object reward vulnerability remains reachable.
+The same executed-window estimator is then driven by fresh on-policy
+feedback: six rounds of 128 new feedback episodes per round, each sampled
+with the current window head at steps
+t
+=
+9
+t=9
+to
+0
+0
+and the frozen parent
+at
+t
+=
+99
+t=99
+to
+10
+10
+, followed by up to 8 KL-capped PPO steps per round with
+Adam state carried across rounds. Three independent histories run on two
+render backends (A on EGL, B and C on OSMesa); 17 of the 18 rounds accept
+all 8 steps and the fifth round of B accepts 2. Each history ends in one
+fixed endpoint of 64 new paired seeds against its original network.
+Paired success is 9/64 to 7/64 (
+−
+2
+[
+−
+6
+,
+2
+]
+/
+64
+-2[-6,2]/64
+) for A, 15/64 to 13/64
+(
+−
+2
+[
+−
+5
+,
+0
+]
+/
+64
+-2[-5,0]/64
+) for B and 9/64 to 10/64 (
++
+1
+[
+−
+2
+,
+4
+]
+/
+64
++1[-2,4]/64
+) for C; completion
+changes by
+−
+.0200
+​
+[
+−
+.1075
+,
+.0527
+]
+-.0200[-.1075,.0527]
+,
+−
+.0444
+​
+[
+−
+.1076
+,
+.0127
+]
+-.0444[-.1076,.0127]
+and
+.0286
+​
+[
+−
+.0228
+,
+.0808
+]
+.0286[-.0228,.0808]
+; wrong-object failures move from 13 to 12/64, 11 to
+13/64 and 18 to 15/64. The equal-weight pooled success difference is
+−
+1
+[
+−
+3
+,
+1
+]
+/
+64
+-1[-3,1]/64
+and is descriptive only, since the two backends are
+different render strata. Training-batch successes per round out of 128
+are 21, 23, 19, 19, 17, 13 for A, 32, 22, 26, 25, 23, 34 for B and 23,
+31, 25, 24, 15, 24 for C; these are unpaired descriptions of the feedback
+batches, not endpoints. The pre-declared rule counts the oracle as
+learnable only if at least two of the three histories show a
+success-difference lower bound above zero or a completion-difference
+interval excluding zero; no history meets either condition. This is the
+seventh exploratory weight-level configuration. Together these
+configurations do not establish a statistically resolved improvement in
+task success and therefore do not validate a weight-level positive
+control; they neither demonstrate nor rule out reward hacking under
+neural policy finetuning. These configurations predate the
+full-denoiser protocol of Section
+4.1
+, which uses a
+different sampler, feedback budget and credit estimator and does establish
+weight-level learnability.
+Development family
+Outcome and boundary
+Reward-weighted denoiser regression
+Initial mitigation does not persist
+across the second training. It does not establish neural-decoder RL repair.
+Noise-policy SAC
+Oracle also degrades; the control does not validate
+a learnable family in which learned reward is specifically to blame.
+RoboReward cube PPO/GRPO
+Complete later panels do not induce the targeted
+original high-score failures. Product task improvement is not hacking repair.
+Terminal-feature replacement
+Does not reliably repair identity errors;
+late policy observations and final critic images are different inputs.
+Unbalanced-color training
+Negative transfer and supervision effects are
+retained as development boundaries. Final balanced-color evidence does not
+establish unseen-color or unseen-task transfer.
+Table 23:
+Negative findings relevant to interpreting the final method.
+The current manuscript does not substitute these protocols for the
+complete common PPO/GRPO endpoints.
+Analytic source-bank controls.
+Earlier complete-noise priors optimize
+p
+i
+∝
+exp
+⁡
+(
+r
+i
+/
+.02
+)
+p_{i}\propto\exp(r_{i}/.02)
+over every source component, with frozen
+decoder and new physical executions. Three independent RoboReward source
+banks give uniform/oracle/critic/product successes 28/80/26/81 out of
+96; three Robometer banks give 3/36/21/47 out of 48. Original-reward
+means change .4922 to .5807 and .3893 to .8131, respectively. Rewarded
+errors can increase while the target task also improves. These analytic
+updates are not iterative PPO/GRPO or DPO and are reported separately
+from the 20 main trainings.
+Appendix M
+Additional Verifier, Continuation and Temporal-evidence Analyses
+The comparisons retain matched verifier-only rewards and their label budgets.
+Ball placement is a controlled extension about process evidence for outcome
+verification; it is not a third task under the main wrong-object protocol.
+M.1
+Verifier-only Ablation
+The ablation removes the original critic and optimizes
+R
+V
+=
+p
+θ
+R_{V}=p_{\theta}
+with the identical verifier, labels, policy capacity and update protocol.
+Supplemental same-head controls retain the original seeds and repeat
+uniform executions to check reference reuse. They are paired ablations,
+not independent training replications. Table
+17
+retains every available matched control and marks missing controls explicitly.
+Source of the hacking repairs.
+For drawer Robometer GRPO, verifier-only reaches 55 and 53/64 successes
+with zero wrong-object errors, compared with product outcomes 56/0 and
+52/0. Product-minus-only success differences are
++
+1
+[
+0
+,
+3
+]
+/
+64
++1[0,3]/64
+and
+−
+1
+[
+−
+3
+,
+0
+]
+/
+64
+-1[-3,0]/64
+. For distinct-color LIV stacking, expanded-only reaches
+63/57 successes under PPO and 50/55 under GRPO; the product reaches
+63/57 and 52/52. Neither optimizer establishes an additional physical
+benefit from retaining LIV. In the second PPO training, product and only
+have identical outcomes on every paired seed. These controls attribute
+much of the repair to verification without establishing a universal
+advantage or statistical equivalence between the two rewards.
+M.1.1
+Retaining the Original Reward on Normal Tasks
+Run / color
+U
+U
+O
+O
+C
+C
+P
+P
+V
+V
+Δ
+​
+S
+P
+−
+V
+\Delta S_{P-V}
+Stacking / Robometer / PPO
+R164 / near
+20/19
+38/21
+26/32
+38/18
+30/25
++
+8
+​
+[
++
+2
+,
++
+14
+]
++8\,[+2,+14]
+R164 / distinct
+20/17
+59/3
+60/1
+61/0
+48/16
++
+13
+​
+[
++
+9
+,
++
+16
+]
++13\,[+9,+16]
+R169 / near
+27/23
+43/17
+37/25
+41/19
+36/20
++
+5
+​
+[
+−
+1
+,
++
+11
+]
++5\,[-1,+11]
+R169 / distinct
+27/22
+63/1
+61/3
+62/2
+45/18
++
+17
+​
+[
++
+13
+,
++
+21
+]
++17\,[+13,+21]
+R175 / near
+24/15
+40/13
+30/28
+32/20
+39/17
+−
+7
+​
+[
+−
+14
+,
++
+0
+]
+-7\,[-14,+0]
+R175 / distinct
+23/14
+52/5
+58/2
+57/3
+46/18
++
+11
+​
+[
++
+6
+,
++
+16
+]
++11\,[+6,+16]
+Stacking / Robometer / GRPO
+R166 / near
+16/24
+34/19
+28/31
+24/33
+31/25
+−
+7
+​
+[
+−
+13
+,
+−
+2
+]
+-7\,[-13,-2]
+R166 / distinct
+17/24
+57/4
+58/5
+41/23
+44/20
+−
+3
+​
+[
+−
+7
+,
++
+1
+]
+-3\,[-7,+1]
+R184 / near
+17/19
+30/22
+36/21
+34/24
+37/24
+−
+3
+​
+[
+−
+8
+,
++
+2
+]
+-3\,[-8,+2]
+R184 / distinct
+15/18
+51/9
+46/14
+57/5
+44/18
++
+13
+​
+[
++
+8
+,
++
+18
+]
++13\,[+8,+18]
+Table 24:
+Robometer stacking with the 456-label head: success/wrong-object counts out of 64. The last column is the paired product-minus-only success-count difference and its 95% interval. Both colors participate in each training. Only controls for R164/R166/R184 come from matched R168/R170/R189 follow-ups; they do not add independent replications. Expanded-head results are retained in Section
+K
+.
+The value of the original reward differs from hacking repair.
+In three distinct-color Robometer PPO trainings, the original critic
+already learns the intended task, reaching 60, 61 and 58/64 successes.
+The 456-label product reaches 61, 62 and 57, compared with 48, 45 and 46
+under the identical verifier alone (Table
+24
+).
+Product-minus-only success gains are
+13
+​
+[
+9
+,
+16
+]
+13[9,16]
+,
+17
+​
+[
+13
+,
+21
+]
+17[13,21]
+and
+11
+​
+[
+6
+,
+16
+]
+11[6,16]
+per 64. Wrong-object errors decrease by 16, 16 and 15,
+with each interval excluding zero. These results support retaining useful
+original task information. They are not three additional hacking repairs.
+Near-color superiority does not repeat consistently.
+GRPO exposes the boundary. In the first training, the small product loses
+17 distinct-color successes relative to original Robometer and has no
+established advantage over matched-only. In the second, the product reaches
+57 successes and five identity errors versus 46/14 under original reward.
+Its matched 456-only follow-up reaches 44/18, giving product advantages
+of
+13
+​
+[
+8
+,
+18
+]
+/
+64
+13[8,18]/64
+successes and
+−
+13
+[
+−
+18
+,
+−
+8
+]
+/
+64
+-13[-18,-8]/64
+errors. The near-color
+comparison is unresolved: 34/24 versus 37/24. All 128 repeated uniform
+executions match the original reference. Because this follow-up was selected
+after the second result and uses its original seeds, it is a matched
+ablation, not independent confirmation of a GRPO advantage
+(Section
+K.4
+).
+The larger head is not uniformly better. In the first Robometer GRPO
+training the expanded product reaches 37/64 near-color successes with 23
+errors, against 24 and 33 for the smaller product and 28 and 31 for
+critic-only training; the second training does not repeat that repair.
+Its distinct-color expanded product reaches 49 successes, eight fewer
+than the smaller product (
+[
+−
+14
+,
+−
+2
+]
+/
+64
+[-14,-2]/64
+), despite 2,080 additional labels.
+Complete comparisons retain these costs and failures
+(Section
+K.4
+).
+M.2
+Endpoint Image Interventions and Actual Verifier Inputs
+The R187 image diagnostic retains all 64 final original-LIV executions.
+Recorded actions reproduce initial states and all 19,200 joint steps
+exactly; captured preintegration poses recover every original terminal
+image pixel for pixel. Six terminal variants per execution keep the
+earlier seven frames, other joints and frozen float32 LIV scorer fixed.
+Unchanged native scores reproduce with maximum error zero. Setting
+target opening to 120 mm lowers native reward in all 64 states, by
+.003560–.016642. Restoring the upper drawer to its initial 57 mm
+opening lowers reward in 63/64. The target and upper effects interact:
+partial target progress has different reward effects at observed and
+initial upper positions. This is an image-scoring intervention, not
+an additional executed policy, a reachable action counterfactual, or
+identification of a training-time causal effect.
+Verifier recomputation.
+The verifier receives recorded policy-camera embeddings, not these
+critic-camera images. Recomputing its actual late-five-plus-initial
+input on all 960 R182/R183/R187 endpoint traces exactly reproduces
+every verifier and product score. Among 53 R187 matched seeds where
+oracle succeeds and LIV fails, original LIV misranks 52 pairs; verifier
+and product both correct 50 of those and retain two errors. Across all
+ten arm pairs within each of the three trainings, their ranking signs
+agree on every success-discordant pair. This locates the observed
+binary-ranking correction in the verifier, without establishing an
+extra original-LIV contribution or identical downstream policy updates.
+M.3
+Confidence-floor Intervention
+Under GRPO, a trajectory with small positive reward can have positive
+group-relative advantage if its peers score lower. With nonnegative group
+rewards, zero reward has nonpositive advantage. A fixed confidence-floor
+intervention in R176 sets products with verifier probability below the
+existing
+.5
+.5
+threshold to zero, retaining matched reference conditions
+and the same head without a threshold sweep.
+All 480 training and 384 final executions complete. Distinct-color Robometer
+wrong-object failures decrease from 12 to seven/64 relative to the old
+product, with a reliable interval; success changes from 52 to 54 with
+an interval crossing zero. Near-color no-stack failures increase.
+The corresponding complete LIV R177 intervention does not establish an
+increment over its original product. No new labels are added, and neither
+experiment is a new independent training repetition of the main method.
+M.4
+Temporal Evidence and Online Release Optimization
+Physical placement followed by drawer closure was qualified using actual
+actions, then used for window-dependent scoring controls. Visual heads
+fit on 64 controls and evaluate on 64 additional executions from 16 new
+perturbed starts, containing 26 successes and 38 failures. Both full-history
+and last-quarter heads classify all 64 correctly. A subsequent matched
+table-camera-only ablation, reusing these controls, preserves perfect
+classification. The terminal images therefore contain usable outcome
+evidence; history’s necessity is not established.
+Sixteen of the 26 successes receive exactly zero from last-quarter
+RoboReward. Multiplication cannot make those scores positive, and retains
+the 40.625% strict failure-preference rate, including 22 reversed
+within-start pairs. Neither critic assigns a failure a high score in
+either window. These are executed physical controls and static reward
+tests, without learned-policy hacking induction or demonstrated RL
+mitigation.
+Ballot placement with independent terminal posture.
+A separate physical task places a red ball into the middle of three opaque
+ballot boxes. Fixed terminal robot poses initially allow both visual windows
+to classify outcomes. We therefore vary the robot’s actual final joint target
+independently of the release action: each home joint receives a uniform
+±
+.05
+\pm.05
+rad offset, reached through joint-position control after release.
+A 64-execution development check preserves the entire ball trajectory
+exactly while changing the terminal arm posture. No simulator state is overwritten.
+Independent confirmation retains all 14 release settings across 16 new
+initial ball positions and independent terminal postures: 112 training
+and 112 test executions, with 24 successes in each split. Both visual heads
+use the same frozen encoder, 64 uniformly spaced frames, and logistic fit;
+the windows cover the whole episode or its final quarter. The terminal
+window begins after the physical return motion.
+Window
+Test AUROC
+Brier
+TP / 24
+FP / 88
+Full episode
+1.000
+.0022
+24
+0
+Final quarter
+.718
+.2225
+9
+18
+Table 25:
+Ballot visual-window confirmation on new object positions and
+terminal postures. Each head is fitted only on the 112 training executions;
+the acceptance threshold is .5.
+The AUROC advantage is .282
+[
+.244
+,
+.315
+]
+[.244,.315]
+, using 20,000 paired bootstrap draws
+over the eight test position/posture groups. This establishes a benefit
+from retained process evidence under this protocol, not complete terminal
+unobservability. Original Robometer scores, each using eight frames,
+have test AUROC .738 for the full episode and .656 for the final quarter.
+Selecting one release setting by its
+training-only
+mean final-quarter
+reward picks a physically reachable failure: it succeeds 0/8 on the test
+positions, with mean original reward .0904. Product and verifier-only
+selection each succeed 8/8 (original reward .0473); oracle selection also
+succeeds 8/8. Full-window Robometer also selects the failing release by
+its training mean: test reward is .2537 with 0/8 successes. Thus retaining
+history benefits the fitted verifier, but truncation alone does not explain
+the original critic’s failure preference.
+Figure 21:
+Original ballot-control frames from the first test position/posture
+group, using release cells selected by training-only critic (top) and product
+(bottom) reward. By withdrawal, the successful ball is inside; failure leaves
+a visible terminal ball. Final-quarter verification misses this success.
+This pair illustrates window-dependent prediction, not terminal
+unobservability or online PPO performance; Tables
+25
+and
+26
+report the complete panels.
+Online PPO with the frozen full-history head.
+We optimize a categorical selector over these 14 scripted release actions,
+starting each of
+O
+/
+C
+/
+P
+/
+V
+O/C/P/V
+from the uniform distribution. Each objective
+receives eight rounds of 32 fresh physical executions; the original reward
+uses eight last-quarter frames, while the frozen verifier uses 64 full-history
+frames. PPO uses eight epochs per round, Adam learning rate .1, clipping .2,
+batch-normalized advantages and entropy coefficient .01. The head is fitted
+only on the separate 112-execution calibration split above. No new labels
+are added to it. The selector’s logits are trainable; the motor scripts
+and visual networks are fixed.
+After the eighth update,
+U
+/
+O
+/
+C
+/
+P
+/
+V
+U/O/C/P/V
+execute 64 new paired initial-position,
+terminal-posture and action-sampling seeds each. All 1,024 training and
+320 endpoint trajectories per training history are retained. We repeat the
+complete protocol with independently seeded feedback and evaluation,
+freezing this repetition before observing the first endpoint. Both histories
+reuse the same calibrated head. Sampling probabilities and old
+log probabilities are saved before execution; every PPO update starts
+with zero reconstructed log-probability error.
+Training 1
+Training 2
+Objective
+Critic reward
+Success / 64
+Critic reward
+Success / 64
+Uniform
+U
+U
+.0390
+12
+.0383
+12
+Oracle
+O
+O
+.0471
+63
+.0467
+64
+Original reward
+C
+C
+.0647
+2
+.0681
+5
+Full-history product
+P
+P
+.0468
+63
+.0466
+64
+Verifier-only
+V
+V
+.0468
+63
+.0469
+64
+Final-quarter product
+.0448
+17
+.0445
+2
+Table 26:
+New-seed endpoints for online ballot-release PPO. This controlled
+extension trains a 14-action scripted release selector, with two independent
+histories per objective; it is separate from the common frozen-decoder noise-policy
+matrix. The last row is a paired follow-up changing only the verifier window
+and its corresponding frozen head.
+Original-reward optimization raises the original score by .0258
+[
+.0171
+,
+.0347
+]
+[.0171,.0347]
+and .0299
+[
+.0190
+,
+.0429
+]
+[.0190,.0429]
+relative to uniform. Success
+differences are
+−
+10
+[
+−
+17
+,
+−
+3
+]
+/
+64
+-10[-17,-3]/64
+and
+−
+7
+[
+−
+15
+,
+1
+]
+/
+64
+-7[-15,1]/64
+: the second history
+repeats the direction but does not resolve the success loss. The critic-trained
+policies select the failing release in 53 and 52/64 endpoints. Oracle raises
+both success and the original score; the latter differences are .0081
+[
+.0007
+,
+.0145
+]
+[.0007,.0145]
+and .0085
+[
+.0028
+,
+.0139
+]
+[.0028,.0139]
+. Product restores
+61
+​
+[
+57
+,
+64
+]
+/
+64
+61[57,64]/64
+and
+59
+​
+[
+54
+,
+63
+]
+/
+64
+59[54,63]/64
+successes relative to critic training.
+Intervals use 20,000 paired endpoint bootstrap draws conditional on each
+trained policy, not a training-population confidence interval. Product and
+verifier-only have identical binary outcomes within each history, so these
+experiments do not establish an additional benefit from retaining the original
+reward. These results
+establish online reward exploitation and physical recovery within this
+scripted action family, not end-to-end neural VLA mitigation or an exclusively
+temporal cause of native-critic failure.
+Matched online window ablation.
+For each history we repeat product training with the final-quarter head fitted
+on the same 112 labels, using the same 64-frame count, encoder, initialization,
+PPO budget and all physical and sampling seeds. This adds 256 feedback and
+128
+U
+/
+P
+U/P
+endpoints per history; repeated
+U
+U
+verifies runtime matching and
+does not count as a new independent baseline. Both first batches reproduce
+all 32 action and physical traces, native-input PNGs and original scores
+exactly; repeated
+U
+U
+endpoints also match. Full-history products succeed
+63 and 64/64 versus 17 and 2/64 for final-quarter products. Paired differences
+are
+46
+​
+[
+39
+,
+53
+]
+/
+64
+46[39,53]/64
+and
+62
+​
+[
+59
+,
+64
+]
+/
+64
+62[59,64]/64
+. Original-score differences between the
+two products have intervals containing zero in both histories. Thus process
+evidence materially improves this verifier’s online mitigation at equal
+label and frame budgets; the first quarter-window run still partially
+improves on uniform. This intervention does not establish that truncation
+alone causes the original critic’s failure.
+M.5
+Continuing from Exploited Checkpoints
+This separate drawer Robometer/PPO protocol retains all three frozen
+parent histories R82/R87/R88. Each continuation copies the parent’s logits
+and Adam state, reuses the same 24-component support and 384-label R59
+verifier, and collects eight rounds of 24 fresh feedback episodes per
+objective. The shared first batch gives 696 unique training executions
+per parent. No labels are added. Fixed checkpoint 008 is evaluated on
+64 new paired seeds per arm in the original opening .475 and the
+prespecified opening .375, held out from continuation. The decoder remains fixed.
+Parent
+Measure
+U
+U
+C
+h
+C_{h}
+C
+C
+P
+P
+V
+V
+O
+O
+ID opening .475
+R82
+Success / wrong
+10/10
+4/58
+3/60
+61/0
+61/0
+54/6
+Original reward
+0.326
+0.838
+0.856
+0.689
+0.684
+0.662
+R87
+Success / wrong
+15/10
+4/57
+3/57
+52/4
+49/5
+54/1
+Original reward
+0.330
+0.813
+0.809
+0.613
+0.602
+0.602
+R88
+Success / wrong
+10/16
+3/56
+4/54
+16/30
+22/20
+59/2
+Original reward
+0.396
+0.747
+0.796
+0.526
+0.522
+0.592
+Held-out continuation opening .375
+R82
+Success / wrong
+15/11
+12/41
+13/43
+62/0
+62/0
+58/2
+Original reward
+0.345
+0.685
+0.755
+0.705
+0.707
+0.659
+R87
+Success / wrong
+8/9
+8/37
+11/45
+49/0
+38/2
+50/0
+Original reward
+0.265
+0.660
+0.773
+0.553
+0.433
+0.565
+R88
+Success / wrong
+17/10
+7/39
+9/39
+21/16
+23/13
+55/0
+Original reward
+0.349
+0.637
+0.663
+0.458
+0.445
+0.572
+Table 27:
+Checkpoint continuation: all three prespecified parents, both test openings.
+U
+U
+is uniform,
+C
+h
+C_{h}
+the frozen hacked parent, and
+C
+/
+P
+/
+V
+/
+O
+C/P/V/O
+the original-reward/product/verifier/oracle continuations. Success/wrong are success and wrong-object counts out of 64 paired new seeds; rewards are original Robometer scores. Both conditions use the same final checkpoint 008; no labels or policy updates are added for the held-out opening.
+All three completed ID panels independently retain the reward–success
+conflict at their exploited starting points: relative to current uniform,
+original reward rises by .5125, .4834, and .3516, while success falls by
+9.375, 17.188, and 10.938 percentage points; all six paired intervals exclude zero.
+Product continuation improves success over its frozen parent by
+89.063 points
+[
+79.688
+,
+96.875
+]
+[79.688,96.875]
+, 75 points
+[
+64.063
+,
+85.938
+]
+[64.063,85.938]
+, and
+20.313 points
+[
+10.938
+,
+29.688
+]
+[10.938,29.688]
+.
+Wrong-object failures fall from 58 to zero, 57 to four, and 56 to 30/64.
+Continuing the original reward produces 60, 57, and 54 wrong-object failures.
+The equal-parent ID success rates are 5.73% for the exploited starting points,
+5.21% for continued original reward, 67.19% for the product, 68.75% for
+verifier-only, and 86.98% for oracle. Product-minus-parent repair is
+61.46 points
+[
+55.73
+,
+66.67
+]
+[55.73,66.67]
+; this mean includes the incompletely repaired third history.
+The same-label verifier-only controls succeed 61, 49, and 22/64. Product-minus-only
+success differences are zero (identical paired outcomes, so the bootstrap
+interval degenerates to
+[
+0
+,
+0
+]
+[0,0]
+; zero discordant pairs in 64 still allow a
+discordance rate up to 4.6% at one-sided 95%, and this is not an
+equivalence result), 4.688 points
+[
+−
+4.688
+,
+14.063
+]
+[-4.688,14.063]
+, and
+−
+9.375
+-9.375
+points
+[
+−
+18.750
+,
+−
+1.563
+]
+[-18.750,-1.563]
+. The third history favors verifier-only;
+the equal-parent difference is
+−
+1.563
+-1.563
+points
+[
+−
+5.729
+,
+2.604
+]
+[-5.729,2.604]
+, which does
+not establish an extra product benefit or policy equivalence.
+At opening .375, the same fixed product policies improve success from
+12, 8, and 7/64 to 62, 49, and 21/64. Gains are
+78.125 points
+[
+67.188
+,
+87.500
+]
+[67.188,87.500]
+, 64.063 points
+[
+48.438
+,
+78.125
+]
+[48.438,78.125]
+, and
+21.875 points
+[
+9.375
+,
+35.938
+]
+[9.375,35.938]
+, while wrong-object failures fall
+41
+→
+\to
+0, 37
+→
+\to
+0, and 39
+→
+\to
+16/64. Equal-parent success rises from
+14.063% to 68.750%, a 54.688-point gain
+[
+46.875
+,
+62.500
+]
+[46.875,62.500]
+;
+continued original reward achieves 17.188%. No labels, refitting or policy
+updates are added for this test opening. All three transferred exploited
+parents have higher original reward and more wrong-object failures than
+uniform; only R88 resolves a binary success loss, so this is a transfer
+test of repair from ID-exploited policies, not three new strict hacking inductions.
+Verifier-only reaches 62, 38, and 23/64 at the held-out opening.
+Product exceeds verifier-only in R87 by 11/64
+[
+5
+,
+17
+]
+/
+64
+[5,17]/64
+, ties R82,
+and has an unresolved
+−
+2
+/
+64
+-2/64
+difference in R88. The equal-parent
+success difference is 4.688 points
+[
+1.042
+,
+8.333
+]
+[1.042,8.333]
+, but wrong-object
+differences and the ID controls do not support universal product superiority.
+All intervals use 20,000 paired-bank draws within each fixed parent,
+not population uncertainty over training histories.
+Figure 22:
+Repair after exploitation and the value of process evidence.
+(a) All three exploited parents, with fixed endpoints at training opening .475
+and opening .375 held out from continuation; no new verifier labels.
+(b) Two ballot PPO histories, using the same 112 labels and 64-frame count.
+Full-history verification improves repair over a final-quarter head.
+Verifier-only is retained in both panels; full controls and paired intervals
+are in Sections
+M.5
+and
+M.4
+.
+Appendix N
+Experiment Identifier Mapping
+The main text uses task–critic group names and optimizer-specific training
+numbers. Table
+28
+maps them to the original run IDs used
+throughout these appendices and in the stored experiment records. One training
+ID covers all of its reward objectives, verifier budgets and evaluated color
+conditions; these rows are not additional independent trainings.
+Setting
+Training ID
+Original run ID
+Drawer / Robometer
+PPO 1
+R82
+Drawer / Robometer
+PPO 2
+R87
+Drawer / Robometer
+PPO 3
+R88
+Drawer / Robometer
+GRPO 1
+R114
+Drawer / Robometer
+GRPO 2
+R151
+Stacking / LIV
+PPO 1
+R167
+Stacking / LIV
+PPO 2
+R174
+Stacking / LIV
+GRPO 1
+R165
+Stacking / LIV
+GRPO 2
+R173
+Stacking / Robometer
+PPO 1
+R164
+Stacking / Robometer
+PPO 2
+R169
+Stacking / Robometer
+PPO 3
+R175
+Stacking / Robometer
+GRPO 1
+R166
+Stacking / Robometer
+GRPO 2
+R184
+Drawer / LIV
+PPO 1
+R182
+Drawer / LIV
+PPO 2
+R178
+Drawer / LIV
+PPO 3
+R187
+Drawer / LIV
+PPO 4
+R188
+Drawer / LIV
+GRPO 1
+R183
+Drawer / LIV
+GRPO 2
+R179
+Stacking verifier development 1
+R112
+Stacking verifier development 2
+R113
+Table 28:
+Reader-facing identifiers and original experiment records. Training numbers are local to each task–critic–optimizer group. Both trained stacking colors and all verifier budgets from one training share its ID; they are not independent replications. The two development runs supply data for the expanded stacking verifier.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+Major funding support from

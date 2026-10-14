@@ -1,0 +1,34 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 66.66it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+0001 0 full {
+  "overlap": "true",
+  "evidence": "The red bar is positioned horizontally and spans across the opening of the green tray."
+}
+0001 0 tray_crop {
+  "overlap": "false",
+  "evidence": "The red bar is positioned above the green tray and does not cross its opening."
+}
+0001 14 full {
+  "overlap": "false",
+  "evidence": "The red bar is held by the robot and positioned beside the green tray, not crossing its opening."
+}
+0001 14 tray_crop {
+  "overlap": "false",
+  "evidence": "The red bar is positioned to the left of the green tray and does not span across its opening."
+}
+0004 0 full {
+  "overlap": "false",
+  "evidence": "The red bar lies beside the green tray, not across its opening."
+}
+0004 0 tray_crop {
+  "overlap": "false",
+  "evidence": "The red bar is positioned to the left of the green tray, not crossing its opening."
+}
+0004 14 full {
+  "overlap": "true",
+  "evidence": "The red bar is positioned horizontally and spans across the opening of the green tray."
+}
+0004 14 tray_crop {
+  "overlap": "false",
+  "evidence": "The red bar is positioned above the green tray and does not cross its opening."
+}

@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_joint_choice_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_joint_choice_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 14:37:42 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\":36,\"last\":\"confirm_p_14_oracle_opposed_first\",\"parent\":128,\"total\":164}{\"id\":\"confirm_p_00_oracle_opposed_first\",\"issued\":32,\"state\":\"False\"}\n{\"id\":\"confirm_p_14_rgb_positive_first\",\"issued\":33,\"state\":\"True\"}\n{\"id\":\"confirm_p_14_rgb_opposed_first\",\"issued\":34,\"state\":\"True\"}\n{\"id\":\"confirm_p_14_oracle_positive_first\",\"issued\":35,\"state\":\"True\"}\n{\"id\":\"confirm_p_14_oracle_opposed_first\",\"issued\":36,\"state\":\"True\"}\n",
+  "stderr": "",
+  "exit_code": 0
+}

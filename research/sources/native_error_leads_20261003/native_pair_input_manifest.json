@@ -1,0 +1,225 @@
+{
+  "status": "input inventory only; not inference preregistration or paper retrieval reproduction",
+  "rule": "all unordered cross-quality pairs from all seven author-labelled task clips",
+  "quality_normalization": "standalone success corresponds to sampler successful; no change to source labels",
+  "unique_episodes": 7,
+  "pair_count": 16,
+  "pairs": [
+    {
+      "pair_id": "Q01",
+      "task": "Unzip the pencil case",
+      "preferred_id": "70598bda-1b06-469e-acc2-8207e178df25",
+      "rejected_id": "8906e1e0-14df-4cb3-b82e-baf44e77224b",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000016.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000019.mp4",
+      "quality_pair": [
+        "success",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q02",
+      "task": "Unzip the pencil case",
+      "preferred_id": "70598bda-1b06-469e-acc2-8207e178df25",
+      "rejected_id": "4d984596-5a93-468d-8ba0-7279ffeb3b52",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000016.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000022.mp4",
+      "quality_pair": [
+        "success",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q03",
+      "task": "Unzip the pencil case",
+      "preferred_id": "70598bda-1b06-469e-acc2-8207e178df25",
+      "rejected_id": "299ab523-67f7-42a2-a3d6-fd41b6904156",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000016.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000023.mp4",
+      "quality_pair": [
+        "success",
+        "suboptimal"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q04",
+      "task": "Unzip the pencil case",
+      "preferred_id": "70598bda-1b06-469e-acc2-8207e178df25",
+      "rejected_id": "2378544f-0f0c-4082-a234-a53780f6a1e2",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000016.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000025.mp4",
+      "quality_pair": [
+        "success",
+        "suboptimal"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q05",
+      "task": "Unzip the pencil case",
+      "preferred_id": "299ab523-67f7-42a2-a3d6-fd41b6904156",
+      "rejected_id": "8906e1e0-14df-4cb3-b82e-baf44e77224b",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000023.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000019.mp4",
+      "quality_pair": [
+        "suboptimal",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q06",
+      "task": "Unzip the pencil case",
+      "preferred_id": "8556e043-8f10-4fa1-8775-1f7a22fb50db",
+      "rejected_id": "8906e1e0-14df-4cb3-b82e-baf44e77224b",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000024.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000019.mp4",
+      "quality_pair": [
+        "success",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q07",
+      "task": "Unzip the pencil case",
+      "preferred_id": "2378544f-0f0c-4082-a234-a53780f6a1e2",
+      "rejected_id": "8906e1e0-14df-4cb3-b82e-baf44e77224b",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000025.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000019.mp4",
+      "quality_pair": [
+        "suboptimal",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q08",
+      "task": "Unzip the pencil case",
+      "preferred_id": "abe808eb-ae29-4ee4-8c52-39acc7cab0d5",
+      "rejected_id": "8906e1e0-14df-4cb3-b82e-baf44e77224b",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000026.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000019.mp4",
+      "quality_pair": [
+        "success",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q09",
+      "task": "Unzip the pencil case",
+      "preferred_id": "299ab523-67f7-42a2-a3d6-fd41b6904156",
+      "rejected_id": "4d984596-5a93-468d-8ba0-7279ffeb3b52",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000023.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000022.mp4",
+      "quality_pair": [
+        "suboptimal",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q10",
+      "task": "Unzip the pencil case",
+      "preferred_id": "8556e043-8f10-4fa1-8775-1f7a22fb50db",
+      "rejected_id": "4d984596-5a93-468d-8ba0-7279ffeb3b52",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000024.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000022.mp4",
+      "quality_pair": [
+        "success",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q11",
+      "task": "Unzip the pencil case",
+      "preferred_id": "2378544f-0f0c-4082-a234-a53780f6a1e2",
+      "rejected_id": "4d984596-5a93-468d-8ba0-7279ffeb3b52",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000025.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000022.mp4",
+      "quality_pair": [
+        "suboptimal",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q12",
+      "task": "Unzip the pencil case",
+      "preferred_id": "abe808eb-ae29-4ee4-8c52-39acc7cab0d5",
+      "rejected_id": "4d984596-5a93-468d-8ba0-7279ffeb3b52",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000026.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000022.mp4",
+      "quality_pair": [
+        "success",
+        "failure"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q13",
+      "task": "Unzip the pencil case",
+      "preferred_id": "8556e043-8f10-4fa1-8775-1f7a22fb50db",
+      "rejected_id": "299ab523-67f7-42a2-a3d6-fd41b6904156",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000024.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000023.mp4",
+      "quality_pair": [
+        "success",
+        "suboptimal"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q14",
+      "task": "Unzip the pencil case",
+      "preferred_id": "abe808eb-ae29-4ee4-8c52-39acc7cab0d5",
+      "rejected_id": "299ab523-67f7-42a2-a3d6-fd41b6904156",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000026.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000023.mp4",
+      "quality_pair": [
+        "success",
+        "suboptimal"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q15",
+      "task": "Unzip the pencil case",
+      "preferred_id": "8556e043-8f10-4fa1-8775-1f7a22fb50db",
+      "rejected_id": "2378544f-0f0c-4082-a234-a53780f6a1e2",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000024.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000025.mp4",
+      "quality_pair": [
+        "success",
+        "suboptimal"
+      ],
+      "prediction": null
+    },
+    {
+      "pair_id": "Q16",
+      "task": "Unzip the pencil case",
+      "preferred_id": "abe808eb-ae29-4ee4-8c52-39acc7cab0d5",
+      "rejected_id": "2378544f-0f0c-4082-a234-a53780f6a1e2",
+      "preferred_clip": "research/sources/native_error_leads_20261003/video_000026.mp4",
+      "rejected_clip": "research/sources/native_error_leads_20261003/video_000025.mp4",
+      "quality_pair": [
+        "success",
+        "suboptimal"
+      ],
+      "prediction": null
+    }
+  ],
+  "missing": [
+    "exact local checkpoint and runtime readiness",
+    "actual paper wrist-camera configuration",
+    "fixed A/B presentation and frame sampling before inference",
+    "Table XXVI retrieval win-matrix aggregation and exact candidate IDs"
+  ],
+  "new_task_output": false,
+  "models_run": 0
+}

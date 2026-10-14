@@ -1,0 +1,2828 @@
+0001: PATCH: Action-Chunk-Conditioned Latent Patch Innovation Monitoring for Robot Manipulation
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2606.16690v1 [cs.RO] 15 Jun 2026
+0010: PATCH: Action-Chunk-Conditioned Latent Patch Innovation Monitoring for Robot Manipulation
+0011: Yanan Zhou
+0012: Ranpeng Qiu
+0013: Yincong Chen
+0014: Jiajie Cui
+0015: Weiming Zhi
+0016: †
+0017: †
+0018: thanks:
+0019: School of Computer Science, The University of Sydney.
+0020: †
+0021: †
+0022: thanks:
+0023: Australian Centre For Robotics, The University of Sydney.
+0024: Abstract
+0025: Learning-based manipulation policies have made substantial progress in real-world robot manipulation, particularly for short-horizon action generation. However, deployment in open workspaces remains fragile under unexpected local scene dynamics, such as moving objects, transient occlusions, or disturbances near the intended motion. Existing runtime monitors often rely on global observation anomalies, policy uncertainty, or frame-level visual changes, and struggle to distinguish task-relevant execution risk from benign visual variation. We introduce PATCH, an action-chunk-conditioned latent patch innovation monitor for deployment-time intervention. Given the active action chunk, PATCH defines a projected execution corridor, predicts latent patch evolution inside it, and accumulates persistent residuals unexplained by the robot’s own motion. These residuals form a localized intervention signal that allows PATCH-Router to pause execution, select an available recovery source, and resume the original policy once localized innovation subsides. Experiments on real robot rollout data show that PATCH produces more stable and context-relevant triggers than competing runtime monitors. Real-robot deployment further demonstrates monitor-driven intervention and policy resumption for disturbance-aware manipulation. Project Page:
+0026: https://yananzhou5555.github.io/PATCH/
+0027: .
+0028: 1
+0029: Introduction
+0030: Learning-based manipulation policies are moving from closed, single-skill settings toward more open-ended real-world autonomy. Methods such as Action Chunking with Transformers enable imitation policies to predict continuous action chunks for fine-grained manipulation
+0031: [
+0032: 1
+0033: ]
+0034: . Recent robot policies further expand the range of objects, scenes, and task specifications that robots can handle
+0035: [
+0036: 2
+0037: ,
+0038: 3
+0039: ]
+0040: . However, open-workspace deployment remains sensitive to scene dynamics that training data cannot exhaustively cover, such as new objects entering the workspace, unexpected occlusions, and surrounding objects being moved. Runtime monitoring therefore needs to determine whether visual evolution is both abnormal for the active action chunk and localized to the region the policy will use, rather than merely detecting unusual observations.
+0041: Existing runtime monitors often rely on global observation anomalies, policy uncertainty, frame-level visual changes, or scalar failure scores. These signals can indicate distribution shift, low action confidence, broad visual change, or overall failure likelihood, but they do not reliably separate task-relevant execution risk from benign visual variation.
+0042: Figure
+0043: 1
+0044: (a) illustrates this limitation through cases that should not trigger intervention: C1 represents nominal execution; C2 introduces an irrelevant static change outside the action-relevant region; and C3 presents a transient obstruction without lasting execution impact. Execution-time monitoring therefore requires a stricter criterion: whether persistent external change lies inside the active policy’s projected execution corridor and remains unexplained by normal action-conditioned evolution.
+0045: We address this with PATCH. Given the active action chunk, PATCH defines a projected execution corridor: the image or latent region traversed or affected by the policy’s near-term motion. It predicts how latent patches inside this corridor should evolve under robot motion and treats the residual between predicted and observed evolution as patch innovation. Persistent innovation after self-motion filtering becomes the intervention signal. PATCH-Router then treats this localized signal as an interruption rather than a task failure: it preserves execution state, routes control to an available recovery source, and resumes the policy once localized innovation subsides.
+0046: Figure 1:
+0047: PATCH intervention monitoring.
+0048: (a) No-intervention cases that can confound visual-change monitors. (b) PATCH localizes action-relevant patch innovation inside the projected execution corridor. (c) Real rollout with PATCH-Router intervention and policy resumption.
+0049: The paper makes three contributions:
+0050: •
+0051: We formulate
+0052: action-chunk-conditioned latent patch innovation monitoring
+0053: , which detects persistent external deviations inside the active policy’s projected execution corridor rather than triggering on global observation change or policy uncertainty alone.
+0054: •
+0055: We introduce PATCH, a latent patch monitor that predicts visual evolution inside this corridor, discounts self-motion-induced changes, and accumulates persistent unexplained residuals into deployment-time intervention signals.
+0056: •
+0057: We evaluate PATCH on real robot rollout data with component ablations, and demonstrate PATCH-Router for monitor-driven intervention and policy resumption on real robots.
+0058: 2
+0059: Related Work
+0060: Action chunks and robot foundation policies.
+0061: Imitation learning
+0062: [
+0063: 4
+0064: ,
+0065: 5
+0066: ]
+0067: enables complex motion patterns beyond motion plans
+0068: [
+0069: 6
+0070: ,
+0071: 7
+0072: ]
+0073: to specific goals. Short action sequences increasingly serve as the perception-control interface.
+0074: ACT and Diffusion Policy established chunked action prediction as a practical basis for high-bandwidth visuomotor manipulation
+0075: [
+0076: 1
+0077: ]
+0078: .
+0079: Mobile ALOHA and real-time action-chunk execution scale this interface to mobile manipulation and low-latency control
+0080: [
+0081: 8
+0082: ]
+0083: . TriPilot-FF
+0084: [
+0085: 9
+0086: ]
+0087: advances this effort, enabling mobile manipulation data to be collected without being co-located, and torque information to be used in training.
+0088: Open X-Embodiment, OpenVLA, and
+0089: π
+0090: 0.5
+0091: \pi_{0.5}
+0092: extend it across embodiments and tasks
+0093: [
+0094: 10
+0095: ,
+0096: 2
+0097: ,
+0098: 3
+0099: ]
+0100: . Beyond action chunks, distributions over trajectory sequences
+0101: [
+0102: 11
+0103: ]
+0104: , and stable dynamical systems have been used to represent action sequences
+0105: [
+0106: 12
+0107: ]
+0108: .
+0109: In these works, the predicted sequence is primarily used to parameterize robot behavior.
+0110: PATCH uses the active chunk to construct a projected execution corridor, directing the monitor to visual regions the policy will traverse next and scene changes that may affect ongoing execution.
+0111: Runtime monitoring, failure prediction, and latent dynamics.
+0112: Runtime monitoring estimates reliability as observations change.
+0113: RND scores novelty through prediction error
+0114: [
+0115: 13
+0116: ]
+0117: . Diffusion-based out-of-distribution signals have been studied in
+0118: [
+0119: 14
+0120: ]
+0121: . Another line of work, ReDiffuser and robot-fleet world models use confidence or prediction error
+0122: [
+0123: 15
+0124: ,
+0125: 16
+0126: ]
+0127: .
+0128: Failure-mode decomposition tracks progress and consistency
+0129: [
+0130: 17
+0131: ]
+0132: .
+0133: FIPER and SAFE predict failures from action chunks or VLA features
+0134: [
+0135: 18
+0136: ,
+0137: 19
+0138: ]
+0139: . Rewind-IL
+0140: [
+0141: 20
+0142: ]
+0143: introduces an action-chunk-based predictor that leverages conformal prediction and outperforms FIPER. Code-as-Monitor and RC-NF localize evidence with constraints or robot-conditioned normality
+0144: [
+0145: 21
+0146: ,
+0147: 22
+0148: ]
+0149: .
+0150: FLARE, DreamGen, and DiWA use latent world models to frame prediction error as an execution counterfactual
+0151: [
+0152: 23
+0153: ,
+0154: 24
+0155: ,
+0156: 25
+0157: ]
+0158: .
+0159: PATCH uses latent dynamics to predict normal-execution patch states and accumulate persistent external innovation in the corridor.
+0160: Monitor-driven intervention and assistance.
+0161: SayCan and Inner Monologue ground help seeking in language and affordances
+0162: [
+0163: 26
+0164: ,
+0165: 27
+0166: ]
+0167: .
+0168: Robots Ask for Help studies assistance requests under uncertainty
+0169: [
+0170: 28
+0171: ]
+0172: .
+0173: Uncertainty Comes for Free links diffusion-policy uncertainty to human input, and UPS studies uncertainty-aware policy steering
+0174: [
+0175: 29
+0176: ,
+0177: 30
+0178: ]
+0179: .
+0180: Dual-agent and latent theory-of-mind systems study peer-robot assistance
+0181: [
+0182: 31
+0183: ,
+0184: 32
+0185: ]
+0186: .
+0187: These approaches define the response after a trigger is produced.
+0188: Here, the trigger also carries localized evidence and active policy context.
+0189: PATCH-Router uses the intervention signal from PATCH with policy libraries and robot state to select an intervention mode and resume the original policy once localized evidence clears in the active region.
+0190: Figure 2:
+0191: The PATCH framework.
+0192: The monitor combines latent prediction, self-motion filtering, action-chunk projection, and evidence accumulation into
+0193: ℐ
+0194: t
+0195: \mathcal{I}_{t}
+0196: for PATCH-Router hold and intervention selection.
+0197: 3
+0198: The PATCH Framework
+0199: 3.1
+0200: Problem Formulation: Action-Chunk-Conditioned Latent Patch Innovation Monitoring
+0201: We formulate
+0202: action-chunk-conditioned latent patch innovation monitoring
+0203: as an execution-time problem for learned manipulation policies.
+0204: At each control step, the active policy identity
+0205: π
+0206: t
+0207: \pi_{t}
+0208: and action chunk
+0209: U
+0210: t
+0211: U_{t}
+0212: define the current policy context.
+0213: The action chunk induces a projected execution corridor: the image-space patch region expected to be traversed or affected by the robot over the short horizon.
+0214: PATCH should trigger only when this corridor contains persistent external latent innovation unexplained by normal robot-conditioned execution.
+0215: At time
+0216: t
+0217: t
+0218: , the monitor receives
+0219: O
+0220: t
+0221: =
+0222: (
+0223: I
+0224: t
+0225: t
+0226: ​
+0227: o
+0228: ​
+0229: p
+0230: ,
+0231: I
+0232: t
+0233: w
+0234: ​
+0235: r
+0236: ​
+0237: i
+0238: ​
+0239: s
+0240: ​
+0241: t
+0242: ,
+0243: q
+0244: t
+0245: ,
+0246: τ
+0247: t
+0248: ,
+0249: π
+0250: t
+0251: ,
+0252: U
+0253: t
+0254: )
+0255: ,
+0256: U
+0257: t
+0258: =
+0259: {
+0260: a
+0261: t
+0262: ,
+0263: …
+0264: ,
+0265: a
+0266: t
+0267: +
+0268: H
+0269: −
+0270: 1
+0271: }
+0272: .
+0273: O_{t}=\left(I_{t}^{top},I_{t}^{wrist},q_{t},\tau_{t},\pi_{t},U_{t}\right),\qquad U_{t}=\{a_{t},\ldots,a_{t+H-1}\}.
+0274: (1)
+0275: Here,
+0276: I
+0277: t
+0278: t
+0279: ​
+0280: o
+0281: ​
+0282: p
+0283: I_{t}^{top}
+0284: and
+0285: I
+0286: t
+0287: w
+0288: ​
+0289: r
+0290: ​
+0291: i
+0292: ​
+0293: s
+0294: ​
+0295: t
+0296: I_{t}^{wrist}
+0297: are top-view and wrist-view RGB images,
+0298: q
+0299: t
+0300: q_{t}
+0301: is joint state,
+0302: τ
+0303: t
+0304: \tau_{t}
+0305: is joint effort,
+0306: π
+0307: t
+0308: \pi_{t}
+0309: is the active policy identity, and
+0310: U
+0311: t
+0312: U_{t}
+0313: is its action chunk over horizon
+0314: H
+0315: H
+0316: .
+0317: A monitored event must satisfy three conditions:
+0318: corridor relevance
+0319: , which restricts evidence to the corridor induced by
+0320: U
+0321: t
+0322: U_{t}
+0323: ;
+0324: external latent innovation
+0325: , which measures local latent deviation after accounting for robot self-motion; and
+0326: temporal persistence
+0327: , which suppresses transient changes through memory and latching.
+0328: PATCH maps
+0329: O
+0330: t
+0331: O_{t}
+0332: to a structured intervention signal containing a trigger, localized evidence region, evidence score, and active policy context.
+0333: 3.2
+0334: PATCH Monitor
+0335: PATCH consists of four components: robot-conditioned latent dynamics, self-motion filtering, action-chunk corridor projection, and corridor evidence accumulation.
+0336: Robot-Conditioned Latent Dynamics.
+0337: This component predicts what the current top-view latent patch field should look like under normal execution, given recent belief history, wrist context, robot state, and the active action chunk.
+0338: The prediction defines the reference for patch-wise innovation: a patch is suspicious when its observed latent state is unlikely under normal dynamics for the active policy context.
+0339: We encode the top-view and wrist-view images with frozen dense visual encoders,
+0340: z
+0341: t
+0342: =
+0343: f
+0344: ϕ
+0345: ​
+0346: (
+0347: I
+0348: t
+0349: t
+0350: ​
+0351: o
+0352: ​
+0353: p
+0354: )
+0355: z_{t}=f_{\phi}(I_{t}^{top})
+0356: and
+0357: z
+0358: t
+0359: w
+0360: ​
+0361: r
+0362: ​
+0363: i
+0364: ​
+0365: s
+0366: ​
+0367: t
+0368: =
+0369: f
+0370: ϕ
+0371: w
+0372: ​
+0373: (
+0374: I
+0375: t
+0376: w
+0377: ​
+0378: r
+0379: ​
+0380: i
+0381: ​
+0382: s
+0383: ​
+0384: t
+0385: )
+0386: z_{t}^{wrist}=f_{\phi}^{w}(I_{t}^{wrist})
+0387: , where
+0388: z
+0389: t
+0390: ∈
+0391: ℝ
+0392: C
+0393: ×
+0394: h
+0395: ×
+0396: w
+0397: z_{t}\in\mathbb{R}^{C\times h\times w}
+0398: .
+0399: The wrist stream provides robot-local context for expected motion and contact, while innovation is scored only in the top-view latent field.
+0400: Let
+0401: b
+0402: t
+0403: b_{t}
+0404: denote the monitor belief latent, updated in
+0405: Equation
+0406: 6
+0407: .
+0408: A lightweight spatial ConvNet predicts a diagonal Gaussian over the current top-view latent:
+0409: (
+0410: μ
+0411: t
+0412: ,
+0413: σ
+0414: t
+0415: )
+0416: =
+0417: F
+0418: θ
+0419: (
+0420: b
+0421: t
+0422: −
+0423: K
+0424: :
+0425: t
+0426: −
+0427: 1
+0428: ,
+0429: z
+0430: t
+0431: −
+0432: K
+0433: :
+0434: t
+0435: w
+0436: ​
+0437: r
+0438: ​
+0439: i
+0440: ​
+0441: s
+0442: ​
+0443: t
+0444: ,
+0445: q
+0446: t
+0447: ,
+0448: U
+0449: t
+0450: )
+0451: ,
+0452: (\mu_{t},\sigma_{t})=F_{\theta}\left(b_{t-K:t-1},z^{wrist}_{t-K:t},q_{t},U_{t}\right),
+0453: (2)
+0454: with
+0455: σ
+0456: t
+0457: \sigma_{t}
+0458: parameterized to be positive.
+0459: The model is trained on normal policy rollouts using synchronized visual, proprioceptive, and action sequences, without external-intervention labels, failure labels, or deployment-scene clean rollouts.
+0460: At test time, PATCH scores patch-wise latent innovation by the negative log-likelihood of the observed latent:
+0461: e
+0462: t
+0463: (
+0464: i
+0465: ,
+0466: j
+0467: )
+0468: =
+0469: 1
+0470: C
+0471: ∑
+0472: c
+0473: =
+0474: 1
+0475: C
+0476: −
+0477: log
+0478: 𝒩
+0479: (
+0480: z
+0481: t
+0482: (
+0483: c
+0484: ,
+0485: i
+0486: ,
+0487: j
+0488: )
+0489: ;
+0490: μ
+0491: t
+0492: (
+0493: c
+0494: ,
+0495: i
+0496: ,
+0497: j
+0498: )
+0499: ,
+0500: σ
+0501: t
+0502: 2
+0503: (
+0504: c
+0505: ,
+0506: i
+0507: ,
+0508: j
+0509: )
+0510: )
+0511: .
+0512: e_{t}(i,j)=\frac{1}{C}\sum_{c=1}^{C}-\log\mathcal{N}\left(z_{t}(c,i,j);\mu_{t}(c,i,j),\sigma_{t}^{2}(c,i,j)\right).
+0513: (3)
+0514: A high
+0515: e
+0516: t
+0517: ​
+0518: (
+0519: i
+0520: ,
+0521: j
+0522: )
+0523: e_{t}(i,j)
+0524: indicates that patch
+0525: (
+0526: i
+0527: ,
+0528: j
+0529: )
+0530: (i,j)
+0531: deviates from robot-conditioned normal latent evolution.
+0532: Self-Motion Filtering.
+0533: Self-motion filtering suppresses innovation caused by the robot’s own execution, including arm motion, gripper motion, contact, held-object motion, and expected occlusion.
+0534: PATCH computes a self-motion support
+0535: S
+0536: t
+0537: ∈
+0538: [
+0539: 0
+0540: ,
+0541: 1
+0542: ]
+0543: h
+0544: ×
+0545: w
+0546: S_{t}\in[0,1]^{h\times w}
+0547: by projecting robot geometry, gripper state, and the action-induced tool-center-point (TCP) sweep into the top-view image and aligning them with the latent patch grid.
+0548: If an object is held, its expected sweep is approximated by dilating the gripper-attached region along the projected TCP path.
+0549: Innovation is normalized using training residual statistics and filtered by
+0550: S
+0551: t
+0552: S_{t}
+0553: :
+0554: ψ
+0555: ⁡
+0556: (
+0557: e
+0558: t
+0559: ​
+0560: (
+0561: i
+0562: ,
+0563: j
+0564: )
+0565: )
+0566: =
+0567: clip
+0568: ⁡
+0569: (
+0570: e
+0571: t
+0572: ​
+0573: (
+0574: i
+0575: ,
+0576: j
+0577: )
+0578: −
+0579: η
+0580: s
+0581: η
+0582: ,
+0583: 0
+0584: ,
+0585: 1
+0586: )
+0587: ,
+0588: X
+0589: t
+0590: ​
+0591: (
+0592: i
+0593: ,
+0594: j
+0595: )
+0596: =
+0597: ψ
+0598: ⁡
+0599: (
+0600: e
+0601: t
+0602: ​
+0603: (
+0604: i
+0605: ,
+0606: j
+0607: )
+0608: )
+0609: ​
+0610: (
+0611: 1
+0612: −
+0613: S
+0614: t
+0615: ​
+0616: (
+0617: i
+0618: ,
+0619: j
+0620: )
+0621: )
+0622: .
+0623: \psi(e_{t}(i,j))=\operatorname{clip}\left(\frac{e_{t}(i,j)-\eta}{s_{\eta}},0,1\right),\qquad X_{t}(i,j)=\psi(e_{t}(i,j))\left(1-S_{t}(i,j)\right).
+0624: (4)
+0625: Here,
+0626: η
+0627: \eta
+0628: is a thresholded percentile of training residuals, and
+0629: s
+0630: η
+0631: s_{\eta}
+0632: is a validation-set residual scale used to map excess negative log-likelihood into
+0633: [
+0634: 0
+0635: ,
+0636: 1
+0637: ]
+0638: [0,1]
+0639: .
+0640: The output
+0641: X
+0642: t
+0643: X_{t}
+0644: remains high only where the observed latent is unlikely under normal dynamics and not explained by robot self-motion.
+0645: Projected Execution Corridor from the Action Chunk.
+0646: The projected execution corridor defines where external innovation is relevant to imminent execution.
+0647: PATCH decodes the active action chunk into an expected robot trajectory, maps it to a TCP path, projects it into the top-view image, dilates it for execution tolerance and end-effector extent, and aligns it with the latent patch grid:
+0648: ξ
+0649: t
+0650: =
+0651: F
+0652: ​
+0653: K
+0654: ​
+0655: (
+0656: D
+0657: a
+0658: ​
+0659: (
+0660: q
+0661: t
+0662: ,
+0663: U
+0664: t
+0665: )
+0666: )
+0667: ,
+0668: P
+0669: t
+0670: =
+0671: 𝒫
+0672: ⁡
+0673: (
+0674: Π
+0675: t
+0676: ​
+0677: o
+0678: ​
+0679: p
+0680: ​
+0681: (
+0682: ξ
+0683: t
+0684: )
+0685: )
+0686: ⊙
+0687: V
+0688: ,
+0689: P
+0690: t
+0691: ∈
+0692: [
+0693: 0
+0694: ,
+0695: 1
+0696: ]
+0697: h
+0698: ×
+0699: w
+0700: .
+0701: \xi_{t}=FK(D_{a}(q_{t},U_{t})),\qquad P_{t}=\mathcal{P}\left(\Pi_{top}(\xi_{t})\right)\odot V,\qquad P_{t}\in[0,1]^{h\times w}.
+0702: (5)
+0703: Here,
+0704: D
+0705: a
+0706: D_{a}
+0707: maps the current joint state and policy actions to a predicted joint trajectory,
+0708: F
+0709: ​
+0710: K
+0711: ​
+0712: (
+0713: ⋅
+0714: )
+0715: FK(\cdot)
+0716: computes the corresponding TCP path
+0717: ξ
+0718: t
+0719: \xi_{t}
+0720: ,
+0721: Π
+0722: t
+0723: ​
+0724: o
+0725: ​
+0726: p
+0727: \Pi_{top}
+0728: projects this path into the top-view camera,
+0729: 𝒫
+0730: ⁡
+0731: (
+0732: ⋅
+0733: )
+0734: \mathcal{P}(\cdot)
+0735: performs dilation and patch-grid alignment, and
+0736: V
+0737: V
+0738: is an optional task or workspace region of interest.
+0739: The resulting
+0740: P
+0741: t
+0742: P_{t}
+0743: localizes action-relevant evidence to the corridor of the active chunk.
+0744: Belief Memory.
+0745: Belief memory converts filtered innovation into a stable prediction context.
+0746: It accepts observed latents where innovation is low or self-explained, and writes predicted normal latents where external innovation is active:
+0747: α
+0748: t
+0749: ​
+0750: (
+0751: i
+0752: ,
+0753: j
+0754: )
+0755: =
+0756: max
+0757: ⁡
+0758: (
+0759: 1
+0760: −
+0761: ψ
+0762: ⁡
+0763: (
+0764: e
+0765: t
+0766: ​
+0767: (
+0768: i
+0769: ,
+0770: j
+0771: )
+0772: )
+0773: ,
+0774: S
+0775: t
+0776: ​
+0777: (
+0778: i
+0779: ,
+0780: j
+0781: )
+0782: )
+0783: ,
+0784: b
+0785: t
+0786: ​
+0787: (
+0788: i
+0789: ,
+0790: j
+0791: )
+0792: =
+0793: α
+0794: t
+0795: ​
+0796: (
+0797: i
+0798: ,
+0799: j
+0800: )
+0801: ​
+0802: z
+0803: t
+0804: ​
+0805: (
+0806: i
+0807: ,
+0808: j
+0809: )
+0810: +
+0811: (
+0812: 1
+0813: −
+0814: α
+0815: t
+0816: ​
+0817: (
+0818: i
+0819: ,
+0820: j
+0821: )
+0822: )
+0823: ​
+0824: μ
+0825: t
+0826: ​
+0827: (
+0828: i
+0829: ,
+0830: j
+0831: )
+0832: .
+0833: \alpha_{t}(i,j)=\max\left(1-\psi(e_{t}(i,j)),S_{t}(i,j)\right),\quad b_{t}(i,j)=\alpha_{t}(i,j)z_{t}(i,j)+\left(1-\alpha_{t}(i,j)\right)\mu_{t}(i,j).
+0834: (6)
+0835: Thus, observed latents are retained when residuals are low or self-explained; otherwise the belief is filled with the predicted normal latent.
+0836: This prevents persistent external objects from becoming normal monitor context.
+0837: Corridor Evidence and Latching.
+0838: PATCH intersects external innovation evidence with the projected execution corridor:
+0839: R
+0840: t
+0841: ​
+0842: (
+0843: i
+0844: ,
+0845: j
+0846: )
+0847: =
+0848: P
+0849: t
+0850: ​
+0851: (
+0852: i
+0853: ,
+0854: j
+0855: )
+0856: ​
+0857: X
+0858: t
+0859: ​
+0860: (
+0861: i
+0862: ,
+0863: j
+0864: )
+0865: ,
+0866: ρ
+0867: t
+0868: =
+0869: ⟨
+0870: R
+0871: t
+0872: ,
+0873: P
+0874: t
+0875: ⟩
+0876: ⟨
+0877: P
+0878: t
+0879: ,
+0880: P
+0881: t
+0882: ⟩
+0883: +
+0884: ϵ
+0885: .
+0886: R_{t}(i,j)=P_{t}(i,j)X_{t}(i,j),\qquad\rho_{t}=\frac{\langle R_{t},P_{t}\rangle}{\langle P_{t},P_{t}\rangle+\epsilon}.
+0887: (7)
+0888: Here,
+0889: R
+0890: t
+0891: R_{t}
+0892: is patch-level evidence inside the projected corridor, and
+0893: ρ
+0894: t
+0895: \rho_{t}
+0896: is a corridor-normalized evidence score.
+0897: For binary
+0898: P
+0899: t
+0900: P_{t}
+0901: ,
+0902: ρ
+0903: t
+0904: \rho_{t}
+0905: is the mean external innovation inside the corridor; for soft
+0906: P
+0907: t
+0908: P_{t}
+0909: , it is the corresponding corridor-weighted score.
+0910: Temporal accumulation and hysteresis produce the intervention trigger:
+0911: R
+0912: ¯
+0913: t
+0914: =
+0915: λ
+0916: ​
+0917: R
+0918: ¯
+0919: t
+0920: −
+0921: 1
+0922: +
+0923: (
+0924: 1
+0925: −
+0926: λ
+0927: )
+0928: ​
+0929: R
+0930: t
+0931: ,
+0932: (
+0933: y
+0934: t
+0935: ,
+0936: 𝒦
+0937: t
+0938: )
+0939: =
+0940: Latch
+0941: int
+0942: ⁡
+0943: (
+0944: R
+0945: ¯
+0946: t
+0947: ,
+0948: ρ
+0949: t
+0950: ,
+0951: q
+0952: t
+0953: ,
+0954: τ
+0955: t
+0956: )
+0957: .
+0958: \bar{R}_{t}=\lambda\bar{R}_{t-1}+(1-\lambda)R_{t},\qquad(y_{t},\mathcal{K}_{t})=\operatorname{Latch}_{\mathrm{int}}\left(\bar{R}_{t},\rho_{t},q_{t},\tau_{t}\right).
+0959: (8)
+0960: Here,
+0961: y
+0962: t
+0963: y_{t}
+0964: is the intervention trigger and
+0965: 𝒦
+0966: t
+0967: \mathcal{K}_{t}
+0968: is the localized evidence region.
+0969: The robot state and effort terms gate triggering and release during contact-rich execution, preventing release during high-effort contact and suppressing expected contact transients.
+0970: The latch rises after
+0971: n
+0972: on
+0973: n_{\mathrm{on}}
+0974: consecutive active frames, clears after
+0975: n
+0976: off
+0977: n_{\mathrm{off}}
+0978: release frames, and produces
+0979: ℐ
+0980: t
+0981: =
+0982: (
+0983: y
+0984: t
+0985: ,
+0986: 𝒦
+0987: t
+0988: ,
+0989: ρ
+0990: t
+0991: ,
+0992: π
+0993: t
+0994: ,
+0995: q
+0996: t
+0997: ,
+0998: τ
+0999: t
+1000: )
+1001: .
+1002: \mathcal{I}_{t}=\left(y_{t},\mathcal{K}_{t},\rho_{t},\pi_{t},q_{t},\tau_{t}\right).
+1003: (9)
+1004: ℐ
+1005: t
+1006: \mathcal{I}_{t}
+1007: is the structured intervention signal passed to the downstream intervention interface.
+1008: 3.3
+1009: PATCH-Router Intervention Interface
+1010: PATCH-Router consumes
+1011: ℐ
+1012: t
+1013: \mathcal{I}_{t}
+1014: during real-robot deployment and operates at the intervention timescale rather than the control-loop timescale.
+1015: It reads the trigger
+1016: y
+1017: t
+1018: y_{t}
+1019: , localized evidence region
+1020: 𝒦
+1021: t
+1022: \mathcal{K}_{t}
+1023: , evidence score
+1024: ρ
+1025: t
+1026: \rho_{t}
+1027: , and active policy context
+1028: (
+1029: π
+1030: t
+1031: ,
+1032: q
+1033: t
+1034: ,
+1035: τ
+1036: t
+1037: )
+1038: (\pi_{t},q_{t},\tau_{t})
+1039: .
+1040: Together, these fields specify whether intervention is needed, where it is needed, which policy is affected, and what robot state must be preserved during hold, intervention, and resumption.
+1041: Given self-recovery skills, peer-robot intervention libraries, and robot availability, the router selects
+1042: u
+1043: t
+1044: r
+1045: ​
+1046: o
+1047: ​
+1048: u
+1049: ​
+1050: t
+1051: ​
+1052: e
+1053: ​
+1054: r
+1055: =
+1056: Select
+1057: ⁡
+1058: (
+1059: ℐ
+1060: t
+1061: ,
+1062: ℒ
+1063: t
+1064: s
+1065: ​
+1066: e
+1067: ​
+1068: l
+1069: ​
+1070: f
+1071: ,
+1072: {
+1073: ℒ
+1074: t
+1075: ,
+1076: m
+1077: p
+1078: ​
+1079: e
+1080: ​
+1081: e
+1082: ​
+1083: r
+1084: }
+1085: m
+1086: =
+1087: 1
+1088: M
+1089: ,
+1090: 𝒜
+1091: t
+1092: r
+1093: ​
+1094: o
+1095: ​
+1096: b
+1097: ​
+1098: o
+1099: ​
+1100: t
+1101: )
+1102: ,
+1103: u_{t}^{router}=\operatorname{Select}\left(\mathcal{I}_{t},\mathcal{L}_{t}^{self},\{\mathcal{L}_{t,m}^{peer}\}_{m=1}^{M},\mathcal{A}_{t}^{robot}\right),
+1104: (10)
+1105: where
+1106: ℒ
+1107: t
+1108: s
+1109: ​
+1110: e
+1111: ​
+1112: l
+1113: ​
+1114: f
+1115: \mathcal{L}_{t}^{self}
+1116: and
+1117: ℒ
+1118: t
+1119: ,
+1120: m
+1121: p
+1122: ​
+1123: e
+1124: ​
+1125: e
+1126: ​
+1127: r
+1128: \mathcal{L}_{t,m}^{peer}
+1129: contain feasible intervention skills indexed by target region, and
+1130: 𝒜
+1131: t
+1132: r
+1133: ​
+1134: o
+1135: ​
+1136: b
+1137: ​
+1138: o
+1139: ​
+1140: t
+1141: \mathcal{A}_{t}^{robot}
+1142: encodes robot availability.
+1143: In our deployment,
+1144: Select
+1145: ⁡
+1146: (
+1147: ⋅
+1148: )
+1149: \operatorname{Select}(\cdot)
+1150: is a priority-ordered feasibility test over
+1151: u
+1152: t
+1153: r
+1154: ​
+1155: o
+1156: ​
+1157: u
+1158: ​
+1159: t
+1160: ​
+1161: e
+1162: ​
+1163: r
+1164: ∈
+1165: {
+1166: hold
+1167: ,
+1168: self
+1169: ​
+1170: _
+1171: ​
+1172: recovery
+1173: ,
+1174: peer
+1175: ​
+1176: _
+1177: ​
+1178: robot
+1179: ​
+1180: _
+1181: ​
+1182: int
+1183: ,
+1184: human
+1185: ​
+1186: _
+1187: ​
+1188: int
+1189: }
+1190: .
+1191: u_{t}^{router}\in\{\mathrm{hold},\mathrm{self\_recovery},\mathrm{peer\_robot\_int},\mathrm{human\_int}\}.
+1192: If
+1193: y
+1194: t
+1195: y_{t}
+1196: is active and no recovery source has been selected, the acting robot enters
+1197: hold
+1198: \mathrm{hold}
+1199: to preserve grasp, object state, and active policy context.
+1200: If a self-recovery skill can address
+1201: 𝒦
+1202: t
+1203: \mathcal{K}_{t}
+1204: without changing this preserved state, the router selects
+1205: self
+1206: ​
+1207: _
+1208: ​
+1209: recovery
+1210: \mathrm{self\_recovery}
+1211: .
+1212: If the acting robot must remain in hold and another robot can reach
+1213: 𝒦
+1214: t
+1215: \mathcal{K}_{t}
+1216: , it selects
+1217: peer
+1218: ​
+1219: _
+1220: ​
+1221: robot
+1222: ​
+1223: _
+1224: ​
+1225: int
+1226: \mathrm{peer\_robot\_int}
+1227: .
+1228: If no robot-side recovery is feasible, it selects
+1229: human
+1230: ​
+1231: _
+1232: ​
+1233: int
+1234: \mathrm{human\_int}
+1235: . The region
+1236: 𝒦
+1237: t
+1238: \mathcal{K}_{t}
+1239: provides the spatial target for intervention, while
+1240: ρ
+1241: t
+1242: \rho_{t}
+1243: and the latch state provide release conditions.
+1244: After PATCH observes that
+1245: 𝒦
+1246: t
+1247: \mathcal{K}_{t}
+1248: has cleared for the required release window, PATCH-Router releases hold and resumes the original policy.
+1249: Thus, resumption is triggered by local evidence clearance rather than by a fixed timeout or task reset.
+1250: 4
+1251: Empirical Evaluations
+1252: 4.1
+1253: Experiment Setup and Evaluation Claims
+1254: We evaluate PATCH on a real robot platform with two
+1255: AgileX Piper
+1256: robot arms.
+1257: The manipulation policies are learned from real demonstrations using Action Chunking Transformer, and PATCH runs alongside the active policy during deployment.
+1258: At each step, PATCH receives the active action chunk and constructs the projected execution corridor used for intervention monitoring.
+1259: Detailed sensor streams, policy horizon, timestamp synchronization, and logging protocol are reported in
+1260: Section
+1261: A.7
+1262: .
+1263: We evaluate three claims.
+1264: Claim 1.
+1265: PATCH reduces false alarms relative to competing monitors while detecting action-relevant persistent disturbances.
+1266: Claim 2.
+1267: Each main component of PATCH contributes to reliable trigger decisions.
+1268: Claim 3.
+1269: PATCH produces intervention signals that support reliable PATCH-Router decisions when workspace changes affect real-robot execution.
+1270: 4.2
+1271: Action-Corridor Trigger Benchmark Setup
+1272: We evaluate Claim 1 with an offline action-corridor trigger benchmark, shown in
+1273: Figure
+1274: 3
+1275: .
+1276: The benchmark contains two robot-task pairs, right-arm towel folding and left-arm cup-to-rack placement, evaluated under four event classes, denoted C1–C4.
+1277: Each evaluation window contains top-view RGB, the active robot’s wrist-view RGB, robot state, joint effort, active policy identity, and active action chunk.
+1278: Each window is labeled according to whether the event should trigger intervention for the current policy execution state.
+1279: The four event classes are:
+1280: C1: clean execution
+1281: , where no external change occurs and any trigger is a false alarm;
+1282: C2: irrelevant static change
+1283: , where persistent clutter changes the observation but remains outside the projected execution corridor;
+1284: C3: transient obstruction
+1285: , where a towel or hand briefly enters the manipulation region and is then removed, producing short-lived visual change without lasting execution impact; and
+1286: C4: persistent action-relevant obstruction
+1287: , where an external obstacle remains inside the active policy’s projected execution corridor.
+1288: C1–C3 are non-trigger classes, while C4 is the trigger class.
+1289: We collect 400 real-rollout evaluation windows balanced across the
+1290: 2
+1291: ×
+1292: 4
+1293: 2\times 4
+1294: robot-task/event-class subsets.
+1295: C1: Clean rollout
+1296: C2: Static change
+1297: C3: Transient obstruction
+1298: C4: Persistent obstruction
+1299: Figure 3:
+1300: Action-corridor trigger benchmark.
+1301: Top row: right-arm towel folding; bottom row: left-arm cup-to-rack.
+1302: Columns show C1–C3 non-trigger cases and the C4 trigger case, testing nominal execution, irrelevant static change, transient obstruction, and persistent action-relevant obstruction.
+1303: Baselines.
+1304: We compare against four monitor families that isolate the main alternatives to PATCH: observation OOD, action confidence, scalar failure prediction, and dense patch change.
+1305: PCA-kmeans
+1306: [
+1307: 16
+1308: ]
+1309: scores the distance from the current observation embedding to its nearest PCA-kmeans cluster.
+1310: RND-A
+1311: adapts RND confidence estimation
+1312: [
+1313: 15
+1314: ]
+1315: and uses action-conditioned prediction error as an anomaly score.
+1316: FIPER-style
+1317: follows runtime failure prediction in FIPER
+1318: [
+1319: 18
+1320: ]
+1321: , combining observation support and action-chunk reliability into a scalar trigger score.
+1322: DINO-Latent Innovation
+1323: aggregates dense DINOv3 patch-level innovation
+1324: [
+1325: 33
+1326: ]
+1327: into a frame-level trigger score.
+1328: All fitted models use the same
+1329: D
+1330: train
+1331: D_{\mathrm{train}}
+1332: ; scalar baselines additionally use
+1333: D
+1334: clean
+1335: D_{\mathrm{clean}}
+1336: for clean-rollout correction.
+1337: PATCH trains its latent dynamics and residual evidence model from
+1338: D
+1339: train
+1340: D_{\mathrm{train}}
+1341: , without additional labels.
+1342: Metrics.
+1343: Following monitor-level metrics used in FIPER
+1344: [
+1345: 18
+1346: ]
+1347: , we report false positive rate (FPR), true negative rate (TNR), true positive rate (TPR), and balanced accuracy (BalAcc) over 10 random seeds.
+1348: FPR is reported separately on C1–C3 to measure false alarms under clean execution, irrelevant static change, and transient obstruction.
+1349: TPR on C4 measures detection of persistent action-relevant obstructions.
+1350: BalAcc treats C4 as the positive class and C1–C3 as negative classes, unless otherwise specified.
+1351: Full metric definitions are provided in
+1352: Section
+1353: A.5
+1354: .
+1355: Table 1:
+1356: Offline action-corridor trigger evaluation.
+1357: Monitor baselines and PATCH ablations share the same event classes and metrics.
+1358: Values are mean
+1359: ±
+1360: \pm
+1361: std over 10 seeds; Clean calib. denotes clean-rollout calibration.
+1362: Method
+1363: Clean calib.
+1364: FPR
+1365: C
+1366: 1
+1367: ↓
+1368: \mathrm{FPR}_{C_{1}}\downarrow
+1369: FPR
+1370: C
+1371: 2
+1372: ↓
+1373: \mathrm{FPR}_{C_{2}}\downarrow
+1374: FPR
+1375: C
+1376: 3
+1377: ↓
+1378: \mathrm{FPR}_{C_{3}}\downarrow
+1379: TNR
+1380: ↑
+1381: \mathrm{TNR}\uparrow
+1382: TPR
+1383: C
+1384: 4
+1385: ↑
+1386: \mathrm{TPR}_{C_{4}}\uparrow
+1387: BalAcc
+1388: ↑
+1389: \mathrm{BalAcc}\uparrow
+1390: PCA-kmeans
+1391: Yes
+1392: 0.01
+1393: ±
+1394: 0.01
+1395: \mathbf{0.01\pm 0.01}
+1396: 0.78
+1397: ±
+1398: 0.10
+1399: 0.78\pm 0.10
+1400: 0.90
+1401: ±
+1402: 0.07
+1403: 0.90\pm 0.07
+1404: 0.44
+1405: ±
+1406: 0.06
+1407: 0.44\pm 0.06
+1408: 0.99
+1409: ±
+1410: 0.01
+1411: \mathbf{0.99\pm 0.01}
+1412: 0.72
+1413: ±
+1414: 0.04
+1415: 0.72\pm 0.04
+1416: RND-A
+1417: Yes
+1418: 0.02
+1419: ±
+1420: 0.01
+1421: ¯
+1422: \underline{0.02\pm 0.01}
+1423: 0.08
+1424: ±
+1425: 0.05
+1426: ¯
+1427: \underline{0.08\pm 0.05}
+1428: 0.20
+1429: ±
+1430: 0.09
+1431: ¯
+1432: \underline{0.20\pm 0.09}
+1433: 0.90
+1434: ±
+1435: 0.04
+1436: ¯
+1437: \underline{0.90\pm 0.04}
+1438: 0.32
+1439: ±
+1440: 0.18
+1441: 0.32\pm 0.18
+1442: 0.61
+1443: ±
+1444: 0.09
+1445: 0.61\pm 0.09
+1446: FIPER-style
+1447: Yes
+1448: 0.03
+1449: ±
+1450: 0.02
+1451: 0.03\pm 0.02
+1452: 0.26
+1453: ±
+1454: 0.10
+1455: 0.26\pm 0.10
+1456: 0.39
+1457: ±
+1458: 0.12
+1459: 0.39\pm 0.12
+1460: 0.77
+1461: ±
+1462: 0.07
+1463: 0.77\pm 0.07
+1464: 0.86
+1465: ±
+1466: 0.10
+1467: 0.86\pm 0.10
+1468: 0.82
+1469: ±
+1470: 0.06
+1471: ¯
+1472: \underline{0.82\pm 0.06}
+1473: DINO-Latent Innovation
+1474: No
+1475: 0.09
+1476: ±
+1477: 0.04
+1478: 0.09\pm 0.04
+1479: 0.12
+1480: ±
+1481: 0.06
+1482: 0.12\pm 0.06
+1483: 0.97
+1484: ±
+1485: 0.03
+1486: 0.97\pm 0.03
+1487: 0.61
+1488: ±
+1489: 0.04
+1490: 0.61\pm 0.04
+1491: 0.98
+1492: ±
+1493: 0.01
+1494: ¯
+1495: \underline{0.98\pm 0.01}
+1496: 0.80
+1497: ±
+1498: 0.03
+1499: 0.80\pm 0.03
+1500: PATCH (ours)
+1501: No
+1502: 0.05
+1503: ±
+1504: 0.03
+1505: 0.05\pm 0.03
+1506: 0.04
+1507: ±
+1508: 0.03
+1509: \mathbf{0.04\pm 0.03}
+1510: 0.07
+1511: ±
+1512: 0.04
+1513: \mathbf{0.07\pm 0.04}
+1514: 0.95
+1515: ±
+1516: 0.03
+1517: \mathbf{0.95\pm 0.03}
+1518: 0.97
+1519: ±
+1520: 0.02
+1521: 0.97\pm 0.02
+1522: 0.96
+1523: ±
+1524: 0.02
+1525: \mathbf{0.96\pm 0.02}
+1526: DINO-Latent Innovation
+1527: No
+1528: 0.09
+1529: ±
+1530: 0.04
+1531: 0.09\pm 0.04
+1532: 0.12
+1533: ±
+1534: 0.06
+1535: 0.12\pm 0.06
+1536: 0.97
+1537: ±
+1538: 0.03
+1539: 0.97\pm 0.03
+1540: 0.61
+1541: ±
+1542: 0.04
+1543: 0.61\pm 0.04
+1544: 0.98
+1545: ±
+1546: 0.01
+1547: \mathbf{0.98\pm 0.01}
+1548: 0.80
+1549: ±
+1550: 0.03
+1551: 0.80\pm 0.03
+1552: + Projected Corridor
+1553: No
+1554: 0.05
+1555: ±
+1556: 0.03
+1557: 0.05\pm 0.03
+1558: 0.04
+1559: ±
+1560: 0.03
+1561: \mathbf{0.04\pm 0.03}
+1562: 0.91
+1563: ±
+1564: 0.04
+1565: 0.91\pm 0.04
+1566: 0.68
+1567: ±
+1568: 0.04
+1569: 0.68\pm 0.04
+1570: 0.97
+1571: ±
+1572: 0.02
+1573: 0.97\pm 0.02
+1574: 0.83
+1575: ±
+1576: 0.03
+1577: 0.83\pm 0.03
+1578: ResNet-Latent Dynamics + Corridor
+1579: No
+1580: 0.06
+1581: ±
+1582: 0.02
+1583: 0.06\pm 0.02
+1584: 0.07
+1585: ±
+1586: 0.04
+1587: 0.07\pm 0.04
+1588: 0.42
+1589: ±
+1590: 0.09
+1591: 0.42\pm 0.09
+1592: 0.82
+1593: ±
+1594: 0.06
+1595: 0.82\pm 0.06
+1596: 0.84
+1597: ±
+1598: 0.08
+1599: 0.84\pm 0.08
+1600: 0.83
+1601: ±
+1602: 0.05
+1603: 0.83\pm 0.05
+1604: DINO-Latent Dynamics + Corridor
+1605: No
+1606: 0.05
+1607: ±
+1608: 0.03
+1609: 0.05\pm 0.03
+1610: 0.05
+1611: ±
+1612: 0.03
+1613: 0.05\pm 0.03
+1614: 0.31
+1615: ±
+1616: 0.08
+1617: 0.31\pm 0.08
+1618: 0.87
+1619: ±
+1620: 0.05
+1621: 0.87\pm 0.05
+1622: 0.94
+1623: ±
+1624: 0.04
+1625: 0.94\pm 0.04
+1626: 0.90
+1627: ±
+1628: 0.04
+1629: 0.90\pm 0.04
+1630: PATCH (full)
+1631: No
+1632: 0.05
+1633: ±
+1634: 0.03
+1635: 0.05\pm 0.03
+1636: 0.04
+1637: ±
+1638: 0.03
+1639: \mathbf{0.04\pm 0.03}
+1640: 0.07
+1641: ±
+1642: 0.04
+1643: \mathbf{0.07\pm 0.04}
+1644: 0.95
+1645: ±
+1646: 0.03
+1647: \mathbf{0.95\pm 0.03}
+1648: 0.97
+1649: ±
+1650: 0.02
+1651: 0.97\pm 0.02
+1652: 0.96
+1653: ±
+1654: 0.02
+1655: \mathbf{0.96\pm 0.02}
+1656: Quantitative Results.
+1657: Table
+1658: 1
+1659: tests whether monitors distinguish visual novelty from action-corridor relevance.
+1660: PCA-kmeans clusters global observation embeddings and is therefore sensitive to scene-level mismatch between the deployment view and the fitted data distribution.
+1661: Its high
+1662: TPR
+1663: C
+1664: 4
+1665: \mathrm{TPR}_{C_{4}}
+1666: comes with high
+1667: FPR
+1668: C
+1669: 2
+1670: \mathrm{FPR}_{C_{2}}
+1671: and
+1672: FPR
+1673: C
+1674: 3
+1675: \mathrm{FPR}_{C_{3}}
+1676: , indicating that global visual change drives its triggers.
+1677: RND-A shows the opposite bias: it achieves high
+1678: TNR
+1679: \mathrm{TNR}
+1680: , but its low
+1681: TPR
+1682: C
+1683: 4
+1684: \mathrm{TPR}_{C_{4}}
+1685: suggests that action-confidence signals can remain stable even when an obstacle enters the projected execution corridor.
+1686: FIPER-style is the strongest scalar baseline because it combines observation support and action-chunk reliability, but it still depends on clean-rollout calibration to set its trigger threshold and retains elevated
+1687: FPR
+1688: C
+1689: 3
+1690: \mathrm{FPR}_{C_{3}}
+1691: under transient dynamics.
+1692: DINO-Latent Innovation responds strongly to local visual dynamics, but its high
+1693: FPR
+1694: C
+1695: 3
+1696: \mathrm{FPR}_{C_{3}}
+1697: shows that dense patch change without action-corridor restriction and temporal persistence over-triggers on transient obstructions.
+1698: PATCH preserves high
+1699: TPR
+1700: C
+1701: 4
+1702: \mathrm{TPR}_{C_{4}}
+1703: while suppressing
+1704: FPR
+1705: C
+1706: 2
+1707: \mathrm{FPR}_{C_{2}}
+1708: and
+1709: FPR
+1710: C
+1711: 3
+1712: \mathrm{FPR}_{C_{3}}
+1713: , supporting Claim 1: reliable intervention triggering requires evidence that is corridor-grounded, external, and temporally persistent.
+1714: Figure 4:
+1715: PATCH evidence trace.
+1716: Top: rollout frames; middle: patch-level external innovation;
+1717: bottom: projected execution corridors, action paths, and localized trigger evidence.
+1718: Component Ablations.
+1719: The lower block of
+1720: Table
+1721: 1
+1722: evaluates Claim 2 using the same event classes and metrics.
+1723: DINO-Latent Innovation maintains high
+1724: TPR
+1725: C
+1726: 4
+1727: \mathrm{TPR}_{C_{4}}
+1728: but over-triggers on
+1729: C
+1730: 3
+1731: C_{3}
+1732: , showing that dense patch change alone is insufficient for selective intervention.
+1733: Adding the projected execution corridor reduces
+1734: FPR
+1735: C
+1736: 2
+1737: \mathrm{FPR}_{C_{2}}
+1738: by restricting evidence to regions affected by the active action chunk.
+1739: Action-conditioned latent dynamics reduces
+1740: FPR
+1741: C
+1742: 3
+1743: \mathrm{FPR}_{C_{3}}
+1744: by explaining normal robot-conditioned motion, while DINO latents retain stronger
+1745: TPR
+1746: C
+1747: 4
+1748: \mathrm{TPR}_{C_{4}}
+1749: than ResNet latents under the same corridor constraint.
+1750: Full PATCH achieves the best balanced accuracy by combining corridor restriction, self-motion filtering, and temporal accumulation of external innovation inside the corridor.
+1751: Figure
+1752: 4
+1753: visualizes these components over one synchronized rollout.
+1754: When external change appears outside the projected execution corridor, patch-level innovation rises but the corridor mask suppresses the trigger.
+1755: When an obstruction enters the corridor and persists, temporal accumulation maintains localized trigger evidence and PATCH issues the intervention signal.
+1756: After the peer robot clears the evidence region, accumulated evidence falls below the release threshold, and the original policy resumes under the preserved policy context.
+1757: 4.3
+1758: Robots that Assist
+1759: (a) Corridor obstruction
+1760: (b) Peer clears obstruction
+1761: (c) Rack knocked down
+1762: (d) Peer restores rack
+1763: Figure 5:
+1764: Real-world rollouts.
+1765: Two robots execute their active task policies in parallel; unexpected task-specific disturbances test PATCH monitoring and PATCH-Router closed-loop intervention decisions.
+1766: We evaluate Claim 3 on the real-world rollouts in
+1767: Figure
+1768: 5
+1769: .
+1770: Two Piper arms execute independent policies in parallel: towel folding with the right arm and cup-to-rack placement with the left arm.
+1771: The rollouts introduce two task-specific disturbances: an obstacle entering the folding corridor, and a rack being knocked down so that the placement target becomes unavailable.
+1772: These cases test whether PATCH produces localized intervention evidence for the affected robot while suppressing irrelevant visual changes from the other active task.
+1773: They also test whether PATCH-Router can select an appropriate intervention mode, preserve the interrupted policy state, and resume execution once the localized evidence clears. Successful resumption after peer intervention indicates that the monitor remains tied to the active task context rather than frame-level visual change.
+1774: Table 2:
+1775: Online real-robot stability.
+1776: All monitors share PATCH-Router and matched workspace changes.
+1777: Monitor
+1778: Inference
+1779: Intervention
+1780: Resume
+1781: Task
+1782: ms / Hz
+1783: Signal Acc.
+1784: Acc.
+1785: Completion Acc.
+1786: FIPER-style
+1787: 3.94 / 254
+1788: 80% (16/20)
+1789: 35% (7/20)
+1790: 30% (6/20)
+1791: VLM monitor
+1792: 2850 / 0.35
+1793: 85% (17/20)
+1794: 20% (4/20)
+1795: 15% (3/20)
+1796: PATCH
+1797: 18.1 / 55.2
+1798: 90% (18/20)
+1799: 90% (18/20)
+1800: 85% (17/20)
+1801: We compare three monitors in closed-loop real-robot deployment under matched workspace disturbances. Since all methods use the same PATCH-Router interface,
+1802: Table
+1803: 2
+1804: isolates the monitor’s effect on intervention timing, resumption, and task completion. Inference reports per-frame latency and throughput on a single RTX 5090 for local monitors, while the VLM row reports API round-trip latency; PATCH runs at the policy-matched 30 Hz control rate. Intervention Signal Acc. measures correct signaling for disturbances that block the active corridor, Resume Acc. measures correct clearance after obstruction removal, and Task Completion Acc. measures successful completion after resumption. FIPER-style detects many abnormal frames but struggles to identify clearance, reducing resume and completion accuracy. The VLM monitor often detects the blocking event, but its API latency can return after contact and required prompts tailored to expected accident categories. In contrast, PATCH updates localized corridor evidence at the policy rate, sustains intervention during persistent obstruction, verifies evidence-clear resumption, and achieves the highest task completion while preserving the active policy state.
+1805: Figure 6:
+1806: Unseen deployment.
+1807: New mat, clutter, and foam paper test action-corridor intervention.
+1808: Figure
+1809: 6
+1810: further tests Claim 3 under unseen appearance and obstacle changes. The scene changes the mat, adds static clutter, and replaces the towel obstruction with foam paper. This separates appearance shift from intervention relevance: background changes and static objects remain continue cases because they do not intersect the active action corridor. Foam paper triggers intervention only after entering the projected corridor and persisting across the evidence window.
+1811: 5
+1812: Conclusion and Limitations
+1813: We presented PATCH, an action-chunk-conditioned latent patch innovation monitor for deployment-time intervention.
+1814: PATCH uses active action chunks to form a short-horizon execution corridor, predict normal latent patch evolution, filter self-motion, and accumulate persistent external innovation for PATCH-Router.
+1815: Offline evaluation shows fewer false alarms on clean, irrelevant-change, and transient-obstruction cases while preserving recall on true execution blockers.
+1816: Ablations verify the roles of corridor projection, latent dynamics, self-motion filtering, and evidence memory.
+1817: Real-robot results show reliable intervention and policy resumption under workspace changes, including unseen backgrounds and obstacles.
+1818: Overall, action chunks provide useful perceptual structure for localized runtime monitoring and router decisions.
+1819: Limitations.
+1820: PATCH currently assumes a calibrated workspace observed from fixed camera viewpoints.
+1821: This makes the projected evidence region reliable in our tabletop setting, but also limits robustness to large viewpoint changes, camera motion, severe occlusion, and unstructured mobile operation where the monitored workspace may change over time. The projected execution corridor further depends on accurate action-to-TCP projection, robot-camera calibration, and workspace alignment. Extending PATCH to moving platforms or less structured scenes may require online calibration, e.g. with joint representation and calibration methods in
+1822: [
+1823: 34
+1824: ,
+1825: 35
+1826: ]
+1827: .
+1828: References
+1829: [1]
+1830: T. Z. Zhao, V. Kumar, S. Levine, and C. Finn.
+1831: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.
+1832: In
+1833: Proceedings of Robotics: Science and Systems
+1834: , 2023.
+1835: [2]
+1836: M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. P. Foster, P. R. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn.
+1837: OpenVLA: An Open-Source Vision-Language-Action Model.
+1838: In
+1839: Proceedings of The 8th Conference on Robot Learning
+1840: , pages 2679–2713, 2025.
+1841: [3]
+1842: K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. R. Equi, C. Finn, N. Fusai, M. Y. Galliker, D. Ghosh, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, D. LeBlanc, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, J. Tanner, Q. Vuong, H. Walke, A. Walling, H. Wang, L. Yu, and U. Zhilinsky.
+1843: π
+1844: 0.5
+1845: \pi_{0.5}
+1846: : A Vision-Language-Action Model with Open-World Generalization.
+1847: In
+1848: Proceedings of The 9th Conference on Robot Learning
+1849: , pages 17–40, 2025.
+1850: [4]
+1851: H. Ravichandar, A. S. Polydoros, S. Chernova, and A. Billard.
+1852: Recent advances in robot learning from demonstration.
+1853: Annual review of control, robotics, and autonomous systems
+1854: , 2020.
+1855: [5]
+1856: W. Zhi, T. Lai, L. Ott, and F. Ramos.
+1857: Diffeomorphic transforms for generalised imitation learning.
+1858: In
+1859: Learning for Dynamics and Control Conference, L4DC
+1860: , 2022.
+1861: [6]
+1862: S. M. LaValle.
+1863: Planning Algorithms
+1864: .
+1865: Cambridge University Press, USA, 2006.
+1866: [7]
+1867: W. Zhi, I. Akinola, K. van Wyk, N. Ratliff, and F. Ramos.
+1868: Global and reactive motion generation with geometric fabric command sequences.
+1869: In
+1870: IEEE International Conference on Robotics and Automation, ICRA
+1871: , 2023.
+1872: [8]
+1873: Z. Fu, T. Z. Zhao, and C. Finn.
+1874: Mobile ALOHA: Learning Bimanual Mobile Manipulation using Low-Cost Whole-Body Teleoperation.
+1875: In
+1876: Proceedings of The 8th Conference on Robot Learning
+1877: , pages 4066–4083, 2025.
+1878: [9]
+1879: Z. Li, Y. Zhou, R. Qiu, H. Wu, G. Ren, and W. Zhi.
+1880: Tripilot-ff: Coordinated whole-body teleoperation with force feedback.
+1881: arXiv preprint arXiv:2602.09888
+1882: , 2026.
+1883: [10]
+1884: Open X-Embodiment Collaboration.
+1885: Open X-Embodiment: Robotic Learning Datasets and RT-X Models.
+1886: In
+1887: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+1888: , pages 6892–6903, 2024.
+1889: [11]
+1890: W. Zhi, T. Zhang, and M. Johnson-Roberson.
+1891: Instructing robots by sketching: Learning from demonstration via probabilistic diagrammatic teaching.
+1892: In
+1893: IEEE International Conference on Robotics and Automation
+1894: , 2024.
+1895: [12]
+1896: W. Zhi, H. Tang, T. Zhang, and M. Johnson-Roberson.
+1897: Teaching periodic stable robot motion generation via sketch.
+1898: IEEE Robotics and Automation Letters
+1899: , 2025.
+1900: [13]
+1901: Y. Burda, H. Edwards, A. Storkey, and O. Klimov.
+1902: Exploration by Random Network Distillation.
+1903: In
+1904: International Conference on Learning Representations
+1905: , 2019.
+1906: [14]
+1907: H. Cheng, T. Zheng, Z. Ma, T. Zhang, M. Johnson-Roberson, and W. Zhi.
+1908: DOSE3: diffusion-based unified out-of-distribution detection on $\mathbb{SE}(3)$ trajectories.
+1909: IEEE Robotics Autom. Lett.
+1910: , 11(2):1706–1713, 2026.
+1911: doi:
+1912: 10.1109/LRA.2025.3640358
+1913: .
+1914: URL
+1915: https://doi.org/10.1109/LRA.2025.3640358
+1916: .
+1917: [15]
+1918: N. He, S. Li, Z. Li, Y. Liu, and Y. He.
+1919: ReDiffuser: Reliable Decision-Making Using a Diffuser with Confidence Estimation.
+1920: In
+1921: Proceedings of the 41st International Conference on Machine Learning
+1922: , pages 17921–17933, 2024.
+1923: [16]
+1924: H. Liu, Y. Zhang, V. Betala, E. Zhang, J. Liu, C. Ding, and Y. Zhu.
+1925: Multi-Task Interactive Robot Fleet Learning with Visual World Models.
+1926: In
+1927: Proceedings of The 8th Conference on Robot Learning
+1928: , pages 4286–4313, 2025.
+1929: [17]
+1930: C. Agia, R. Sinha, J. Yang, Z. Cao, R. Antonova, M. Pavone, and J. Bohg.
+1931: Unpacking Failure Modes of Generative Policies: Runtime Monitoring of Consistency and Progress.
+1932: In
+1933: Proceedings of The 8th Conference on Robot Learning
+1934: , pages 689–723, 2025.
+1935: [18]
+1936: R. Römer, A. Kobras, L. Worbis, and A. P. Schoellig.
+1937: Failure Prediction at Runtime for Generative Robot Policies.
+1938: In
+1939: Advances in Neural Information Processing Systems 38
+1940: , 2025.
+1941: [19]
+1942: Q. Gu, Y. Ju, S. Sun, I. Gilitschenski, H. Nishimura, M. Itkina, and F. Shkurti.
+1943: SAFE: Multitask Failure Detection for Vision-Language-Action Models.
+1944: In
+1945: Advances in Neural Information Processing Systems 38
+1946: , 2025.
+1947: [20]
+1948: G. Zheng, S. Seenivasan, M. Johnson-Roberson, and W. Zhi.
+1949: Rewind-il: Online failure detection and state respawning for imitation learning.
+1950: arXiv preprint arXiv:2604.16683
+1951: , 2026.
+1952: [21]
+1953: E. Zhou, Q. Su, C. Chi, Z. Zhang, Z. Wang, T. Huang, L. Sheng, and H. Wang.
+1954: Code-as-Monitor: Constraint-aware Visual Programming for Reactive and Proactive Robotic Failure Detection.
+1955: In
+1956: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1957: , pages 6919–6929, 2025.
+1958: [22]
+1959: S. Zhou, B. Zhu, J. Yang, X. Zhao, J. Chen, and Y.-G. Jiang.
+1960: RC-NF: Robot-Conditioned Normalizing Flow for Real-Time Anomaly Detection in Robotic Manipulation.
+1961: In
+1962: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1963: , 2026.
+1964: [23]
+1965: R. Zheng, J. Wang, S. Reed, J. Bjorck, Y. Fang, F. Hu, J. Jang, K. Kundalia, Z. Lin, L. Magne, A. Narayan, Y. L. Tan, G. Wang, Q. Wang, J. Xiang, Y. Xu, S. Ye, J. Kautz, F. Huang, Y. Zhu, and L. Fan.
+1966: FLARE: Robot Learning with Implicit World Modeling.
+1967: In
+1968: Proceedings of The 9th Conference on Robot Learning
+1969: , pages 3952–3971, 2025.
+1970: [24]
+1971: J. Jang, S. Ye, Z. Lin, J. Xiang, J. Bjorck, Y. Fang, F. Hu, S. Huang, K. Kundalia, Y.-C. Lin, L. Magne, A. Mandlekar, A. Narayan, Y. L. Tan, G. Wang, J. Wang, Q. Wang, Y. Xu, X. Zeng, K. Zheng, R. Zheng, M.-Y. Liu, L. Zettlemoyer, D. Fox, J. Kautz, S. Reed, Y. Zhu, and L. Fan.
+1972: DreamGen: Unlocking Generalization in Robot Learning through Video World Models.
+1973: In
+1974: Proceedings of The 9th Conference on Robot Learning
+1975: , pages 5170–5194, 2025.
+1976: [25]
+1977: A. L. Chandra, I. Nematollahi, C. Huang, T. Welschehold, W. Burgard, and A. Valada.
+1978: DiWA: Diffusion Policy Adaptation with World Models.
+1979: In
+1980: Proceedings of The 9th Conference on Robot Learning
+1981: , pages 3378–3400, 2025.
+1982: [26]
+1983: B. Ichter, A. Brohan, Y. Chebotar, C. Finn, K. Hausman, A. Herzog, D. Ho, J. Ibarz, A. Irpan, E. Jang, R. Julian, D. Kalashnikov, S. Levine, Y. Lu, C. Parada, K. Rao, P. Sermanet, A. Toshev, V. Vanhoucke, F. Xia, T. Xiao, P. Xu, M. Yan, N. Brown, M. Ahn, O. Cortes, N. Sievers, C. Tan, S. Xu, D. Reyes, J. Rettinghouse, J. Quiambao, P. Pastor, L. Luu, K.-H. Lee, Y. Kuang, S. Jesmonth, N. J. Joshi, K. Jeffrey, R. J. Ruano, J. Hsu, K. Gopalakrishnan, B. David, A. Zeng, and C. K. Fu.
+1984: Do As I Can, Not As I Say: Grounding Language in Robotic Affordances.
+1985: In
+1986: Proceedings of The 6th Conference on Robot Learning
+1987: , pages 287–318, 2023.
+1988: [27]
+1989: W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang, P. Florence, A. Zeng, J. Tompson, I. Mordatch, Y. Chebotar, P. Sermanet, T. Jackson, N. Brown, L. Luu, S. Levine, K. Hausman, and B. Ichter.
+1990: Inner Monologue: Embodied Reasoning through Planning with Language Models.
+1991: In
+1992: Proceedings of The 6th Conference on Robot Learning
+1993: , pages 1769–1782, 2023.
+1994: [28]
+1995: A. Z. Ren, A. Dixit, A. Bodrova, S. Singh, S. Tu, N. Brown, P. Xu, L. Takayama, F. Xia, J. Varley, Z. Xu, D. Sadigh, A. Zeng, and A. Majumdar.
+1996: Robots That Ask For Help: Uncertainty Alignment for Large Language Model Planners.
+1997: In
+1998: Proceedings of The 7th Conference on Robot Learning
+1999: , pages 661–682, 2023.
+2000: [29]
+2001: Z. He, Y. Cao, and M. Ciocarlie.
+2002: Uncertainty Comes for Free: Human-in-the-Loop Policies with Diffusion Models.
+2003: In
+2004: 2026 IEEE International Conference on Robotics and Automation (ICRA)
+2005: , 2026.
+2006: [30]
+2007: J. Yuan, Y. Wu, and A. Bajcsy.
+2008: When to Act, Ask, or Learn: Uncertainty-Aware Policy Steering.
+2009: arXiv preprint arXiv:2602.22474
+2010: , 2026.
+2011: [31]
+2012: Z. Zhao, X. Yue, J. Xie, C. Fang, Z. Shao, and S. Guo.
+2013: A Dual-Agent Collaboration Framework Based on LLMs for Nursing Robots to Perform Bimanual Coordination Tasks.
+2014: IEEE Robotics and Automation Letters
+2015: , 10(3):2942–2949, 2025.
+2016: [32]
+2017: C. He, G. M. S. Camps, X. Liu, M. Schwager, and G. Sartoretti.
+2018: Latent Theory of Mind: A Decentralized Diffusion Architecture for Cooperative Manipulation.
+2019: In
+2020: Proceedings of The 9th Conference on Robot Learning
+2021: , pages 392–405, 2025.
+2022: [33]
+2023: O. Siméoni, H. V. Vo, M. Seitzer, F. Baldassarre, M. Oquab, C. Jose, V. Khalidov, M. Szafraniec, S. E. Yi, M. Ramamonjisoa, F. Massa, D. Haziza, L. Wehrstedt, J. Wang, T. Darcet, T. Moutakanni, L. Sentana, C. Roberts, A. Vedaldi, J. Tolan, J. Brandt, C. Couprie, J. Mairal, H. Jégou, P. Labatut, and P. Bojanowski.
+2024: DINOv3.
+2025: Transactions on Machine Learning Research
+2026: , 2026.
+2027: [34]
+2028: W. Zhi, H. Tang, T. Zhang, and M. Johnson-Roberson.
+2029: Unifying representation and calibration with 3d foundation models.
+2030: IEEE Robotics and Automation Letters
+2031: , 2024.
+2032: [35]
+2033: H. Tang, T. Zhang, M. Johnson-Roberson, and W. Zhi.
+2034: Bi-manual joint camera calibration and scene representation.
+2035: arXiv preprint arXiv:2505.24819
+2036: , 2025.
+2037: Appendix A
+2038: Reproducibility Details
+2039: A.1
+2040: Robot Platform and Sensing
+2041: Our experiments use two AgileX Piper robot arms in a shared tabletop workspace.
+2042: Each arm is equipped with a wrist-mounted fisheye RGB camera, and the workspace is observed by an external top-view RGB camera.
+2043: All cameras provide
+2044: 640
+2045: ×
+2046: 480
+2047: 640\times 480
+2048: RGB streams at 30 Hz, matching the 30 Hz closed-loop policy execution rate.
+2049: For each rollout, the logging system records time-aligned top-view RGB, wrist-view RGB, robot state, joint effort, active policy identity, and the active action chunk.
+2050: Table 3:
+2051: Robot platform and sensing setup.
+2052: The same sensing and logging interface is used for offline evaluation and closed-loop deployment.
+2053: Item
+2054: Configuration
+2055: Robot platform
+2056: Two AgileX Piper robot arms in a shared tabletop workspace
+2057: Wrist sensing
+2058: One wrist-mounted fisheye RGB camera per arm
+2059: External sensing
+2060: One top-view RGB camera observing the workspace
+2061: Camera streams
+2062: 640
+2063: ×
+2064: 480
+2065: 640\times 480
+2066: RGB at 30 Hz
+2067: Policy rate
+2068: 30 Hz closed-loop policy execution
+2069: Logged fields
+2070: Time-aligned top-view RGB, wrist-view RGB, robot state, joint effort, active policy id, active action chunk
+2071: A.2
+2072: Manipulation Policy Training
+2073: Both manipulation policies are trained from real robot demonstrations using the LeRobot ACT pipeline.
+2074: Each policy uses a ResNet18 visual backbone and a 7-layer decoder.
+2075: The action chunk size is 100, the action dimension is 7, and the robot state dimension is 14.
+2076: Top-view and wrist-view RGB images are resized to
+2077: 256
+2078: ×
+2079: 256
+2080: 256\times 256
+2081: before being passed to the policy.
+2082: Table 4:
+2083: ACT policy configuration.
+2084: Both base manipulation policies use the same LeRobot ACT architecture and input format.
+2085: Item
+2086: Configuration
+2087: Training pipeline
+2088: LeRobot ACT
+2089: Visual backbone
+2090: ResNet18
+2091: Decoder
+2092: 7-layer decoder
+2093: Action chunk size
+2094: 100
+2095: Action dimension
+2096: 7
+2097: State dimension
+2098: 14
+2099: Image input
+2100: 256
+2101: ×
+2102: 256
+2103: 256\times 256
+2104: top-view and wrist-view RGB images
+2105: Policy rate
+2106: 30 Hz
+2107: A.3
+2108: Base Policy Success Rate
+2109: Before evaluating intervention monitoring, we verify that the underlying ACT policies are reliable under undisturbed deployment.
+2110: Across 30 real-robot rollouts for each evaluated task, the base policies achieve over 90% success without injected workspace disturbances.
+2111: This protocol keeps the closed-loop evaluation focused on monitor decisions under workspace disturbances and avoids attributing independent manipulation-policy failures to the monitor.
+2112: A.4
+2113: Offline Benchmark Protocol
+2114: Table
+2115: 5
+2116: records the evaluation protocol behind
+2117: Table
+2118: 1
+2119: .
+2120: The purpose is to make the action-corridor benchmark auditable: the evaluated unit is an execution window with policy context, not an isolated image.
+2121: Table 5:
+2122: Offline action-corridor protocol.
+2123: These controls prevent visual novelty, threshold fitting, and window sampling from leaking into the trigger decision.
+2124: Item
+2125: Protocol
+2126: Evaluation unit
+2127: A window contains top-view RGB, wrist-view RGB, robot state, joint effort, active policy identity, and the action chunk
+2128: U
+2129: t
+2130: U_{t}
+2131: . Labels attach to
+2132: (
+2133: I
+2134: t
+2135: t
+2136: ​
+2137: o
+2138: ​
+2139: p
+2140: ,
+2141: I
+2142: t
+2143: w
+2144: ​
+2145: r
+2146: ​
+2147: i
+2148: ​
+2149: s
+2150: ​
+2151: t
+2152: ,
+2153: q
+2154: t
+2155: ,
+2156: τ
+2157: t
+2158: ,
+2159: π
+2160: t
+2161: ,
+2162: U
+2163: t
+2164: )
+2165: (I_{t}^{top},I_{t}^{wrist},q_{t},\tau_{t},\pi_{t},U_{t})
+2166: .
+2167: Event ontology
+2168: C1 clean, C2 persistent but outside the projected execution corridor, C3 transient inside the corridor, and C4 persistent inside the corridor. C1–C3 are continue classes; C4 is the trigger class.
+2169: Task balance
+2170: The benchmark crosses two robot-task pairs with four event classes, producing
+2171: 2
+2172: ×
+2173: 4
+2174: 2\times 4
+2175: robot-task/event subsets. We collect 400 windows balanced across these subsets.
+2176: Window sampling
+2177: Fixed-duration windows are sampled from complete rollouts at the monitor rate. Windows with ambiguous repair or trigger-to-clear transitions are not used in the binary trigger table.
+2178: Training data
+2179: D
+2180: train
+2181: D_{\mathrm{train}}
+2182: fits representation models, latent dynamics, and PATCH residual calibration. External-intervention labels are not used for PATCH calibration.
+2183: Clean correction
+2184: D
+2185: clean
+2186: D_{\mathrm{clean}}
+2187: is used only to set comparable operating points for scalar baselines that require clean-rollout threshold correction.
+2188: Randomization
+2189: Reported table values average over ten random window-sampling seeds; the same sampled windows are used for all compared methods within a seed.
+2190: Leakage prevention
+2191: Thresholds, residual percentiles, and router latches are fixed before evaluating benchmark windows. Evaluation labels are not used to adjust operating points after scoring.
+2192: A.5
+2193: Metric Definitions
+2194: Following the monitor-level evaluation metrics used in FIPER
+2195: [
+2196: 18
+2197: ]
+2198: , the offline trigger benchmark reports false positive rate (FPR), true negative rate (TNR), true positive rate (TPR), and balanced accuracy (BalAcc).
+2199: For monitor predictions
+2200: y
+2201: ^
+2202: t
+2203: ∈
+2204: {
+2205: trigger
+2206: ,
+2207: continue
+2208: }
+2209: \hat{y}_{t}\in\{\mathrm{trigger},\mathrm{continue}\}
+2210: , we compute
+2211: FPR
+2212: C
+2213: m
+2214: \displaystyle\mathrm{FPR}_{C_{m}}
+2215: =
+2216: Pr
+2217: ⁡
+2218: (
+2219: y
+2220: ^
+2221: t
+2222: =
+2223: trigger
+2224: ∣
+2225: C
+2226: m
+2227: )
+2228: ,
+2229: m
+2230: ∈
+2231: {
+2232: 1
+2233: ,
+2234: 2
+2235: ,
+2236: 3
+2237: }
+2238: ,
+2239: \displaystyle=\Pr(\hat{y}_{t}=\mathrm{trigger}\mid C_{m}),\quad m\in\{1,2,3\},
+2240: (11)
+2241: TNR
+2242: \displaystyle\mathrm{TNR}
+2243: =
+2244: Pr
+2245: ⁡
+2246: (
+2247: y
+2248: ^
+2249: t
+2250: =
+2251: continue
+2252: ∣
+2253: C
+2254: 1
+2255: ∪
+2256: C
+2257: 2
+2258: ∪
+2259: C
+2260: 3
+2261: )
+2262: ,
+2263: \displaystyle=\Pr(\hat{y}_{t}=\mathrm{continue}\mid C_{1}\cup C_{2}\cup C_{3}),
+2264: (12)
+2265: TPR
+2266: C
+2267: 4
+2268: \displaystyle\mathrm{TPR}_{C_{4}}
+2269: =
+2270: Pr
+2271: ⁡
+2272: (
+2273: y
+2274: ^
+2275: t
+2276: =
+2277: trigger
+2278: ∣
+2279: C
+2280: 4
+2281: )
+2282: ,
+2283: \displaystyle=\Pr(\hat{y}_{t}=\mathrm{trigger}\mid C_{4}),
+2284: (13)
+2285: BalAcc
+2286: \displaystyle\mathrm{BalAcc}
+2287: =
+2288: 1
+2289: 2
+2290: ​
+2291: (
+2292: TNR
+2293: +
+2294: TPR
+2295: C
+2296: 4
+2297: )
+2298: .
+2299: \displaystyle=\frac{1}{2}(\mathrm{TNR}+\mathrm{TPR}_{C_{4}}).
+2300: (14)
+2301: C1–C3 are continue classes, so
+2302: FPR
+2303: C
+2304: m
+2305: \mathrm{FPR}_{C_{m}}
+2306: measures false alarms under clean execution, irrelevant static change, and transient obstruction.
+2307: C4 is the trigger class, so
+2308: TPR
+2309: C
+2310: 4
+2311: \mathrm{TPR}_{C_{4}}
+2312: measures detection of persistent execution-blocking obstruction.
+2313: A.6
+2314: Baseline Implementation Details
+2315: Table
+2316: 6
+2317: summarizes the implementation scope of monitors used in the offline benchmark or the online real-robot study.
+2318: Offline baselines use the same evaluated windows as PATCH.
+2319: Fitted representation or prediction models use
+2320: D
+2321: train
+2322: D_{\mathrm{train}}
+2323: ; methods marked with clean calibration in
+2324: Table
+2325: 1
+2326: use
+2327: D
+2328: clean
+2329: D_{\mathrm{clean}}
+2330: only to set the operating point.
+2331: Table 6:
+2332: Baseline implementation summary.
+2333: Each baseline isolates one common runtime-monitoring signal under matched evaluation inputs.
+2334: Monitor
+2335: Fitting / calibration
+2336: Runtime score or decision
+2337: PCA-kmeans
+2338: Fits PCA observation embeddings and k-means clusters from
+2339: D
+2340: train
+2341: D_{\mathrm{train}}
+2342: ; uses
+2343: D
+2344: clean
+2345: D_{\mathrm{clean}}
+2346: for operating-point calibration.
+2347: Uses distance to the nearest cluster as an observation-level OOD score.
+2348: RND-A
+2349: Trains a predictor to match a fixed random target network on action-conditioned inputs from
+2350: D
+2351: train
+2352: D_{\mathrm{train}}
+2353: ; uses
+2354: D
+2355: clean
+2356: D_{\mathrm{clean}}
+2357: for calibration.
+2358: Uses the resulting prediction error as the action-confidence anomaly score.
+2359: FIPER-style
+2360: Follows the FIPER runtime-failure formulation using
+2361: D
+2362: train
+2363: D_{\mathrm{train}}
+2364: and clean-rollout calibration.
+2365: Combines observation support and action-chunk reliability into one scalar trigger score.
+2366: DINO-Latent Innovation
+2367: Uses the same frozen dense DINOv3 patch representation as the monitor ablation.
+2368: Aggregates patch-level latent innovation into a frame-level dense-change score.
+2369: VLM monitor
+2370: Uses no local fitting; prompts are fixed before evaluation.
+2371: Queries a GPT-4o API with the current frame and policy context, then maps the response to the same router signal format for the online comparison.
+2372: A.7
+2373: PATCH Implementation Details
+2374: PATCH uses a frozen DINOv3 ViT-B/16 encoder to extract dense visual tokens.
+2375: The
+2376: 16
+2377: ×
+2378: 16
+2379: 16\times 16
+2380: patch grid gives 768-dimensional raw patch tokens, which are mapped by a fixed random projection and channel normalization to 128 latent channels.
+2381: The latent dynamics model is distinct from the ACT 7-layer policy decoder: it is a lightweight convolutional world model that predicts the current top-view latent patch state.
+2382: Given
+2383: L
+2384: =
+2385: 4
+2386: L=4
+2387: previous top-view latents,
+2388: L
+2389: =
+2390: 4
+2391: L=4
+2392: previous wrist-view latents, five robot states, and four recent action vectors, a context MLP maps the 98-dimensional proprioceptive-action history to 64 channels and broadcasts it over the
+2393: 16
+2394: ×
+2395: 16
+2396: 16\times 16
+2397: grid.
+2398: The resulting 1088-channel tensor is processed by a
+2399: 1
+2400: ×
+2401: 1
+2402: 1\times 1
+2403: convolution, two
+2404: 3
+2405: ×
+2406: 3
+2407: 3\times 3
+2408: convolutions, and four residual convolution blocks with 256 hidden channels.
+2409: Two
+2410: 1
+2411: ×
+2412: 1
+2413: 1\times 1
+2414: heads predict
+2415: μ
+2416: t
+2417: \mu_{t}
+2418: and
+2419: log
+2420: ⁡
+2421: σ
+2422: t
+2423: \log\sigma_{t}
+2424: , with delta prediction
+2425: μ
+2426: t
+2427: =
+2428: z
+2429: t
+2430: −
+2431: 1
+2432: t
+2433: ​
+2434: o
+2435: ​
+2436: p
+2437: +
+2438: Δ
+2439: θ
+2440: ​
+2441: (
+2442: ⋅
+2443: )
+2444: \mu_{t}=z_{t-1}^{top}+\Delta_{\theta}(\cdot)
+2445: .
+2446: A.8
+2447: PATCH-Router Rule-Based Interface
+2448: Table
+2449: 7
+2450: records the rule-based interface used in the real-robot demonstrations.
+2451: The router is a deployment component: it consumes
+2452: ℐ
+2453: t
+2454: \mathcal{I}_{t}
+2455: , checks recovery-library coverage and robot free state, and returns one of the intervention modes in
+2456: Equation
+2457: 10
+2458: .
+2459: The monitor remains responsible for trigger evidence and release evidence; the router only decides which free intervention source should act on the localized evidence region.
+2460: The key availability check is whether a robot is free to switch policy, which in our tasks mainly depends on whether its gripper is already holding an object; we mark a gripper as holding an object when its gripper torque exceeds 0.4.
+2461: Table 7:
+2462: PATCH-Router rule-based interface.
+2463: The selector is intentionally simple: the acting robot holds its current state, and the router chooses a self or peer intervention source only if that robot is not already holding an object.
+2464: Line
+2465: Rule
+2466: 1
+2467: For a triggered robot
+2468: i
+2469: i
+2470: , read
+2471: ℐ
+2472: t
+2473: i
+2474: =
+2475: (
+2476: y
+2477: t
+2478: i
+2479: ,
+2480: 𝒦
+2481: t
+2482: i
+2483: ,
+2484: ρ
+2485: t
+2486: i
+2487: ,
+2488: π
+2489: t
+2490: i
+2491: ,
+2492: q
+2493: t
+2494: i
+2495: ,
+2496: τ
+2497: t
+2498: i
+2499: )
+2500: \mathcal{I}_{t}^{i}=(y_{t}^{i},\mathcal{K}_{t}^{i},\rho_{t}^{i},\pi_{t}^{i},q_{t}^{i},\tau_{t}^{i})
+2501: and let
+2502: j
+2503: ≠
+2504: i
+2505: j\neq i
+2506: denote the peer robot.
+2507: 2
+2508: If
+2509: y
+2510: t
+2511: i
+2512: =
+2513: 0
+2514: y_{t}^{i}=0
+2515: , keep executing the current task policy. If a previous intervention is latched and
+2516: 𝒦
+2517: t
+2518: i
+2519: \mathcal{K}_{t}^{i}
+2520: has cleared for the release window, release hold and resume the original policy.
+2521: 3
+2522: If
+2523: y
+2524: t
+2525: i
+2526: =
+2527: 1
+2528: y_{t}^{i}=1
+2529: , put robot
+2530: i
+2531: i
+2532: in
+2533: hold
+2534: \mathrm{hold}
+2535: and preserve the current task state, active policy id, and cached action context.
+2536: 4
+2537: Compute
+2538: free
+2539: ⁡
+2540: (
+2541: r
+2542: )
+2543: \mathrm{free}(r)
+2544: for each robot
+2545: r
+2546: r
+2547: : the robot is not already executing an intervention policy, is not in a policy transition, and its gripper is empty, i.e., its gripper torque is at most 0.4 and it is not holding a task object.
+2548: 5
+2549: If
+2550: free
+2551: ⁡
+2552: (
+2553: i
+2554: )
+2555: \mathrm{free}(i)
+2556: and a self-recovery skill can clear
+2557: 𝒦
+2558: t
+2559: i
+2560: \mathcal{K}_{t}^{i}
+2561: , select
+2562: self
+2563: ​
+2564: _
+2565: ​
+2566: recovery
+2567: \mathrm{self\_recovery}
+2568: .
+2569: 6
+2570: Else, if
+2571: free
+2572: ⁡
+2573: (
+2574: j
+2575: )
+2576: \mathrm{free}(j)
+2577: and a peer intervention skill can clear
+2578: 𝒦
+2579: t
+2580: i
+2581: \mathcal{K}_{t}^{i}
+2582: , keep robot
+2583: i
+2584: i
+2585: in
+2586: hold
+2587: \mathrm{hold}
+2588: and select
+2589: peer
+2590: ​
+2591: _
+2592: ​
+2593: robot
+2594: ​
+2595: _
+2596: ​
+2597: int
+2598: \mathrm{peer\_robot\_int}
+2599: .
+2600: 7
+2601: Else, if no robot-side intervention source is available, select
+2602: human
+2603: ​
+2604: _
+2605: ​
+2606: int
+2607: \mathrm{human\_int}
+2608: and expose the localized evidence target through the same interface.
+2609: 8
+2610: During a latched intervention event, keep the selected mode until PATCH reports that
+2611: 𝒦
+2612: t
+2613: i
+2614: \mathcal{K}_{t}^{i}
+2615: has cleared for the release window; then resume the original policy without reset.
+2616: A.9
+2617: Score and Threshold Audit
+2618: Audit checks.
+2619: PATCH fixes the p99.5 residual threshold from
+2620: D
+2621: train
+2622: D_{\mathrm{train}}
+2623: before scoring C1–C4 windows and exports the realized
+2624: tau_innov
+2625: field in per-frame logs.
+2626: Corridor overlap thresholds are fixed before reporting and audited through
+2627: overlap_fraction
+2628: ,
+2629: overlap_count
+2630: , and
+2631: corridor_count
+2632: .
+2633: Scalar baselines select thresholds using
+2634: D
+2635: clean
+2636: D_{\mathrm{clean}}
+2637: only, then recompute class-wise metrics over the same ten window-sampling seeds as PATCH.
+2638: Every score CSV and replay overlay is stored with the source bag/session id; ROS message counts are not treated as trials.
+2639: A.10
+2640: Additional Qualitative Rollouts
+2641: We provide additional qualitative demonstrations focused on PATCH-Router behavior.
+2642: These examples complement the real-world deployment results by showing how the same localized PATCH intervention signal can lead to different intervention modes depending on the acting robot state, peer free state, and recovery-library coverage.
+2643: Here,
+2644: free
+2645: ⁡
+2646: (
+2647: r
+2648: )
+2649: \mathrm{free}(r)
+2650: follows the definition in
+2651: Table
+2652: 7
+2653: .
+2654: Figure 7:
+2655: Multi-intervention towel rollout.
+2656: Panels 1–15 are ordered frames from one continuous towel-folding deployment, grouped as three sequential intervention episodes.
+2657: Episodes 1–5 and 6–10 use
+2658: peer
+2659: ​
+2660: _
+2661: ​
+2662: robot
+2663: ​
+2664: _
+2665: ​
+2666: int
+2667: \mathrm{peer\_robot\_int}
+2668: because robot
+2669: i
+2670: i
+2671: is occupied by the towel task
+2672: (
+2673: ¬
+2674: free
+2675: ⁡
+2676: (
+2677: i
+2678: )
+2679: )
+2680: (\neg\mathrm{free}(i))
+2681: ; episode 11–15 uses
+2682: self
+2683: ​
+2684: _
+2685: ​
+2686: recovery
+2687: \mathrm{self\_recovery}
+2688: because robot
+2689: i
+2690: i
+2691: is free.
+2692: Table 8:
+2693: PATCH-Router qualitative decisions.
+2694: The demonstrations show how localized intervention signals map to different recovery modes under
+2695: free
+2696: ⁡
+2697: (
+2698: ⋅
+2699: )
+2700: \mathrm{free}(\cdot)
+2701: and policy-library constraints.
+2702: Episode
+2703: Disturbance
+2704: Acting robot state
+2705: Peer state
+2706: Router decision
+2707: Towel 1–5
+2708: Obstruction near folding region
+2709: ¬
+2710: free
+2711: ⁡
+2712: (
+2713: i
+2714: )
+2715: \neg\mathrm{free}(i)
+2716: free
+2717: ⁡
+2718: (
+2719: j
+2720: )
+2721: \mathrm{free}(j)
+2722: peer
+2723: ​
+2724: _
+2725: ​
+2726: robot
+2727: ​
+2728: _
+2729: ​
+2730: int
+2731: \mathrm{peer\_robot\_int}
+2732: Towel 6–10
+2733: Obstruction near folding region
+2734: ¬
+2735: free
+2736: ⁡
+2737: (
+2738: i
+2739: )
+2740: \neg\mathrm{free}(i)
+2741: free
+2742: ⁡
+2743: (
+2744: j
+2745: )
+2746: \mathrm{free}(j)
+2747: peer
+2748: ​
+2749: _
+2750: ​
+2751: robot
+2752: ​
+2753: _
+2754: ​
+2755: int
+2756: \mathrm{peer\_robot\_int}
+2757: Towel 11–15
+2758: Obstruction near folding region
+2759: free
+2760: ⁡
+2761: (
+2762: i
+2763: )
+2764: \mathrm{free}(i)
+2765: Not queried
+2766: self
+2767: ​
+2768: _
+2769: ​
+2770: recovery
+2771: \mathrm{self\_recovery}
+2772: Cup-rack
+2773: Rack knocked down
+2774: ¬
+2775: free
+2776: ⁡
+2777: (
+2778: i
+2779: )
+2780: \neg\mathrm{free}(i)
+2781: free
+2782: ⁡
+2783: (
+2784: j
+2785: )
+2786: \mathrm{free}(j)
+2787: peer
+2788: ​
+2789: _
+2790: ​
+2791: robot
+2792: ​
+2793: _
+2794: ​
+2795: int
+2796: \mathrm{peer\_robot\_int}
+2797: Figure 8:
+2798: Cup-rack peer intervention.
+2799: The cup-to-rack policy is active when the rack is knocked down.
+2800: PATCH triggers on the affected placement target; the acting arm holds its execution state while PATCH-Router selects
+2801: peer
+2802: ​
+2803: _
+2804: ​
+2805: robot
+2806: ​
+2807: _
+2808: ​
+2809: int
+2810: \mathrm{peer\_robot\_int}
+2811: , allowing the peer robot to restore the rack before policy resumption.
+2812: If no robot-side recovery source is feasible, PATCH-Router selects
+2813: human
+2814: ​
+2815: _
+2816: ​
+2817: int
+2818: \mathrm{human\_int}
+2819: .
+2820: This case occurs when no robot satisfies
+2821: free
+2822: ⁡
+2823: (
+2824: r
+2825: )
+2826: \mathrm{free}(r)
+2827: , or when the localized intervention signal does not match any self- or peer-recovery skill in the policy library.
+2828: We include this rule for completeness, while the qualitative demonstrations above focus on the robot-side peer-intervention and self-recovery modes used in our deployment.

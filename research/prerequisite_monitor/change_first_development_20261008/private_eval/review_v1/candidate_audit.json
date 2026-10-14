@@ -1,0 +1,490 @@
+[
+  {
+    "family": "access_gate",
+    "condition": "E",
+    "source_sha256": "914e03f16405a037f91fa997c0e8db924626434342b4e6388eb75f32d10c1fc2",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        5000,
+        6000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      5000,
+      6000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "access_gate",
+    "condition": "G",
+    "source_sha256": "b8924c2579da2c4a06cbe6c786cc0a349b67d72121222efa86129bba14ced962",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        6000,
+        7000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      6000,
+      7000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "access_gate",
+    "condition": "H",
+    "source_sha256": "8b677452399a26aa6903d6a5e338b9870bcbcac4c9192720b1d5715bde9e2c67",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        9000,
+        10000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      9000,
+      10000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "access_gate",
+    "condition": "I_b",
+    "source_sha256": "5b3b96330b4c0fb7e85bf0c7f3878bdc9bea80af91119c235d5935d26a613322",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        7000,
+        8000
+      ],
+      [
+        9000,
+        10000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      7000,
+      8000,
+      9000,
+      10000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "access_gate",
+    "condition": "I_o",
+    "source_sha256": "97cb6e35789254005a245ea0d263fcfe503072c8b953b67c75cce23eb47fe106",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        7000,
+        8000
+      ],
+      [
+        9000,
+        10000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      7000,
+      8000,
+      9000,
+      10000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "access_gate",
+    "condition": "N_b",
+    "source_sha256": "9be4bf8325ae2b41916457a8c5dbb29c2761ddcd337bb4c32ddb65974c78fb9c",
+    "candidate_intervals_ms": [],
+    "selected_ms": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000
+    ],
+    "overflow": false
+  },
+  {
+    "family": "access_gate",
+    "condition": "N_o",
+    "source_sha256": "bbff90451d04385447dc678821709646577bbd44afeadea5460f045b5cb629d8",
+    "candidate_intervals_ms": [],
+    "selected_ms": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000
+    ],
+    "overflow": false
+  },
+  {
+    "family": "access_gate",
+    "condition": "R",
+    "source_sha256": "d8baa2c63188ca9f20bdd69a3e964dd14eb618f428e03049bc590328550af50b",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        9000,
+        10000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      9000,
+      10000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "access_gate",
+    "condition": "S",
+    "source_sha256": "4e1a3caab90af8269aaa33d65f24fa4bcececc41b67a095da5f7eb25c75ab02c",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        9000,
+        10000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      9000,
+      10000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "E",
+    "source_sha256": "3e889f5d6ecb938a9a216bbfb812a9f96f1260a690e22b9059a256d90a0f2075",
+    "candidate_intervals_ms": [
+      [
+        3000,
+        4000
+      ],
+      [
+        5000,
+        6000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      3000,
+      4000,
+      5000,
+      6000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "G",
+    "source_sha256": "de51bd2d003ebe393b570057f2fd3a64f6dcceb5edb6f68e65ab02287412242e",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        6000,
+        7000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      6000,
+      7000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "H",
+    "source_sha256": "0df666307dc5a1fca61e9c79c277f88595c09875a1e4e87c783d3ea20075d2ff",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        7000,
+        8000
+      ],
+      [
+        9000,
+        10000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      7000,
+      8000,
+      9000,
+      10000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "I_b",
+    "source_sha256": "bc3fa9d899a11f0838d1a0823dea9f7d29a917b19cb0c8c8bd463ea6842e9680",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        7000,
+        8000
+      ],
+      [
+        9000,
+        10000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      7000,
+      8000,
+      9000,
+      10000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "I_o",
+    "source_sha256": "94f4d6424cbbe6d81a2eb5d37bd875c2d753bac9bc8d935b7b73de70dbe5fcde",
+    "candidate_intervals_ms": [
+      [
+        2000,
+        3000
+      ],
+      [
+        7000,
+        8000
+      ],
+      [
+        9000,
+        10000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      2000,
+      3000,
+      7000,
+      8000,
+      9000,
+      10000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "N_b",
+    "source_sha256": "d5176e3bdd4d29066a6780e26aeb7411eca42adefc8406c3794ab5823b73f3a1",
+    "candidate_intervals_ms": [],
+    "selected_ms": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000
+    ],
+    "overflow": false
+  },
+  {
+    "family": "support_surface",
+    "condition": "N_o",
+    "source_sha256": "869c899f92951e0d82b2ba71182bcfa915fade43d316536b042d9d1d29b2cee2",
+    "candidate_intervals_ms": [],
+    "selected_ms": [
+      0,
+      2000,
+      4000,
+      6000,
+      8000,
+      10000,
+      12000,
+      14000
+    ],
+    "overflow": false
+  },
+  {
+    "family": "support_surface",
+    "condition": "R",
+    "source_sha256": "b7641e512765230fadfc51ed93db15fbd1dec022fa5f90b7feb33cff43663ece",
+    "candidate_intervals_ms": [
+      [
+        3000,
+        4000
+      ],
+      [
+        5000,
+        6000
+      ],
+      [
+        9000,
+        10000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      3000,
+      4000,
+      5000,
+      6000,
+      9000,
+      10000,
+      14000
+    ],
+    "overflow": true
+  },
+  {
+    "family": "support_surface",
+    "condition": "S",
+    "source_sha256": "424c3cb33b30ede23dfcd74c8976a8d51cc9d24609221d3913f37ee22dc32338",
+    "candidate_intervals_ms": [
+      [
+        3000,
+        4000
+      ],
+      [
+        9000,
+        10000
+      ],
+      [
+        11000,
+        12000
+      ]
+    ],
+    "selected_ms": [
+      0,
+      3000,
+      4000,
+      9000,
+      10000,
+      11000,
+      12000,
+      14000
+    ],
+    "overflow": true
+  }
+]

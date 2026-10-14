@@ -1,0 +1,42 @@
+{
+  "source_budget_bytes": 26214400,
+  "actual_source_bytes": 26105349,
+  "failures": [
+    {
+      "action": "ep1_85 initial JPEG",
+      "reason": "SSL WRONG_VERSION_NUMBER during stream; no partial file saved; subsequent 89/91/96 not requested"
+    },
+    {
+      "action": "ep1_58 source MP4 first attempt",
+      "reason": "Known 6401631-byte file exceeds initial 5000000-byte per-file cap; body not fetched. Purpose/size announced; later explicit 8000000 cap within unchanged batch cap."
+    },
+    {
+      "action": "LeRobot ep5197 high video",
+      "reason": "4557258-byte file would exceed 25 MiB batch; stopped before body. Existing original high video already obtained; fetched only needed 3065431-byte right wrist instead."
+    },
+    {
+      "action": "bundled Python pyarrow import",
+      "reason": "Unavailable; used already installed system Python pyarrow 25.0.1; no dependency installation"
+    },
+    {
+      "action": "web tool pinned HF README",
+      "reason": "Web open inaccessible; local pinned README snapshots and direct pinned API/resolve used"
+    },
+    {
+      "action": "first diagnostic audit read",
+      "reason": "Default Windows GBK decoding rejected UTF-8 judgment symbols. Explicit UTF-8 fixed audit only; no model rerun or log changes."
+    }
+  ],
+  "not_downloaded_raw_hdf5": [
+    {
+      "path": "raw_data/stack_three_color_cubes_ep1/episode_58.hdf5",
+      "bytes": 153612328
+    },
+    {
+      "path": "raw_data/stack_three_color_cubes_ep2/episode_36.hdf5",
+      "bytes": 82596495
+    }
+  ],
+  "next_hardware_time_source": "These exact HDF5 headers/attributes or original capture/export script, via bounded range access before considering whole-file download",
+  "clock_limit": "Neither MP4 FPS nor generated LeRobot timestamp independently proves physical capture clock"
+}

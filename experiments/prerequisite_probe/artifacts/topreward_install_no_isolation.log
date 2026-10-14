@@ -1,0 +1,105 @@
+Obtaining file:///D:/monitor2/research/sources/TOPReward
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: accelerate>=1.8.1 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (1.15.0)
+Requirement already satisfied: datasets>=2.19.0 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (4.1.1)
+Collecting dotenv>=0.9.9 (from topreward==0.1.0)
+  Using cached dotenv-0.9.9-py2.py3-none-any.whl.metadata (279 bytes)
+Collecting google-genai>=1.24.0 (from topreward==0.1.0)
+  Using cached google_genai-2.28.0-py3-none-any.whl.metadata (56 kB)
+Collecting google-generativeai>=0.8.5 (from topreward==0.1.0)
+  Using cached google_generativeai-0.8.6-py3-none-any.whl.metadata (3.9 kB)
+Collecting ipykernel>=6.30.1 (from topreward==0.1.0)
+  Using cached ipykernel-7.4.0-py3-none-any.whl.metadata (3.4 kB)
+Collecting isort>=6.0.1 (from topreward==0.1.0)
+  Using cached isort-9.0.2-cp312-cp312-win_amd64.whl.metadata (11 kB)
+Requirement already satisfied: loguru>=0.7.3 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (0.7.3)
+Collecting marimo>=0.14.10 (from topreward==0.1.0)
+  Using cached marimo-0.25.1-py3-none-any.whl.metadata (20 kB)
+Collecting openai>=1.93.0 (from topreward==0.1.0)
+  Using cached openai-3.24.0-py3-none-any.whl.metadata (44 kB)
+Collecting lerobot==0.4.3 (from topreward==0.1.0)
+  Using cached lerobot-0.4.3-py3-none-any.whl.metadata (17 kB)
+Collecting pyright>=1.1.405 (from topreward==0.1.0)
+  Using cached pyright-1.1.414-py3-none-any.whl.metadata (6.9 kB)
+Collecting pytest>=8.4.1 (from topreward==0.1.0)
+  Using cached pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting ruff>=0.12.2 (from topreward==0.1.0)
+  Using cached ruff-0.16.10-py3-none-win_amd64.whl.metadata (21 kB)
+Requirement already satisfied: scipy>=1.16.0 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (1.18.1)
+Collecting torch==2.8.0 (from topreward==0.1.0)
+  Using cached torch-2.8.0-cp312-cp312-win_amd64.whl.metadata (30 kB)
+Collecting torchvision==0.23.0 (from topreward==0.1.0)
+  Using cached torchvision-0.23.0-cp312-cp312-win_amd64.whl.metadata (6.1 kB)
+Collecting transformers==4.57.1 (from topreward==0.1.0)
+  Using cached transformers-4.57.1-py3-none-any.whl.metadata (43 kB)
+Collecting tiktoken>=0.11.0 (from topreward==0.1.0)
+  Using cached tiktoken-0.14.0-cp312-cp312-win_amd64.whl.metadata (6.8 kB)
+Collecting blobfile>=3.1.0 (from topreward==0.1.0)
+  Using cached blobfile-3.3.0-py3-none-any.whl.metadata (15 kB)
+Collecting seaborn>=0.13.2 (from topreward==0.1.0)
+  Using cached seaborn-0.13.2-py3-none-any.whl.metadata (5.4 kB)
+Requirement already satisfied: omegaconf>=2.3.0 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (2.3.1)
+Requirement already satisfied: hydra-core>=1.3.2 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (1.3.7)
+Requirement already satisfied: qwen-vl-utils>=0.0.14 in d:\monitor2\.venv\lib\site-packages (from topreward==0.1.0) (0.0.14)
+Collecting torchcodec==0.7.0 (from topreward==0.1.0)
+  Using cached torchcodec-0.7.0-cp312-cp312-win_amd64.whl.metadata (9.7 kB)
+Collecting molmo_utils (from topreward==0.1.0)
+  Using cached molmo_utils-0.0.1-py3-none-any.whl.metadata (17 kB)
+Collecting flash-attn==2.8.3 (from topreward==0.1.0)
+  Using cached flash_attn-2.8.3.tar.gz (8.4 MB)
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Preparing metadata (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [33 lines of output]
+      D:\monitor2\.venv\Lib\site-packages\setuptools\_vendor\wheel\bdist_wheel.py:4: FutureWarning: The 'wheel' package is no longer the canonical location of the 'bdist_wheel' command, and will be removed in a future release. Please update to setuptools v70.1 or later which contains an integrated version of this command.
+        warn(
+      <string>:106: UserWarning: flash_attn was requested, but nvcc was not found.  Are you sure your environment has nvcc available?  If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, only images whose names contain 'devel' will provide nvcc.
+      
+      
+      torch.__version__  = 2.11.0+cu128
+      
+      
+      Traceback (most recent call last):
+        File "D:\monitor2\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 353, in <module>
+          main()
+        File "D:\monitor2\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 335, in main
+          json_out['return_val'] = hook(**hook_input['kwargs'])
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "D:\monitor2\.venv\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 149, in prepare_metadata_for_build_wheel
+          return hook(metadata_directory, config_settings)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "D:\monitor2\.venv\Lib\site-packages\setuptools\build_meta.py", line 380, in prepare_metadata_for_build_wheel
+          self.run_setup()
+        File "D:\monitor2\.venv\Lib\site-packages\setuptools\build_meta.py", line 520, in run_setup
+          super().run_setup(setup_script=setup_script)
+        File "D:\monitor2\.venv\Lib\site-packages\setuptools\build_meta.py", line 317, in run_setup
+          exec(code, locals())
+        File "<string>", line 227, in <module>
+        File "D:\monitor2\.venv\Lib\site-packages\torch\utils\cpp_extension.py", line 1459, in CUDAExtension
+          library_dirs += library_paths(device_type="cuda")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "D:\monitor2\.venv\Lib\site-packages\torch\utils\cpp_extension.py", line 1692, in library_paths
+          paths.append(_join_cuda_home(lib_dir))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+        File "D:\monitor2\.venv\Lib\site-packages\torch\utils\cpp_extension.py", line 3182, in _join_cuda_home
+          raise OSError('CUDA_HOME environment variable is not set. '
+      OSError: CUDA_HOME environment variable is not set. Please set it to your CUDA install root.
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: metadata-generation-failed
+
+× Encountered error while generating package metadata.
+╰─> See above for output.
+
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
+
+[notice] A new release of pip is available: 24.0 -> 26.2.1
+[notice] To update, run: D:\monitor2\.venv\Scripts\python.exe -m pip install --upgrade pip

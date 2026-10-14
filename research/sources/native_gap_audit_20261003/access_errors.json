@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://api.github.com/repos/GLAD-RUC/R2VLM/git/trees/main?recursive=1",
+    "method": "unauthenticated HEAD",
+    "result": "403 rate limit",
+    "fallback": "existing authenticated gh API; no permission change"
+  },
+  {
+    "url": "https://andyzworks.github.io/progresscompass/",
+    "method": "web open",
+    "result": "Internal Error",
+    "fallback": "reuse same-day official snapshot; current release not freshly confirmed"
+  }
+]

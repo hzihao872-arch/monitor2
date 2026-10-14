@@ -1,0 +1,22 @@
+{
+  "_subtask_clip": {
+    "dataset": "RMBench",
+    "task": "place_block_mat",
+    "episode": "episode1",
+    "original_episode": "episode4",
+    "subtask_id": "subtask01",
+    "raw_segment_indices": [
+      0
+    ],
+    "raw_labels": [
+      "Pick up the first block and move it onto the green mat and then return it to the original mat."
+    ],
+    "start_frame": 174,
+    "end_frame_exclusive": 349,
+    "last_frame": 348,
+    "source_frame_count": 1056,
+    "boundary_source": "language_annotation.json cumulative frame lengths plus visually validated raw-segment midpoint",
+    "full_video": false,
+    "instruction": "Move the red block from the green mat back onto the leftmost blue mat"
+  }
+}

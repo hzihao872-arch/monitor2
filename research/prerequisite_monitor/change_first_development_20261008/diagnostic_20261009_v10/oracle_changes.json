@@ -1,0 +1,32 @@
+{
+  "q613a0d8ddf5acc68": {
+    "context": "Blue cube on the wooden table beside a transparent-sided box. An orange panel with a gray block covers the top aperture.",
+    "changes": [
+      {"b":"f0000","a":"f0014","object":"orange panel on box","before":"covers the rectangular top aperture","after":"shifted behind the aperture; rectangular opening is exposed; gray block stays on panel"}
+    ],
+    "coverage":"complete"
+  },
+  "q07e7773ad34d85f6": {
+    "context": "Blue cube on the table left of two rails. Yellow board with a gray block lies near green rail markings and the stationary pink block.",
+    "changes": [
+      {"b":"f0000","a":"f0014","object":"yellow board","before":"at the rear of the rails near the green markings and pink block","after":"at the front of the rails nearer the viewer; rear marked area is exposed; gray block stays on board"}
+    ],
+    "coverage":"complete"
+  },
+  "qbb0dbd57d63ce6a9": {
+    "context": "Blue and pink cubes stay on the table. Yellow board with gray block initially lies at the front of two rails, away from the green markings.",
+    "changes": [
+      {"b":"f0000","a":"f0008","object":"yellow board","before":"front of rails near viewer, away from green markings","after":"rear of rails near green markings and pink cube; gray block stays on board"},
+      {"b":"f0008","a":"f0014","object":"yellow board","before":"rear of rails near green markings and pink cube","after":"back at front of rails near viewer; rear marked area exposed again"}
+    ],
+    "coverage":"complete"
+  },
+  "qf2bed1caaecc37a0": {
+    "context": "Blue cube on the wooden table left of a transparent-sided box. The top aperture is already open; orange panel and gray block remain behind it.",
+    "changes": [
+      {"b":"f0000","a":"f0007","object":"blue cube","before":"on the wooden table outside the box","after":"held in the robot gripper above the table"},
+      {"b":"f0007","a":"f0014","object":"blue cube","before":"held by gripper outside the box","after":"inside the box near its floor, separated from the retracted gripper"}
+    ],
+    "coverage":"complete"
+  }
+}

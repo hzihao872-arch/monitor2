@@ -1,0 +1,2359 @@
+0001: MomaGraph : State-Aware Unified Scene Graphs with Vision–Language Model for Embodied Task Planning
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2512.16909v1 [cs.CV] 18 Dec 2025
+0010: †
+0011: †
+0012: footnotetext:
+0013: ∗
+0014: Equal Contribution,
+0015: †
+0016: Equal Advising
+0017: MomaGraph
+0018: : State-Aware Unified Scene Graphs with Vision–Language Model for Embodied Task Planning
+0019: Yuanchen Ju
+0020: Yongyuan Liang
+0021: Yen-Jen Wang
+0022: Nandiraju Gireesh
+0023: Yuanliang Ju
+0024: Affiliation:
+0025: University of Toronto
+0026: Project website:
+0027: https://HybridRobotics.github.io/MomaGraph/
+0028: Seungjae Lee
+0029: Affiliation:
+0030: University of Maryland, College Park
+0031: Qiao Gu
+0032: Affiliation:
+0033: University of Toronto
+0034: Project website:
+0035: https://HybridRobotics.github.io/MomaGraph/
+0036: Elvis Hsieh
+0037: Affiliation:
+0038: University of California, Berkeley
+0039: Furong Huang
+0040: Koushil Sreenath
+0041: Abstract
+0042: Mobile manipulators in households must both navigate and manipulate. This requires a compact, semantically rich scene representation that captures
+0043: where
+0044: objects are,
+0045: how
+0046: they function, and
+0047: which parts
+0048: are actionable. Scene graphs are a natural choice, yet prior work often separates spatial and functional relations, treats scenes as static snapshots without object states or temporal updates, and overlooks information most relevant for accomplishing the current task. To address these limitations, we introduce
+0049: MomaGraph
+0050: , a unified scene representation for embodied agents that integrates spatial-functional relationships and part-level interactive elements. However, advancing such a representation requires both suitable data and rigorous evaluation, which have been largely missing. We thus contribute
+0051: MomaGraph-Scenes
+0052: , the first large-scale dataset of richly annotated, task-driven scene graphs in household environments, along with
+0053: MomaGraph-Bench
+0054: , a systematic evaluation suite spanning six reasoning capabilities from high-level planning to fine-grained scene understanding. Built upon this foundation, we further develop
+0055: MomaGraph-R1
+0056: , a 7B vision–language model trained with reinforcement learning on
+0057: MomaGraph-Scenes
+0058: .
+0059: MomaGraph-R1
+0060: predicts task-oriented scene graphs and serves as a zero-shot task planner under a
+0061: Graph-then-Plan
+0062: framework. Extensive experiments demonstrate that our model achieves state-of-the-art results among open-source models, reaching
+0063: 71.6%
+0064: accuracy on the benchmark (
+0065: +11.4%
+0066: over the best baseline), while generalizing across public benchmarks and transferring effectively to real-robot experiments.
+0067: Figure 1:
+0068: Overview of the
+0069: MomaGraph
+0070: . Given a task instruction,
+0071: MomaGraph
+0072: constructs a task-specific scene graph that highlights relevant objects and parts along with their spatial-functional relationships, enabling the robot to perform spatial understanding and task planning.
+0073: 1
+0074: Introduction
+0075: When mobile manipulators
+0076: (
+0077: Qiu et al., 2024
+0078: ;
+0079: Honerkamp et al., 2024a
+0080: ;
+0081: Wu et al., 2023
+0082: ;
+0083: Zhang et al., 2024a
+0084: )
+0085: enter household environments, they face the fundamental challenge of understanding how the environment works, which objects are interactive, and how they can be used. In other words, such robots must not only be capable of navigating through the home, but also manipulate objects within it. While navigation requires modeling the overall spatial layout, manipulation demands capturing more fine-grained object affordances
+0086: (
+0087: Ju et al., 2024
+0088: ;
+0089: Zhu et al., 2025
+0090: )
+0091: . This naturally raises a central question:
+0092: What is the most effective, compact, and semantically rich representation of an indoor scene?
+0093: An intuitive answer is the
+0094: scene graph
+0095: , which organizes objects and their relationships in a scene through a graph structure
+0096: (
+0097: Armeni et al., 2019
+0098: ;
+0099: Koch et al., 2024a
+0100: ;
+0101: Koch et al., 2024b
+0102: )
+0103: and has shown great potential in various downstream robotic applications
+0104: (
+0105: Rana et al., 2023
+0106: ;
+0107: Werby et al., 2024
+0108: ;
+0109: Ekpo et al., 2024
+0110: )
+0111: .
+0112: However, existing scene graphs suffer from notable limitations. (1) Their edges typically encode only a single type of relationship, either spatial
+0113: (
+0114: Jatavallabhula et al., 2023
+0115: ;
+0116: Gu et al., 2024a
+0117: ;
+0118: Loo et al., 2025
+0119: )
+0120: or functional
+0121: (
+0122: Zhang et al., 2025
+0123: ;
+0124: Dong et al., 2021
+0125: )
+0126: (
+0127: e.g., a remote controlling a TV, a knob adjusting parameters
+0128: ). Relying solely on spatial relationships captures geometric layout but overlooks operability, while relying solely on functional relationships ignores spatial constraints, leading to incomplete and less actionable structures. (2) Most existing methods
+0129: (
+0130: Wu et al., 2021
+0131: ;
+0132: Takmaz et al., 2025
+0133: ;
+0134: Zhang et al., 2021
+0135: )
+0136: are limited to static scenes and struggle to adapt to dynamic environments where object positions change or object states change. (3) They lack task relevance, as they fail to emphasize information directly tied to task execution, thereby reducing efficiency and effectiveness. In contrast, cognitive science research
+0137: (
+0138: Uithol et al., 2021
+0139: ;
+0140: Kondyli et al., 2020
+0141: ;
+0142: Castanheira et al., 2025
+0143: )
+0144: shows that human perception in new environments is both dynamic and task-oriented. Humans do not process all information equally; instead, they flexibly adjust their attention according to the current task. This process is similar to browsing a map on an iPad: people first take a broad view to roughly locate the area of interest, and then zoom in to focus on the specific details needed for the task.
+0145: Motivated by these insights, we emphasize that
+0146: an ideal scene graph should integrate both spatial and functional relationships, include fine-grained object parts as nodes, making the representation compact, adaptive to dynamic changes, and highly aligned with task instructions, thus providing a more concrete guidance for embodied perception and task planning.
+0147: To achieve this goal, we present
+0148: MomaGraph
+0149: , a novel scene representation specifically designed for embodied agents. It is the first to unify spatial and functional relationships while introducing part-level interactive nodes, providing a more fine-grained, compact, and task-relevant structured representation than existing approaches. To support this representation, we build
+0150: MomaGraph-Scenes
+0151: , the first dataset that jointly models spatial and functional relationships with part-level annotations, encompassing multi-view observations, executed actions, and their interactive object parts, and task-aligned scene graph annotations.
+0152: Building on this foundation, we propose
+0153: MomaGraph-R1
+0154: , a 7B vision–language model (VLM) trained with the DAPO
+0155: (
+0156: Yu et al., 2025
+0157: )
+0158: reinforcement learning algorithm on
+0159: MomaGraph-Scenes
+0160: . We design a graph-alignment reward function to guide the model toward constructing accurate, task-oriented scene graphs.
+0161: MomaGraph-R1
+0162: not only predicts scene graphs but also serves as a zero-shot task planner within a
+0163: Graph-then-Plan
+0164: framework: the model first generates a structured scene graph as an intermediate representation and then performs task planning based on this graph, significantly improving reasoning effectiveness and interpretability.
+0165: Despite progress in task-graph planning
+0166: (
+0167: Agia et al., 2022
+0168: )
+0169: , the community still lacks a unified benchmark to systematically evaluate whether and how task-oriented scene graphs improve planning performance. To address this gap, we introduce
+0170: MomaGraph-Bench
+0171: , a comprehensive evaluation suite that systematically assesses six key reasoning capabilities, spanning from high-level task planning to fine-grained scene understanding.
+0172: In summary, our work makes the following key contributions:
+0173: •
+0174: We propose
+0175: MomaGraph
+0176: , the first scene graph representation that jointly models spatial and functional relationships while incorporating part-level interactive nodes, providing a compact, dynamic, and task-aligned knowledge structure for embodied intelligence.
+0177: •
+0178: We construct
+0179: MomaGraph-Scenes
+0180: , the first large-scale dataset of richly annotated, task-driven scene graphs in household environments, and build
+0181: MomaGraph-Bench
+0182: , a unified evaluation suite that systematically measures the impact of scene graph representations on task planning across six core reasoning capabilities.
+0183: •
+0184: We develop
+0185: MomaGraph-R1
+0186: , a 7B vision-language model that leverages reinforcement learning to optimize spatial–functional reasoning, enabling zero-shot planning in a
+0187: Graph-then-Plan
+0188: paradigm.
+0189: •
+0190: MomaGraph-R1
+0191: surpasses all open-source baseline models, delivering substantial gains across public benchmarks and translating these improvements into strong generalization and effectiveness in real-world robotic experiments.
+0192: 2
+0193: Related works
+0194: Scene Graphs for 3D Indoor Scene Understanding.
+0195: Scene graphs have emerged as a structured and hierarchical representation in autonomous driving
+0196: (
+0197: Zhang et al., 2024b
+0198: ;
+0199: Greve et al., 2024
+0200: )
+0201: , robot manipulation
+0202: (
+0203: Jiang et al., 2024
+0204: ;
+0205: Wang et al., 2025
+0206: ;
+0207: Engelbracht et al., 2024
+0208: ;
+0209: Jiang et al., 2025
+0210: )
+0211: , and spatial intelligence
+0212: (
+0213: Yin et al., 2025
+0214: ;
+0215: Zemskova & Yudin,
+0216: ;
+0217: Liang et al., 2025a
+0218: ;
+0219: Liang et al., 2025b
+0220: )
+0221: community. They function not only as a means of scene representation but also as a critical bridge between spatial understanding
+0222: (
+0223: Cao et al., 2024
+0224: ;
+0225: Yang et al., 2024
+0226: ;
+0227: Gu et al., 2024b
+0228: )
+0229: and action planning. We focus on the household scenes. However, existing works often focus on a single type of scene graphs. For example, ConceptGraphs
+0230: (
+0231: Gu et al., 2024a
+0232: )
+0233: primarily model spatial layouts, representing object instances and their geometric relations in an open-vocabulary manner. While spatial graphs
+0234: (
+0235: Honerkamp et al., 2024b
+0236: ;
+0237: Yan et al., 2025
+0238: )
+0239: provide useful geometric and semantic grounding, they overlook how objects can functionally interact with one another. Conversely, functional graphs
+0240: (
+0241: Li et al., 2021
+0242: ;
+0243: Dong et al., 2021
+0244: ;
+0245: Zhang et al., 2025
+0246: )
+0247: highlight object affordances and control relations but do not capture the overall spatial structure. Relying solely on either spatial or functional graphs leads to incomplete and less actionable representations. This motivates us to build
+0248: MomaGraph
+0249: , which unifies spatial and functional relationships, incorporates part-level nodes, and explicitly models state changes, providing a more comprehensive foundation for embodied task planning.
+0250: Zero-shot Embodied Task Planning with VLMs.
+0251: VLMs
+0252: (
+0253: OpenAI, 2023
+0254: ;
+0255: Team et al., 2025
+0256: ;
+0257: Ahn et al., 2022
+0258: )
+0259: have gained significant attention in robotic task planning
+0260: (
+0261: Niu et al., 2024
+0262: ;
+0263: Yue et al., 2024
+0264: ;
+0265: Lu et al., 2023
+0266: ;
+0267: Liang et al., 2024
+0268: ;
+0269: Guo et al., 2024
+0270: )
+0271: due to their powerful capabilities in processing multimodal inputs, such as images and language instructions. However, when directly used as task planners, VLMs
+0272: (
+0273: Huang et al., 2023
+0274: ;
+0275: Huang et al., 2024
+0276: ;
+0277: Ahn et al., 2022
+0278: ;
+0279: Zheng et al., 2025a
+0280: ;
+0281: Yang et al., 2025
+0282: )
+0283: often suffer from sensitivity to visual noise and shallow semantic grounding; more fundamentally, their lack of structured object–relationship representations necessitates extracting or constructing more effective representations from the same visual inputs to support accurate and reliable high-level planning. Prior approaches such as SayPlan
+0284: (
+0285: Ahn et al., 2022
+0286: )
+0287: assume access to a reliable 3D scene graph, which is often unrealistic in practice. To overcome this gap, we propose the
+0288: Graph-then-Plan
+0289: strategy, which first generates task-specific scene graphs as an intermediate structured representation before high-level planning. By explicitly modeling objects and their relations, this approach significantly improves the accuracy and robustness of task planning. Unlike prior graph‐then‐plan methods
+0290: (
+0291: Dai et al., 2024
+0292: ;
+0293: Ekpo et al., 2024
+0294: )
+0295: that either assume reliable scene graphs or treat graph construction and planning as separate modules, our approach enables a single VLM to jointly generate structured, task-oriented scene graphs and perform high-level planning.
+0296: 3
+0297: Preliminary Findings and Motivation Experiments
+0298: To ground our analysis, before the full evaluations we perform two motivating experiments on the
+0299: MomaGraph-Bench
+0300: . These comparisons are designed to validate our motivation and design principles, and to reveal why our proposed model is essential for embodied task planning. In this section, we aim to answer the following questions.
+0301: 3.1
+0302: Are VLMs Reliable for Direct Planning Without Scene Graphs?
+0303: To examine whether direct planning from visual inputs is reliable even for strong closed-source VLMs, we design controlled evaluations on real-world household tasks such as
+0304: “Open the window”
+0305: and
+0306: “Obtain clean boiled water”
+0307: . In these scenarios, models must reason over functional relationships, spatial constraints, and multi-step dependencies (e.g., plug-in before activation, filtration before boiling). As shown in Fig.
+0308: 2
+0309: , despite their scale, closed-source VLMs like GPT-5 produce incorrect or incomplete plans, missing prerequisite steps, or misidentifying interaction types. In contrast, our
+0310: Graph-then-Plan
+0311: approach, which first generates a task-specific scene graph and then performs planning, consistently produces correct and complete action sequences aligned with ground-truth logic. This demonstrates that incorporating structured scene representations significantly enhances planning accuracy and robustness beyond what direct planning can achieve.
+0312: Figure 2:
+0313: Direct planning often fails even for strong closed-source models like GPT-5, producing wrong actions or missing key steps, while our
+0314: Graph-then-Plan
+0315: approach with structured scene graphs enables accurate and complete task sequences aligned with ground truth.
+0316: Preliminary Findings 1
+0317: •
+0318: In contrast to directly relying on vision-language models for task planning from raw scene images, our
+0319: Graph-then-Plan
+0320: strategy—which incorporates task-oriented scene graph generation as an intermediate structured representation prior to high-level planning, substantially improves both the accuracy and robustness of task planning.
+0321: 3.2
+0322: Are Single-Relationship Graphs Adequate for Embodied Agents?
+0323: To ensure a fair comparison, we retrain our model using the same graph structure as in
+0324: MomaGraph
+0325: , but constrain the edge types to encode only a single kind of relation—either spatial or functional. This setup allows us to isolate the effect of relation types while keeping the graph topology consistent, thereby directly examining whether single-relation representations are sufficient for task planning. To ensure this finding generalizes beyond one specific architecture, we evaluate this comparison across different base models using the same dataset and experimental configurations. As demonstrated in Table
+0326: 1
+0327: , both
+0328: MomaGraph-R1
+0329: (trained from Qwen-2.5-VL-7B) and LLaVA-Onevision consistently show superior performance with unified spatial-functional scene graphs compared to single-relationship variants, supporting our hypothesis that integrated representations are essential for effective embodied task planning. Detailed training methodology is described in the Sec.
+0330: 4.2
+0331: .
+0332: Table 1:
+0333: Comparison between
+0334: MomaGraph-R1
+0335: and LLaVA variants across task tiers.
+0336: Models
+0337: T1
+0338: T2
+0339: T3
+0340: T4
+0341: Overall
+0342: Models
+0343: T1
+0344: T2
+0345: T3
+0346: T4
+0347: Overall
+0348: MomaGraph-R1 (Spatial-only)
+0349: 69.1
+0350: 67.0
+0351: 58.4
+0352: 45.4
+0353: 59.9
+0354: LLaVA-Onevision (Spatial-only)
+0355: 63.4
+0356: 56.7
+0357: 59.7
+0358: 36.3
+0359: 54.0
+0360: MomaGraph-R1 (Functional-only)
+0361: 71.4
+0362: 65.8
+0363: 63.6
+0364: 59.0
+0365: 64.9
+0366: LLaVA-Onevision (Functional-only)
+0367: 65.1
+0368: 61.7
+0369: 55.8
+0370: 45.4
+0371: 57.0
+0372: MomaGraph-R1 (Unified)
+0373: 76.4
+0374: 71.9
+0375: 70.1
+0376: 68.1
+0377: 71.6
+0378: LLaVA-Onevision (Unified)
+0379: 68.6
+0380: 62.9
+0381: 67.5
+0382: 56.5
+0383: 66.0
+0384: Preliminary Findings 2
+0385: •
+0386: Graph representations that rely solely on spatial relationships or solely on functional relationships are insufficient. For embodied agents,
+0387: a unified representation that jointly models both spatial and functional relationships
+0388: provides a more complete and effective foundation for perception and action.
+0389: 4
+0390: Method
+0391: 4.1
+0392: MomaGraph Definition
+0393: Given a single indoor room, the agent receives as input a set of
+0394: multi-view images
+0395: {
+0396: ℐ
+0397: i
+0398: }
+0399: i
+0400: =
+0401: 1
+0402: n
+0403: \{\mathcal{I}_{i}\}_{i=1}^{n}
+0404: and a natural language instruction
+0405: 𝒯
+0406: \mathcal{T}
+0407: .
+0408: The objective is to construct an
+0409: instruction-conditioned
+0410: ,
+0411: task-oriented scene graph
+0412: 𝒢
+0413: 𝒯
+0414: =
+0415: (
+0416: 𝒩
+0417: 𝒯
+0418: ,
+0419: ℰ
+0420: s
+0421: 𝒯
+0422: ,
+0423: ℰ
+0424: f
+0425: 𝒯
+0426: )
+0427: \mathcal{G}_{\mathcal{T}}=(\mathcal{N}_{\mathcal{T}},\mathcal{E}_{s}^{\mathcal{T}},\mathcal{E}_{f}^{\mathcal{T}})
+0428: .
+0429: Here,
+0430: 𝒩
+0431: 𝒯
+0432: \mathcal{N}_{\mathcal{T}}
+0433: denotes the set of nodes representing objects relevant to task
+0434: 𝒯
+0435: \mathcal{T}
+0436: .
+0437: ℰ
+0438: s
+0439: 𝒯
+0440: \mathcal{E}_{s}^{\mathcal{T}}
+0441: encodes the
+0442: spatial relationships
+0443: among these nodes,
+0444: and
+0445: ℰ
+0446: f
+0447: 𝒯
+0448: \mathcal{E}_{f}^{\mathcal{T}}
+0449: captures their
+0450: functional relationships
+0451: .
+0452: This task-oriented scene graph provides a minimal yet sufficient structured representation
+0453: that grounds the instruction
+0454: 𝒯
+0455: \mathcal{T}
+0456: in the observed scene
+0457: and facilitates downstream embodied task planning. Both
+0458: ℰ
+0459: s
+0460: 𝒯
+0461: \mathcal{E}_{s}^{\mathcal{T}}
+0462: and
+0463: ℰ
+0464: f
+0465: 𝒯
+0466: \mathcal{E}_{f}^{\mathcal{T}}
+0467: are modeled as directed edges, pointing from the
+0468: triggering object
+0469: to the
+0470: affected object
+0471: .
+0472: 4.2
+0473: VLMs Learn Scene Graph Representations with Reinforcement Learning
+0474: Existing open-source VLMs have demonstrated limited capability in generating accurate task-oriented scene graphs
+0475: 𝒢
+0476: 𝒯
+0477: \mathcal{G}_{\mathcal{T}}
+0478: from multi-view observations
+0479: {
+0480: ℐ
+0481: i
+0482: }
+0483: i
+0484: =
+0485: 1
+0486: n
+0487: \{\mathcal{I}_{i}\}_{i=1}^{n}
+0488: and natural language instructions
+0489: 𝒯
+0490: \mathcal{T}
+0491: . VLMs do not form structured spatial-functional representations or reason effectively about task-relevant object relationships needed for embodied tasks. To go further, we want to know:
+0492: Can reinforcement learning teach VLMs to build more precise and task-relevant scene graph representations with
+0493: MomaGraph
+0494: ?
+0495: Reinforcement learning offers a more principled approach by encouraging the model to explore, reason, and iteratively refine its representations through outcome-driven feedback. Rather than replicating memorized patterns, RL enables models to discover effective strategies for constructing task-relevant scene graphs through structured thinking and reasoning. We apply the DAPO
+0496: (
+0497: Yu et al., 2025
+0498: )
+0499: . The key innovation lies in our carefully designed
+0500: graph-based reward function
+0501: ℛ
+0502: ⁡
+0503: (
+0504: 𝒢
+0505: 𝒯
+0506: pred
+0507: ,
+0508: 𝒢
+0509: 𝒯
+0510: gt
+0511: )
+0512: \mathcal{R}(\mathcal{G}_{\mathcal{T}}^{\text{pred}},\mathcal{G}_{\mathcal{T}}^{\text{gt}})
+0513: , where
+0514: 𝒢
+0515: 𝒯
+0516: pred
+0517: \mathcal{G}_{\mathcal{T}}^{\text{pred}}
+0518: and
+0519: 𝒢
+0520: 𝒯
+0521: gt
+0522: \mathcal{G}_{\mathcal{T}}^{\text{gt}}
+0523: denote the predicted and ground truth task-oriented scene graphs, respectively, which evaluates how well predicted graphs embody these principles through three key components.
+0524: Action type prediction.
+0525: Given the task instruction
+0526: 𝒯
+0527: \mathcal{T}
+0528: , we ensure correct prediction of the required action type through
+0529: R
+0530: action
+0531: =
+0532: 𝕀
+0533: [
+0534: a
+0535: pred
+0536: =
+0537: a
+0538: gt
+0539: ]
+0540: R_{\text{action}}=\mathbb{I}[a_{\text{pred}}=a_{\text{gt}}]
+0541: , where
+0542: a
+0543: pred
+0544: a_{\text{pred}}
+0545: and
+0546: a
+0547: gt
+0548: a_{\text{gt}}
+0549: denote the predicted and ground truth action types, respectively.
+0550: Spatial-functional integration on edges.
+0551: We jointly evaluate both spatial relationships
+0552: ℰ
+0553: s
+0554: 𝒯
+0555: \mathcal{E}_{s}^{\mathcal{T}}
+0556: and functional relationships
+0557: ℰ
+0558: f
+0559: 𝒯
+0560: \mathcal{E}_{f}^{\mathcal{T}}
+0561: within each edge, where
+0562: ℰ
+0563: pred
+0564: 𝒯
+0565: \mathcal{E}^{\mathcal{T}}_{\text{pred}}
+0566: and
+0567: ℰ
+0568: gt
+0569: 𝒯
+0570: \mathcal{E}^{\mathcal{T}}_{\text{gt}}
+0571: represent the predicted and ground truth edge sets:
+0572: R
+0573: edges
+0574: =
+0575: 1
+0576: |
+0577: ℰ
+0578: gt
+0579: 𝒯
+0580: |
+0581: ​
+0582: ∑
+0583: e
+0584: j
+0585: ∈
+0586: ℰ
+0587: gt
+0588: 𝒯
+0589: max
+0590: e
+0591: i
+0592: ∈
+0593: ℰ
+0594: pred
+0595: 𝒯
+0596: ⁡
+0597: S
+0598: edge
+0599: ​
+0600: (
+0601: e
+0602: i
+0603: ,
+0604: e
+0605: j
+0606: )
+0607: \displaystyle R_{\text{edges}}=\frac{1}{|\mathcal{E}^{\mathcal{T}}_{\text{gt}}|}\sum_{e_{j}\in\mathcal{E}^{\mathcal{T}}_{\text{gt}}}\max_{e_{i}\in\mathcal{E}^{\mathcal{T}}_{\text{pred}}}S_{\text{edge}}(e_{i},e_{j})
+0608: (1)
+0609: where
+0610: S
+0611: edge
+0612: ​
+0613: (
+0614: e
+0615: i
+0616: ,
+0617: e
+0618: j
+0619: )
+0620: S_{\text{edge}}(e_{i},e_{j})
+0621: measures semantic similarity between edges
+0622: e
+0623: i
+0624: e_{i}
+0625: and
+0626: e
+0627: j
+0628: e_{j}
+0629: based on their spatial and functional relationship labels.
+0630: Node completeness.
+0631: We compute intersection-over-union similarity for task-relevant objects in
+0632: 𝒩
+0633: 𝒯
+0634: \mathcal{N}_{\mathcal{T}}
+0635: , where
+0636: 𝒩
+0637: 𝒯
+0638: pred
+0639: \mathcal{N}_{\mathcal{T}}^{\text{pred}}
+0640: and
+0641: 𝒩
+0642: 𝒯
+0643: gt
+0644: \mathcal{N}_{\mathcal{T}}^{\text{gt}}
+0645: denote the predicted and ground truth sets of task-relevant nodes:
+0646: R
+0647: nodes
+0648: =
+0649: |
+0650: 𝒩
+0651: 𝒯
+0652: pred
+0653: ∩
+0654: 𝒩
+0655: 𝒯
+0656: gt
+0657: |
+0658: |
+0659: 𝒩
+0660: 𝒯
+0661: pred
+0662: ∪
+0663: 𝒩
+0664: 𝒯
+0665: gt
+0666: |
+0667: R_{\text{nodes}}=\frac{|\mathcal{N}_{\mathcal{T}}^{\text{pred}}\cap\mathcal{N}_{\mathcal{T}}^{\text{gt}}|}{|\mathcal{N}_{\mathcal{T}}^{\text{pred}}\cup\mathcal{N}_{\mathcal{T}}^{\text{gt}}|}
+0668: .
+0669: The final reward function integrates these task-oriented design principles with format validation and length control, where
+0670: R
+0671: format
+0672: R_{\text{format}}
+0673: ensures valid JSON structure and
+0674: R
+0675: length
+0676: R_{\text{length}}
+0677: penalizes overly verbose outputs:
+0678: ℛ
+0679: ⁡
+0680: (
+0681: 𝒢
+0682: 𝒯
+0683: pred
+0684: ,
+0685: 𝒢
+0686: 𝒯
+0687: gt
+0688: )
+0689: =
+0690: w
+0691: a
+0692: ⋅
+0693: (
+0694: R
+0695: action
+0696: +
+0697: R
+0698: edges
+0699: +
+0700: R
+0701: nodes
+0702: )
+0703: +
+0704: w
+0705: f
+0706: ⋅
+0707: R
+0708: format
+0709: +
+0710: w
+0711: l
+0712: ⋅
+0713: R
+0714: length
+0715: \displaystyle\mathcal{R}(\mathcal{G}_{\mathcal{T}}^{\text{pred}},\mathcal{G}_{\mathcal{T}}^{\text{gt}})=w_{a}\cdot(R_{\text{action}}+R_{\text{edges}}+R_{\text{nodes}})+w_{f}\cdot R_{\text{format}}+w_{l}\cdot R_{\text{length}}
+0716: (2)
+0717: where
+0718: w
+0719: a
+0720: w_{a}
+0721: ,
+0722: w
+0723: f
+0724: w_{f}
+0725: , and
+0726: w
+0727: l
+0728: w_{l}
+0729: are hyperparameters controlling the relative importance of each component.
+0730: This reward design directly implements our core insight: scene graphs must simultaneously capture spatial layout (
+0731: ℰ
+0732: s
+0733: 𝒯
+0734: \mathcal{E}_{s}^{\mathcal{T}}
+0735: ) and functional relationships (
+0736: ℰ
+0737: f
+0738: 𝒯
+0739: \mathcal{E}_{f}^{\mathcal{T}}
+0740: ) while remaining tightly coupled to task requirements (
+0741: 𝒯
+0742: \mathcal{T}
+0743: ). With RL training on
+0744: MomaGraph-Scenes
+0745: , we develop
+0746: MomaGraph-R1
+0747: , a 7B vision-language model built on Qwen2.5-VL-7B-Instruct
+0748: (
+0749: Qwen, 2025
+0750: )
+0751: , which learns to generate compact, task-relevant representations that provide concrete guidance for embodied planning.
+0752: We demonstrate that RL significantly enhances both the effectiveness and generalizability of open-source VLMs for scene graph generation in the following section. This aligns with broader findings that combining structured scene representations with reasoning consistently improves VLM scene understanding. Critically,
+0753: MomaGraph-R1
+0754: achieves robust performance across diverse environments and task configurations, enabling practical deployment in unseen embodied scenarios.
+0755: 4.3
+0756: State-Aware Dynamic Scene Graph Update
+0757: In realistic environments, multiple objects of the same category may coexist, and their task-related correspondences are often initially
+0758: uncertain
+0759: . Take Figure
+0760: 3
+0761: as an example, a kitchen stove may have several knobs, but only one controls the burner required for the current cooking task. Simply relying on visual appearance is insufficient to determine the correct functional relationship. In this work, we do not focus on the agent’s interaction policy; instead, our emphasis lies on
+0762: how to capture and incorporate observed state changes in the environment
+0763: into the scene graph to resolve such ambiguities.
+0764: Figure 3:
+0765: MomaGraph
+0766: captures state changes in the environment and dynamically updates the task-specific scene graph accordingly, enabling the graph to evolve as interactions occur and reflecting updated spatial–functional relationships.
+0767: Formally, at time step
+0768: t
+0769: t
+0770: , the task-oriented scene graph is represented as:
+0771: 𝒢
+0772: 𝒯
+0773: (
+0774: t
+0775: )
+0776: =
+0777: (
+0778: 𝒩
+0779: 𝒯
+0780: (
+0781: t
+0782: )
+0783: ,
+0784: ℰ
+0785: s
+0786: 𝒯
+0787: ,
+0788: (
+0789: t
+0790: )
+0791: ,
+0792: ℰ
+0793: f
+0794: 𝒯
+0795: ,
+0796: (
+0797: t
+0798: )
+0799: )
+0800: ,
+0801: \mathcal{G}_{\mathcal{T}}^{(t)}=\big(\mathcal{N}_{\mathcal{T}}^{(t)},\mathcal{E}_{s}^{\mathcal{T},(t)},\mathcal{E}_{f}^{\mathcal{T},(t)}\big),
+0802: (3)
+0803: where
+0804: 𝒩
+0805: 𝒯
+0806: (
+0807: t
+0808: )
+0809: \mathcal{N}_{\mathcal{T}}^{(t)}
+0810: denotes the set of task-relevant candidate objects,
+0811: ℰ
+0812: s
+0813: 𝒯
+0814: ,
+0815: (
+0816: t
+0817: )
+0818: \mathcal{E}_{s}^{\mathcal{T},(t)}
+0819: encodes their spatial layout, and
+0820: ℰ
+0821: f
+0822: 𝒯
+0823: ,
+0824: (
+0825: t
+0826: )
+0827: \mathcal{E}_{f}^{\mathcal{T},(t)}
+0828: captures
+0829: hypothesized
+0830: functional relationships, which may initially include one-to-many mappings.
+0831: After the agent executes an action
+0832: a
+0833: t
+0834: a_{t}
+0835: and observes the new environment state
+0836: s
+0837: t
+0838: +
+0839: 1
+0840: s_{t+1}
+0841: , the scene graph is refined as:
+0842: 𝒢
+0843: 𝒯
+0844: (
+0845: t
+0846: +
+0847: 1
+0848: )
+0849: =
+0850: 𝒰
+0851: ⁡
+0852: (
+0853: 𝒢
+0854: 𝒯
+0855: (
+0856: t
+0857: )
+0858: ,
+0859: a
+0860: t
+0861: ,
+0862: s
+0863: t
+0864: +
+0865: 1
+0866: )
+0867: ,
+0868: \mathcal{G}_{\mathcal{T}}^{(t+1)}=\mathcal{U}\!\left(\mathcal{G}_{\mathcal{T}}^{(t)},a_{t},s_{t+1}\right),
+0869: (4)
+0870: where the update function
+0871: 𝒰
+0872: ⁡
+0873: (
+0874: ⋅
+0875: )
+0876: \mathcal{U}(\cdot)
+0877: removes inconsistent hypotheses and strengthens confirmed correspondences based on the observed state transition. As illustrated in Fig.
+0878: 3
+0879: , if rotating a specific knob ignites the burner while others have no effect, the functional edge
+0880: [control]
+0881: between that knob and the burner is established, while edges from other knobs are pruned. This process enables the scene graph to evolve from ambiguous, one-to-many hypotheses into a compact,
+0882: state-aware dynamic representation
+0883: with unique and reliable object-to-object correspondences.
+0884: 5
+0885: Dataset and Benchmark
+0886: 5.1
+0887: MomaGraph-Scenes Dataset
+0888: Existing scene graph datasets for 3D indoor environments are often constrained to a single relationship: some focus exclusively on
+0889: spatial layouts
+0890: of objects
+0891: (
+0892: Armeni et al., 2019
+0893: ;
+0894: Koch et al., 2024b
+0895: )
+0896: , while others emphasize
+0897: functional interactions
+0898: (
+0899: Dong et al., 2021
+0900: ;
+0901: Zhang et al., 2025
+0902: )
+0903: . However, these scene graph representations that are restricted to a single relationship type are insufficient for embodied agents, as task execution in household environments requires reasoning about both
+0904: where objects are
+0905: and
+0906: how they can be used
+0907: . To address these limitations, we introduce
+0908: MomaGraph-Scenes
+0909: , the first dataset designed to provide a more comprehensive and task-relevant scene representation.
+0910: MomaGraph-Scenes
+0911: jointly encodes
+0912: spatial relationships
+0913: and
+0914: functional relationships
+0915: , covering
+0916: 9 spatial relationship types and 6 functional relationship types
+0917: , explicitly representing interactive elements such as handles and buttons. Our dataset consists of approximately 1,050 task-oriented subgraphs and 6278 multi-view RGB images, collected from a combination of manually collected real-world data, re-annotated existing datasets
+0918: (
+0919: Zhang et al., 2025
+0920: ;
+0921: Delitzas et al., 2024
+0922: )
+0923: , and simulated environments built with AI2-THOR
+0924: (
+0925: Kolve et al., 2017
+0926: )
+0927: . These samples span more than
+0928: 350 diverse household scenes
+0929: and encompass
+0930: 93 distinct task instructions
+0931: . Compared with prior datasets, our annotations are significantly more detailed, and capturing interaction semantics at both the object and part levels. This broad coverage ensures rich variability in scene layouts, object configurations, and interaction types, supporting robust learning and evaluation of embodied reasoning.
+0932: 5.1.1
+0933: Dataset Annotation
+0934: Multi-View Observation.
+0935: The multi-view images provided for each graph are not constrained to always contain every relevant object within each single view. We also do not impose restrictions on the number of viewpoints or their exact configurations. This flexible setup better reflects realistic perception conditions, where embodied agents must reason across partial and diverse observations to build consistent scene graph representations.
+0936: Task Instruction.
+0937: It is worth noting that the task instructions in our dataset do not explicitly mention all the objects required to accomplish the task. Instead, they are expressed in simple and natural forms (e.g., “Fill the bathtub”), where the relevant objects such as the
+0938: bathtub
+0939: ,
+0940: faucet
+0941: , and
+0942: button
+0943: must be inferred by the model. This design encourages the model to learn how to ground natural instructions into the appropriate set of objects and relationships, rather than relying on object names being explicitly stated.
+0944: Nodes.
+0945: 𝒩
+0946: 𝒯
+0947: \mathcal{N}_{\mathcal{T}}
+0948: primarily consists of the objects necessary to accomplish the instruction.
+0949: When the task execution requires interacting with specific parts, the graph may additionally include
+0950: part-level interactive elements
+0951: (e.g., handles, knobs, or buttons).
+0952: For example, for the instruction “Open the fridge,”
+0953: 𝒩
+0954: 𝒯
+0955: \mathcal{N}_{\mathcal{T}}
+0956: includes both the
+0957: fridge
+0958: and its
+0959: handle
+0960: ;
+0961: for the instruction “Turn on the light,”
+0962: 𝒩
+0963: 𝒯
+0964: \mathcal{N}_{\mathcal{T}}
+0965: consists of the
+0966: switch
+0967: and the
+0968: ceiling light
+0969: .
+0970: Edges.
+0971: Edges in the task-oriented scene graph capture both
+0972: functional
+0973: and
+0974: spatial
+0975: relationships between nodes.
+0976: •
+0977: Functional Relationships.
+0978: We define a functional relationship as the ability of one object to change the state of another object.
+0979: In indoor environments, common tasks can be broadly categorized as
+0980: Parameter Adjustment, Device Control, Open/Close the Cabinet or Door, Water Flow Control, Power Supply, and Assembly
+0981: .
+0982: Accordingly, we identify six major types:
+0983: [OPEN OR CLOSE], [ADJUST], [CONTROL], [ACTIVATE], [POWER BY], [PAIR WITH].
+0984: Notably, [PAIR WITH] does not alter the internal state of objects but instead modifies their spatial configuration, which is essential for assembly tasks
+0985: (
+0986: Qi et al., 2025
+0987: )
+0988: .
+0989: Since such tasks are critical for robotic interaction and task planning, we explicitly include [PAIR WITH] as a functional relationship.
+0990: Through this definition, our dataset extends beyond physical and electronic interactions to encompass fine-grained reasoning about assembly and pairing, enhancing its utility for downstream action execution and planning.
+0991: •
+0992: Spatial Relationships.
+0993: Capture geometric dependencies between objects and parts.
+0994: The dataset primarily annotates:
+0995: Directional:
+0996: [LEFT OF], [RIGHT OF], [IN FRONT OF], [BEHIND], [HIGHER THAN], [LOWER THAN].
+0997: Distance-based:
+0998: [CLOSE], [FAR], [TOUCHING].
+0999: These annotations provide the rich context necessary for reasoning about layout, reachability, and interaction feasibility.
+1000: Figure 4:
+1001: Examples of evaluation Multi-Choices VQA tasks in the
+1002: MomaGraph-Bench
+1003: . We showcase example questions covering six core reasoning capabilities. Beyond these core capabilities, we further design tasks on
+1004: Dynamic Verification
+1005: and
+1006: Long-horizon Task Decomposition
+1007: to evaluate temporal reasoning and multi-steps planning.
+1008: 5.2
+1009: MomaGraph Benchmark and Evaluation
+1010: We introduce
+1011: MomaGraph-Bench
+1012: , the first benchmark that jointly evaluates fine-grained scene understanding and task planning abilities across diverse levels of difficulty. Our design principle for
+1013: MomaGraph-Bench
+1014: is to evaluate whether advances in scene understanding provide tangible improvements in downstream task planning and reasoning. Our evaluation framework examines six essential reasoning capabilities in four tiers of difficulty levels: (1)
+1015: Action Sequence Reasoning
+1016: , (2)
+1017: Spatial Reasoning
+1018: , (3)
+1019: Object Affordance Reasoning
+1020: , (4)
+1021: Precondition & Effect Reasoning
+1022: , (5)
+1023: Goal Decomposition
+1024: , and (6)
+1025: Visual Correspondence
+1026: (with concrete examples shown in Fig.
+1027: 4
+1028: ).
+1029: •
+1030: Action Sequence Reasoning
+1031: : examines whether models understand the order and dependency of actions and can plan efficient sequences.
+1032: •
+1033: Spatial Reasoning
+1034: : focuses on reasoning over spatial relations such as
+1035: left_of
+1036: or
+1037: in_front_of
+1038: , judging reachability, and selecting the most suitable object among candidates.
+1039: •
+1040: Object Affordance Reasoning
+1041: : evaluates whether models can infer the functionality of objects (e.g., knobs can be turned, cabinets can be opened), match objects to task requirements, and reason about indirect tool use.
+1042: •
+1043: Precondition & Effect Reasoning
+1044: : assesses whether models understand the preconditions and effects of actions, such as a door needing to be closed before it can be opened, and can predict possible side effects.
+1045: •
+1046: Goal Decomposition
+1047: : measures the ability to break down complex tasks into sub-goals, prioritize them, and determine parallel versus sequential execution strategies.
+1048: •
+1049: Visual Correspondence (extended capability)
+1050: : tests whether models can maintain object consistency across multiple views and integrate information under viewpoint changes.
+1051: MomaGraph-Bench
+1052: is formulated as a multi-choice VQA task which comprises 294 diverse indoor scenes with 1,446 multi-view images, featuring 352 task-oriented scene graphs spanning 1,315 instances that range from simple step object manipulation(Tier 1) to complex multi-step replanning (Tier 4) scenarios (detailed breakdown in Appendix
+1053: A.4
+1054: ).
+1055: MomaGraph-Bench
+1056: offers the most comprehensive assessment for embodied agents’ capacity to generalize across tasks and scenarios. To ensure that the evaluation truly reflects generalization rather than memorization, all scenarios are drawn from entirely unseen environments.
+1057: 6
+1058: Experiments
+1059: 6.1
+1060: Benchmark Evaluation for Embodied Task Planning
+1061: We compare the performance of our
+1062: MomaGraph-R1
+1063: with other models across all task tiers in
+1064: MomaGraph-Bench
+1065: to rigorously assess embodied planning, including state-of-the-art closed source models (Claude-4.5-Sonnet, GPT-5, Gemini-2.5-Pro) and leading open source models (InstructBLIP, LLaVA-V1.5, DeepSeek-VL2, InternVL2.5, LLaVA-OneVision, Qwen2.5). We further examine whether
+1066: Graph-then-Plan
+1067: brings performance gains by evaluating each model under two controlled settings:
+1068: (i)
+1069: Direct Plan (w/o Graph)
+1070: : the model is directly evaluated on task planning in
+1071: MomaGraph-Bench
+1072: using multi-view observations and instructions;
+1073: (ii)
+1074: Graph-then-Plan (w/ Graph)
+1075: : the model first generates a task-oriented scene graph
+1076: 𝒢
+1077: 𝒯
+1078: \mathcal{G}_{\mathcal{T}}
+1079: , capturing nodes, spatial and functional edges, and action types, and then performs task planning conditioned on the graph.
+1080: Table 2:
+1081: Performance comparison on the
+1082: MomaGraph-Bench
+1083: . We report accuracy (%) across four tiers (T1–T4) and the overall score, with and without graph-based reasoning.
+1084: Type
+1085: Models
+1086: Params
+1087: MomaGraph Benchmark
+1088: Tier 1
+1089: Tier 2
+1090: Tier 3
+1091: Tier 4
+1092: Overall
+1093: w/o Graph
+1094: w/ Graph
+1095: w/o Graph
+1096: w/ Graph
+1097: w/o Graph
+1098: w/ Graph
+1099: w/o Graph
+1100: w/ Graph
+1101: w/o Graph
+1102: w/ Graph
+1103: Closed Source
+1104: Claude-4.5-Sonnet
+1105: -
+1106: 77.3
+1107: 83.7
+1108: 67.0
+1109: 70.3
+1110: 69.7
+1111: 72.3
+1112: 65.2
+1113: 69.5
+1114: 69.8
+1115: 73.9
+1116: GPT-5
+1117: -
+1118: 77.3
+1119: 79.8
+1120: 63.4
+1121: 68.2
+1122: 70.8
+1123: 75.0
+1124: 54.5
+1125: 63.6
+1126: 66.5
+1127: 71.6
+1128: Gemini-2.5-Pro
+1129: -
+1130: 76.6
+1131: 79.0
+1132: 65.8
+1133: 69.5
+1134: 67.5
+1135: 72.7
+1136: 60.8
+1137: 65.2
+1138: 67.6
+1139: 71.6
+1140: Open Source
+1141: InstructBLIP-7B
+1142: 7B
+1143: 43.1
+1144: 44.1
+1145: 42.6
+1146: 41.4
+1147: 38.6
+1148: 36.3
+1149: 31.8
+1150: 36.3
+1151: 39.0
+1152: 39.5
+1153: LLaVA-V1.5-7B
+1154: 7B
+1155: 51.0
+1156: 53.4
+1157: 46.3
+1158: 48.7
+1159: 40.2
+1160: 36.3
+1161: 38.9
+1162: 40.9
+1163: 44.1
+1164: 44.8
+1165: DeepSeek-VL2
+1166: 4.5B
+1167: 54.2
+1168: 56.9
+1169: 51.2
+1170: 53.6
+1171: 61.8
+1172: 61.3
+1173: 40.9
+1174: 45.4
+1175: 52.0
+1176: 54.3
+1177: InternVL2.5-8B
+1178: 8B
+1179: 53.6
+1180: 51.0
+1181: 51.2
+1182: 53.0
+1183: 55.8
+1184: 59.7
+1185: 33.3
+1186: 40.9
+1187: 48.4
+1188: 51.1
+1189: LLaVA-Onevision-7B
+1190: 7B
+1191: 60.0
+1192: 63.8
+1193: 52.4
+1194: 56.0
+1195: 58.4
+1196: 59.2
+1197: 43.4
+1198: 43.4
+1199: 53.5
+1200: 55.6
+1201: Qwen2.5-VL-7B-Instruct
+1202: 7B
+1203: 62.1
+1204: 66.3
+1205: 58.5
+1206: 58.5
+1207: 51.9
+1208: 57.1
+1209: 56.5
+1210: 59.0
+1211: 57.2
+1212: 60.2
+1213: MomaGraph-R1(Ours)
+1214: 7B
+1215: 70.2
+1216: 76.4
+1217: 65.8
+1218: 71.9
+1219: 63.6
+1220: 70.1
+1221: 60.8
+1222: 68.1
+1223: 65.1
+1224: 71.6
+1225: 6.1.1
+1226: Result Analysis.
+1227: The results in Table
+1228: 2
+1229: yield several key insights:
+1230: (1) Effectiveness of Graph-then-Plan.
+1231: Across all models, the
+1232: w/ Graph
+1233: setting consistently outperforms the
+1234: w/o Graph
+1235: baseline, demonstrating that explicitly structuring task-oriented scene graphs provides a tangible benefit for downstream planning. This validates our central hypothesis that disentangling scene representation from action generation improves reasoning reliability.
+1236: (2) Competitiveness of
+1237: MomaGraph-R1
+1238: .
+1239: Our
+1240: MomaGraph-R1
+1241: achieves performance on par with closed-source giants like Claude-4.5-Sonnet and GPT-5, while clearly surpassing all leading open-source VLMs. Notably,
+1242: MomaGraph-R1
+1243: delivers a
+1244: +
+1245: 11.4
+1246: %
+1247: +11.4\%
+1248: relative improvement over its base model (Qwen2.5-VL-7B) under
+1249: w/ Graph
+1250: , highlighting the effectiveness of reinforcement learning with graph-based rewards.
+1251: (3) Scalability with Task Complexity.
+1252: As task complexity increases from Tier 1 to Tier 4, the performance of most open-source baselines drops sharply, reflecting their limited ability to generalize to multi-step reasoning. In contrast,
+1253: MomaGraph-R1
+1254: exhibits a much smaller degradation, preserving strong performance in Tier 3 and Tier 4. This indicates superior scalability to long-horizon planning scenarios, a crucial capability for embodied agents.
+1255: (4) General Trend Across Communities.
+1256: Closed-source models still maintain the highest absolute performance, benefiting from larger-scale pretraining and proprietary data. However, the consistent gap reduction achieved by
+1257: MomaGraph-R1
+1258: shows that reinforcement learning with graph-structured intermediate representations can substantially narrow the divide, offering a practical path toward competitive open-source systems.
+1259: 6.2
+1260: Benchmark Evaluation for Visual Correspondence
+1261: Table 3:
+1262: Performance comparison on the BLINK and
+1263: MomaGraph-Bench
+1264: . By enforcing multi-view consistency, our method significantly improves correspondence reasoning across all open-source models.
+1265: Model
+1266: GPT-5
+1267: LLaVA-Onevision
+1268: Qwen2.5-VL-7B-Instruct
+1269: DeepSeek-VL2
+1270: MomaGraph-R1
+1271: BLINK
+1272: MomaGraph-Bench
+1273: BLINK
+1274: MomaGraph-Bench
+1275: BLINK
+1276: MomaGraph-Bench
+1277: BLINK
+1278: MomaGraph-Bench
+1279: BLINK
+1280: MomaGraph-Bench
+1281: Results
+1282: 66.1
+1283: 81.2
+1284: 59.7
+1285: 70.7
+1286: 58.7
+1287: 72.7
+1288: 57.4
+1289: 68.4
+1290: 63.5
+1291: 77.5
+1292: As the model learns scene representations from multi-view observations, it exhibits an emergent ability of
+1293: cross-view consistency
+1294: , which can reason about the same point across different viewpoints. This capability is most evident in visual correspondence tasks. As shown in Table
+1295: 3
+1296: , we compare model performance on visual correspondence tasks from public benchmark BLINK
+1297: Fu et al. (2024)
+1298: and our
+1299: MomaGraph-Bench
+1300: . Scene graph representations enhance performance universally by reducing VLM hallucinations in visual perception. By prompting models to first generate structured scene graphs (
+1301: w/ Graph
+1302: ) and then answer questions in single-turn interactions, we force them to explicitly reason about spatial and functional relationships between objects before answering. We primarily evaluate perception on multi-view reasoning and visual correspondence tasks from BLINK, as well as multi-view correspondence in
+1303: MomaGraph-Bench
+1304: . Our
+1305: MomaGraph-R1
+1306: achieves state-of-the-art performance among open-source VLMs, leading by 3.8% on BLINK and 4.8% on our correspondence benchmark compared to the best competing open-source models. These results confirm that
+1307: MomaGraph-R1
+1308: enables more nuanced and detailed perception of complex indoor scenes, effectively mitigating hallucinations and enabling more reliable scene perception.
+1309: 6.3
+1310: Real Robot Demonstrations
+1311: Setup.
+1312: To validate the effectiveness of our model in real-world settings, we deploy on the RobotEra Q5, a bimanual humanoid platform with a mobile base. An Intel RealSense D455 camera is mounted to enhance RGB-D perception. Importantly, all evaluation scenes are
+1313: unseen
+1314: , ensuring that performance reflects true generalization.
+1315: Tasks.
+1316: We design four representative tasks (Figure
+1317: 5
+1318: ), consisting of two
+1319: local
+1320: interactions (e.g., opening a cabinet, opening a microwave) and two
+1321: remote
+1322: interactions (e.g., turning on the TV, turning off a light).
+1323: Deployment.
+1324: Prior to execution, the robot performs active perception by adjusting its head pose to acquire multi-view observations.
+1325: MomaGraph-R1
+1326: processes these observations together with the task instruction to generate a task-specific subgraph, which explicitly encodes the relevant objects and their spatial–functional relationships, see more deployment details in
+1327: B.3
+1328: . Following the
+1329: Graph-then-Plan
+1330: paradigm,
+1331: MomaGraph-R1
+1332: then functions as a task planner, producing a structured action sequence. These specifications are subsequently instantiated as low-level trajectories through a library of parameterized primitive skills. We note that the primitive skills are task-specific and derived from teleoperation data for each scenario; the primary contribution of this work lies in the high-level planning and scene graph generating enabled by
+1333: MomaGraph-R1
+1334: .
+1335: Summary.
+1336: Our real-world evaluations show that
+1337: MomaGraph-R1
+1338: delivers robust scene understanding and task planning even in unseen scenarios, while remaining directly compatible with standard mobile humanoid systems. This combination underscores the strength of our model and its practicality for real-world deployment.
+1339: Figure 5:
+1340: Real Robot experiments on the RobotEra Q5 with a D455, demonstrating four household tasks that require
+1341: spatial, functional, and part-level interactive elements reasoning for task execution.
+1342: 6.4
+1343: Quantitative Real-Robot Evaluation
+1344: To provide rigorous quantitative validation of our system’s robustness, we conduct a comprehensive evaluation on a complex multi-step long-horizon task. This evaluation includes success rates and failure analysis across different stages to validate overall system performance under realistic, sequential conditions (see Figure
+1345: 6
+1346: ).
+1347: Figure 6:
+1348: Quantitative real-robot evaluation.
+1349: (a) Environment setup of the real-robot experiment.
+1350: (b) Failure analysis illustrating success/failure rates across different reasoning stages.
+1351: Task Setup.
+1352: We evaluate the following natural language instruction that requires sequential reasoning and manipulation:
+1353: “I need better lighting. Turn on the light closest to the remote so I can find it and turn on the monitor to watch.”
+1354: To assess system robustness, we conducted 10 experimental trials, changing the camera viewpoint in each trial.
+1355: This task requires spatial reasoning (finding the switch and the remote), functional understanding (linking switches, lights, remote, monitor), and state-dependent planning (lighting affects perception). Additionally, there’s object uncertainty (multiple similar lamps or switches), complex spatial relations between objects, and sequential manipulation under partial observability.
+1356: Results.
+1357: As shown in Figure
+1358: 6
+1359: , our system achieves an 80% success rate in graph generation, 87.5% success rate in planning (conditioned on correct graphs), and an overall task success rate of 70% over 10 trials.
+1360: The main failure modes were: (1)spatial relation errors or missing nodes during graph generation; and (2) action sequencing errors in the planning phase, suggesting that the system sometimes plans the right actions but in a suboptimal order.
+1361: These results demonstrate that
+1362: MomaGraph
+1363: remains robust across multiple reasoning and execution stages, achieving a 70% overall success rate on a complex multi-step task. This validates the system’s reliability under realistic long-horizon conditions where errors can compound across stages.
+1364: 7
+1365: Conclusion
+1366: This work addresses to the fundamental limitations of existing scene graphs for embodied agents: reliance on a single type of relationship, inability to adapt to dynamic environments, and lack of task relevance. To overcome these issues, we introduce
+1367: MomaGraph
+1368: , a novel scene representation that unifies spatial and functional scene graphs with interactive elements. To learn this representation, we construct a large-scale dataset
+1369: MomaGraph-Scenes
+1370: and propose
+1371: MomaGraph-R1
+1372: , a 7B VLM trained with reinforcement learning, which predicts task-oriented scene graphs and serves as a zero-shot task planner under a
+1373: Graph-then-Plan
+1374: framework. Furthermore, we design the
+1375: MomaGraph-Bench
+1376: , a comprehensive benchmark that rigorously evaluates both fine-grained reasoning and high-level planning. Through extensive experiments, we demonstrate that our approach achieves state-of-the-art performance among open source models, remains competitive with closed source systems, and transfers effectively to public benchmarks and real robot experiments. We hope that
+1377: MomaGraph
+1378: will serve as a foundation for advancing scene representations, fostering stronger connections between the spatial VLM and robotics communities, and ultimately enabling more intelligent and adaptive embodied agents.
+1379: 8
+1380: Acknowledgements
+1381: We would like to express our heartfelt thanks to Chenyangguang Zhang, Prof. Florian Shkurti, and Prof. Tom Silver for their insightful suggestions and constructive feedback. We also thank Guowei Zhang, Yuman Gao, Bike Zhang, Gechen Qu, Lihan Zha, Yuanhang Zhang, and Yu Qi for their valuable assistance in the collection of benchmark data. We thank Robot Era for providing their Q5 Mobile Manipulator for our experiments.
+1382: Liang, Lee and Huang are supported by DARPA Transfer from Imprecise and Abstract Models to Autonomous Technologies (TIAMAT) 80321, DARPA HR001124S0029-AIQ-FP-019, DOD-AFOSR-Air Force Office of Scientific Research under award number FA9550-23-1-0048, National Science Foundation NSF-IIS-2147276 FAI, National Science Foundation NAIRR240045, National Science Foundation TRAILS Institute (2229885). Private support was provided by Peraton and Open Philanthropy.
+1383: The work by Ju, Wang, and Sreenath was supported by The Robotics and AI Institute.
+1384: References
+1385: Agia et al. (2022)
+1386: Christopher Agia, Krishna Murthy Jatavallabhula, Mohamed Khodeir, Ondrej Miksik, Vibhav Vineet, Mustafa Mukadam, Liam Paull, and Florian Shkurti.
+1387: Taskography: Evaluating robot task planning over large 3d scene graphs.
+1388: In
+1389: Conference on Robot Learning
+1390: , pp.  46–58. PMLR, 2022.
+1391: Ahn et al. (2022)
+1392: Michael Ahn, Anthony Brohan, Noah Brown, Yevgen Chebotar, Omar Cortes, Byron David, Chelsea Finn, Chuyuan Fu, Keerthana Gopalakrishnan, Karol Hausman, et al.
+1393: Do as i can, not as i say: Grounding language in robotic affordances.
+1394: arXiv preprint arXiv:2204.01691
+1395: , 2022.
+1396: Armeni et al. (2019)
+1397: Iro Armeni, Zhi-Yang He, JunYoung Gwak, Amir R Zamir, Martin Fischer, Jitendra Malik, and Silvio Savarese.
+1398: 3d scene graph: A structure for unified semantics, 3d space, and camera.
+1399: In
+1400: Proceedings of the IEEE/CVF international conference on computer vision
+1401: , pp.  5664–5673, 2019.
+1402: Cao et al. (2024)
+1403: Yang Cao, Yuanliang Jv, and Dan Xu.
+1404: 3dgs-det: Empower 3d gaussian splatting with boundary guidance and box-focused sampling for 3d object detection.
+1405: arXiv preprint arXiv:2410.01647
+1406: , 2024.
+1407: Castanheira et al. (2025)
+1408: Jason da Silva Castanheira, Nicholas Shea, and Stephen M Fleming.
+1409: How attention simplifies mental representations for planning.
+1410: arXiv preprint arXiv:2506.09520
+1411: , 2025.
+1412: Dai et al. (2024)
+1413: Zhirui Dai, Arash Asgharivaskasi, Thai Duong, Shusen Lin, Maria-Elizabeth Tzes, George Pappas, and Nikolay Atanasov.
+1414: Optimal scene graph planning with large language model guidance.
+1415: In
+1416: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+1417: , pp.  14062–14069. IEEE, 2024.
+1418: Delitzas et al. (2024)
+1419: Alexandros Delitzas, Ayca Takmaz, Federico Tombari, Robert Sumner, Marc Pollefeys, and Francis Engelmann.
+1420: SceneFun3D: Fine-Grained Functionality and Affordance Understanding in 3D Scenes.
+1421: In
+1422: IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1423: , 2024.
+1424: Dong et al. (2021)
+1425: Ang Dong, Li Feng, Dengcheng Yang, Shuang Wu, Jinshuai Zhao, Jing Wang, and Rongling Wu.
+1426: Fungraph: A statistical protocol to reconstruct omnigenic multilayer interactome networks for complex traits.
+1427: Star Protocols
+1428: , 2(4):100985, 2021.
+1429: Ekpo et al. (2024)
+1430: Daniel Ekpo, Mara Levy, Saksham Suri, Chuong Huynh, and Abhinav Shrivastava.
+1431: Verigraph: Scene graphs for execution verifiable robot planning.
+1432: arXiv preprint arXiv:2411.10446
+1433: , 2024.
+1434: Engelbracht et al. (2024)
+1435: Tim Engelbracht, René Zurbrügg, Marc Pollefeys, Hermann Blum, and Zuria Bauer.
+1436: Spotlight: Robotic scene understanding through interaction and affordance detection.
+1437: arXiv preprint arXiv:2409.11870
+1438: , 2024.
+1439: Fu et al. (2024)
+1440: Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A Smith, Wei-Chiu Ma, and Ranjay Krishna.
+1441: Blink: Multimodal large language models can see but not perceive.
+1442: In
+1443: European Conference on Computer Vision
+1444: , pp.  148–166. Springer, 2024.
+1445: Greve et al. (2024)
+1446: Elias Greve, Martin Büchner, Niclas Vödisch, Wolfram Burgard, and Abhinav Valada.
+1447: Collaborative dynamic 3d scene graphs for automated driving.
+1448: In
+1449: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+1450: , pp.  11118–11124. IEEE, 2024.
+1451: Gu et al. (2024a)
+1452: Qiao Gu, Ali Kuwajerwala, Sacha Morin, Krishna Murthy Jatavallabhula, Bipasha Sen, Aditya Agarwal, Corban Rivera, William Paul, Kirsty Ellis, Rama Chellappa, et al.
+1453: Conceptgraphs: Open-vocabulary 3d scene graphs for perception and planning.
+1454: In
+1455: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+1456: , pp.  5021–5028. IEEE, 2024a.
+1457: Gu et al. (2024b)
+1458: Qiao Gu, Zhaoyang Lv, Duncan Frost, Simon Green, Julian Straub, and Chris Sweeney.
+1459: Egolifter: Open-world 3d segmentation for egocentric perception.
+1460: In
+1461: European Conference on Computer Vision
+1462: , pp.  382–400, 2024b.
+1463: Guo et al. (2024)
+1464: Yanjiang Guo, Yen-Jen Wang, Lihan Zha, and Jianyu Chen.
+1465: Doremi: Grounding language model by detecting and recovering from plan-execution misalignment.
+1466: In
+1467: 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+1468: , pp.  12124–12131. IEEE, 2024.
+1469: Honerkamp et al. (2024a)
+1470: Daniel Honerkamp, Martin Büchner, Fabien Despinoy, Tim Welschehold, and Abhinav Valada.
+1471: Language-grounded dynamic scene graphs for interactive object search with mobile manipulation.
+1472: IEEE Robotics and Automation Letters
+1473: , 2024a.
+1474: Honerkamp et al. (2024b)
+1475: Daniel Honerkamp, Martin Büchner, Fabien Despinoy, Tim Welschehold, and Abhinav Valada.
+1476: Language-grounded dynamic scene graphs for interactive object search with mobile manipulation.
+1477: IEEE Robotics and Automation Letters
+1478: , 2024b.
+1479: Huang et al. (2023)
+1480: Wenlong Huang, Chen Wang, Ruohan Zhang, Yunzhu Li, Jiajun Wu, and Li Fei-Fei.
+1481: Voxposer: Composable 3d value maps for robotic manipulation with language models.
+1482: arXiv preprint arXiv:2307.05973
+1483: , 2023.
+1484: Huang et al. (2024)
+1485: Wenlong Huang, Chen Wang, Yunzhu Li, Ruohan Zhang, and Li Fei-Fei.
+1486: Rekep: Spatio-temporal reasoning of relational keypoint constraints for robotic manipulation.
+1487: arXiv preprint arXiv:2409.01652
+1488: , 2024.
+1489: Jatavallabhula et al. (2023)
+1490: Krishna Murthy Jatavallabhula, Alihusein Kuwajerwala, Qiao Gu, Mohd. Omama, Ganesh Iyer, Soroush Saryazdi, Tao Chen, Alaa Maalouf, Shuang Li, Nikhil Varma Keetha, Ayush Tewari, Joshua B. Tenenbaum, Celso Miguel de Melo, K. Madhava Krishna, Liam Paull, Florian Shkurti, and Antonio Torralba.
+1491: Conceptfusion: Open-set multimodal 3d mapping.
+1492: In
+1493: Robotics: Science and Systems
+1494: , 2023.
+1495: Jiang et al. (2025)
+1496: Guangqi Jiang, Yifei Sun, Tao Huang, Huanyu Li, Yongyuan Liang, and Huazhe Xu.
+1497: Robots pre-train robots: Manipulation-centric robotic representation from large-scale robot datasets.
+1498: 2025.
+1499: Jiang et al. (2024)
+1500: Hanxiao Jiang, Binghao Huang, Ruihai Wu, Zhuoran Li, Shubham Garg, Hooshang Nayyeri, Shenlong Wang, and Yunzhu Li.
+1501: Roboexp: Action-conditioned scene graph via interactive exploration for robotic manipulation.
+1502: arXiv preprint arXiv:2402.15487
+1503: , 2024.
+1504: Ju et al. (2024)
+1505: Yuanchen Ju, Kaizhe Hu, Guowei Zhang, Gu Zhang, Mingrun Jiang, and Huazhe Xu.
+1506: Robo-abc: Affordance generalization beyond categories via semantic correspondence for robot manipulation.
+1507: In
+1508: European Conference on Computer Vision (ECCV)
+1509: , 2024.
+1510: Koch et al. (2024a)
+1511: Sebastian Koch, Pedro Hermosilla, Narunas Vaskevicius, Mirco Colosi, and Timo Ropinski.
+1512: Lang3dsg: Language-based contrastive pre-training for 3d scene graph prediction.
+1513: In
+1514: 2024 International Conference on 3D Vision (3DV)
+1515: , pp.  1037–1047. IEEE, 2024a.
+1516: Koch et al. (2024b)
+1517: Sebastian Koch, Narunas Vaskevicius, Mirco Colosi, Pedro Hermosilla, and Timo Ropinski.
+1518: Open3dsg: Open-vocabulary 3d scene graphs from point clouds with queryable objects and open-set relationships.
+1519: In
+1520: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+1521: , pp.  14183–14193, 2024b.
+1522: Kolve et al. (2017)
+1523: Eric Kolve, Roozbeh Mottaghi, Winson Han, Eli VanderBilt, Luca Weihs, Alvaro Herrasti, Matt Deitke, Kiana Ehsani, Daniel Gordon, Yuke Zhu, et al.
+1524: Ai2-thor: An interactive 3d environment for visual ai.
+1525: arXiv preprint arXiv:1712.05474
+1526: , 2017.
+1527: Kondyli et al. (2020)
+1528: Vasiliki Kondyli, Mehul Bhatt, and Jakob Suchan.
+1529: Towards a human-centred cognitive model of visuospatial complexity in everyday driving.
+1530: arXiv preprint arXiv:2006.00059
+1531: , 2020.
+1532: Li et al. (2021)
+1533: Qi Li, Kaichun Mo, Yanchao Yang, Hang Zhao, and Leonidas Guibas.
+1534: Ifr-explore: Learning inter-object functional relationships in 3d indoor scenes.
+1535: arXiv preprint arXiv:2112.05298
+1536: , 2021.
+1537: Liang et al. (2024)
+1538: Yongyuan Liang, Tingqiang Xu, Kaizhe Hu, Guangqi Jiang, Furong Huang, and Huazhe Xu.
+1539: Make-an-agent: A generalizable policy network generator with behavior-prompted diffusion.
+1540: 2024.
+1541: Liang et al. (2025a)
+1542: Yongyuan Liang, Wei Chow, Feng Li, Ziqiao Ma, Xiyao Wang, Jiageng Mao, Jiuhai Chen, Jiatao Gu, Yue Wang, and Furong Huang.
+1543: Rover: Benchmarking reciprocal cross-modal reasoning for omnimodal generation.
+1544: arXiv preprint arXiv:2511.01163
+1545: , 2025a.
+1546: Liang et al. (2025b)
+1547: Yongyuan Liang, Xiyao Wang, Yuanchen Ju, Jianwei Yang, and Furong Huang.
+1548: Lemon: A unified and scalable 3d multimodal model for universal spatial understanding.
+1549: arXiv preprint arXiv:2512.12822
+1550: , 2025b.
+1551: Loo et al. (2025)
+1552: Joel Loo, Zhanxin Wu, and David Hsu.
+1553: Open scene graphs for open-world object-goal navigation.
+1554: arXiv preprint arXiv:2508.04678
+1555: , 2025.
+1556: Lu et al. (2023)
+1557: Pan Lu, Hritik Bansal, Tony Xia, Jiacheng Liu, Chunyuan Li, Hannaneh Hajishirzi, Hao Cheng, Kai-Wei Chang, Michel Galley, and Jianfeng Gao.
+1558: Mathvista: Evaluating mathematical reasoning of foundation models in visual contexts.
+1559: arXiv preprint arXiv:2310.02255
+1560: , 2023.
+1561: Niu et al. (2024)
+1562: Dantong Niu, Yuvan Sharma, Giscard Biamby, Jerome Quenum, Yutong Bai, Baifeng Shi, Trevor Darrell, and Roei Herzig.
+1563: Llarva: Vision-action instruction tuning enhances robot learning.
+1564: arXiv preprint arXiv:2406.11815
+1565: , 2024.
+1566: OpenAI (2023)
+1567: OpenAI.
+1568: Gpt-4 technical report.
+1569: Technical report, OpenAI, 2023.
+1570: URL
+1571: https://api.semanticscholar.org/CorpusID:257532815
+1572: .
+1573: Qi et al. (2025)
+1574: Yu Qi, Yuanchen Ju, Tianming Wei, Chi Chu, Lawson LS Wong, and Huazhe Xu.
+1575: Two by two: Learning multi-task pairwise objects assembly for generalizable robot manipulation.
+1576: CVPR 2025
+1577: , 2025.
+1578: Qiu et al. (2024)
+1579: Ri-Zhao Qiu, Yafei Hu, Yuchen Song, Ge Yang, Yang Fu, Jianglong Ye, Jiteng Mu, Ruihan Yang, Nikolay Atanasov, Sebastian Scherer, et al.
+1580: Learning generalizable feature fields for mobile manipulation.
+1581: arXiv preprint arXiv:2403.07563
+1582: , 2024.
+1583: Qwen (2025)
+1584: Qwen.
+1585: Qwen2.5-vl, January 2025.
+1586: URL
+1587: https://qwenlm.github.io/blog/qwen2.5-vl/
+1588: .
+1589: Rana et al. (2023)
+1590: Krishan Rana, Jesse Haviland, Sourav Garg, Jad Abou-Chakra, Ian Reid, and Niko Suenderhauf.
+1591: Sayplan: Grounding large language models using 3d scene graphs for scalable robot task planning.
+1592: arXiv preprint arXiv:2307.06135
+1593: , 2023.
+1594: Takmaz et al. (2025)
+1595: Ayca Takmaz, Alexandros Delitzas, Robert W Sumner, Francis Engelmann, Johanna Wald, and Federico Tombari.
+1596: Search3d: Hierarchical open-vocabulary 3d segmentation.
+1597: IEEE Robotics and Automation Letters
+1598: , 2025.
+1599: Team et al. (2025)
+1600: Gemini Robotics Team, Saminda Abeyruwan, Joshua Ainslie, Jean-Baptiste Alayrac, Montserrat Gonzalez Arenas, Travis Armstrong, Ashwin Balakrishna, Robert Baruch, Maria Bauza, Michiel Blokzijl, et al.
+1601: Gemini robotics: Bringing ai into the physical world.
+1602: arXiv preprint arXiv:2503.20020
+1603: , 2025.
+1604: Uithol et al. (2021)
+1605: Sebo Uithol, Katherine L Bryant, Ivan Toni, and Rogier B Mars.
+1606: The anticipatory and task-driven nature of visual perception.
+1607: Cerebral Cortex
+1608: , 31(12):5354–5362, 2021.
+1609: Wang et al. (2025)
+1610: Yixuan Wang, Leonor Fermoselle, Tarik Kelestemur, Jiuguang Wang, and Yunzhu Li.
+1611: Curiousbot: Interactive mobile exploration via actionable 3d relational object graph.
+1612: arXiv preprint arXiv:2501.13338
+1613: , 2025.
+1614: Werby et al. (2024)
+1615: Abdelrhman Werby, Chenguang Huang, Martin Büchner, Abhinav Valada, and Wolfram Burgard.
+1616: Hierarchical open-vocabulary 3d scene graphs for language-grounded robot navigation.
+1617: In
+1618: First Workshop on Vision-Language Models for Navigation and Manipulation at ICRA 2024
+1619: , 2024.
+1620: Wu et al. (2023)
+1621: Jimmy Wu, Rika Antonova, Adam Kan, Marion Lepert, Andy Zeng, Shuran Song, Jeannette Bohg, Szymon Rusinkiewicz, and Thomas Funkhouser.
+1622: Tidybot: Personalized robot assistance with large language models.
+1623: Autonomous Robots
+1624: , 47(8):1087–1102, 2023.
+1625: Wu et al. (2021)
+1626: Shun-Cheng Wu, Johanna Wald, Keisuke Tateno, Nassir Navab, and Federico Tombari.
+1627: Scenegraphfusion: Incremental 3d scene graph prediction from rgb-d sequences.
+1628: In
+1629: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+1630: , pp.  7515–7525, 2021.
+1631: Yan et al. (2025)
+1632: Zhijie Yan, Shufei Li, Zuoxu Wang, Lixiu Wu, Han Wang, Jun Zhu, Lijiang Chen, and Jihong Liu.
+1633: Dynamic open-vocabulary 3d scene graphs for long-term language-guided mobile manipulation.
+1634: IEEE Robotics and Automation Letters
+1635: , 2025.
+1636: Yang et al. (2025)
+1637: Jianwei Yang, Reuben Tan, Qianhui Wu, Ruijie Zheng, Baolin Peng, Yongyuan Liang, Yu Gu, Mu Cai, Seonghyeon Ye, Joel Jang, et al.
+1638: Magma: A foundation model for multimodal ai agents.
+1639: In
+1640: Proceedings of the Computer Vision and Pattern Recognition Conference
+1641: , pp.  14203–14214, 2025.
+1642: Yang et al. (2024)
+1643: Timing Yang, Yuanliang Ju, and Li Yi.
+1644: Imov3d: Learning open vocabulary point clouds 3d object detection from only 2d images.
+1645: Advances in Neural Information Processing Systems
+1646: , 37:141261–141291, 2024.
+1647: Yin et al. (2025)
+1648: Baiqiao Yin, Qineng Wang, Pingyue Zhang, Jianshu Zhang, Kangrui Wang, Zihan Wang, Jieyu Zhang, Keshigeyan Chandrasegaran, Han Liu, Ranjay Krishna, et al.
+1649: Spatial mental modeling from limited views.
+1650: arXiv preprint arXiv:2506.21458
+1651: , 2025.
+1652: Yu et al. (2025)
+1653: Qiying Yu, Zheng Zhang, Ruofei Zhu, Yufeng Yuan, Xiaochen Zuo, Yu Yue, Weinan Dai, Tiantian Fan, Gaohong Liu, Lingjun Liu, et al.
+1654: Dapo: An open-source llm reinforcement learning system at scale.
+1655: arXiv preprint arXiv:2503.14476
+1656: , 2025.
+1657: Yue et al. (2024)
+1658: Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, et al.
+1659: Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi.
+1660: In
+1661: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+1662: , pp.  9556–9567, 2024.
+1663: (53)
+1664: Tatiana Zemskova and Dmitry Yudin.
+1665: 3dgraphllm: Combining semantic graphs and large language models for 3d referred object grounding.
+1666: Zhang et al. (2025)
+1667: Chenyangguang Zhang, Alexandros Delitzas, Fangjinhua Wang, Ruida Zhang, Xiangyang Ji, Marc Pollefeys, and Francis Engelmann.
+1668: Open-vocabulary functional 3d scene graphs for real-world indoor spaces.
+1669: In
+1670: Proceedings of the Computer Vision and Pattern Recognition Conference
+1671: , pp.  19401–19413, 2025.
+1672: Zhang et al. (2021)
+1673: Shoulong Zhang, Aimin Hao, Hong Qin, et al.
+1674: Knowledge-inspired 3d scene graph prediction in point cloud.
+1675: Advances in Neural Information Processing Systems
+1676: , 34:18620–18632, 2021.
+1677: Zhang et al. (2024a)
+1678: Yuanhang Zhang, Tianhai Liang, Zhenyang Chen, Yanjie Ze, and Huazhe Xu.
+1679: Catch it! learning to catch in flight with mobile dexterous hands.
+1680: arXiv preprint arXiv:2409.10319
+1681: , 2024a.
+1682: Zhang et al. (2024b)
+1683: Yunpeng Zhang, Deheng Qian, Ding Li, Yifeng Pan, Yong Chen, Zhenbao Liang, Zhiyao Zhang, Shurui Zhang, Hongxu Li, Maolei Fu, et al.
+1684: Graphad: Interaction scene graph for end-to-end autonomous driving.
+1685: arXiv preprint arXiv:2403.19098
+1686: , 2024b.
+1687: Zheng et al. (2025a)
+1688: Ruijie Zheng, Yongyuan Liang, Shuaiyi Huang, Jianfeng Gao, Hal Daumé III, Andrey Kolobov, Furong Huang, and Jianwei Yang.
+1689: Tracevla: Visual trace prompting enhances spatial-temporal awareness for generalist robotic policies.
+1690: 2025a.
+1691: Zheng et al. (2025b)
+1692: Yaowei Zheng, Junting Lu, Shenzhi Wang, Zhangchi Feng, Dongdong Kuang, and Yuwen Xiong.
+1693: Easyr1: An efficient, scalable, multi-modality rl training framework.
+1694: https://github.com/hiyouga/EasyR1
+1695: , 2025b.
+1696: Zhu et al. (2025)
+1697: Junzhe Zhu, Yuanchen Ju, Junyi Zhang, Muhan Wang, Zhecheng Yuan, Kaizhe Hu, and Huazhe Xu.
+1698: Densematcher: Learning 3d semantic correspondence for category-level manipulation from a single demo.
+1699: International Conference on Learning Representations (ICLR) Spotlight
+1700: , 2025.
+1701: Appendix A
+1702: Appendix
+1703: A.1
+1704: MomaGraph-Scenes Dataset
+1705: A.1.1
+1706: Real-World Dataset Source and Collection.
+1707: Our dataset is built through a synergistic integration of newly curated data and existing public resources. We manually collected a substantial portion of the data in real-world household environments, capturing diverse interaction scenarios under natural conditions. To further enrich the dataset, we incorporated samples from two public benchmarks, OpenFunGraph
+1708: (
+1709: Zhang et al., 2025
+1710: )
+1711: and SceneFun3D
+1712: (
+1713: Delitzas et al., 2024
+1714: )
+1715: , both of which contain videos depicting human–object interactions in indoor contexts. From these videos, we carefully curated representative keyframes to derive multi-view RGB observations, ensuring comprehensive coverage of interaction dynamics and spatial variability.
+1716: A.1.2
+1717: Simulation Data Collection
+1718: To complement the real-world data, we additionally generated samples within the AI2-THOR simulation environment
+1719: Kolve et al. (2017)
+1720: . We strategically positioned the embodied agent at diverse, reachable viewpoints and captured multi-view observations from varying perspectives, as illustrated in Fig.
+1721: 7
+1722: . Throughout this process, we applied manual post-filtering to exclude non-interactable elements, thereby ensuring that the curated dataset remains focused on actionable objects and emphasizes functional relevance critical for downstream embodied reasoning tasks.
+1723: Figure 7:
+1724: Simulated indoor environments in our benchmark. Each row shows three scenes (
+1725: Floor 15
+1726: ,
+1727: Floor 224
+1728: and
+1729: Floor 301
+1730: ) with a top-down view of the layout, reachable locations for the robot, and multiview observations from different viewpoints.
+1731: A.1.3
+1732: Dataset Annotation and Format.
+1733: Annotation and Format.
+1734: Each task-oriented subgraph in
+1735: MomaGraph-Scenes
+1736: is stored in a structured JSON format and linked to its corresponding scene.
+1737: Annotations include a subgraph identifier, the associated scene identifier, the action type, the functional category, the natural language task instruction, a set of nodes, and a set of edges.
+1738: Nodes correspond to the
+1739: objects or part-level interactive elements
+1740: required to accomplish the task, while edges capture both
+1741: functional relationships
+1742: (e.g.,
+1743: control
+1744: ,
+1745: open or close
+1746: ) and
+1747: spatial relationships
+1748: (e.g.,
+1749: close
+1750: ,
+1751: in_front_of
+1752: ,
+1753: lower_than
+1754: ).
+1755: ⬇
+1756: 1
+1757: {
+1758: 2
+1759: "
+1760: subgraph_id
+1761: "
+1762: :
+1763: "
+1764: da21b9f9
+1765: -
+1766: f4fa
+1767: -
+1768: 4
+1769: a85
+1770: -
+1771: 9
+1772: 6
+1773: 1
+1774: b
+1775: -
+1776: 2
+1777: e2c2e182d3e
+1778: "
+1779: ,
+1780: 3
+1781: "
+1782: scene_id
+1783: "
+1784: :
+1785: "
+1786: 4
+1787: 6
+1788: 6
+1789: 8
+1790: 2
+1791: 8
+1792: "
+1793: ,
+1794: 4
+1795: "
+1796: action_type
+1797: "
+1798: :
+1799: "
+1800: press
+1801: "
+1802: ,
+1803: 5
+1804: "
+1805: function_type
+1806: "
+1807: :
+1808: "
+1809: device_control
+1810: "
+1811: ,
+1812: 6
+1813: "
+1814: task_instruction
+1815: "
+1816: :
+1817: "
+1818: Turn
+1819: on
+1820: the
+1821: television
+1822: .
+1823: "
+1824: ,
+1825: 7
+1826: "
+1827: nodes
+1828: "
+1829: :
+1830: [
+1831: 8
+1832: {
+1833: "
+1834: label
+1835: "
+1836: :
+1837: "
+1838: remote
+1839: control
+1840: "
+1841: ,
+1842: "
+1843: id
+1844: "
+1845: :
+1846: "
+1847: f15474de
+1848: -
+1849: 7
+1850: b35
+1851: -
+1852: 4
+1853: a5e
+1854: -
+1855: ac8a
+1856: -
+1857: dc02f93960b3
+1858: "
+1859: }
+1860: ,
+1861: 9
+1862: {
+1863: "
+1864: label
+1865: "
+1866: :
+1867: "
+1868: tv
+1869: "
+1870: ,
+1871: "
+1872: id
+1873: "
+1874: :
+1875: "
+1876: 9
+1877: 1
+1878: 4
+1879: 8
+1880: 6
+1881: 0
+1882: 1
+1883: 7
+1884: -
+1885: 9
+1886: 4
+1887: ce
+1888: -
+1889: 4
+1890: 7
+1891: 8
+1892: 8
+1893: -
+1894: aabd
+1895: -
+1896: 0
+1897: d07262c9bed
+1898: "
+1899: }
+1900: 10
+1901: ]
+1902: ,
+1903: 11
+1904: "
+1905: edges
+1906: "
+1907: :
+1908: [
+1909: 12
+1910: {
+1911: 13
+1912: "
+1913: relation_id
+1914: "
+1915: :
+1916: "
+1917: ef3e72fe
+1918: -
+1919: ae9f
+1920: -
+1921: 4
+1922: 2
+1923: e4
+1924: -
+1925: 9
+1926: b5a
+1927: -
+1928: 5
+1929: 0
+1930: 5
+1931: b5cb1844a
+1932: "
+1933: ,
+1934: 14
+1935: "
+1936: functional_relationship
+1937: "
+1938: :
+1939: "
+1940: control
+1941: "
+1942: ,
+1943: 15
+1944: "
+1945: object1
+1946: "
+1947: :
+1948: {
+1949: "
+1950: label
+1951: "
+1952: :
+1953: "
+1954: remote
+1955: control
+1956: "
+1957: ,
+1958: "
+1959: id
+1960: "
+1961: :
+1962: "
+1963: f15474de
+1964: -
+1965: 7
+1966: b35
+1967: -
+1968: 4
+1969: a5e
+1970: -
+1971: ac8a
+1972: -
+1973: dc02f93960b3
+1974: "
+1975: }
+1976: ,
+1977: 16
+1978: "
+1979: object2
+1980: "
+1981: :
+1982: {
+1983: "
+1984: label
+1985: "
+1986: :
+1987: "
+1988: tv
+1989: "
+1990: ,
+1991: "
+1992: id
+1993: "
+1994: :
+1995: "
+1996: 9
+1997: 1
+1998: 4
+1999: 8
+2000: 6
+2001: 0
+2002: 1
+2003: 7
+2004: -
+2005: 9
+2006: 4
+2007: ce
+2008: -
+2009: 4
+2010: 7
+2011: 8
+2012: 8
+2013: -
+2014: aabd
+2015: -
+2016: 0
+2017: d07262c9bed
+2018: "
+2019: }
+2020: ,
+2021: 17
+2022: "
+2023: spatial_relations
+2024: "
+2025: :
+2026: [
+2027: "
+2028: lower_than
+2029: "
+2030: ,
+2031: "
+2032: in_front_of
+2033: "
+2034: ,
+2035: "
+2036: close
+2037: "
+2038: ]
+2039: ,
+2040: 18
+2041: "
+2042: is_touching
+2043: "
+2044: :
+2045: false
+2046: 19
+2047: }
+2048: 20
+2049: ]
+2050: 21
+2051: }
+2052: Figure 8:
+2053: Example JSON annotation for the task “Turn on the television.”
+2054: This example corresponds to the instruction
+2055: “Turn on the television”
+2056: ,
+2057: where the relevant nodes are the
+2058: remote control
+2059: and the
+2060: TV
+2061: ,
+2062: connected by a
+2063: control
+2064: functional edge and spatial relations
+2065: lower_than
+2066: ,
+2067: in_front_of
+2068: , and
+2069: close
+2070: .
+2071: In addition, each subgraph is grounded in
+2072: multi-view observations
+2073: .
+2074: For every scene, we provide synchronized RGB images captured from multiple viewpoints. This multi-view grounding allows the annotated subgraphs to be consistently aligned with visual evidence, supporting both instruction-conditioned graph prediction from perception and multi-view reasoning tasks.
+2075: A.1.4
+2076: Multi-Aspect Statistics of the Training Dataset
+2077: Our dataset consists of approximately 1,050 subgraphs and 6278 multi-view RGB images, collected across more than 350 diverse household scenes and encompassing 93 distinct task instructions. This broad coverage ensures rich variability in scene layouts, object configurations, and interaction types.
+2078: To provide a comprehensive overview of our training data, we present multi-aspect statistics covering scene context, action diversity, functional relationships, and object distributions. As shown in Fig.
+2079: 9
+2080: , the dataset spans four common household room types and captures the correspondence between action types and functional categories, reflecting the diversity and richness of real-world manipulation scenarios. Fig.
+2081: 10
+2082: illustrates the distribution of action types across different room contexts, while Fig.
+2083: 11
+2084: summarizes the prevalence of various functional relationships and Fig.
+2085: 12
+2086: summarizes the frequency of object occurrences. Together, these statistics highlight the diversity and task relevance of our dataset, ensuring broad coverage of spatial–functional interactions essential for embodied planning and reasoning.
+2087: (a)
+2088: Room-type distribution.
+2089: (b)
+2090: Action–function correspondence.
+2091: Figure 9:
+2092: Dataset statistics: (a) Distribution across four room types; (b)Heatmap showing the correspondence between action types and functional types.
+2093: Figure 10:
+2094: Task distribution across four room types: kitchen, living room, bedroom, and bathroom.
+2095: Figure 11:
+2096: Distribution of functional relationships across all tasks in the dataset.
+2097: Figure 12:
+2098: Statistics of object occurrences, highlighting the most frequent objects in tasks.
+2099: A.2
+2100: Training Details
+2101: We train our model using 8× 80GB A100 GPUs for approximately 13 hours based on the EasyR1
+2102: (
+2103: Zheng et al., 2025b
+2104: )
+2105: training framework. The complete training configuration for DAPO algorithm is presented in Table
+2106: 4
+2107: .
+2108: Table 4:
+2109: DAPO Training Configuration
+2110: Parameter
+2111: Value
+2112: Model Configuration
+2113: Base Model
+2114: Qwen2.5-VL-7B-Instruct
+2115: Mixed Precision
+2116: bfloat16
+2117: Training Setup
+2118: Total Epochs
+2119: 25
+2120: Training Steps
+2121: 175
+2122: Actor Global Batch Size
+2123: 128
+2124: Critic Global Batch Size
+2125: 256
+2126: Micro Batch Size (Actor)
+2127: 1
+2128: Micro Batch Size (Critic)
+2129: 4
+2130: Optimization
+2131: Learning Rate
+2132: 1e-6
+2133: Optimizer
+2134: AdamW
+2135: Weight Decay
+2136: 0.01
+2137: Beta1, Beta2
+2138: 0.9, 0.999
+2139: Gradient Clipping
+2140: 1.0
+2141: DAPO Algorithm
+2142: KL Coefficient
+2143: 0.01
+2144: KL Penalty
+2145: low_var_kl
+2146: Disable KL
+2147: True
+2148: Clip Ratio Low
+2149: 0.2
+2150: Clip Ratio High
+2151: 0.28
+2152: Clip Ratio Dual
+2153: 3.0
+2154: Reward Function
+2155: Format Weight
+2156: 0.2
+2157: Max Response Length
+2158: 2048
+2159: Overlong Penalty Factor
+2160: 0.5
+2161: Generation Config
+2162: Temperature
+2163: 1.0
+2164: Top-p
+2165: 1.0
+2166: Rollout Samples
+2167: 5
+2168: Figure 13:
+2169: Training reward curves during
+2170: MomaGraph-R1
+2171: training.
+2172: Figure 14:
+2173: Validation reward curves during
+2174: MomaGraph-R1
+2175: training.
+2176: A.3
+2177: Training Curve
+2178: Figure
+2179: 13
+2180: and
+2181: 14
+2182: shows the training curves during DAPO optimization. The training and validation curves closely align across all metrics, indicating good generalization without significant overfitting. The
+2183: overall reward
+2184: converges to
+2185: ∼
+2186: \sim
+2187: 0.93, while
+2188: accuracy reward
+2189: stabilizes at
+2190: ∼
+2191: \sim
+2192: 0.9. The
+2193: format reward
+2194: quickly reaches 1.0 within the first 25 steps, showing the model rapidly learns to produce valid JSON-structured outputs.
+2195: A.4
+2196: MomaGraph Benchmark
+2197: A.4.1
+2198: Benchmark Design
+2199: To rigorously evaluate spatial–functional reasoning and task planning capabilities, we design a comprehensive multi-choice VQA benchmark based on the scenes and tasks in our dataset. Rather than manually crafting all questions, we leverage large vision–language models (VLMs) to generate them in a scalable and diverse manner. Specifically, we provide the model with structured prompts describing the scene images, state-aware scene graph, and task instructions, and instruct it to produce question–answer pairs that probe different reasoning skills, such as spatial relation understanding, affordance inference, precondition reasoning, and goal decomposition. To ensure the reliability and correctness of the benchmark, all generated questions and answers undergo several rounds of manual verification, during which ambiguous or low-quality samples are refined or removed.
+2200: Moreover, since the benchmark is formulated as a multi-choice VQA task with clearly defined correct answers, it does not require complex evaluation metrics. Model performance can be directly measured by simple accuracy — i.e., the proportion of correctly answered questions — which provides an intuitive and reliable indicator of spatial–functional reasoning and planning capabilities. This simplicity enables straightforward comparison across models while ensuring that the evaluation remains rigorous and meaningful.
+2201: Data Source and Task Scope.
+2202: We leverage long video sequences from SceneFun3D
+2203: (
+2204: Delitzas et al., 2024
+2205: )
+2206: that capture human-recorded layouts of entire indoor environments, from which key frames are extracted and manually annotated with task-specific graphs. To enhance diversity and coverage, we additionally collect data from real indoor scenes. Our benchmark spans four representative indoor room categories:
+2207: bathroom, kitchen, living room, and bedroom
+2208: .
+2209: The task scope is organized into four levels of difficulty:
+2210: T1
+2211: Single-step actions:
+2212: e.g., turning on a light, pulling a drawer, opening a door.
+2213: T2
+2214: Two complementary steps:
+2215: e.g., filling a bathtub by first pressing the drain button and then turning on the faucet.
+2216: T3
+2217: Multi-step or preconditioned tasks:
+2218: e.g., making coffee (pick up a cup
+2219: →
+2220: \rightarrow
+2221: add water
+2222: →
+2223: \rightarrow
+2224: start the coffee machine).
+2225: T4
+2226: Dynamic verification tasks:
+2227: e.g., when the target object is missing, the system must perform
+2228: graph-based replanning
+2229: and identify
+2230: alternative interactive objects
+2231: .
+2232: Appendix B
+2233: Additional Ablation Studies
+2234: B.1
+2235: Comparison with SFT and ICL Baselines
+2236: To validate our choice of RL-based training over alternative learning paradigms, we compare our method against two additional baselines:
+2237: •
+2238: SFT baseline:
+2239: We fine-tune Qwen2.5-VL-7B on MomaGraph-Scenes using supervised learning only (without RL), with the same graph-alignment objectives as our full method.
+2240: •
+2241: ICL baseline:
+2242: We evaluate the base model with 3-5 in-context graph examples provided in the prompt (same setting as Qwen2.5-VL-7B-Instruct (w/ Graph) in Table 2 and 3 of the main paper).
+2243: Method
+2244: BLINK
+2245: MomaGraph-Bench (Overall)
+2246: SFT baseline
+2247: 60.4
+2248: 63.9
+2249: ICL baseline
+2250: 58.7
+2251: 60.2
+2252: RL w/ Graph (Ours)
+2253: 63.5
+2254: 71.6
+2255: Table 5:
+2256: Comparison of our RL-based training with SFT and ICL baselines. Our method achieves substantially better performance on both benchmarks.
+2257: As shown in Table
+2258: 5
+2259: , our RL training method achieves clearly superior performance compared to both the SFT baseline (+3.1 on BLINK, +7.7 on MomaGraph-Bench) and the ICL baseline (+4.8 on BLINK, +11.4 on MomaGraph-Bench). This demonstrates that the RL formulation is crucial for learning high-quality scene graph generation that effectively improves downstream planning performance.
+2260: B.2
+2261: Reward Weight Sensitivity Study
+2262: We follow the original DAPO implementation in the EasyR1 framework for default settings of
+2263: w
+2264: f
+2265: w_{f}
+2266: and
+2267: w
+2268: l
+2269: w_{l}
+2270: in Eq. 2 of the main paper. We conduct a sensitivity study by varying
+2271: (
+2272: w
+2273: a
+2274: ,
+2275: w
+2276: f
+2277: ,
+2278: w
+2279: l
+2280: )
+2281: (w_{a},w_{f},w_{l})
+2282: around the default configuration:
+2283: Setting ID
+2284: 𝐰
+2285: 𝐚
+2286: \mathbf{w_{a}}
+2287: 𝐰
+2288: 𝐟
+2289: \mathbf{w_{f}}
+2290: 𝐰
+2291: 𝐥
+2292: \mathbf{w_{l}}
+2293: BLINK
+2294: MomaGraph-Bench (Overall)
+2295: A
+2296: 0.5
+2297: 0.5
+2298: 0.5
+2299: 61.3
+2300: 68.2
+2301: B
+2302: 0.7
+2303: 0.3
+2304: 0.5
+2305: 63.1
+2306: 70.9
+2307: C
+2308: 0.8
+2309: 0.2
+2310: 0.7
+2311: 63.7
+2312: 71.2
+2313: Default
+2314: 0.8
+2315: 0.2
+2316: 0.5
+2317: 63.5
+2318: 71.6
+2319: Table 6:
+2320: Sensitivity analysis of reward weights
+2321: (
+2322: w
+2323: a
+2324: ,
+2325: w
+2326: f
+2327: ,
+2328: w
+2329: l
+2330: )
+2331: (w_{a},w_{f},w_{l})
+2332: in our DAPO training. The model’s performance remains stable across different weight configurations.
+2333: As shown in Table
+2334: 6
+2335: , the model’s performance remains stable across these weight configurations, with variations of less than 2.4% on BLINK and 3.4% on MomaGraph-Bench. This indicates low sensitivity to reward-weight choices and demonstrates the robustness of our training approach.
+2336: B.3
+2337: Detailed Real-World Demonstrations.
+2338: To provide a closer look into the behavior of our system, this section presents fine-grained real-world examples. We illustrate how the model processes raw images captured in realistic household environments, transforms them into task-oriented scene graphs, and generates corresponding planner outputs. These case studies highlight the system’s ability to capture subtle details, encode them into structured graphs, and reason over them to produce actionable plans.
+2339: To validate the effectiveness of our approach in real-world settings, we deploy the system on a mobile manipulator to perform a variety of everyday tasks, as shown in Fig.
+2340: 15
+2341: . These tasks span multiple functional categories, such as turning off a light, opening a microwave, turning on a TV, and opening a cabinet. In each case, the robot leverages the predicted spatial–functional scene graph to plan and execute a sequence of actions without task-specific fine-tuning. The successful completion of these tasks demonstrates the system’s ability to generalize from structured graph representations to real-world interaction scenarios, highlighting its potential for practical household assistance.
+2342: Figure 15:
+2343: Real-world robot execution of household tasks.
+2344: Figure 16:
+2345: Real-world example of
+2346: MomaGraph-R1
+2347: performing the task “Open the Cabinet.” From multiview images, the system generates a scene graph capturing spatial–functional relations and outputs the corresponding action plan.
+2348: Figure 17:
+2349: Real-world example of
+2350: MomaGraph-R1
+2351: performing the task “Turn off the light.” From multiview images, the system generates a scene graph capturing spatial–functional relations and outputs the corresponding action plan.
+2352: Figure 18:
+2353: Real-world example of
+2354: MomaGraph-R1
+2355: performing the task “Open the microwave.” From multiview images, the system generates a scene graph capturing spatial–functional relations and outputs the corresponding action plan.
+2356: Figure 19:
+2357: Real-world example of
+2358: MomaGraph-R1
+2359: performing the task “Turn on the TV.” From multiview images, the system generates a scene graph capturing spatial–functional relations and outputs the corresponding action plan.

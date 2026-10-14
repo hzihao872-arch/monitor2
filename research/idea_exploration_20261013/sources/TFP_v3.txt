@@ -1,0 +1,4746 @@
+0001: TFP: Temporally Conditioned Memory-Fusion Policies for Visuomotor Learning
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY-NC-SA 4.0
+0009: arXiv:2607.08283v3 [cs.RO] 30 Aug 2026
+0010: TFP: Temporally Conditioned Memory-Fusion Policies for Visuomotor Learning
+0011: Yushen Liang
+0012: 1,
+0013: †
+0014: \dagger
+0015: ,
+0016: Yue Peng
+0017: 1,
+0018: †
+0019: \dagger
+0020: ,
+0021: Baosheng Jin
+0022: 1,
+0023: †
+0024: \dagger
+0025: ,
+0026: Tianluo Zhang
+0027: 1
+0028: ,
+0029: Xinyu Zhang
+0030: 2
+0031: ,
+0032: Shuyi Zhou,
+0033: Zhuoran Chen
+0034: 1
+0035: ,
+0036: Xinqi Liu
+0037: 1
+0038: ,
+0039: Shenji Wan
+0040: 1
+0041: Affiliation:
+0042: Affiliation:
+0043: 1
+0044: NYU Shanghai, Shanghai, China
+0045: Affiliation:
+0046: 2
+0047: University of Electronic Science and Technology of China, Chengdu, China
+0048: Affiliation:
+0049: Affiliation:
+0050: †
+0051: \dagger
+0052: Equal contribution
+0053: Affiliation:
+0054: Code:
+0055: github.com/Mirage415/TFP-Temporally-conditioned-Memory-Fusion-Policies-for-Visuomotor-Learning
+0056: Abstract
+0057: Vision–Language–Action (VLA) policies such as
+0058: π
+0059: 0.5
+0060: \pi_{0.5}
+0061: and OpenVLA perform well on many manipulation tasks, but they are often reactive: the next action is predicted from the current observation, instruction, and proprioceptive state. This assumption breaks down in stage-dependent manipulation, where visually similar states may require different actions depending on latent task progress and previous interaction outcomes. We argue that such tasks require not only memory, but dynamics-aware belief updates: the policy should preserve task progress during stable or occluded phases and revise its belief near contact, release, or subgoal transitions. We introduce Temporally Conditioned Memory-Fusion Policies (TFP), a lightweight memory-action framework for VLA backbones. TFP maintains an episode-local task-progress belief with Liquid Time-Constant dynamics and injects the updated belief directly into the flow-matching action decoder through adaptive modulation. This lets temporally accumulated context shape the generated action chunk, rather than serving only as passive history context. With a 3.3B-parameter model, TFP improves the average success rate from
+0062: 96.9
+0063: %
+0064: 96.9\%
+0065: to
+0066: 98.75
+0067: %
+0068: 98.75\%
+0069: on LIBERO and from
+0070: 91.4
+0071: %
+0072: 91.4\%
+0073: to
+0074: 93.77
+0075: %
+0076: 93.77\%
+0077: on LIBERO-plus. On the memory-focused MIKASA ShellGameTouch diagnostic, TFP achieves success up to
+0078: 75.0
+0079: %
+0080: 75.0\%
+0081: . Mechanistic analyses show that write-gain changes near manipulation events are about
+0082: 6
+0083: ×
+0084: 6\times
+0085: larger than far non-event phases, and hidden-state interventions show that the belief causally modulates generated action chunks. These results suggest that compact, event-sensitive memory dynamics can improve VLA policies under occlusion, visual perturbation, and stage-dependent task structure.
+0086: Index Terms:
+0087: Imitation Learning, Manipulation, Memory-Augmented VLA
+0088: Fig. 1
+0089: :
+0090: Overview illustrating the motivation for memory-conditioned visuomotor control.
+0091: I
+0092: Introduction
+0093: Vision–Language–Action (VLA) models, such as
+0094: π
+0095: 0.5
+0096: \pi_{0.5}
+0097: , OpenVLA,
+0098: and Octo, have achieved strong performance in robotic manipulation by mapping
+0099: language instructions and multimodal observations directly to actions
+0100: [
+0101: 2
+0102: ,
+0103: 3
+0104: ,
+0105: 8
+0106: ,
+0107: 16
+0108: ,
+0109: 22
+0110: ]
+0111: .
+0112: However, many VLA policies remain largely reactive: each action is predicted
+0113: from the current observation, instruction, and proprioceptive state. This is
+0114: insufficient for stage-dependent manipulation, where the same visible scene may
+0115: require different actions depending on latent task progress and previous
+0116: interaction outcomes. For example, in object swapping, a visually similar state
+0117: may correspond to moving the first object to a buffer, moving the second object
+0118: into the first object’s original location, or terminating the task.
+0119: This motivates adding memory, or task belief, to VLA policies. We use
+0120: “belief” to denote a learned latent memory state that summarizes hidden task
+0121: progress relevant to future actions. However, robotic manipulation requires more than storing past observations. A useful belief must also decide
+0122: when
+0123: to change. During
+0124: stable transport or occlusion, the policy should preserve task-progress
+0125: information despite ambiguous visual evidence; near contact, release, or
+0126: subgoal completion, it should rapidly incorporate new evidence. Thus, the key
+0127: question is not only whether a VLA has memory, but whether its memory update
+0128: follows the event structure and temporal dynamics of manipulation.
+0129: Existing memory-aware robot policies mainly either retrieve from history buffers
+0130: or maintain recurrent latent states
+0131: [
+0132: 27
+0133: ,
+0134: 26
+0135: ,
+0136: 30
+0137: ,
+0138: 33
+0139: ,
+0140: 18
+0141: ]
+0142: . History-based methods preserve rich episodic
+0143: detail but do not explicitly form a compact task-progress state; recurrent
+0144: methods provide such a state, but updates are typically indexed by policy updates rather than manipulation events and elapsed
+0145: physical time.
+0146: We argue that chunked visuomotor control calls for a dynamics-aware belief
+0147: update. A practical controller may re-query earlier when a chunk becomes unreliable, unstable, or
+0148: requires correction after contact. Thus, the interval between policy queries is
+0149: a physical-time variable, not merely a discrete step index.
+0150: Liquid Time-Constant (LTC) networks provide a natural mechanism for such belief
+0151: tracking. Their hidden states evolve through input-dependent time constants,
+0152: allowing the model to retain information when task context should persist and to
+0153: update more rapidly when new evidence appears
+0154: [
+0155: 13
+0156: ,
+0157: 14
+0158: ]
+0159: .
+0160: This continuous-time inductive bias is well matched to memory-dependent
+0161: manipulation, where completed subgoals, prior contacts, and interaction outcomes
+0162: may remain relevant across multiple action chunks.
+0163: We introduce
+0164: Temporally Conditioned Memory-Fusion Policies (TFP)
+0165: , a
+0166: belief-conditioned VLA framework for robotic manipulation. TFP maintains an
+0167: episode-local latent belief with LTC dynamics: the previous hidden state carries
+0168: retained task context, the current visual and proprioceptive observation proposes
+0169: an update, and elapsed time controls how strongly the belief is retained or
+0170: revised. The updated belief is projected into the action-head conditioning space
+0171: and injected through AdaLN-style modulation, allowing temporal context to
+0172: directly shape the flow-matching action distribution rather than serve only as
+0173: passive historical context.
+0174: We evaluate TFP on simulation benchmarks and real-world memory-dependent
+0175: manipulation tasks. TFP consistently improves over reactive, history-based, and
+0176: latent-state baselines. Mechanistic analyses further show that the learned
+0177: belief stabilizes task-progress representations and causally modulates generated
+0178: action chunks. Our contributions are:
+0179: •
+0180: We formulate stage-dependent manipulation as dynamics-aware belief
+0181: tracking, where the correct action depends not only on latent task progress and
+0182: interaction history, but also on when the internal belief should be revised or
+0183: preserved.
+0184: •
+0185: We propose TFP, a belief-conditioned VLA framework that maintains a
+0186: continuous-time latent belief using LTC dynamics and injects this belief
+0187: directly into flow-matching action generation. We further introduce
+0188: Episode-Aware Temporal Batching (EATB) to train recurrent belief states
+0189: efficiently while preserving episode-local hidden-state continuity.
+0190: •
+0191: We show that TFP improves memory-dependent control in simulation and
+0192: on a real Galaxea A1 robot, and provide mechanistic analyses showing that
+0193: the learned belief stabilizes task-progress representations and causally
+0194: modulates generated action chunks.
+0195: II
+0196: Related Work
+0197: Memory in vision-language-action policies.
+0198: Recent VLA policies such as RT-2, OpenVLA, Octo, and
+0199: π
+0200: 0
+0201: \pi_{0}
+0202: map language,
+0203: visual observations, and robot states directly to actions
+0204: [
+0205: 3
+0206: ,
+0207: 16
+0208: ,
+0209: 22
+0210: ,
+0211: 2
+0212: ]
+0213: . Since many
+0214: manipulation tasks are partially observable, several works augment such
+0215: policies with history or memory. One class stores past observations, actions,
+0216: or semantic summaries and retrieves or attends to them at decision time, as in
+0217: HAMLET, MemoryVLA, and Causal Diffusion Policy
+0218: [
+0219: 17
+0220: ,
+0221: 27
+0222: ,
+0223: 20
+0224: ]
+0225: . These methods improve access to
+0226: past context, but memory is mainly used as a retrieval source rather than as an
+0227: explicit state of task progress. A second class maintains a compact latent state. AVA-VLA uses a recurrent
+0228: belief state to modulate visual processing, and ReMem-VLA propagates recurrent
+0229: memory queries across frames and action chunks
+0230: [
+0231: 33
+0232: ,
+0233: 18
+0234: ]
+0235: .
+0236: These methods provide explicit memory, but their updates are typically tied to
+0237: frames, policy steps, or chunks. In chunked receding-horizon control, however,
+0238: the interval between policy queries can vary with execution progress, contact,
+0239: or instability. The memory update should therefore depend on physical elapsed
+0240: time, not only on a discrete step index.
+0241: Continuous-time belief for chunked control.
+0242: Liquid Time-Constant networks and closed-form continuous-time networks model
+0243: hidden-state evolution with input-dependent time constants
+0244: [
+0245: 13
+0246: ,
+0247: 14
+0248: ]
+0249: . TFP uses this continuous-time mechanism as
+0250: a task-belief filter for chunked VLA control. The belief retains slow
+0251: task-progress information, updates when new visual and proprioceptive evidence
+0252: arrives, and directly modulates the flow-matching action decoder through
+0253: AdaLN-style conditioning. Thus, memory in TFP is not only retrieved context or an
+0254: auxiliary perception signal, but a compact physical-time belief state that
+0255: directly shapes action generation. More discussion on broader related work can be found in Appendix
+0256: A
+0257: .
+0258: III
+0259: Method
+0260: TFP augments a chunked VLA policy with an episode-local latent belief over task
+0261: progress and interaction history. At each policy query, the current visual and
+0262: proprioceptive observations update this belief through Liquid Time-Constant
+0263: (LTC) dynamics, and the updated belief directly conditions the flow-matching
+0264: action head through AdaLN-style modulation. This couples memory and action
+0265: generation: temporal context is not stored as a passive history buffer, but as a
+0266: persistent state that modulates the next generated action chunk.
+0267: Fig. 2
+0268: :
+0269: TFP maintains a continuous-time latent belief and injects it into the action decoder through adaptive modulation.
+0270: III-A
+0271: Problem Setting and Notation
+0272: At policy query
+0273: t
+0274: t
+0275: , the agent receives a visual observation
+0276: ℐ
+0277: t
+0278: \mathcal{I}_{t}
+0279: ,
+0280: robot state
+0281: 𝐬
+0282: t
+0283: ∈
+0284: ℝ
+0285: d
+0286: s
+0287: \mathbf{s}_{t}\in\mathbb{R}^{d_{s}}
+0288: , elapsed time
+0289: Δ
+0290: ​
+0291: t
+0292: t
+0293: ∈
+0294: ℝ
+0295: ≥
+0296: 0
+0297: \Delta t_{t}\in\mathbb{R}_{\geq 0}
+0298: since the previous query, language
+0299: instruction
+0300: ℓ
+0301: \ell
+0302: , and previous belief
+0303: 𝐡
+0304: t
+0305: −
+0306: 1
+0307: ∈
+0308: ℝ
+0309: d
+0310: h
+0311: \mathbf{h}_{t-1}\in\mathbb{R}^{d_{h}}
+0312: .
+0313: A vision encoder maps
+0314: ℐ
+0315: t
+0316: \mathcal{I}_{t}
+0317: to visual tokens
+0318: V
+0319: t
+0320: =
+0321: [
+0322: 𝐯
+0323: t
+0324: ,
+0325: 1
+0326: ,
+0327: …
+0328: ,
+0329: 𝐯
+0330: t
+0331: ,
+0332: N
+0333: ]
+0334: ∈
+0335: ℝ
+0336: N
+0337: ×
+0338: d
+0339: v
+0340: .
+0341: V_{t}=[\mathbf{v}_{t,1},\dots,\mathbf{v}_{t,N}]\in\mathbb{R}^{N\times d_{v}}.
+0342: (1)
+0343: The policy updates the latent belief
+0344: 𝐡
+0345: t
+0346: \mathbf{h}_{t}
+0347: and predicts an action chunk
+0348: conditioned on the current observation, robot state, instruction, and belief.
+0349: III-B
+0350: Continuous-Time Belief Update
+0351: We first form a compact observation representation
+0352: 𝐱
+0353: t
+0354: =
+0355: [
+0356: ϕ
+0357: vision
+0358: ​
+0359: (
+0360: V
+0361: t
+0362: )
+0363: ;
+0364: ϕ
+0365: state
+0366: ​
+0367: (
+0368: 𝐬
+0369: t
+0370: )
+0371: ]
+0372: \mathbf{x}_{t}=[\phi_{\mathrm{vision}}(V_{t});\,\phi_{\mathrm{state}}(\mathbf{s}_{t})]
+0373: ,
+0374: where
+0375: ϕ
+0376: vision
+0377: ​
+0378: (
+0379: ⋅
+0380: )
+0381: \phi_{\mathrm{vision}}(\cdot)
+0382: pools or projects visual tokens and
+0383: ϕ
+0384: state
+0385: ​
+0386: (
+0387: ⋅
+0388: )
+0389: \phi_{\mathrm{state}}(\cdot)
+0390: embeds the robot state. TFP updates the latent
+0391: belief with an LTC-style recurrence:
+0392: 𝐡
+0393: ^
+0394: t
+0395: \displaystyle\hat{\mathbf{h}}_{t}
+0396: =
+0397: tanh
+0398: ⁡
+0399: (
+0400: W
+0401: h
+0402: ​
+0403: [
+0404: 𝐱
+0405: t
+0406: ;
+0407: 𝐡
+0408: t
+0409: −
+0410: 1
+0411: ]
+0412: +
+0413: b
+0414: h
+0415: )
+0416: ,
+0417: \displaystyle=\tanh\!\left(W_{h}[\mathbf{x}_{t};\mathbf{h}_{t-1}]+b_{h}\right),
+0418: (2)
+0419: τ
+0420: t
+0421: \displaystyle\mathbf{\tau}_{t}
+0422: =
+0423: softplus
+0424: ⁡
+0425: (
+0426: W
+0427: τ
+0428: ​
+0429: [
+0430: 𝐱
+0431: t
+0432: ;
+0433: 𝐡
+0434: t
+0435: −
+0436: 1
+0437: ]
+0438: +
+0439: b
+0440: τ
+0441: )
+0442: +
+0443: ϵ
+0444: .
+0445: \displaystyle=\operatorname{softplus}\!\left(W_{\tau}[\mathbf{x}_{t};\mathbf{h}_{t-1}]+b_{\tau}\right)+\epsilon.
+0446: 𝐤
+0447: t
+0448: \displaystyle\mathbf{k}_{t}
+0449: =
+0450: exp
+0451: (
+0452: −
+0453: Δ
+0454: t
+0455: t
+0456: /
+0457: τ
+0458: t
+0459: )
+0460: ,
+0461: \displaystyle=\exp\!\left(-\Delta t_{t}/\mathbf{\tau}_{t}\right),
+0462: (3)
+0463: 𝐡
+0464: t
+0465: \displaystyle\mathbf{h}_{t}
+0466: =
+0467: 𝐤
+0468: t
+0469: ⊙
+0470: 𝐡
+0471: t
+0472: −
+0473: 1
+0474: +
+0475: (
+0476: 1
+0477: −
+0478: 𝐤
+0479: t
+0480: )
+0481: ⊙
+0482: 𝐡
+0483: ^
+0484: t
+0485: .
+0486: \displaystyle=\mathbf{k}_{t}\odot\mathbf{h}_{t-1}+(1-\mathbf{k}_{t})\odot\hat{\mathbf{h}}_{t}.
+0487: Here
+0488: 𝐡
+0489: ^
+0490: t
+0491: \hat{\mathbf{h}}_{t}
+0492: is the candidate belief induced by the current
+0493: observation and previous belief,
+0494: τ
+0495: t
+0496: ∈
+0497: ℝ
+0498: >
+0499: 0
+0500: d
+0501: h
+0502: \mathbf{\tau}_{t}\in\mathbb{R}^{d_{h}}_{>0}
+0503: is a
+0504: vector of input-dependent time constants, and
+0505: 𝐤
+0506: t
+0507: \mathbf{k}_{t}
+0508: controls how much
+0509: of the previous belief is retained over the elapsed interval
+0510: Δ
+0511: ​
+0512: t
+0513: t
+0514: \Delta t_{t}
+0515: .
+0516: Equivalently, with write gain
+0517: 𝐠
+0518: t
+0519: =
+0520: 1
+0521: −
+0522: 𝐤
+0523: t
+0524: \mathbf{g}_{t}=1-\mathbf{k}_{t}
+0525: , the update can be
+0526: written as
+0527: 𝐡
+0528: t
+0529: −
+0530: 𝐡
+0531: t
+0532: −
+0533: 1
+0534: =
+0535: 𝐠
+0536: t
+0537: ⊙
+0538: (
+0539: 𝐡
+0540: ^
+0541: t
+0542: −
+0543: 𝐡
+0544: t
+0545: −
+0546: 1
+0547: )
+0548: .
+0549: \mathbf{h}_{t}-\mathbf{h}_{t-1}=\mathbf{g}_{t}\odot(\hat{\mathbf{h}}_{t}-\mathbf{h}_{t-1}).
+0550: (4)
+0551: Thus, memory changes only when the candidate belief differs from the retained
+0552: belief and the elapsed-time-dependent write gain permits the update. This is
+0553: useful for manipulation: slow channels can preserve task context across action
+0554: chunks, while faster channels can absorb new perceptual evidence when the scene
+0555: changes.
+0556: We use
+0557: belief
+0558: in a functional sense:
+0559: 𝐡
+0560: t
+0561: \mathbf{h}_{t}
+0562: is a learned
+0563: latent state summarizing task progress and interaction history, rather than an
+0564: explicit Bayesian posterior or a raw buffer of past observations.
+0565: This shows that memory changes only when the current candidate belief differs
+0566: from the retained belief and the write gain allows new evidence to be
+0567: incorporated. In manipulation, this is useful because observations can be noisy,
+0568: partially occluded, or locally ambiguous. Once the policy has formed a
+0569: task-conditioned belief, later observations may produce candidate beliefs that
+0570: are already consistent with the retained state, yielding small updates without
+0571: making the memory uninformative.
+0572: The vector-valued time constant
+0573: τ
+0574: t
+0575: \tau_{t}
+0576: allows different latent channels to
+0577: operate at different effective time scales. We do not assume that individual
+0578: coordinates correspond to human-defined events; rather, task progress, object
+0579: state, contact evidence, and occlusion-related information may be represented as
+0580: distributed latent patterns. Some subspaces can therefore behave as
+0581: high-retention channels for slow task context, while others can update more
+0582: quickly with local perceptual evidence.
+0583: For each latent dimension
+0584: j
+0585: j
+0586: , the update unrolls as
+0587: h
+0588: t
+0589: ,
+0590: j
+0591: =
+0592: (
+0593: ∏
+0594: r
+0595: =
+0596: 1
+0597: t
+0598: k
+0599: r
+0600: ,
+0601: j
+0602: )
+0603: ​
+0604: h
+0605: 0
+0606: ,
+0607: j
+0608: +
+0609: ∑
+0610: i
+0611: =
+0612: 1
+0613: t
+0614: (
+0615: 1
+0616: −
+0617: k
+0618: i
+0619: ,
+0620: j
+0621: )
+0622: ​
+0623: (
+0624: ∏
+0625: r
+0626: =
+0627: i
+0628: +
+0629: 1
+0630: t
+0631: k
+0632: r
+0633: ,
+0634: j
+0635: )
+0636: ​
+0637: h
+0638: ^
+0639: i
+0640: ,
+0641: j
+0642: .
+0643: h_{t,j}=\left(\prod_{r=1}^{t}k_{r,j}\right)h_{0,j}+\sum_{i=1}^{t}(1-k_{i,j})\left(\prod_{r=i+1}^{t}k_{r,j}\right)\hat{h}_{i,j}.
+0644: (5)
+0645: Thus, the memory forms a path-dependent mixture of past candidate beliefs:
+0646: a candidate contributes only if it is written when observed and retained by
+0647: later updates. This explains the write-then-stabilize behavior observed in our
+0648: diagnostics. A useful memory trajectory need not keep changing throughout a
+0649: rollout; after informative observations establish the task belief, high
+0650: retention can preserve it through occlusion, contact noise, or visually
+0651: ambiguous stages.
+0652: III-C
+0653: Belief-Conditioned Action Generation
+0654: TFP injects the updated belief into the flow-matching action decoder through
+0655: adaptive normalization rather than explicit memory-token cross-attention. Given
+0656: 𝐡
+0657: t
+0658: \mathbf{h}_{t}
+0659: , we project it into the decoder conditioning space:
+0660: 𝐦
+0661: t
+0662: =
+0663: W
+0664: m
+0665: ​
+0666: 𝐡
+0667: t
+0668: +
+0669: 𝐛
+0670: m
+0671: ∈
+0672: ℝ
+0673: d
+0674: c
+0675: .
+0676: \mathbf{m}_{t}=W_{m}\mathbf{h}_{t}+\mathbf{b}_{m}\in\mathbb{R}^{d_{c}}.
+0677: (6)
+0678: The flow-matching timestep is embedded as
+0679: 𝐞
+0680: τ
+0681: =
+0682: PE
+0683: ⁡
+0684: (
+0685: τ
+0686: )
+0687: ,
+0688: 𝐳
+0689: τ
+0690: =
+0691: W
+0692: 2
+0693: ​
+0694: σ
+0695: ​
+0696: (
+0697: W
+0698: 1
+0699: ​
+0700: 𝐞
+0701: τ
+0702: +
+0703: 𝐛
+0704: 1
+0705: )
+0706: +
+0707: 𝐛
+0708: 2
+0709: ,
+0710: \mathbf{e}_{\tau}=\operatorname{PE}(\tau),\qquad\mathbf{z}_{\tau}=W_{2}\sigma(W_{1}\mathbf{e}_{\tau}+\mathbf{b}_{1})+\mathbf{b}_{2},
+0711: (7)
+0712: where
+0713: σ
+0714: ⁡
+0715: (
+0716: ⋅
+0717: )
+0718: \sigma(\cdot)
+0719: is a swish nonlinearity. We combine timestep and belief
+0720: conditioning by
+0721: 𝐜
+0722: t
+0723: =
+0724: 𝐳
+0725: τ
+0726: +
+0727: 𝐦
+0728: t
+0729: ,
+0730: 𝐱
+0731: ^
+0732: (
+0733: ℓ
+0734: )
+0735: =
+0736: AdaLN
+0737: ⁡
+0738: (
+0739: 𝐱
+0740: (
+0741: ℓ
+0742: )
+0743: ,
+0744: 𝐜
+0745: t
+0746: )
+0747: ,
+0748: \mathbf{c}_{t}=\mathbf{z}_{\tau}+\mathbf{m}_{t},\qquad\hat{\mathbf{x}}^{(\ell)}=\operatorname{AdaLN}(\mathbf{x}^{(\ell)},\mathbf{c}_{t}),
+0749: (8)
+0750: where
+0751: 𝐱
+0752: (
+0753: ℓ
+0754: )
+0755: \mathbf{x}^{(\ell)}
+0756: is the hidden state of decoder layer
+0757: ℓ
+0758: \ell
+0759: .
+0760: AdaLN predicts feature-wise affine modulation parameters from
+0761: 𝐜
+0762: t
+0763: \mathbf{c}_{t}
+0764: and applies them to normalized decoder activations
+0765: [
+0766: 23
+0767: ,
+0768: 24
+0769: ]
+0770: . The resulting action head predicts
+0771: the memory-conditioned flow velocity
+0772: v
+0773: θ
+0774: (
+0775: a
+0776: τ
+0777: ,
+0778: τ
+0779: ∣
+0780: ℐ
+0781: t
+0782: ,
+0783: 𝐬
+0784: t
+0785: ,
+0786: ℓ
+0787: ,
+0788: 𝐡
+0789: t
+0790: )
+0791: .
+0792: v_{\theta}(a_{\tau},\tau\mid\mathcal{I}_{t},\mathbf{s}_{t},\ell,\mathbf{h}_{t}).
+0793: (9)
+0794: This interface makes the belief directly modulate the generated action chunk,
+0795: instead of requiring the decoder to retrieve and interpret a separate memory
+0796: token sequence. Consequently, visually similar observations can produce
+0797: different actions when their retained task beliefs differ.
+0798: Additional discussion of this adaptive-conditioning interface is given in
+0799: Appendix
+0800: B-A
+0801: .
+0802: III-D
+0803: Training with Episode-Aware Temporal Batching
+0804: Training TFP requires preserving hidden-state continuity within each
+0805: demonstration episode. Randomly shuffling individual chunks breaks this
+0806: continuity, while full-episode backpropagation is memory-intensive for large VLA
+0807: backbones. We therefore introduce
+0808: Episode-Aware Temporal Batching
+0809: (EATB), which trains on temporally contiguous chunks from multiple episodes in
+0810: parallel while maintaining a separate hidden state for each active episode.
+0811: For each episode
+0812: e
+0813: e
+0814: , EATB keeps an episode-local hidden state
+0815: 𝐡
+0816: t
+0817: (
+0818: e
+0819: )
+0820: =
+0821: f
+0822: θ
+0823: ​
+0824: (
+0825: 𝐡
+0826: t
+0827: −
+0828: 1
+0829: (
+0830: e
+0831: )
+0832: ,
+0833: o
+0834: t
+0835: (
+0836: e
+0837: )
+0838: ,
+0839: Δ
+0840: ​
+0841: t
+0842: t
+0843: (
+0844: e
+0845: )
+0846: )
+0847: \mathbf{h}_{t}^{(e)}=f_{\theta}(\mathbf{h}_{t-1}^{(e)},o_{t}^{(e)},\Delta t_{t}^{(e)})
+0848: and resets it only at episode boundaries. At each training step, we sample
+0849: B
+0850: B
+0851: active episodes and unroll each for
+0852: K
+0853: K
+0854: consecutive chunks. If episode
+0855: e
+0856: b
+0857: e_{b}
+0858: starts from chunk index
+0859: τ
+0860: b
+0861: \tau_{b}
+0862: , its stored hidden state is retrieved as
+0863: 𝐡
+0864: b
+0865: ,
+0866: 0
+0867: =
+0868: 𝐡
+0869: ~
+0870: τ
+0871: b
+0872: (
+0873: e
+0874: b
+0875: )
+0876: \mathbf{h}_{b,0}=\tilde{\mathbf{h}}_{\tau_{b}}^{(e_{b})}
+0877: and updated through the
+0878: segment. We optimize the average flow-matching imitation loss over the resulting
+0879: B
+0880: ​
+0881: K
+0882: BK
+0883: chunks,
+0884: ℒ
+0885: s
+0886: =
+0887: 1
+0888: B
+0889: ​
+0890: K
+0891: ​
+0892: ∑
+0893: b
+0894: =
+0895: 1
+0896: B
+0897: ∑
+0898: k
+0899: =
+0900: 1
+0901: K
+0902: ℓ
+0903: flow
+0904: (
+0905: b
+0906: ,
+0907: k
+0908: )
+0909: .
+0910: \mathcal{L}_{s}=\frac{1}{BK}\sum_{b=1}^{B}\sum_{k=1}^{K}\ell_{\mathrm{flow}}^{(b,k)}.
+0911: (10)
+0912: After the parameter update, the final hidden state is written back with gradient
+0913: truncation:
+0914: 𝐡
+0915: ~
+0916: τ
+0917: b
+0918: +
+0919: K
+0920: (
+0921: e
+0922: b
+0923: )
+0924: ←
+0925: stopgrad
+0926: ⁡
+0927: (
+0928: 𝐡
+0929: b
+0930: ,
+0931: K
+0932: )
+0933: .
+0934: \tilde{\mathbf{h}}_{\tau_{b}+K}^{(e_{b})}\leftarrow\operatorname{stopgrad}(\mathbf{h}_{b,K}).
+0935: (11)
+0936: Thus, hidden states persist numerically across training segments, while
+0937: gradients are truncated at segment boundaries. EATB preserves long-horizon
+0938: forward memory without the cost of full-episode backpropagation.
+0939: Further implementation details are described in
+0940: Appendix
+0941: B
+0942: .
+0943: III-E
+0944: Adaptive Receding-Horizon Execution
+0945: To evaluate TFP under irregular policy-query intervals, we use an inference-time
+0946: adaptive receding-horizon executor. The policy always predicts an action chunk
+0947: of horizon
+0948: H
+0949: H
+0950: , but the executor selects a prefix length
+0951: E
+0952: t
+0953: ∈
+0954: [
+0955: E
+0956: min
+0957: ,
+0958: H
+0959: ]
+0960: E_{t}\in[E_{\min},H]
+0961: to execute before the next policy query. The next memory
+0962: update receives the actual elapsed interval
+0963: Δ
+0964: ​
+0965: t
+0966: t
+0967: +
+0968: 1
+0969: =
+0970: E
+0971: t
+0972: ​
+0973: δ
+0974: ​
+0975: t
+0976: ctrl
+0977: .
+0978: \Delta t_{t+1}=E_{t}\delta t_{\mathrm{ctrl}}.
+0979: (12)
+0980: The executor executes the full horizon by default and shortens the prefix only
+0981: when the predicted chunk contains a gripper-transition boundary or a sustained
+0982: high-risk region. The per-step chunk risk is
+0983: R
+0984: t
+0985: ,
+0986: r
+0987: =
+0988: λ
+0989: j
+0990: ​
+0991: J
+0992: t
+0993: ,
+0994: r
+0995: +
+0996: λ
+0997: b
+0998: ​
+0999: B
+1000: t
+1001: ,
+1002: r
+1003: +
+1004: λ
+1005: c
+1006: ​
+1007: C
+1008: t
+1009: ,
+1010: r
+1011: ,
+1012: R_{t,r}=\lambda_{j}J_{t,r}+\lambda_{b}B_{t,r}+\lambda_{c}C_{t,r},
+1013: (13)
+1014: where
+1015: J
+1016: t
+1017: ,
+1018: r
+1019: J_{t,r}
+1020: measures action jerk,
+1021: B
+1022: t
+1023: ,
+1024: r
+1025: B_{t,r}
+1026: indicates gripper-transition
+1027: boundaries, and
+1028: C
+1029: t
+1030: ,
+1031: r
+1032: C_{t,r}
+1033: measures continuity with the previously executed
+1034: action. This changes only the inference-time execution schedule; the policy
+1035: network, predicted action horizon, and model weights are unchanged.
+1036: IV
+1037: Comparison to Recurrent and State-Space Baselines
+1038: IV-A
+1039: Relation to GRUs
+1040: A standard GRU updates its hidden state as
+1041: h
+1042: t
+1043: =
+1044: z
+1045: t
+1046: ⊙
+1047: h
+1048: t
+1049: −
+1050: 1
+1051: +
+1052: (
+1053: 1
+1054: −
+1055: z
+1056: t
+1057: )
+1058: ⊙
+1059: h
+1060: ~
+1061: t
+1062: ,
+1063: z
+1064: t
+1065: =
+1066: σ
+1067: ⁡
+1068: (
+1069: W
+1070: z
+1071: ​
+1072: [
+1073: x
+1074: t
+1075: ,
+1076: h
+1077: t
+1078: −
+1079: 1
+1080: ]
+1081: +
+1082: b
+1083: z
+1084: )
+1085: .
+1086: h_{t}=z_{t}\odot h_{t-1}+(1-z_{t})\odot\tilde{h}_{t},\qquad z_{t}=\sigma\!\left(W_{z}[x_{t},h_{t-1}]+b_{z}\right).
+1087: (14)
+1088: This update resembles the interpolation form used by TFP, but its retention
+1089: gate is indexed by recurrent steps rather than physical time. In particular,
+1090: when elapsed time is not provided as an input, two updates with the same
+1091: observation and previous hidden state necessarily produce the same gate,
+1092: even if they occur after different physical intervals.
+1093: This differs from continuous-time belief dynamics. For example, in the
+1094: absence of new evidence, exponential decay evolves as
+1095: h
+1096: t
+1097: =
+1098: exp
+1099: ⁡
+1100: (
+1101: −
+1102: λ
+1103: ​
+1104: Δ
+1105: ​
+1106: t
+1107: t
+1108: )
+1109: ​
+1110: h
+1111: t
+1112: −
+1113: 1
+1114: ,
+1115: λ
+1116: >
+1117: 0
+1118: ,
+1119: h_{t}=\exp(-\lambda\Delta t_{t})h_{t-1},\qquad\lambda>0,
+1120: (15)
+1121: and therefore produces different retained states for different values of
+1122: Δ
+1123: ​
+1124: t
+1125: t
+1126: \Delta t_{t}
+1127: . A standard step-indexed GRU without access to
+1128: Δ
+1129: ​
+1130: t
+1131: t
+1132: \Delta t_{t}
+1133: does not enforce this elapsed-time dependence. In contrast, TFP explicitly
+1134: parameterizes its retention as
+1135: k
+1136: t
+1137: =
+1138: exp
+1139: (
+1140: −
+1141: Δ
+1142: t
+1143: t
+1144: /
+1145: τ
+1146: t
+1147: )
+1148: ,
+1149: k_{t}=\exp(-\Delta t_{t}/\tau_{t}),
+1150: (16)
+1151: so the belief update remains calibrated to the physical interval between
+1152: policy queries.
+1153: This distinction does not imply that GRUs or LSTMs are incapable of
+1154: representing temporal history. Rather, elapsed-time consistency must be
+1155: learned from additional timing inputs or introduced through architectural
+1156: constraints, whereas it is built directly into the TFP update.
+1157: IV-B
+1158: Relation to Fixed-Decay Memory
+1159: A fixed-decay memory updates its state according to
+1160: h
+1161: t
+1162: =
+1163: exp
+1164: (
+1165: −
+1166: Δ
+1167: t
+1168: t
+1169: /
+1170: τ
+1171: 0
+1172: )
+1173: ⊙
+1174: h
+1175: t
+1176: −
+1177: 1
+1178: +
+1179: (
+1180: 1
+1181: −
+1182: exp
+1183: (
+1184: −
+1185: Δ
+1186: t
+1187: t
+1188: /
+1189: τ
+1190: 0
+1191: )
+1192: )
+1193: ⊙
+1194: h
+1195: ^
+1196: t
+1197: ,
+1198: h_{t}=\exp(-\Delta t_{t}/\tau_{0})\odot h_{t-1}+\left(1-\exp(-\Delta t_{t}/\tau_{0})\right)\odot\hat{h}_{t},
+1199: (17)
+1200: where
+1201: τ
+1202: 0
+1203: \tau_{0}
+1204: is a constant time scale. This model is a special case of the
+1205: TFP update obtained by setting
+1206: τ
+1207: t
+1208: =
+1209: τ
+1210: 0
+1211: \tau_{t}=\tau_{0}
+1212: . TFP instead predicts
+1213: τ
+1214: t
+1215: =
+1216: τ
+1217: θ
+1218: ​
+1219: (
+1220: x
+1221: t
+1222: ,
+1223: h
+1224: t
+1225: −
+1226: 1
+1227: )
+1228: ,
+1229: \tau_{t}=\tau_{\theta}(x_{t},h_{t-1}),
+1230: (18)
+1231: allowing the effective retention time to depend on both the current evidence
+1232: and the retained belief. Consequently, TFP preserves the elapsed-time
+1233: structure of exponential retention while adapting how quickly individual
+1234: memory channels update across different task states and interaction events.
+1235: IV-C
+1236: Relation to State-Space Models
+1237: Linear state-space models provide efficient long-horizon sequence modeling
+1238: through structured linear recurrences
+1239: [
+1240: 12
+1241: ,
+1242: 11
+1243: ]
+1244: . Continuous-
+1245: time SSMs can also implement elapsed-time-dependent transitions, for example
+1246: h
+1247: t
+1248: =
+1249: exp
+1250: ⁡
+1251: (
+1252: A
+1253: ​
+1254: Δ
+1255: ​
+1256: t
+1257: t
+1258: )
+1259: ​
+1260: h
+1261: t
+1262: −
+1263: 1
+1264: +
+1265: B
+1266: ⁡
+1267: (
+1268: Δ
+1269: ​
+1270: t
+1271: t
+1272: )
+1273: ​
+1274: x
+1275: t
+1276: .
+1277: h_{t}=\exp(A\Delta t_{t})h_{t-1}+B(\Delta t_{t})x_{t}.
+1278: Therefore, we do not claim that LTC is more time-consistent than all SSMs.
+1279: Instead, the distinction is functional: TFP uses LTC as a nonlinear,
+1280: input-dependent belief fuser whose state directly conditions a generative action
+1281: decoder. This makes the memory update both time-calibrated and action-relevant
+1282: for chunked manipulation policies.
+1283: IV-D
+1284: Computational Overhead
+1285: The LTC update costs
+1286: 𝒪
+1287: ⁡
+1288: (
+1289: d
+1290: h
+1291: ​
+1292: (
+1293: d
+1294: x
+1295: +
+1296: d
+1297: h
+1298: )
+1299: )
+1300: \mathcal{O}(d_{h}(d_{x}+d_{h}))
+1301: , where
+1302: d
+1303: x
+1304: d_{x}
+1305: is the compact
+1306: observation dimension and
+1307: d
+1308: h
+1309: d_{h}
+1310: is the memory dimension. The memory projection
+1311: costs
+1312: 𝒪
+1313: ⁡
+1314: (
+1315: d
+1316: h
+1317: ​
+1318: d
+1319: c
+1320: )
+1321: \mathcal{O}(d_{h}d_{c})
+1322: , and AdaLN adds only lightweight affine modulation in
+1323: the action decoder. These costs are small relative to the vision-language
+1324: backbone and transformer-based action decoder; the main computational cost of
+1325: TFP comes from recurrent training over multiple contiguous chunks.
+1326: Fig. 3
+1327: :
+1328: Episode-Aware Temporal Batching trains on contiguous chunks while carrying episode-local hidden states across truncated segments.
+1329: V
+1330: Experiments
+1331: Evaluation Questions.
+1332: Our experiments ask whether TFP (i) improves standard and robustness-oriented manipulation benchmarks, (ii) improves real-world stage-dependent manipulation where the current observation alone is insufficient, (iii) encodes action-relevant task progress that causally affects action generation, and (iv) benefits from continuous-time LTC dynamics and real elapsed-time conditioning under irregular control intervals.
+1333: Experimental Setup.
+1334: We evaluate TFP with
+1335: π
+1336: 0.5
+1337: \pi_{0.5}
+1338: as the primary VLA backbone on LIBERO, LIBERO-plus, MIKASA-Robo, and two Galaxea A1 real-world tasks: object swapping and counting pick-and-place. For our controlled same-backbone experiments, all reproduced variants use the same demonstrations, action horizon, optimizer, and rollout protocol. Published baselines are reported as literature references when available. Across experiments, TFP receives a language prompt, two RGB observations, and proprioceptive state at each policy query, and maintains an episode-local 256-dimensional memory state
+1339: h
+1340: t
+1341: h_{t}
+1342: .
+1343: For recurrent methods, EATB is applied during training, memory states are episode-local and
+1344: reset only at episode boundaries during inference.
+1345: For comparisons to published baselines, we report their original fixed-horizon
+1346: numbers when available and mark them as literature references. For our controlled
+1347: same-backbone ablations, including recurrent variants, TFP
+1348: w/o
+1349: Δ
+1350: ​
+1351: t
+1352: \Delta t
+1353: , and TFP, we use the same adaptive receding-horizon executor.
+1354: Thus, policy queries occur after variable executed prefixes, and all controlled
+1355: memory variants are evaluated under the same irregular-query schedule. The only
+1356: difference between TFP and TFP w/o
+1357: Δ
+1358: ​
+1359: t
+1360: \Delta t
+1361: is whether the memory update
+1362: receives the measured elapsed interval or a constant step interval. The real-world setup uses a
+1363: single-arm Galaxea A1 platform with a parallel gripper, a wrist-mounted fisheye
+1364: camera, and a static Intel RealSense D435 camera. Predicted action chunks are
+1365: executed as joint-angle commands through ROS1 Noetic.
+1366: Statistical reliability for the reproduced LIBERO and real-world results is reported in Appendix
+1367: E
+1368: .
+1369: V-A
+1370: Main Benchmark Results
+1371: We organize our evaluation around different benchmark purposes. LIBERO and LIBERO-plus measure online rollout performance and general manipulation quality, including long-horizon and multi-stage tasks. This is important because real-world manipulation is not always explicitly memory-dependent; a memory-augmented VLA should improve memory-sensitive behavior without sacrificing general task execution. Tables
+1372: I
+1373: summarizes the results on simulation benchmarks.
+1374: We then use memory-focused benchmarks and real-world experiments as sanity checks for whether the proposed memory state is used. MIKASA-Robo ShellGameTouch isolates belief-state filtering under occlusion in simulation, while our real-world A1 experiments evaluate memory-dependent manipulation on hardware. Thus, LIBERO benchmark tests generality and rollout quality, whereas MIKASA-Robo and real-world A1 experiments test the intended memory mechanism, and LIBERO-plus further evaluates zero-shot generality under occlusion and visual perturbations, where the belief state is expected to stabilize action generation when the current observation is incomplete or unreliable. Ablations with recurrent, SSM-based variants are reported in Sec.
+1375: V-C
+1376: .
+1377: TABLE I
+1378: :
+1379: Success rate (%) on LIBERO, LIBERO-plus, and MIKASA-Robo ShellGameTouch. TFP obtains the best average success rate on both LIBERO and LIBERO-plus while remaining in the 3.3B-parameter-only regime. Numbers for prior methods are reported results from
+1380: published work and are not necessarily reproduced under our training pipeline. We use ShellGameTouch as a diagnostic rather than a state-of-the-art comparison.
+1381: LIBERO
+1382: LIBERO-plus
+1383: MIKASA-Robo
+1384: Policy
+1385: Spatial
+1386: Object
+1387: Goal
+1388: Long-10
+1389: Avg.
+1390: Noise
+1391: Light
+1392: Backgr.
+1393: Avg.
+1394: ShellGameTouch
+1395: π
+1396: 0.5
+1397: \pi_{0.5}
+1398: (3.3B)
+1399: 98.8
+1400: 98.0
+1401: 98.2
+1402: 92.4
+1403: 96.85
+1404: 85.2
+1405: 93.9
+1406: 95.1
+1407: 91.4
+1408: –
+1409: π
+1410: 0
+1411: \pi_{0}
+1412: (3.3B)
+1413: 94.2
+1414: 96.4
+1415: 96.8
+1416: 87.6
+1417: 93.8
+1418: 79.0
+1419: 85.0
+1420: 81.4
+1421: 81.8
+1422: 33
+1423: OpenVLA (7B)
+1424: 84.7
+1425: 88.4
+1426: 79.2
+1427: 53.7
+1428: 76.5
+1429: 15.2
+1430: 8.1
+1431: 34.8
+1432: 19.37
+1433: 12
+1434: OpenVLA-OFT (7.3B)
+1435: 97.6
+1436: 98.4
+1437: 97.9
+1438: 94.5
+1439: 97.1
+1440: 75.8
+1441: 88.7
+1442: 93.3
+1443: 85.93
+1444: 47
+1445: HAMLET (3B)
+1446: 99.0
+1447: 100.0
+1448: 99.2
+1449: 92.2
+1450: 97.6
+1451: –
+1452: –
+1453: –
+1454: –
+1455: –
+1456: AVA-VLA
+1457: [
+1458: 33
+1459: ]
+1460: (7.3B)
+1461: 97.4
+1462: 99.4
+1463: 97.4
+1464: 97.6
+1465: 98.0
+1466: 78.0
+1467: 95.5
+1468: 88.9
+1469: 87.47
+1470: –
+1471: MemoryVLA (7.3B)
+1472: 98.4
+1473: 98.4
+1474: 96.4
+1475: 93.4
+1476: 96.65
+1477: –
+1478: –
+1479: –
+1480: –
+1481: 88
+1482: TFP (ours) (3.3B)
+1483: 99.6
+1484: 99.0
+1485: 99.4
+1486: 97.0
+1487: 98.75
+1488: 88.5
+1489: 96.1
+1490: 96.7
+1491: 93.77
+1492: 75
+1493: LIBERO.
+1494: On LIBERO, TFP improves the average success rate from
+1495: 96.9
+1496: %
+1497: 96.9\%
+1498: for the reactive
+1499: π
+1500: 0.5
+1501: \pi_{0.5}
+1502: baseline to
+1503: 98.75
+1504: %
+1505: 98.75\%
+1506: . The improvement is most visible on the
+1507: long
+1508: split, where TFP reaches
+1509: 97.0
+1510: %
+1511: 97.0\%
+1512: compared with
+1513: 92.4
+1514: %
+1515: 92.4\%
+1516: for
+1517: π
+1518: 0.5
+1519: \pi_{0.5}
+1520: . This supports our hypothesis that maintaining latent task progress is especially beneficial for long-horizon manipulation, where the current observation alone may be insufficient for selecting the correct action.
+1521: LIBERO-plus.
+1522: On LIBERO-plus, TFP achieves the best average robustness score of
+1523: 93.77
+1524: %
+1525: 93.77\%
+1526: , outperforming
+1527: π
+1528: 0.5
+1529: \pi_{0.5}
+1530: by
+1531: 2.37
+1532: 2.37
+1533: percentage points. The gains are most notable under noise and lighting perturbations, where TFP improves from
+1534: 85.2
+1535: %
+1536: 85.2\%
+1537: to
+1538: 88.5
+1539: %
+1540: 88.5\%
+1541: and from
+1542: 93.9
+1543: %
+1544: 93.9\%
+1545: to
+1546: 96.1
+1547: %
+1548: 96.1\%
+1549: , respectively.
+1550: MIKASA-Robo.
+1551: On MIKASA-Robo ShellGameTouch, TFP achieves a success rate of 75.0%,
+1552: substantially improving over the reported OpenVLA-OFT reference result at 47.0%.
+1553: ShellGameTouch isolates belief-state filtering under occlusion: after the ball
+1554: is hidden by visually identical mugs, the policy must remember the hidden ball
+1555: location and use that belief to touch the correct mug. Since the Touch variant
+1556: minimizes additional pushing or grasping requirements, the improvement more
+1557: directly reflects memory-conditioned action selection rather than low-level
+1558: manipulation skill. We do not present this result as a state-of-the-art claim:
+1559: MemoryVLA reports 88.0% on this task. Instead, we use ShellGameTouch as a
+1560: diagnostic showing that TFP improves hidden-state reasoning in a reactive VLA,
+1561: while the remaining gap points to a complementary need for object-centric
+1562: hidden-location binding; see Appendix
+1563: D-B
+1564: .
+1565: Real-world A1.
+1566: Table
+1567: II
+1568: reports real-robot success counts and dominant
+1569: failure types among unsuccessful trials.
+1570: TABLE II
+1571: :
+1572: Real-world Galaxea A1 results and failure analysis.
+1573: Task
+1574: Method
+1575: Success
+1576: Stage
+1577: Repeat
+1578: Target
+1579: Exec.
+1580: Object swap
+1581: π
+1582: 0.5
+1583: \pi_{0.5}
+1584: 3
+1585: /
+1586: 20
+1587: 3/20
+1588: ✓
+1589: \checkmark
+1590: ✓
+1591: \checkmark
+1592: ∘
+1593: \circ
+1594: –
+1595: TFP
+1596: 15
+1597: /
+1598: 20
+1599: 15/20
+1600: –
+1601: –
+1602: ∘
+1603: \circ
+1604: ✓
+1605: \checkmark
+1606: Counting pick-place
+1607: π
+1608: 0.5
+1609: \pi_{0.5}
+1610: 8
+1611: /
+1612: 20
+1613: 8/20
+1614: ✓
+1615: \checkmark
+1616: ✓
+1617: \checkmark
+1618: –
+1619: ∘
+1620: \circ
+1621: TFP
+1622: 18
+1623: /
+1624: 20
+1625: 18/20
+1626: –
+1627: ∘
+1628: \circ
+1629: ∘
+1630: \circ
+1631: ✓
+1632: \checkmark
+1633: Failure tags:
+1634: Stage = wrong phase/forgotten progress;
+1635: Repeat = completed subtask repeated; Target = wrong object/placement grounding;
+1636: Exec. = low-level grasp, placement, or contact instability.
+1637: Table
+1638: II
+1639: shows that TFP primarily reduces
+1640: stage-level memory failures: the reactive baseline often repeats completed
+1641: subtasks or switches to the wrong stage, whereas TFP failures shift toward
+1642: target grounding and low-level execution errors. This suggests that the learned
+1643: belief improves task-progress tracking rather than merely improving low-level
+1644: manipulation.
+1645: V-B
+1646: Event-Sensitive Belief Dynamics
+1647: Fig. 4
+1648: :
+1649: LTC belief update gain
+1650: g
+1651: t
+1652: g_{t}
+1653: during a rollout. Frames, dimension-wise gate heatmaps, and summary statistics show gate changes around reaching, carrying, releasing, and pushing events.
+1654: Irregular-query diagnostic.
+1655: We next examine whether the LTC memory learns an event-sensitive belief update
+1656: rather than a generic step-indexed recurrence. For this diagnostic, we run TFP
+1657: with adaptive receding-horizon execution: the policy predicts an action
+1658: chunk, but the executor may re-query after a variable executed prefix when the
+1659: chunk crosses a gripper transition, contact-sensitive phase, or unstable region.
+1660: The memory update therefore receives the elapsed interval between policy
+1661: queries. This setting exposes the memory module to irregular physical time, so
+1662: the learned update gain can reflect both manipulation events and elapsed time
+1663: rather than a fixed recurrent step index.
+1664: At each policy query, we record the internal LTC variables during LIBERO
+1665: rollouts: the time constant
+1666: τ
+1667: t
+1668: \tau_{t}
+1669: , retention gate
+1670: k
+1671: t
+1672: k_{t}
+1673: , update gain
+1674: g
+1675: t
+1676: =
+1677: 1
+1678: −
+1679: k
+1680: t
+1681: g_{t}=1-k_{t}
+1682: , hidden state
+1683: h
+1684: t
+1685: h_{t}
+1686: , and candidate belief
+1687: h
+1688: ^
+1689: t
+1690: \hat{h}_{t}
+1691: . Larger
+1692: values of
+1693: g
+1694: t
+1695: g_{t}
+1696: indicate stronger writing from the current observation, whereas
+1697: smaller values indicate stronger retention of the previous task belief. Thus,
+1698: the temporal pattern of
+1699: g
+1700: t
+1701: g_{t}
+1702: directly reveals when the model chooses to revise
+1703: or preserve its latent belief.
+1704: For interpretation only, we extract privileged simulator states such as gripper state, end-effector position, object poses, object height, and
+1705: task success; these signals are never provided to the policy.
+1706: Figure
+1707: 4
+1708: shows nonuniform LTC updates: some dimensions
+1709: remain stable during transport, while others change near task transitions. To
+1710: quantify this event sensitivity, we measure write-gain changes
+1711: D
+1712: t
+1713: g
+1714: =
+1715: 1
+1716: d
+1717: h
+1718: ​
+1719: ∑
+1720: i
+1721: |
+1722: g
+1723: t
+1724: ,
+1725: i
+1726: −
+1727: g
+1728: t
+1729: −
+1730: 1
+1731: ,
+1732: i
+1733: |
+1734: D^{g}_{t}=\frac{1}{d_{h}}\sum_{i}|g_{t,i}-g_{t-1,i}|
+1735: . For each simulator-side event,
+1736: we take the largest
+1737: D
+1738: t
+1739: g
+1740: D^{g}_{t}
+1741: within
+1742: ±
+1743: 6
+1744: \pm 6
+1745: queries and compare it with a far
+1746: non-event baseline excluding
+1747: ±
+1748: 8
+1749: \pm 8
+1750: -query neighborhoods. Table
+1751: III
+1752: shows that gain-pattern changes near events are about
+1753: 6
+1754: ×
+1755: 6\times
+1756: larger than
+1757: the far non-event baseline, indicating that the policy often adjusts its
+1758: write/retain schedule slightly before the simulator-side event label.
+1759: TABLE III
+1760: :
+1761: Lagged alignment of LTC write-gain dynamics on LIBERO mug-in-microwave, using 224 events from 30 successful rollouts.
+1762: Metric
+1763: Center/base
+1764: Best
+1765: ±
+1766: 6
+1767: \pm 6
+1768: /base
+1769: 95% CI
+1770: Lag
+1771: Mean dim.
+1772: |
+1773: Δ
+1774: ​
+1775: g
+1776: t
+1777: |
+1778: |\Delta g_{t}|
+1779: 0.42
+1780: ×
+1781: 0.42\times
+1782: 5.97
+1783: ×
+1784: \mathbf{5.97\times}
+1785: [
+1786: 4.61
+1787: ,
+1788: 7.54
+1789: ]
+1790: [4.61,7.54]
+1791: −
+1792: 1.64
+1793: -1.64
+1794: Top-10% dim.
+1795: |
+1796: Δ
+1797: ​
+1798: g
+1799: t
+1800: |
+1801: |\Delta g_{t}|
+1802: 0.48
+1803: ×
+1804: 0.48\times
+1805: 5.90
+1806: ×
+1807: 5.90\times
+1808: [
+1809: 4.57
+1810: ,
+1811: 7.44
+1812: ]
+1813: [4.57,7.44]
+1814: −
+1815: 2.13
+1816: -2.13
+1817: |
+1818: Δ
+1819: ​
+1820: g
+1821: ¯
+1822: t
+1823: |
+1824: |\Delta\bar{g}_{t}|
+1825: 0.34
+1826: ×
+1827: 0.34\times
+1828: 6.24
+1829: ×
+1830: 6.24\times
+1831: [
+1832: 4.81
+1833: ,
+1834: 7.88
+1835: ]
+1836: [4.81,7.88]
+1837: −
+1838: 1.78
+1839: -1.78
+1840: ‖
+1841: Δ
+1842: ​
+1843: g
+1844: t
+1845: ‖
+1846: 2
+1847: /
+1848: d
+1849: h
+1850: \|\Delta g_{t}\|_{2}/\sqrt{d_{h}}
+1851: 0.35
+1852: ×
+1853: 0.35\times
+1854: 6.14
+1855: ×
+1856: 6.14\times
+1857: [
+1858: 4.65
+1859: ,
+1860: 7.88
+1861: ]
+1862: [4.65,7.88]
+1863: −
+1864: 1.88
+1865: -1.88
+1866: Following prior analyses of policy dynamics and task-relevant factors
+1867: [
+1868: 32
+1869: ]
+1870: , we use event labels only post hoc: they are not provided to the policy, but reveal whether LTC update gains track manipulation changes.
+1871: Same Observation, Different Memory States.
+1872: Fixing the observation, robot state, and instruction while replacing only the LTC hidden state substantially changes the predicted 10-step action chunks: mean pairwise action distance is
+1873: 0.0442
+1874: 0.0442
+1875: , maximum
+1876: 0.1303
+1877: 0.1303
+1878: , while temporally adjacent hidden states have median distance
+1879: 0.0108
+1880: 0.0108
+1881: . Thus, the LTC belief actively conditions actions; see Appendix
+1882: D-A
+1883: .
+1884: V-C
+1885: Ablation Studies
+1886: TABLE IV
+1887: :
+1888: Controlled memory-dynamics ablations under the same adaptive receding-horizon
+1889: executor. All same-backbone variants use the same demonstrations, action horizon,
+1890: optimizer, rollout protocol, and irregular-query execution schedule. TFP w/o
+1891: Δ
+1892: ​
+1893: t
+1894: \Delta t
+1895: uses the same LTC and AdaLN architecture as TFP but replaces the
+1896: measured elapsed interval with a constant step size.
+1897: (a) LIBERO
+1898: [
+1899: 19
+1900: ]
+1901: Method
+1902: Spatial
+1903: Object
+1904: Goal
+1905: Long
+1906: Avg.
+1907: π
+1908: 0.5
+1909: \pi_{0.5}
+1910: 98.8
+1911: 98.0
+1912: 98.2
+1913: 92.4
+1914: 96.9
+1915: π
+1916: 0.5
+1917: \pi_{0.5}
+1918: + GRU
+1919: 99.0
+1920: 98.5
+1921: 95.5
+1922: 89.0
+1923: 95.5
+1924: π
+1925: 0.5
+1926: \pi_{0.5}
+1927: + SSM (S4D)
+1928: 98.5
+1929: 98.5
+1930: 97.0
+1931: 92.5
+1932: 96.625
+1933: TFP w/o
+1934: Δ
+1935: ​
+1936: t
+1937: \Delta t
+1938: 98.5
+1939: 97.5
+1940: 97.5
+1941: 94.0
+1942: 96.9
+1943: TFP (ours)
+1944: 99.6
+1945: 99.0
+1946: 99.4
+1947: 97.0
+1948: 98.75
+1949: (b) LIBERO-plus
+1950: [
+1951: 9
+1952: ]
+1953: Method
+1954: Noise
+1955: Light
+1956: Bg.
+1957: Avg.
+1958: π
+1959: 0.5
+1960: \pi_{0.5}
+1961: 85.2
+1962: 93.9
+1963: 95.1
+1964: 91.4
+1965: π
+1966: 0.5
+1967: \pi_{0.5}
+1968: + GRU
+1969: 85.9
+1970: 91.5
+1971: 96.1
+1972: 91.2
+1973: π
+1974: 0.5
+1975: \pi_{0.5}
+1976: + SSM (S4D)
+1977: 82.6
+1978: 95.0
+1979: 92.3
+1980: 90.0
+1981: TFP w/o
+1982: Δ
+1983: ​
+1984: t
+1985: \Delta t
+1986: 82.5
+1987: 93.8
+1988: 94.1
+1989: 90.1
+1990: TFP (ours)
+1991: 88.5
+1992: 96.1
+1993: 96.7
+1994: 93.8
+1995: We ablate whether TFP’s gains come merely from adding temporal state, and whether elapsed-time conditioning in the LTC update is necessary.
+1996: V-C
+1997: 1
+1998: Memory Dynamics
+1999: We compare TFP with GRU and S4D memory variants under the same
+2000: π
+2001: 0.5
+2002: \pi_{0.5}
+2003: backbone, training data, action horizon, and LIBERO evaluation protocol. This tests whether gains come from generic recurrence or from continuous-time memory coupled to action-head conditioning.
+2004: GRU performs competitively on spatial tasks but degrades on object, goal, and long-horizon tasks; S4D improves over GRU but remains below TFP, especially on the long-horizon split. Thus, gains are not from memory alone: the state must be temporally stable and directly coupled to action generation.
+2005: Elapsed-time conditioning.
+2006: Because adaptive receding-horizon execution re-queries the policy after variable
+2007: executed prefixes, the interval between memory updates is nonuniform. We isolate
+2008: the role of measured elapsed time by comparing TFP with TFP w/o
+2009: Δ
+2010: ​
+2011: t
+2012: \Delta t
+2013: ,
+2014: which keeps the same LTC update, AdaLN action conditioning, training data, and
+2015: adaptive executor, but replaces the measured interval with a constant step size.
+2016: The drop from TFP to TFP w/o
+2017: Δ
+2018: ​
+2019: t
+2020: \Delta t
+2021: , especially on LIBERO Long and
+2022: LIBERO-plus, shows that the gain is not only from adding a recurrent state or
+2023: adaptive execution; the memory update benefits from receiving the actual elapsed
+2024: time between policy queries.
+2025: On LIBERO-plus, GRU improves some perturbations but lowers average robustness relative to
+2026: π
+2027: 0.5
+2028: \pi_{0.5}
+2029: , while TFP improves the average from
+2030: 91.4
+2031: %
+2032: 91.4\%
+2033: to
+2034: 93.8
+2035: %
+2036: 93.8\%
+2037: , mainly under noise and lighting. Memory must therefore stabilize action generation rather than merely add recurrent state.
+2038: V-D
+2039: Limitations
+2040: Although LTC and AdaLN add little inference overhead, recurrent full fine-tuning is costly because training must unroll across action chunks to preserve hidden-state continuity and credit assignment. EATB truncates gradients across contiguous chunks, but our largest LIBERO runs still used
+2041: K
+2042: =
+2043: 8
+2044: K=8
+2045: , batch size 128, over 100GB GPU memory, and about 80 hours on 4 H200 GPUs to reach imitation loss near 0.003. Our real-world evaluation is also limited to tabletop single-arm manipulation, leaving mobile manipulators, humanoids, and dexterous hands for future work.
+2046: VI
+2047: Conclusion
+2048: We presented Temporally Conditioned Memory-Fusion Policies (TFP), a framework
+2049: for extending reactive VLA policies with an explicit task-progress belief for
+2050: history-dependent manipulation. TFP maintains this belief with Liquid
+2051: Time-Constant dynamics and injects it directly into the flow-matching action
+2052: decoder through AdaLN-style conditioning, allowing the learned belief to
+2053: shape action generation rather than serve as passive history context. Across
+2054: simulation and real-world tasks, TFP improves performance most clearly when the
+2055: current observation alone is insufficient, including long-horizon, visually
+2056: perturbed, occluded, and stage-dependent manipulation settings. Mechanistic
+2057: analyses show that the learned write-gain dynamics change sharply near
+2058: manipulation-event boundaries, while hidden-memory interventions show that
+2059: changing only the belief can alter the generated action chunk and end-effector
+2060: trajectory. These results suggest that memory in VLA policies should act as an
+2061: event-sensitive action-conditioning state: retaining task progress during stable
+2062: or ambiguous phases, and revising the belief when task-relevant evidence
+2063: changes. Future work should combine such dynamics-aware memory with stronger
+2064: object-centric grounding, spatial generalization, and compositional planning, while developing more efficient recurrent fine-tuning schemes.
+2065: References
+2066: [1]
+2067: I. M. Baytas, C. Xiao, X. Zhang, F. Wang, A. K. Jain, and J. Zhou
+2068: (2017)
+2069: Patient subtyping via time-aware lstm networks
+2070: .
+2071: In
+2072: Proceedings of the 23rd ACM SIGKDD international conference on knowledge discovery and data mining
+2073: ,
+2074: pp. 65–74
+2075: .
+2076: Cited by:
+2077: Appendix A
+2078: .
+2079: [2]
+2080: K. Black
+2081: et al.
+2082: (2024)
+2083: π
+2084: 0
+2085: \pi_{0}
+2086: : A flow-matching policy for generalist robot manipulation
+2087: .
+2088: arXiv preprint arXiv:2410.24164
+2089: .
+2090: Note:
+2091: Physical Intelligence
+2092: Cited by:
+2093: Appendix A
+2094: ,
+2095: Appendix A
+2096: ,
+2097: §I
+2098: ,
+2099: §II
+2100: .
+2101: [3]
+2102: A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu,
+2103: et al.
+2104: (2023)
+2105: RT-2: vision-language-action models transfer web knowledge to robotic control
+2106: .
+2107: arXiv preprint arXiv:2307.15818
+2108: .
+2109: Cited by:
+2110: Appendix A
+2111: ,
+2112: §I
+2113: ,
+2114: §II
+2115: .
+2116: [4]
+2117: Z. Che, S. Purushotham, K. Cho, D. Sontag, and Y. Liu
+2118: (2018)
+2119: Recurrent neural networks for multivariate time series with missing values
+2120: .
+2121: Scientific reports
+2122: 8
+2123: (
+2124: 1
+2125: ),
+2126: pp. 6085
+2127: .
+2128: Cited by:
+2129: Appendix A
+2130: .
+2131: [5]
+2132: R. T. Q. Chen, Y. Rubanova, J. Bettencourt, and D. Duvenaud
+2133: (2018)
+2134: Neural ordinary differential equations
+2135: .
+2136: In
+2137: Advances in Neural Information Processing Systems
+2138: ,
+2139: Vol.
+2140: 31
+2141: .
+2142: Cited by:
+2143: Appendix A
+2144: .
+2145: [6]
+2146: C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and S. Song
+2147: (2023)
+2148: Diffusion policy: visuomotor policy learning via action diffusion
+2149: .
+2150: arXiv preprint arXiv:2303.04137
+2151: .
+2152: Cited by:
+2153: Appendix A
+2154: .
+2155: [7]
+2156: K. Cho, B. Van Merriënboer, Ç. Gulçehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio
+2157: (2014)
+2158: Learning phrase representations using rnn encoder–decoder for statistical machine translation
+2159: .
+2160: In
+2161: Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP)
+2162: ,
+2163: pp. 1724–1734
+2164: .
+2165: Cited by:
+2166: Appendix A
+2167: .
+2168: [8]
+2169: D. Driess, F. Xia, M. S. M. Sajjadi, C. Lynch, A. Chowdhery, B. Ichter, A. Wahid, J. Tompson, Q. Vuong, T. Yu,
+2170: et al.
+2171: (2023)
+2172: PaLM-E: an embodied multimodal language model
+2173: .
+2174: arXiv preprint arXiv:2303.03378
+2175: .
+2176: Cited by:
+2177: §I
+2178: .
+2179: [9]
+2180: S. Fei, S. Wang, J. Shi, Z. Dai, J. Cai, P. Qian, J. Li, X. He, S. Zhang, Z. Fei, J. Fu, J. Gong, and X. Qiu
+2181: (2025)
+2182: LIBERO-Plus: in-depth robustness analysis of vision-language-action models
+2183: .
+2184: arXiv preprint arXiv:2510.13626
+2185: .
+2186: Cited by:
+2187: TABLE IV
+2188: .
+2189: [10]
+2190: K. Funahashi and Y. Nakamura
+2191: (1993)
+2192: Approximation of dynamical systems by continuous time recurrent neural networks
+2193: .
+2194: Neural networks
+2195: 6
+2196: (
+2197: 6
+2198: ),
+2199: pp. 801–806
+2200: .
+2201: Cited by:
+2202: Appendix A
+2203: .
+2204: [11]
+2205: A. Gu and T. Dao
+2206: (2023)
+2207: Mamba: linear-time sequence modeling with selective state spaces
+2208: .
+2209: arXiv preprint arXiv:2312.00752
+2210: .
+2211: Cited by:
+2212: Appendix A
+2213: ,
+2214: §IV-C
+2215: .
+2216: [12]
+2217: A. Gu, K. Goel, and C. Ré
+2218: (2022)
+2219: Efficiently modeling long sequences with structured state spaces
+2220: .
+2221: In
+2222: International Conference on Learning Representations
+2223: ,
+2224: Cited by:
+2225: Appendix A
+2226: ,
+2227: §IV-C
+2228: .
+2229: [13]
+2230: R. Hasani, M. Lechner, A. Amini, D. Rus, and R. Grosu
+2231: (2021)
+2232: Liquid time-constant networks
+2233: .
+2234: In
+2235: Proceedings of the AAAI Conference on Artificial Intelligence
+2236: ,
+2237: Vol.
+2238: 35
+2239: ,
+2240: pp. 7657–7666
+2241: .
+2242: Cited by:
+2243: Appendix A
+2244: ,
+2245: §I
+2246: ,
+2247: §II
+2248: .
+2249: [14]
+2250: R. Hasani, M. Lechner, A. Amini, H. Sun, A. Mehrjou, R. Grosu, and D. Rus
+2251: (2022)
+2252: Closed-form continuous-time neural networks
+2253: .
+2254: Nature Machine Intelligence
+2255: 4
+2256: (
+2257: 11
+2258: ),
+2259: pp. 992–1003
+2260: .
+2261: External Links:
+2262: Document
+2263: Cited by:
+2264: Appendix A
+2265: ,
+2266: §I
+2267: ,
+2268: §II
+2269: .
+2270: [15]
+2271: S. Hochreiter and J. Schmidhuber
+2272: (1997)
+2273: Long short-term memory
+2274: .
+2275: Neural Computation
+2276: 9
+2277: (
+2278: 8
+2279: ),
+2280: pp. 1735–1780
+2281: .
+2282: External Links:
+2283: Document
+2284: Cited by:
+2285: Appendix A
+2286: .
+2287: [16]
+2288: M. J. Kim
+2289: et al.
+2290: (2024)
+2291: OpenVLA: an open-source vision-language-action model
+2292: .
+2293: arXiv preprint arXiv:2406.09246
+2294: .
+2295: Cited by:
+2296: Appendix A
+2297: ,
+2298: §I
+2299: ,
+2300: §II
+2301: .
+2302: [17]
+2303: M. Koo, D. Choi, T. Kim, K. Lee, C. Kim, Y. Seo, and J. Shin
+2304: (2025)
+2305: Hamlet: switch your vision-language-action model into a history-aware policy
+2306: .
+2307: arXiv preprint arXiv:2510.00695
+2308: .
+2309: Cited by:
+2310: Appendix A
+2311: ,
+2312: §II
+2313: .
+2314: [18]
+2315: H. Li, F. Shen, D. Chen, L. Yang, X. Wang, J. Shi, Z. Bing, Z. Liu, and A. Knoll
+2316: (2026)
+2317: ReMem-vla: empowering vision-language-action model with memory via dual-level recurrent queries
+2318: .
+2319: arXiv preprint arXiv:2603.12942
+2320: .
+2321: External Links:
+2322: 2603.12942
+2323: ,
+2324: Document
+2325: Cited by:
+2326: §I
+2327: ,
+2328: §II
+2329: .
+2330: [19]
+2331: B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+2332: (2023)
+2333: LIBERO: benchmarking knowledge transfer for lifelong robot learning
+2334: .
+2335: arXiv preprint arXiv:2306.03310
+2336: .
+2337: Cited by:
+2338: TABLE IV
+2339: .
+2340: [20]
+2341: J. Ma
+2342: et al.
+2343: (2025)
+2344: CDP: towards robust autoregressive visuomotor policy learning via causal diffusion
+2345: .
+2346: arXiv preprint arXiv:2506.14769
+2347: .
+2348: Cited by:
+2349: Appendix A
+2350: ,
+2351: §II
+2352: .
+2353: [21]
+2354: D. Neil, M. Pfeiffer, and S. Liu
+2355: (2016)
+2356: Phased lstm: accelerating recurrent network training for long or event-based sequences
+2357: .
+2358: Advances in neural information processing systems
+2359: 29
+2360: .
+2361: Cited by:
+2362: Appendix A
+2363: .
+2364: [22]
+2365: Octo Model Team, D. Ghosh, H. Walke, K. Pertsch, K. Black, O. Mees, S. Dasari, J. Hejna, C. Xu, J. Luo,
+2366: et al.
+2367: (2024)
+2368: Octo: an open-source generalist robot policy
+2369: .
+2370: arXiv preprint arXiv:2405.12213
+2371: .
+2372: Cited by:
+2373: Appendix A
+2374: ,
+2375: §I
+2376: ,
+2377: §II
+2378: .
+2379: [23]
+2380: W. Peebles and S. Xie
+2381: (2023)
+2382: Scalable diffusion models with transformers
+2383: .
+2384: In
+2385: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)
+2386: ,
+2387: pp. 4195–4205
+2388: .
+2389: Cited by:
+2390: §III-C
+2391: .
+2392: [24]
+2393: E. Perez, F. Strub, H. de Vries, V. Dumoulin, and A. Courville
+2394: (2018)
+2395: FiLM: visual reasoning with a general conditioning layer
+2396: .
+2397: In
+2398: Proceedings of the AAAI Conference on Artificial Intelligence
+2399: ,
+2400: Cited by:
+2401: §III-C
+2402: .
+2403: [25]
+2404: Y. Rubanova, R. T. Q. Chen, and D. Duvenaud
+2405: (2019)
+2406: Latent ordinary differential equations for irregularly-sampled time series
+2407: .
+2408: In
+2409: Advances in Neural Information Processing Systems
+2410: ,
+2411: Vol.
+2412: 32
+2413: .
+2414: Cited by:
+2415: Appendix A
+2416: .
+2417: [26]
+2418: R. Shah, R. K. Jenamani, X. Zhang, L. Sun, R. Martín-Martín, Y. Zhu, D. Ramanan, and K. Schmeckpeper
+2419: (2026)
+2420: Scaling short-term memory of visuomotor policies for long-horizon tasks
+2421: .
+2422: Note:
+2423: Submitted to ICLR 2026
+2424: External Links:
+2425: Link
+2426: Cited by:
+2427: §I
+2428: .
+2429: [27]
+2430: H. Shi, B. Xie, Y. Liu, L. Sun, F. Liu, T. Wang, E. Zhou, H. Fan, X. Zhang, and G. Huang
+2431: (2025)
+2432: Memoryvla: perceptual-cognitive memory in vision-language-action models for robotic manipulation
+2433: .
+2434: arXiv preprint arXiv:2508.19236
+2435: .
+2436: Cited by:
+2437: Appendix A
+2438: ,
+2439: §I
+2440: ,
+2441: §II
+2442: .
+2443: [28]
+2444: M. Shridhar, L. Manuelli, and D. Fox
+2445: (2023)
+2446: Perceiver-actor: a multi-task transformer for robotic manipulation
+2447: .
+2448: In
+2449: Conference on Robot Learning
+2450: ,
+2451: pp. 785–799
+2452: .
+2453: Cited by:
+2454: Appendix A
+2455: .
+2456: [29]
+2457: Q. Tan, M. Ye, B. Yang, S. Liu, A. J. Ma, T. C. Yip, G. L. Wong, and P. Yuen
+2458: (2020)
+2459: Data-gru: dual-attention time-aware gated recurrent unit for irregular multivariate time series
+2460: .
+2461: In
+2462: Proceedings of the AAAI conference on artificial intelligence
+2463: ,
+2464: Vol.
+2465: 34
+2466: ,
+2467: pp. 930–937
+2468: .
+2469: Cited by:
+2470: Appendix A
+2471: .
+2472: [30]
+2473: M. Torne, K. Pertsch, H. Walke, K. Vedder, S. Nair, B. Ichter, A. Z. Ren, H. Wang, J. Tang, K. Stachowicz, K. Dhabalia, M. Equi, Q. Vuong, J. T. Springenberg, S. Levine, C. Finn, and D. Driess
+2474: (2026)
+2475: MEM: multi-scale embodied memory for vision language action models
+2476: .
+2477: arXiv preprint arXiv:2603.03596
+2478: .
+2479: External Links:
+2480: 2603.03596
+2481: ,
+2482: Document
+2483: Cited by:
+2484: §I
+2485: .
+2486: [31]
+2487: A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin
+2488: (2017)
+2489: Attention is all you need
+2490: .
+2491: Advances in Neural Information Processing Systems
+2492: 30
+2493: .
+2494: Cited by:
+2495: Appendix A
+2496: .
+2497: [32]
+2498: T. Wang, W. Xiao, T. Seyde, R. Hasani, and D. Rus
+2499: (2023)
+2500: Measuring interpretability of neural policies of robots with disentangled representation
+2501: .
+2502: In
+2503: 7th Annual Conference on Robot Learning
+2504: ,
+2505: External Links:
+2506: Link
+2507: Cited by:
+2508: §D-B
+2509: ,
+2510: §V-B
+2511: .
+2512: [33]
+2513: L. Xiao, J. Li, J. Gao, F. Ye, Y. Jin, J. Qian, J. Zhang, Y. Wu, and X. Yu
+2514: (2025)
+2515: AVA-VLA: improving vision-language-action models with active visual attention
+2516: .
+2517: arXiv preprint arXiv:2511.18960
+2518: .
+2519: External Links:
+2520: Document
+2521: Cited by:
+2522: Appendix A
+2523: ,
+2524: §I
+2525: ,
+2526: §II
+2527: ,
+2528: TABLE I
+2529: .
+2530: [34]
+2531: T. Z. Zhao, V. Kumar, S. Levine, and C. Finn
+2532: (2023)
+2533: Learning fine-grained bimanual manipulation with low-cost hardware
+2534: .
+2535: In
+2536: Robotics: Science and Systems
+2537: ,
+2538: Cited by:
+2539: Appendix A
+2540: .
+2541: The appendix provides additional material omitted from the main paper for space.
+2542: Appendix
+2543: A
+2544: gives a broader discussion of related work.
+2545: Appendix
+2546: B
+2547: describes implementation and execution details.
+2548: Appendix
+2549: C
+2550: formalizes the continuous-time belief
+2551: interpretation of LTC memory. Appendix
+2552: IV
+2553: compares
+2554: TFP with recurrent, fixed-decay, and state-space alternatives.
+2555: Appendix
+2556: D
+2557: provides additional experimental
+2558: details, including hidden-state interventions and MIKASA-Robo failure analysis.
+2559: Appendix
+2560: E
+2561: reports statistical reliability
+2562: results for simulation and real-world rollouts.
+2563: Appendix A
+2564: Additional Related Work
+2565: Vision-language-conditioned robot policies.
+2566: Robot manipulation has increasingly moved from task-specific behavior cloning toward vision-language-conditioned policies that map images, language instructions, and robot states to actions. RT-2, OpenVLA, Octo, and
+2567: π
+2568: 0
+2569: \pi_{0}
+2570: extend this direction to generalist VLA policies trained with large-scale robot and vision-language data
+2571: [
+2572: 3
+2573: ,
+2574: 16
+2575: ,
+2576: 22
+2577: ,
+2578: 2
+2579: ]
+2580: . Related architectures such as PerAct further show the benefit of structured visual representations for language-conditioned manipulation
+2581: [
+2582: 28
+2583: ]
+2584: . TFP builds on this family of policies, but targets a different failure mode: in stage-dependent manipulation, the current observation and instruction may not uniquely determine the correct action without an internal belief over task progress, hidden object state, or previous interaction outcomes.
+2585: Chunked generative action policies.
+2586: Recent imitation policies often predict action chunks rather than single-step actions. ACT learns sequence-level action prediction for fine-grained manipulation, Diffusion Policy represents visuomotor control as conditional denoising over action trajectories, and
+2587: π
+2588: 0
+2589: \pi_{0}
+2590: uses flow matching for generalist action generation
+2591: [
+2592: 34
+2593: ,
+2594: 6
+2595: ,
+2596: 2
+2597: ]
+2598: .Action chunking improves temporal consistency and reduces policy-query frequency, but it also creates a memory problem: after executing part of a chunk, the policy must decide what task-progress information should persist to the next query. TFP addresses this by maintaining a latent belief across policy queries and injecting it directly into the action decoder.
+2599: Temporal and continuous-time memory models.
+2600: Temporal context can be modeled with recurrent networks, self-attention,state-space models, and continuous-time recurrent dynamics. RNNs, LSTMs, and GRUs provide compact recurrent states for history aggregation, with LSTMs designed for long time-lag dependencies and GRUs offering a gated recurrence
+2601: [
+2602: 15
+2603: ,
+2604: 7
+2605: ]
+2606: . Time-aware variants further incorporate elapsed time through decay mechanisms or temporal gates, including GRU-D,T-LSTM, DATA-GRU, and Phased LSTM
+2607: [
+2608: 4
+2609: ,
+2610: 1
+2611: ,
+2612: 29
+2613: ,
+2614: 21
+2615: ]
+2616: .These models are natural baselines for history-dependent control, but in chunked visuomotor policies they still require sequential unrolling over policy queries. Because each recurrent step may involve a large VLA backbone, an action-generation decoder, and a full action-horizon imitation loss, repeatedly calling the policy across many memory steps can substantially increase training cost and limit temporal parallelism.
+2617: Self-attention provides parallel content-based access to history, but using past observations and action chunks as an ever-growing token set increases context length and does not by itself impose a physical-time belief dynamics
+2618: [
+2619: 31
+2620: ]
+2621: . Structured state-space models such as S4 and selective SSMs such as Mamba offer efficient long-sequence modeling with linearor near-linear scaling
+2622: [
+2623: 12
+2624: ,
+2625: 11
+2626: ]
+2627: . These methods are strong sequence encoders, but our setting requires more than long-context compression:the policy must maintain an online task-progress belief whose retention is calibrated by elapsed time and whose state directly conditions action generation.
+2628: Continuous-time recurrent models provide another route to temporal memory.Classical continuous-time recurrent neural networks model hidden-state evolution with differential equations, while Neural ODEs, ODE-RNNs, and LatentODEs evolve hidden states continuously between irregular observations
+2629: [
+2630: 10
+2631: ,
+2632: 5
+2633: ,
+2634: 25
+2635: ]
+2636: .Liquid Time-Constant networks and closed-form continuous-time networks further parameterize input-dependent time constants for adaptive continuous-time sequence modeling
+2637: [
+2638: 13
+2639: ,
+2640: 14
+2641: ]
+2642: . TFP builds on this continuous-time memory family, but uses LTC not as a standalone sequence model:we use it as a compact belief filter for chunked VLA control, with vector-valued, input-dependent time constants and closed-form elapsed-time retention. The resulting memory is then projected into the action-head conditioning space, so temporal belief directly modulates the generated action chunk instead of remaining a passive history representation.
+2643: Memory-augmented and history-aware visuomotor policies.
+2644: Several recent works augment robot policies with history or memory to address partial observability and long-horizon manipulation. HAMLET adapts pretrained VLAs into history-aware policies by introducing moment tokens and a lightweight memory module that aggregates historical context for action prediction
+2645: [
+2646: 17
+2647: ]
+2648: . This provides an efficient alternative to naively appending multiple past frames, but its memory primarily serves as a token-level history compression and retrieval interface. MemoryVLA introduces a cognition-memory-action framework, where perceptual and cognitive tokens form working memory, retrieve decision-relevant entries from a memory bank, and condition a diffusion action expert
+2649: [
+2650: 27
+2651: ]
+2652: . This design preserves richer historical details, but the temporal state is organized around memory storage, retrieval, and consolidation rather than an explicit elapsed-time-conditioned task dynamics. AVA-VLA reformulates VLA control from a POMDP perspective and uses a recurrent belief state to actively modulate visual token processing
+2653: [
+2654: 33
+2655: ]
+2656: . However, its memory is mainly used to guide perception, whereas the action-generation pathway is not explicitly conditioned by a continuous-time task-progress belief.
+2657: History-aware diffusion policies are also related. Causal Diffusion Policy conditions diffusion-based visuomotor control on historical action sequences through a causal transformer, improving temporal coherence and robustness under degraded observations
+2658: [
+2659: 20
+2660: ]
+2661: . Its focus is autoregressive action history modeling rather than language-conditioned VLA control, and its own limitation notes that extremely long-horizon tasks requiring sustained planning remain unresolved. These methods show that exposing the policy to better,richer, or more retrievable history is valuable. TFP addresses a complementary problem: the policy should not only access history, but should maintain a compact latent belief whose evolution follows temporal-conditioned task dynamics.
+2662: Concretely, TFP compresses history into a fixed-size continuous-time belief state with input-dependent LTC retention and injects this belief directly into the generative action decoder through AdaLN-style modulation. Thus, memory is not only a retrieved context or an auxiliary visual-attention signal; it directly modulates the decoder activations and therefore the flow-matching velocity field over the predicted action chunk. This makes TFP better aligned with real manipulation dynamics, where the correct action depends on how task progress evolves over physical time, not merely on whether the model can attend to a more complete history.
+2663: Appendix B
+2664: Additional Method Details
+2665: B-A
+2666: Memory-Conditioning Interface
+2667: TFP conditions the action decoder through adaptive modulation rather than
+2668: explicit memory-token cross-attention. Cross-attention-based memory injection
+2669: requires the decoder to retrieve and interpret a separate set of memory tokens.
+2670: In contrast, adaptive conditioning compresses temporal context into a single
+2671: modulation vector that directly shapes decoder activations. The timestep
+2672: embedding captures where the denoising process is, while the memory condition
+2673: captures what temporal context is relevant. Their additive fusion lets the
+2674: decoder jointly adapt to diffusion phase and retained task belief without adding
+2675: an extra attention pathway.
+2676: This choice reflects the role of LTC memory as a compact time-consistent belief
+2677: state rather than a retrievable history buffer. We do not claim that
+2678: cross-attention is inherently inferior; instead, AdaLN provides a simpler
+2679: fixed-size interface for injecting belief into every action-decoder layer. A
+2680: computational overhead discussion is provided in
+2681: Appendix
+2682: IV-D
+2683: .
+2684: B-B
+2685: Episode-Aware Temporal Batching Details
+2686: For each episode
+2687: e
+2688: e
+2689: , EATB keeps an episode-local hidden state
+2690: 𝐡
+2691: t
+2692: (
+2693: e
+2694: )
+2695: =
+2696: f
+2697: θ
+2698: ​
+2699: (
+2700: 𝐡
+2701: t
+2702: −
+2703: 1
+2704: (
+2705: e
+2706: )
+2707: ,
+2708: o
+2709: t
+2710: (
+2711: e
+2712: )
+2713: ,
+2714: Δ
+2715: ​
+2716: t
+2717: t
+2718: (
+2719: e
+2720: )
+2721: )
+2722: \mathbf{h}_{t}^{(e)}=f_{\theta}(\mathbf{h}_{t-1}^{(e)},o_{t}^{(e)},\Delta t_{t}^{(e)})
+2723: ,
+2724: with
+2725: 𝐡
+2726: 0
+2727: (
+2728: e
+2729: )
+2730: =
+2731: 𝟎
+2732: \mathbf{h}_{0}^{(e)}=\mathbf{0}
+2733: , and resets it only at episode boundaries.
+2734: At training step
+2735: s
+2736: s
+2737: , we sample
+2738: B
+2739: B
+2740: active episodes and unroll each for
+2741: K
+2742: K
+2743: consecutive chunks. If episode
+2744: e
+2745: b
+2746: e_{b}
+2747: starts from chunk index
+2748: τ
+2749: b
+2750: \tau_{b}
+2751: , its
+2752: stored hidden state is retrieved as
+2753: 𝐡
+2754: b
+2755: ,
+2756: 0
+2757: =
+2758: 𝐡
+2759: ~
+2760: τ
+2761: b
+2762: (
+2763: e
+2764: b
+2765: )
+2766: \mathbf{h}_{b,0}=\tilde{\mathbf{h}}_{\tau_{b}}^{(e_{b})}
+2767: and updated as
+2768: 𝐡
+2769: b
+2770: ,
+2771: k
+2772: =
+2773: f
+2774: θ
+2775: (
+2776: 𝐡
+2777: b
+2778: ,
+2779: k
+2780: −
+2781: 1
+2782: ,
+2783: 𝐱
+2784: b
+2785: ,
+2786: k
+2787: ,
+2788: Δ
+2789: t
+2790: b
+2791: ,
+2792: k
+2793: )
+2794: ,
+2795: k
+2796: =
+2797: 1
+2798: ,
+2799: …
+2800: ,
+2801: K
+2802: .
+2803: \mathbf{h}_{b,k}=f_{\theta}(\mathbf{h}_{b,k-1},\mathbf{x}_{b,k},\Delta t_{b,k}),\qquad k=1,\dots,K.
+2804: (19)
+2805: The optimization objective is
+2806: ℒ
+2807: s
+2808: =
+2809: 1
+2810: B
+2811: ​
+2812: K
+2813: ​
+2814: ∑
+2815: b
+2816: =
+2817: 1
+2818: B
+2819: ∑
+2820: k
+2821: =
+2822: 1
+2823: K
+2824: ℓ
+2825: flow
+2826: (
+2827: b
+2828: ,
+2829: k
+2830: )
+2831: .
+2832: \mathcal{L}_{s}=\frac{1}{BK}\sum_{b=1}^{B}\sum_{k=1}^{K}\ell_{\mathrm{flow}}^{(b,k)}.
+2833: (20)
+2834: After the parameter update, the final hidden state is written back with gradient
+2835: truncation,
+2836: 𝐡
+2837: ~
+2838: τ
+2839: b
+2840: +
+2841: K
+2842: (
+2843: e
+2844: b
+2845: )
+2846: ←
+2847: stopgrad
+2848: ⁡
+2849: (
+2850: 𝐡
+2851: b
+2852: ,
+2853: K
+2854: )
+2855: .
+2856: \tilde{\mathbf{h}}_{\tau_{b}+K}^{(e_{b})}\leftarrow\operatorname{stopgrad}(\mathbf{h}_{b,K}).
+2857: (21)
+2858: This preserves forward memory across training segments while bounding the
+2859: backpropagation length.
+2860: Appendix C
+2861: Continuous-Time Belief Interpretation
+2862: This section formalizes the connection between Liquid Time-Constant (LTC) memory
+2863: and belief filtering in partially observable manipulation. We do not claim that
+2864: LTCs are universally more expressive than all recurrent models. A sufficiently
+2865: large recurrent network with access to elapsed time may approximate many
+2866: belief-update functions. Instead, our claim is more specific: LTC provides a
+2867: structural inductive bias that matches a class of continuous-time,
+2868: multi-timescale belief dynamics. This class is particularly relevant for
+2869: chunked robot manipulation, where policy queries may occur after variable
+2870: execution intervals.
+2871: Claim.
+2872: For manipulation tasks that can be modeled as partially observable decision
+2873: processes with latent task state, the desired memory should behave as a
+2874: time-consistent belief state. LTC implements the exact discretization of a
+2875: first-order continuous-time belief relaxation process, and its exponential
+2876: retention gate is the unique continuous scalar retention rule satisfying
+2877: elapsed-time consistency. Step-indexed recurrent baselines such as GRUs or
+2878: LSTMs do not enforce this property unless elapsed time is explicitly provided
+2879: and the gate is constrained to satisfy the same exponential semigroup structure.
+2880: C-A
+2881: Belief Filtering in a Continuous-Time POMDP
+2882: Let
+2883: z
+2884: t
+2885: z_{t}
+2886: denote the latent task state, which may include task phase, object
+2887: state, object-in-hand status, subgoal completion, and other variables not fully
+2888: observable from the current image. Let
+2889: o
+2890: t
+2891: o_{t}
+2892: denote the observation, including
+2893: visual and proprioceptive inputs. In a partially observable Markov decision
+2894: process, the sufficient statistic for optimal decision making is the belief
+2895: state
+2896: b
+2897: t
+2898: (
+2899: z
+2900: )
+2901: =
+2902: p
+2903: (
+2904: z
+2905: t
+2906: =
+2907: z
+2908: ∣
+2909: o
+2910: 1
+2911: :
+2912: t
+2913: ,
+2914: a
+2915: 1
+2916: :
+2917: t
+2918: −
+2919: 1
+2920: )
+2921: .
+2922: b_{t}(z)=p(z_{t}=z\mid o_{1:t},a_{1:t-1}).
+2923: (22)
+2924: The standard discrete-time Bayes filter updates the belief by combining a
+2925: prediction step with an observation likelihood:
+2926: b
+2927: t
+2928: ​
+2929: (
+2930: z
+2931: t
+2932: )
+2933: =
+2934: η
+2935: ​
+2936: p
+2937: ​
+2938: (
+2939: o
+2940: t
+2941: ∣
+2942: z
+2943: t
+2944: )
+2945: ​
+2946: ∑
+2947: z
+2948: t
+2949: −
+2950: 1
+2951: p
+2952: ⁡
+2953: (
+2954: z
+2955: t
+2956: ∣
+2957: z
+2958: t
+2959: −
+2960: 1
+2961: ,
+2962: a
+2963: t
+2964: −
+2965: 1
+2966: )
+2967: ​
+2968: b
+2969: t
+2970: −
+2971: 1
+2972: ​
+2973: (
+2974: z
+2975: t
+2976: −
+2977: 1
+2978: )
+2979: ,
+2980: b_{t}(z_{t})=\eta\,p(o_{t}\mid z_{t})\sum_{z_{t-1}}p(z_{t}\mid z_{t-1},a_{t-1})b_{t-1}(z_{t-1}),
+2981: (23)
+2982: where
+2983: η
+2984: \eta
+2985: is a normalization constant.
+2986: In continuous time, if the latent Markov dynamics have generator
+2987: Q
+2988: Q
+2989: , the
+2990: prediction step over an elapsed interval
+2991: Δ
+2992: ​
+2993: t
+2994: t
+2995: \Delta t_{t}
+2996: is
+2997: b
+2998: ¯
+2999: t
+3000: =
+3001: exp
+3002: ⁡
+3003: (
+3004: Q
+3005: ​
+3006: Δ
+3007: ​
+3008: t
+3009: t
+3010: )
+3011: ​
+3012: b
+3013: t
+3014: −
+3015: 1
+3016: .
+3017: \bar{b}_{t}=\exp(Q\Delta t_{t})b_{t-1}.
+3018: (24)
+3019: Thus, belief evolution depends on elapsed physical time, not only on the number
+3020: of policy queries. This motivates memory updates whose retention is explicitly a
+3021: function of
+3022: Δ
+3023: ​
+3024: t
+3025: t
+3026: \Delta t_{t}
+3027: .
+3028: In TFP, we do not represent the full probabilistic belief
+3029: b
+3030: t
+3031: b_{t}
+3032: . Instead, the
+3033: memory state
+3034: h
+3035: t
+3036: ∈
+3037: ℝ
+3038: d
+3039: h
+3040: h_{t}\in\mathbb{R}^{d_{h}}
+3041: is a learned belief embedding that
+3042: summarizes task progress and interaction history.
+3043: C-B
+3044: LTC as First-Order Belief Relaxation
+3045: Assume that, at query
+3046: t
+3047: t
+3048: , the current observation and prior memory induce a
+3049: candidate belief
+3050: h
+3051: ^
+3052: t
+3053: =
+3054: C
+3055: θ
+3056: ​
+3057: (
+3058: x
+3059: t
+3060: ,
+3061: h
+3062: t
+3063: −
+3064: 1
+3065: )
+3066: ,
+3067: \hat{h}_{t}=C_{\theta}(x_{t},h_{t-1}),
+3068: (25)
+3069: where
+3070: x
+3071: t
+3072: x_{t}
+3073: is the compact observation representation. Consider the following
+3074: continuous-time relaxation dynamics for each latent belief coordinate
+3075: j
+3076: j
+3077: :
+3078: d
+3079: ​
+3080: h
+3081: j
+3082: ​
+3083: (
+3084: u
+3085: )
+3086: d
+3087: ​
+3088: u
+3089: =
+3090: −
+3091: 1
+3092: τ
+3093: t
+3094: ,
+3095: j
+3096: ​
+3097: (
+3098: h
+3099: j
+3100: ​
+3101: (
+3102: u
+3103: )
+3104: −
+3105: h
+3106: ^
+3107: t
+3108: ,
+3109: j
+3110: )
+3111: ,
+3112: u
+3113: ∈
+3114: [
+3115: t
+3116: −
+3117: Δ
+3118: ​
+3119: t
+3120: t
+3121: ,
+3122: t
+3123: ]
+3124: ,
+3125: \frac{dh_{j}(u)}{du}=-\frac{1}{\tau_{t,j}}\left(h_{j}(u)-\hat{h}_{t,j}\right),\qquad u\in[t-\Delta t_{t},t],
+3126: (26)
+3127: where
+3128: τ
+3129: t
+3130: ,
+3131: j
+3132: >
+3133: 0
+3134: \tau_{t,j}>0
+3135: is the time constant for memory channel
+3136: j
+3137: j
+3138: . We assume
+3139: that
+3140: h
+3141: ^
+3142: t
+3143: \hat{h}_{t}
+3144: and
+3145: τ
+3146: t
+3147: \tau_{t}
+3148: are held fixed over the interval between two
+3149: policy queries.
+3150: Proposition 1.
+3151: The exact solution of Eq. (
+3152: 26
+3153: ) over elapsed time
+3154: Δ
+3155: ​
+3156: t
+3157: t
+3158: \Delta t_{t}
+3159: is
+3160: h
+3161: t
+3162: ,
+3163: j
+3164: =
+3165: exp
+3166: (
+3167: −
+3168: Δ
+3169: t
+3170: t
+3171: /
+3172: τ
+3173: t
+3174: ,
+3175: j
+3176: )
+3177: h
+3178: t
+3179: −
+3180: 1
+3181: ,
+3182: j
+3183: +
+3184: (
+3185: 1
+3186: −
+3187: exp
+3188: (
+3189: −
+3190: Δ
+3191: t
+3192: t
+3193: /
+3194: τ
+3195: t
+3196: ,
+3197: j
+3198: )
+3199: )
+3200: h
+3201: ^
+3202: t
+3203: ,
+3204: j
+3205: .
+3206: h_{t,j}=\exp(-\Delta t_{t}/\tau_{t,j})h_{t-1,j}+\left(1-\exp(-\Delta t_{t}/\tau_{t,j})\right)\hat{h}_{t,j}.
+3207: (27)
+3208: Equivalently, in vector form,
+3209: h
+3210: t
+3211: =
+3212: k
+3213: t
+3214: ⊙
+3215: h
+3216: t
+3217: −
+3218: 1
+3219: +
+3220: (
+3221: 1
+3222: −
+3223: k
+3224: t
+3225: )
+3226: ⊙
+3227: h
+3228: ^
+3229: t
+3230: ,
+3231: k
+3232: t
+3233: =
+3234: exp
+3235: (
+3236: −
+3237: Δ
+3238: t
+3239: t
+3240: /
+3241: τ
+3242: t
+3243: )
+3244: .
+3245: h_{t}=k_{t}\odot h_{t-1}+(1-k_{t})\odot\hat{h}_{t},\qquad k_{t}=\exp(-\Delta t_{t}/\tau_{t}).
+3246: (28)
+3247: Proof.
+3248: For each dimension
+3249: j
+3250: j
+3251: , Eq. (
+3252: 26
+3253: ) is a linear first-order ODE:
+3254: d
+3255: ​
+3256: h
+3257: j
+3258: ​
+3259: (
+3260: u
+3261: )
+3262: d
+3263: ​
+3264: u
+3265: =
+3266: −
+3267: 1
+3268: τ
+3269: t
+3270: ,
+3271: j
+3272: ​
+3273: h
+3274: j
+3275: ​
+3276: (
+3277: u
+3278: )
+3279: +
+3280: 1
+3281: τ
+3282: t
+3283: ,
+3284: j
+3285: ​
+3286: h
+3287: ^
+3288: t
+3289: ,
+3290: j
+3291: .
+3292: \frac{dh_{j}(u)}{du}=-\frac{1}{\tau_{t,j}}h_{j}(u)+\frac{1}{\tau_{t,j}}\hat{h}_{t,j}.
+3293: Let the initial value at the beginning of the interval be
+3294: h
+3295: j
+3296: ​
+3297: (
+3298: t
+3299: −
+3300: Δ
+3301: ​
+3302: t
+3303: t
+3304: )
+3305: =
+3306: h
+3307: t
+3308: −
+3309: 1
+3310: ,
+3311: j
+3312: h_{j}(t-\Delta t_{t})=h_{t-1,j}
+3313: . Solving the ODE gives
+3314: h
+3315: j
+3316: ​
+3317: (
+3318: u
+3319: )
+3320: −
+3321: h
+3322: ^
+3323: t
+3324: ,
+3325: j
+3326: =
+3327: exp
+3328: ⁡
+3329: (
+3330: −
+3331: u
+3332: −
+3333: (
+3334: t
+3335: −
+3336: Δ
+3337: ​
+3338: t
+3339: t
+3340: )
+3341: τ
+3342: t
+3343: ,
+3344: j
+3345: )
+3346: ​
+3347: (
+3348: h
+3349: t
+3350: −
+3351: 1
+3352: ,
+3353: j
+3354: −
+3355: h
+3356: ^
+3357: t
+3358: ,
+3359: j
+3360: )
+3361: .
+3362: h_{j}(u)-\hat{h}_{t,j}=\exp\!\left(-\frac{u-(t-\Delta t_{t})}{\tau_{t,j}}\right)\left(h_{t-1,j}-\hat{h}_{t,j}\right).
+3363: Setting
+3364: u
+3365: =
+3366: t
+3367: u=t
+3368: yields
+3369: h
+3370: t
+3371: ,
+3372: j
+3373: −
+3374: h
+3375: ^
+3376: t
+3377: ,
+3378: j
+3379: =
+3380: exp
+3381: (
+3382: −
+3383: Δ
+3384: t
+3385: t
+3386: /
+3387: τ
+3388: t
+3389: ,
+3390: j
+3391: )
+3392: (
+3393: h
+3394: t
+3395: −
+3396: 1
+3397: ,
+3398: j
+3399: −
+3400: h
+3401: ^
+3402: t
+3403: ,
+3404: j
+3405: )
+3406: .
+3407: h_{t,j}-\hat{h}_{t,j}=\exp(-\Delta t_{t}/\tau_{t,j})\left(h_{t-1,j}-\hat{h}_{t,j}\right).
+3408: Rearranging gives Eq. (
+3409: 27
+3410: ). Applying this
+3411: coordinate-wise gives Eq. (
+3412: 28
+3413: ).
+3414: □
+3415: \square
+3416: This shows that the LTC update is not an arbitrary interpolation rule: it is the
+3417: exact discrete-time update of a continuous-time belief relaxation process. The
+3418: candidate
+3419: h
+3420: ^
+3421: t
+3422: \hat{h}_{t}
+3423: acts as evidence induced by the current observation, the
+3424: previous memory
+3425: h
+3426: t
+3427: −
+3428: 1
+3429: h_{t-1}
+3430: acts as the retained prior belief, and the
+3431: time-dependent retention
+3432: k
+3433: t
+3434: k_{t}
+3435: determines how strongly the prior persists over
+3436: the elapsed interval.
+3437: C-C
+3438: Elapsed-Time Consistency of Exponential Retention
+3439: The exponential form in Eq. (
+3440: 28
+3441: ) is also the natural form
+3442: required by elapsed-time consistency. Consider a scalar memory channel whose
+3443: retention over elapsed time
+3444: Δ
+3445: \Delta
+3446: is
+3447: k
+3448: ⁡
+3449: (
+3450: Δ
+3451: )
+3452: k(\Delta)
+3453: . If the same interval is
+3454: split into two sub-intervals,
+3455: Δ
+3456: 1
+3457: \Delta_{1}
+3458: and
+3459: Δ
+3460: 2
+3461: \Delta_{2}
+3462: , then applying
+3463: retention over
+3464: Δ
+3465: 1
+3466: \Delta_{1}
+3467: and then over
+3468: Δ
+3469: 2
+3470: \Delta_{2}
+3471: should be equivalent to
+3472: applying it once over
+3473: Δ
+3474: 1
+3475: +
+3476: Δ
+3477: 2
+3478: \Delta_{1}+\Delta_{2}
+3479: . Therefore, a time-consistent
+3480: retention function must satisfy
+3481: k
+3482: ⁡
+3483: (
+3484: Δ
+3485: 1
+3486: +
+3487: Δ
+3488: 2
+3489: )
+3490: =
+3491: k
+3492: ⁡
+3493: (
+3494: Δ
+3495: 1
+3496: )
+3497: ​
+3498: k
+3499: ​
+3500: (
+3501: Δ
+3502: 2
+3503: )
+3504: .
+3505: k(\Delta_{1}+\Delta_{2})=k(\Delta_{1})k(\Delta_{2}).
+3506: (29)
+3507: Proposition 2.
+3508: Assume
+3509: k
+3510: :
+3511: [
+3512: 0
+3513: ,
+3514: ∞
+3515: )
+3516: →
+3517: (
+3518: 0
+3519: ,
+3520: 1
+3521: ]
+3522: k:[0,\infty)\rightarrow(0,1]
+3523: is continuous, satisfies
+3524: k
+3525: ⁡
+3526: (
+3527: 0
+3528: )
+3529: =
+3530: 1
+3531: k(0)=1
+3532: ,
+3533: and obeys Eq. (
+3534: 29
+3535: ). Then
+3536: k
+3537: ⁡
+3538: (
+3539: Δ
+3540: )
+3541: =
+3542: exp
+3543: ⁡
+3544: (
+3545: −
+3546: λ
+3547: ​
+3548: Δ
+3549: )
+3550: k(\Delta)=\exp(-\lambda\Delta)
+3551: (30)
+3552: for some
+3553: λ
+3554: ≥
+3555: 0
+3556: \lambda\geq 0
+3557: . Equivalently,
+3558: k
+3559: (
+3560: Δ
+3561: )
+3562: =
+3563: exp
+3564: (
+3565: −
+3566: Δ
+3567: /
+3568: τ
+3569: )
+3570: k(\Delta)=\exp(-\Delta/\tau)
+3571: for
+3572: τ
+3573: =
+3574: 1
+3575: /
+3576: λ
+3577: \tau=1/\lambda
+3578: , with
+3579: τ
+3580: =
+3581: ∞
+3582: \tau=\infty
+3583: when
+3584: λ
+3585: =
+3586: 0
+3587: \lambda=0
+3588: .
+3589: Proof.
+3590: Since
+3591: k
+3592: ⁡
+3593: (
+3594: Δ
+3595: )
+3596: >
+3597: 0
+3598: k(\Delta)>0
+3599: , define
+3600: r
+3601: ⁡
+3602: (
+3603: Δ
+3604: )
+3605: =
+3606: log
+3607: ⁡
+3608: k
+3609: ⁡
+3610: (
+3611: Δ
+3612: )
+3613: r(\Delta)=\log k(\Delta)
+3614: . Taking logarithms of
+3615: Eq. (
+3616: 29
+3617: ) gives
+3618: r
+3619: ⁡
+3620: (
+3621: Δ
+3622: 1
+3623: +
+3624: Δ
+3625: 2
+3626: )
+3627: =
+3628: r
+3629: ⁡
+3630: (
+3631: Δ
+3632: 1
+3633: )
+3634: +
+3635: r
+3636: ⁡
+3637: (
+3638: Δ
+3639: 2
+3640: )
+3641: .
+3642: r(\Delta_{1}+\Delta_{2})=r(\Delta_{1})+r(\Delta_{2}).
+3643: Because
+3644: k
+3645: k
+3646: is continuous,
+3647: r
+3648: r
+3649: is continuous. The continuous solutions to
+3650: Cauchy’s additive functional equation on
+3651: [
+3652: 0
+3653: ,
+3654: ∞
+3655: )
+3656: [0,\infty)
+3657: are linear:
+3658: r
+3659: ⁡
+3660: (
+3661: Δ
+3662: )
+3663: =
+3664: c
+3665: ​
+3666: Δ
+3667: .
+3668: r(\Delta)=c\Delta.
+3669: Since
+3670: k
+3671: ⁡
+3672: (
+3673: Δ
+3674: )
+3675: ∈
+3676: (
+3677: 0
+3678: ,
+3679: 1
+3680: ]
+3681: k(\Delta)\in(0,1]
+3682: , we have
+3683: r
+3684: ⁡
+3685: (
+3686: Δ
+3687: )
+3688: ≤
+3689: 0
+3690: r(\Delta)\leq 0
+3691: , so
+3692: c
+3693: =
+3694: −
+3695: λ
+3696: c=-\lambda
+3697: for
+3698: some
+3699: λ
+3700: ≥
+3701: 0
+3702: \lambda\geq 0
+3703: . Thus,
+3704: k
+3705: ⁡
+3706: (
+3707: Δ
+3708: )
+3709: =
+3710: exp
+3711: ⁡
+3712: (
+3713: r
+3714: ⁡
+3715: (
+3716: Δ
+3717: )
+3718: )
+3719: =
+3720: exp
+3721: ⁡
+3722: (
+3723: −
+3724: λ
+3725: ​
+3726: Δ
+3727: )
+3728: .
+3729: k(\Delta)=\exp(r(\Delta))=\exp(-\lambda\Delta).
+3730: □
+3731: \square
+3732: Thus, exponential retention is not an arbitrary design choice. It is the unique
+3733: continuous scalar retention rule that is consistent with elapsed-time
+3734: composition. LTC parameterizes this retention with an input-dependent time
+3735: constant,
+3736: τ
+3737: t
+3738: =
+3739: τ
+3740: θ
+3741: ​
+3742: (
+3743: x
+3744: t
+3745: ,
+3746: h
+3747: t
+3748: −
+3749: 1
+3750: )
+3751: ,
+3752: \tau_{t}=\tau_{\theta}(x_{t},h_{t-1}),
+3753: allowing each memory channel to adapt its effective time scale to the current
+3754: belief and evidence.
+3755: C-D
+3756: Belief Stabilization Is Not Memory Collapse
+3757: The LTC update also explains why low update gain does not necessarily indicate
+3758: memory degeneration. Suppose that within a manipulation stage, the relevant
+3759: latent belief is approximately constant:
+3760: z
+3761: t
+3762: =
+3763: z
+3764: .
+3765: z_{t}=z.
+3766: Assume that the candidate belief produced from the current observation is noisy:
+3767: h
+3768: ^
+3769: t
+3770: =
+3771: z
+3772: +
+3773: ϵ
+3774: t
+3775: ,
+3776: 𝔼
+3777: ⁡
+3778: [
+3779: ϵ
+3780: t
+3781: ]
+3782: =
+3783: 0
+3784: ,
+3785: Var
+3786: ⁡
+3787: (
+3788: ϵ
+3789: t
+3790: )
+3791: =
+3792: σ
+3793: 2
+3794: .
+3795: \hat{h}_{t}=z+\epsilon_{t},\qquad\mathbb{E}[\epsilon_{t}]=0,\qquad\operatorname{Var}(\epsilon_{t})=\sigma^{2}.
+3796: (31)
+3797: For a scalar memory channel with constant retention
+3798: k
+3799: k
+3800: , the update is
+3801: h
+3802: t
+3803: =
+3804: k
+3805: ​
+3806: h
+3807: t
+3808: −
+3809: 1
+3810: +
+3811: (
+3812: 1
+3813: −
+3814: k
+3815: )
+3816: ​
+3817: (
+3818: z
+3819: +
+3820: ϵ
+3821: t
+3822: )
+3823: .
+3824: h_{t}=kh_{t-1}+(1-k)(z+\epsilon_{t}).
+3825: (32)
+3826: Proposition 3.
+3827: Under the assumptions above and with
+3828: h
+3829: 0
+3830: =
+3831: 0
+3832: h_{0}=0
+3833: , the mean and variance of
+3834: h
+3835: t
+3836: h_{t}
+3837: are
+3838: 𝔼
+3839: ⁡
+3840: [
+3841: h
+3842: t
+3843: ]
+3844: =
+3845: (
+3846: 1
+3847: −
+3848: k
+3849: t
+3850: )
+3851: ​
+3852: z
+3853: ,
+3854: \mathbb{E}[h_{t}]=(1-k^{t})z,
+3855: (33)
+3856: and
+3857: Var
+3858: ⁡
+3859: (
+3860: h
+3861: t
+3862: )
+3863: =
+3864: (
+3865: 1
+3866: −
+3867: k
+3868: )
+3869: 2
+3870: ​
+3871: σ
+3872: 2
+3873: ​
+3874: 1
+3875: −
+3876: k
+3877: 2
+3878: ​
+3879: t
+3880: 1
+3881: −
+3882: k
+3883: 2
+3884: .
+3885: \operatorname{Var}(h_{t})=(1-k)^{2}\sigma^{2}\frac{1-k^{2t}}{1-k^{2}}.
+3886: (34)
+3887: For large
+3888: t
+3889: t
+3890: ,
+3891: Var
+3892: ⁡
+3893: (
+3894: h
+3895: t
+3896: )
+3897: ≈
+3898: σ
+3899: 2
+3900: ​
+3901: 1
+3902: −
+3903: k
+3904: 1
+3905: +
+3906: k
+3907: .
+3908: \operatorname{Var}(h_{t})\approx\sigma^{2}\frac{1-k}{1+k}.
+3909: (35)
+3910: Proof.
+3911: Unrolling Eq. (
+3912: 32
+3913: ) gives
+3914: h
+3915: t
+3916: =
+3917: k
+3918: t
+3919: ​
+3920: h
+3921: 0
+3922: +
+3923: (
+3924: 1
+3925: −
+3926: k
+3927: )
+3928: ​
+3929: ∑
+3930: i
+3931: =
+3932: 1
+3933: t
+3934: k
+3935: t
+3936: −
+3937: i
+3938: ​
+3939: (
+3940: z
+3941: +
+3942: ϵ
+3943: i
+3944: )
+3945: .
+3946: h_{t}=k^{t}h_{0}+(1-k)\sum_{i=1}^{t}k^{t-i}(z+\epsilon_{i}).
+3947: With
+3948: h
+3949: 0
+3950: =
+3951: 0
+3952: h_{0}=0
+3953: ,
+3954: h
+3955: t
+3956: =
+3957: (
+3958: 1
+3959: −
+3960: k
+3961: )
+3962: ​
+3963: ∑
+3964: i
+3965: =
+3966: 1
+3967: t
+3968: k
+3969: t
+3970: −
+3971: i
+3972: ​
+3973: z
+3974: +
+3975: (
+3976: 1
+3977: −
+3978: k
+3979: )
+3980: ​
+3981: ∑
+3982: i
+3983: =
+3984: 1
+3985: t
+3986: k
+3987: t
+3988: −
+3989: i
+3990: ​
+3991: ϵ
+3992: i
+3993: .
+3994: h_{t}=(1-k)\sum_{i=1}^{t}k^{t-i}z+(1-k)\sum_{i=1}^{t}k^{t-i}\epsilon_{i}.
+3995: Since
+3996: 𝔼
+3997: ⁡
+3998: [
+3999: ϵ
+4000: i
+4001: ]
+4002: =
+4003: 0
+4004: \mathbb{E}[\epsilon_{i}]=0
+4005: ,
+4006: 𝔼
+4007: ⁡
+4008: [
+4009: h
+4010: t
+4011: ]
+4012: =
+4013: (
+4014: 1
+4015: −
+4016: k
+4017: )
+4018: ​
+4019: ∑
+4020: i
+4021: =
+4022: 1
+4023: t
+4024: k
+4025: t
+4026: −
+4027: i
+4028: ​
+4029: z
+4030: =
+4031: (
+4032: 1
+4033: −
+4034: k
+4035: )
+4036: ​
+4037: (
+4038: 1
+4039: +
+4040: k
+4041: +
+4042: ⋯
+4043: +
+4044: k
+4045: t
+4046: −
+4047: 1
+4048: )
+4049: ​
+4050: z
+4051: .
+4052: \mathbb{E}[h_{t}]=(1-k)\sum_{i=1}^{t}k^{t-i}z=(1-k)(1+k+\cdots+k^{t-1})z.
+4053: Using the geometric series identity,
+4054: 1
+4055: +
+4056: k
+4057: +
+4058: ⋯
+4059: +
+4060: k
+4061: t
+4062: −
+4063: 1
+4064: =
+4065: 1
+4066: −
+4067: k
+4068: t
+4069: 1
+4070: −
+4071: k
+4072: ,
+4073: 1+k+\cdots+k^{t-1}=\frac{1-k^{t}}{1-k},
+4074: we obtain
+4075: 𝔼
+4076: ⁡
+4077: [
+4078: h
+4079: t
+4080: ]
+4081: =
+4082: (
+4083: 1
+4084: −
+4085: k
+4086: t
+4087: )
+4088: ​
+4089: z
+4090: .
+4091: \mathbb{E}[h_{t}]=(1-k^{t})z.
+4092: For the variance, only the noise term contributes:
+4093: Var
+4094: ⁡
+4095: (
+4096: h
+4097: t
+4098: )
+4099: =
+4100: Var
+4101: ⁡
+4102: [
+4103: (
+4104: 1
+4105: −
+4106: k
+4107: )
+4108: ​
+4109: ∑
+4110: i
+4111: =
+4112: 1
+4113: t
+4114: k
+4115: t
+4116: −
+4117: i
+4118: ​
+4119: ϵ
+4120: i
+4121: ]
+4122: .
+4123: \operatorname{Var}(h_{t})=\operatorname{Var}\left[(1-k)\sum_{i=1}^{t}k^{t-i}\epsilon_{i}\right].
+4124: Assuming the noise terms are independent with variance
+4125: σ
+4126: 2
+4127: \sigma^{2}
+4128: ,
+4129: Var
+4130: ⁡
+4131: (
+4132: h
+4133: t
+4134: )
+4135: =
+4136: (
+4137: 1
+4138: −
+4139: k
+4140: )
+4141: 2
+4142: ​
+4143: ∑
+4144: i
+4145: =
+4146: 1
+4147: t
+4148: k
+4149: 2
+4150: ​
+4151: (
+4152: t
+4153: −
+4154: i
+4155: )
+4156: ​
+4157: σ
+4158: 2
+4159: .
+4160: \operatorname{Var}(h_{t})=(1-k)^{2}\sum_{i=1}^{t}k^{2(t-i)}\sigma^{2}.
+4161: The remaining sum is
+4162: ∑
+4163: i
+4164: =
+4165: 1
+4166: t
+4167: k
+4168: 2
+4169: ​
+4170: (
+4171: t
+4172: −
+4173: i
+4174: )
+4175: =
+4176: 1
+4177: +
+4178: k
+4179: 2
+4180: +
+4181: ⋯
+4182: +
+4183: k
+4184: 2
+4185: ​
+4186: (
+4187: t
+4188: −
+4189: 1
+4190: )
+4191: =
+4192: 1
+4193: −
+4194: k
+4195: 2
+4196: ​
+4197: t
+4198: 1
+4199: −
+4200: k
+4201: 2
+4202: .
+4203: \sum_{i=1}^{t}k^{2(t-i)}=1+k^{2}+\cdots+k^{2(t-1)}=\frac{1-k^{2t}}{1-k^{2}}.
+4204: Thus,
+4205: Var
+4206: ⁡
+4207: (
+4208: h
+4209: t
+4210: )
+4211: =
+4212: (
+4213: 1
+4214: −
+4215: k
+4216: )
+4217: 2
+4218: ​
+4219: σ
+4220: 2
+4221: ​
+4222: 1
+4223: −
+4224: k
+4225: 2
+4226: ​
+4227: t
+4228: 1
+4229: −
+4230: k
+4231: 2
+4232: .
+4233: \operatorname{Var}(h_{t})=(1-k)^{2}\sigma^{2}\frac{1-k^{2t}}{1-k^{2}}.
+4234: For large
+4235: t
+4236: t
+4237: ,
+4238: k
+4239: 2
+4240: ​
+4241: t
+4242: →
+4243: 0
+4244: k^{2t}\rightarrow 0
+4245: when
+4246: |
+4247: k
+4248: |
+4249: <
+4250: 1
+4251: |k|<1
+4252: , and since
+4253: 1
+4254: −
+4255: k
+4256: 2
+4257: =
+4258: (
+4259: 1
+4260: −
+4261: k
+4262: )
+4263: ​
+4264: (
+4265: 1
+4266: +
+4267: k
+4268: )
+4269: 1-k^{2}=(1-k)(1+k)
+4270: , we get
+4271: Var
+4272: ⁡
+4273: (
+4274: h
+4275: t
+4276: )
+4277: ≈
+4278: σ
+4279: 2
+4280: ​
+4281: 1
+4282: −
+4283: k
+4284: 1
+4285: +
+4286: k
+4287: .
+4288: \operatorname{Var}(h_{t})\approx\sigma^{2}\frac{1-k}{1+k}.
+4289: □
+4290: \square
+4291: Equation (
+4292: 35
+4293: ) shows that when the candidate belief is noisy
+4294: but the underlying task belief is stable, larger retention
+4295: k
+4296: k
+4297: reduces the
+4298: variance of the memory state. Therefore, a high-retention regime can represent
+4299: belief stabilization rather than collapse. In manipulation, this is desirable
+4300: when slow variables such as task progress, target identity, or object-in-hand
+4301: status should persist across occlusion, contact noise, and action chunks.
+4302: Appendix D
+4303: Additional Experimental Details
+4304: D-A
+4305: Same-Observation Hidden-State Intervention
+4306: To isolate the effect of the LTC memory from perception, we conduct a controlled hidden-state intervention. We select one query from a LIBERO rollout and fix its observation, robot state, and language instruction. We then evaluate the policy multiple times while replacing only the LTC hidden state
+4307: h
+4308: t
+4309: h_{t}
+4310: with hidden states collected from 25 different rollout timesteps. All other inputs are kept unchanged. For each hidden condition, the policy predicts a 10-step action chunk in the environment action space.
+4311: Given two predicted action chunks
+4312: A
+4313: i
+4314: ,
+4315: A
+4316: j
+4317: ∈
+4318: ℝ
+4319: H
+4320: ×
+4321: d
+4322: a
+4323: A_{i},A_{j}\in\mathbb{R}^{H\times d_{a}}
+4324: , we compute their normalized L2 distance:
+4325: D
+4326: ⁡
+4327: (
+4328: i
+4329: ,
+4330: j
+4331: )
+4332: =
+4333: 1
+4334: H
+4335: ​
+4336: ∑
+4337: r
+4338: =
+4339: 1
+4340: H
+4341: ‖
+4342: A
+4343: i
+4344: ,
+4345: r
+4346: −
+4347: A
+4348: j
+4349: ,
+4350: r
+4351: ‖
+4352: 2
+4353: .
+4354: D(i,j)=\frac{1}{H}\sum_{r=1}^{H}\|A_{i,r}-A_{j,r}\|_{2}.
+4355: We report pairwise distances across all hidden-state pairs, distances to a reference hidden state, and distances between temporally adjacent hidden states. Since the observation, robot state, and instruction are fixed, any action variation is caused by the memory intervention.
+4356: Metric
+4357: Value
+4358: Hidden conditions
+4359: 25
+4360: Pairwise comparisons
+4361: 300
+4362: Mean pairwise dist.
+4363: 0.0442
+4364: Median pairwise dist.
+4365: 0.0363
+4366: Max pairwise dist.
+4367: 0.1303
+4368: Ref. distance, mean
+4369: 0.0324
+4370: Ref. distance, max
+4371: 0.1209
+4372: Adjacent dist., median
+4373: 0.0108
+4374: TABLE V
+4375: :
+4376: Hidden-state intervention under a fixed observation.
+4377: Fig. 5
+4378: :
+4379: Action-chunk variation caused by changing only the LTC hidden state under the same observation.
+4380: D-B
+4381: Failure Modes on MIKASA-Robo ShellGameTouch
+4382: MIKASA-Robo ShellGameTouch provides a useful diagnostic for testing whether a
+4383: policy can preserve information that is no longer visible in the current
+4384: observation. In our same-backbone evaluation, TFP achieves the success rate of 75.0%, indicating that the learned belief
+4385: state provides useful memory under occlusion. However, the remaining failures
+4386: also reveal an important boundary of the proposed method: ShellGameTouch
+4387: requires a memory regime that is only partially aligned with the event-sensitive
+4388: manipulation dynamics targeted by TFP.
+4389: A complementary memory regime.
+4390: TFP is designed to model continuous task-progress dynamics in manipulation. Its
+4391: LTC belief update is most useful when the policy must decide when to preserve
+4392: slow task variables and when to revise them around interaction events such as
+4393: contact, grasp, release, placement, or subgoal completion. ShellGameTouch has a
+4394: different structure. The decisive variable is a discrete hidden object-location
+4395: binding: which visually identical mug hides the ball. Once the ball is occluded,
+4396: the current observation provides little corrective evidence about this latent
+4397: identity-location association. The policy must therefore write the correct
+4398: binding early and retrieve it at the final touch decision. This is closer to
+4399: object-centric episodic memory or key-value binding than to continuously
+4400: evolving manipulation-stage dynamics.
+4401: Sparse opportunities for belief correction.
+4402: In many manipulation tasks, the belief can be refined as new contact, motion,
+4403: object-state, or subgoal-completion evidence appears. For example, after a
+4404: grasp, release, or placement event, the observation gives new evidence about
+4405: task progress, and an event-sensitive memory update can revise the internal
+4406: state accordingly. In ShellGameTouch, by contrast, the crucial information is
+4407: available only before and during occlusion. After the mugs become visually
+4408: ambiguous, later observations mainly support execution rather than correction
+4409: of the hidden ball-location belief. As a result, a weak or incorrect initial
+4410: memory write is difficult to repair through subsequent LTC updates.
+4411: Representation mismatch.
+4412: This failure mode can also be viewed through a representation-learning lens.
+4413: Prior work on interpreting neural robot policies argues that useful policy
+4414: representations often align with task-relevant factors of variation, such as
+4415: skills, behaviors, or strategies
+4416: [
+4417: 32
+4418: ]
+4419: . Under this view,
+4420: ShellGameTouch stresses a different dominant factor of variation from the one
+4421: most directly targeted by TFP. The task-relevant factor in ShellGameTouch is a
+4422: persistent categorical object-location variable, whereas the factor targeted by
+4423: TFP is event-sensitive task-progress dynamics. TFP can still improve
+4424: ShellGameTouch because its belief state preserves useful latent context, but
+4425: the memory is not explicitly structured as a symbolic object map, slot memory,
+4426: or key-value store over hidden cup identities.
+4427: Failure categories.
+4428: Qualitatively, we observe four main failure modes. First, the policy may fail
+4429: to encode the correct ball–mug association before occlusion, especially when
+4430: the relevant visual cue is brief or spatially small. Second, the memory may
+4431: retain a coarse task-progress signal but not a sufficiently precise
+4432: object-location binding, causing the final touch to target the wrong mug.
+4433: Third, the retained belief may be correct, but the action decoder may fail to
+4434: ground that belief into the correct end-effector target under visually similar
+4435: mugs. Finally, some failures are low-level execution errors near the final
+4436: target rather than clear memory errors. These categories suggest that
+4437: ShellGameTouch requires both persistent memory and precise object-centric
+4438: grounding.
+4439: Interpretation.
+4440: We therefore treat ShellGameTouch as a same-backbone diagnostic rather than a
+4441: direct state-of-the-art comparison. The improvement over the reactive
+4442: baselines shows that TFP provides useful memory under occlusion, but
+4443: the absolute success rate reflects the mismatch between ShellGameTouch’s
+4444: categorical hidden-location memory and TFP’s primary design target:
+4445: continuous-time, event-sensitive manipulation belief dynamics. A natural future
+4446: direction is to combine TFP with an object-centric memory module, such as a
+4447: slot-based belief map or a retrieval mechanism for discrete hidden-state
+4448: bindings. Such a hybrid would allow the policy to retain symbolic
+4449: object-location facts while still using LTC dynamics to update task-progress
+4450: belief around manipulation events.
+4451: Appendix E
+4452: Statistical Reliability of Rollout Results
+4453: Because several LIBERO splits are close to saturation, we report confidence intervals for reproduced rollout results. For standard LIBERO, each suite contains 10 tasks and each task is evaluated with 50 rollout trials, giving 500 rollouts per suite. For each success rate, we compute a Wilson 95% confidence interval from the number of successful rollouts. For method differences on standard LIBERO, we report approximate two-proportion 95% confidence intervals against the reproduced
+4454: π
+4455: 0.5
+4456: \pi_{0.5}
+4457: baseline. We report intervals only for our reproduced methods; published prior-method numbers in Table
+4458: I
+4459: are not necessarily evaluated under the same rollout protocol.
+4460: TABLE VI:
+4461: Statistical reliability of reproduced LIBERO rollout results. Each LIBERO suite contains 10 tasks, and each task is evaluated with 50 rollout trials, giving 500 rollouts per suite. We report success counts, Wilson 95% confidence intervals for success rates, and approximate 95% confidence intervals for absolute improvements over
+4462: π
+4463: 0.5
+4464: \pi_{0.5}
+4465: .
+4466: Benchmark
+4467: Split
+4468: π
+4469: 0.5
+4470: \pi_{0.5}
+4471: TFP
+4472: Δ
+4473: \Delta
+4474: vs.
+4475: π
+4476: 0.5
+4477: \pi_{0.5}
+4478: LIBERO
+4479: Spatial
+4480: 494
+4481: /
+4482: 500
+4483: =
+4484: 98.8
+4485: %
+4486: 494/500=98.8\%
+4487: [
+4488: 97.4
+4489: ,
+4490: 99.4
+4491: ]
+4492: [97.4,99.4]
+4493: 498
+4494: /
+4495: 500
+4496: =
+4497: 99.6
+4498: %
+4499: 498/500=99.6\%
+4500: [
+4501: 98.6
+4502: ,
+4503: 99.9
+4504: ]
+4505: [98.6,99.9]
+4506: +
+4507: 0.8
+4508: +0.8
+4509: pp
+4510: [
+4511: −
+4512: 0.3
+4513: ,
+4514: +
+4515: 1.9
+4516: ]
+4517: [-0.3,+1.9]
+4518: LIBERO
+4519: Object
+4520: 490
+4521: /
+4522: 500
+4523: =
+4524: 98.0
+4525: %
+4526: 490/500=98.0\%
+4527: [
+4528: 96.4
+4529: ,
+4530: 98.9
+4531: ]
+4532: [96.4,98.9]
+4533: 495
+4534: /
+4535: 500
+4536: =
+4537: 99.0
+4538: %
+4539: 495/500=99.0\%
+4540: [
+4541: 97.7
+4542: ,
+4543: 99.6
+4544: ]
+4545: [97.7,99.6]
+4546: +
+4547: 1.0
+4548: +1.0
+4549: pp
+4550: [
+4551: −
+4552: 0.5
+4553: ,
+4554: +
+4555: 2.5
+4556: ]
+4557: [-0.5,+2.5]
+4558: LIBERO
+4559: Goal
+4560: 491
+4561: /
+4562: 500
+4563: =
+4564: 98.2
+4565: %
+4566: 491/500=98.2\%
+4567: [
+4568: 96.6
+4569: ,
+4570: 99.1
+4571: ]
+4572: [96.6,99.1]
+4573: 497
+4574: /
+4575: 500
+4576: =
+4577: 99.4
+4578: %
+4579: 497/500=99.4\%
+4580: [
+4581: 98.3
+4582: ,
+4583: 99.8
+4584: ]
+4585: [98.3,99.8]
+4586: +
+4587: 1.2
+4588: +1.2
+4589: pp
+4590: [
+4591: −
+4592: 0.1
+4593: ,
+4594: +
+4595: 2.5
+4596: ]
+4597: [-0.1,+2.5]
+4598: LIBERO
+4599: Long
+4600: 462
+4601: /
+4602: 500
+4603: =
+4604: 92.4
+4605: %
+4606: 462/500=92.4\%
+4607: [
+4608: 89.7
+4609: ,
+4610: 94.4
+4611: ]
+4612: [89.7,94.4]
+4613: 485
+4614: /
+4615: 500
+4616: =
+4617: 97.0
+4618: %
+4619: 485/500=97.0\%
+4620: [
+4621: 95.1
+4622: ,
+4623: 98.2
+4624: ]
+4625: [95.1,98.2]
+4626: +
+4627: 4.6
+4628: +4.6
+4629: pp
+4630: [
+4631: +
+4632: 1.8
+4633: ,
+4634: +
+4635: 7.4
+4636: ]
+4637: [+1.8,+7.4]
+4638: LIBERO
+4639: Avg.
+4640: 𝟏𝟗𝟑𝟕
+4641: /
+4642: 𝟐𝟎𝟎𝟎
+4643: =
+4644: 96.85
+4645: %
+4646: \mathbf{1937/2000=96.85\%}
+4647: [
+4648: 96.0
+4649: ,
+4650: 97.5
+4651: ]
+4652: \mathbf{[96.0,97.5]}
+4653: 𝟏𝟗𝟕𝟓
+4654: /
+4655: 𝟐𝟎𝟎𝟎
+4656: =
+4657: 98.75
+4658: %
+4659: \mathbf{1975/2000=98.75\%}
+4660: [
+4661: 98.2
+4662: ,
+4663: 99.2
+4664: ]
+4665: \mathbf{[98.2,99.2]}
+4666: +
+4667: 1.90
+4668: \mathbf{+1.90}
+4669: pp
+4670: [
+4671: +
+4672: 0.99
+4673: ,
+4674: +
+4675: 2.81
+4676: ]
+4677: \mathbf{[+0.99,+2.81]}
+4678: TABLE VII:
+4679: Statistical reliability of real-world Galaxea A1 results. We report Wilson 95% confidence intervals for success rates over 20 trials per method and task.
+4680: Task
+4681: Method
+4682: Success rate
+4683: Object swap
+4684: π
+4685: 0.5
+4686: \pi_{0.5}
+4687: 3
+4688: /
+4689: 20
+4690: =
+4691: 15.0
+4692: %
+4693: 3/20=15.0\%
+4694: [
+4695: 5.2
+4696: ,
+4697: 36.0
+4698: ]
+4699: [5.2,36.0]
+4700: Object swap
+4701: TFP
+4702: 15
+4703: /
+4704: 20
+4705: =
+4706: 75.0
+4707: %
+4708: 15/20=75.0\%
+4709: [
+4710: 53.1
+4711: ,
+4712: 88.8
+4713: ]
+4714: [53.1,88.8]
+4715: Counting pick-place
+4716: π
+4717: 0.5
+4718: \pi_{0.5}
+4719: 8
+4720: /
+4721: 20
+4722: =
+4723: 40.0
+4724: %
+4725: 8/20=40.0\%
+4726: [
+4727: 21.9
+4728: ,
+4729: 61.3
+4730: ]
+4731: [21.9,61.3]
+4732: Counting pick-place
+4733: TFP
+4734: 18
+4735: /
+4736: 20
+4737: =
+4738: 90.0
+4739: %
+4740: 18/20=90.0\%
+4741: [
+4742: 69.9
+4743: ,
+4744: 97.2
+4745: ]
+4746: [69.9,97.2]

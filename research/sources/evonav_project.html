@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="EvoNav: Evolving Agent with Experience and Thought for Zero-shot VLN-CE">
+  <meta name="keywords" content="EvoNav, VLN-CE, Zero-shot, LLM, CVPR 2026">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EvoNav - CVPR 2026</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <style>
+    body { font-family: 'Google Sans', sans-serif; line-height: 1.6; color: #333; margin: 0 auto; max-width: 1000px; padding: 20px; }
+    .hero { text-align: center; padding: 40px 0; }
+    .title { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
+    .authors { font-size: 1.2rem; margin-bottom: 20px; color: #555; }
+    .links { margin-bottom: 40px; }
+    .link-btn { background: #333; color: white; padding: 10px 20px; border-radius: 20px; text-decoration: none; margin: 5px; font-weight: bold; display: inline-block; }
+    .link-btn:hover { background: #555; }
+    .section { margin-bottom: 50px; }
+    .section-title { font-size: 1.8rem; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+    .teaser-img { width: 100%; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    .caption { text-align: justify; font-size: 0.95rem; color: #555; line-height: 1.5; }
+    .abstract-box { background-color: #f9f9f9; padding: 25px; border-radius: 10px; border: 1px solid #efefef; text-align: justify; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center; border: 1px solid #ddd; }
+    th, td { padding: 10px; border: 1px solid #ddd; }
+    th { background-color: #f2f2f2; }
+    .highlight { font-weight: bold; color: #d9534f; }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <h1 class="title">Evolving Agent with Experience and Thought for Zero-shot Vision-and-Language Navigation</h1>
+    <p style="font-size: 1.5rem; color: #d9534f; font-weight: bold;">CVPR 2026</p>
+    <div class="authors">
+      Guangzhao Dai, Shuo Wang, Zihan Wang, Guo-Sen Xie, Yang Yang, Jinshan Pan, Qianru Sun, <strong>Xiangbo Shu<sup>&dagger;</sup></strong>
+    </div>
+    <div class="links">
+      <a href="https://drive.google.com/file/d/1mywBxbcVRy4sJ_9UX1ys6rCpVUq5sTul/view?usp=sharing" class="link-btn" target="_blank">Paper</a>
+      <a href="https://github.com/daiguangzhao/EvoNav_CVPR2026" class="link-btn" target="_blank">Code</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <h2 class="section-title">Abstract</h2>
+    <div class="abstract-box">
+      Vision-and-Language Navigation in Continuous Environment (VLN-CE) requires an agent to follow language instructions to navigate the target destination. With the advancement of large language models (LLMs), recent efforts have explored adapting them for zero-shot VLN-CE, offering a promising solution in addressing the drawbacks of poor generalization in the training-based paradigm. However, existing LLM-based works primarily perform naive reasoning for decision-making and lack feedback, e.g., reviewing historical errors and predicting future potentials. Consequently, it may suffer from continuous failure for those initial error tasks. In this paper, we rethink LLM-based zero-shot VLN-CE and propose a new paradigm, named <strong>EVONAV</strong>, to improve the agent's decision-making with future thought and history experience via Future Chain-of-Thought (F-CoT) and History Chain-of-Experience (H-CoE). F-CoT predicts future actions and landmarks as thoughts to assist navigation progress estimation and direction selection, while H-CoE summarizes historical trajectories and scenes as experience to improve navigation decision reliability. Both F-CoT and H-CoE cooperatively evolve the agent's decision-making.
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Motivation</h2>
+    <img src="figure1_teaser.png" alt="Figure 1" class="teaser-img">
+    <p class="caption">
+      <strong>Figure 1. Comparison of navigation paradigms.</strong> 
+      Previous methods typically focused on the task of VLN-CE under training-based paradigms, suffering from poor zero-shot generalization in unseen scenes. 
+      Recent methods address this by using LLMs but incur naive reasoning without feedback, leading to poor decision-making. 
+      Our EvoNav improves LLM-based agents' decision-making by the Feedback Reasoning of history experience and future thought via History Chain-of-Experience (H-CoE) and Future Chain-of-Thought (F-CoT).
+    </p>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">EvoNav Framework</h2>
+    <img src="figure2_framework.png" alt="Figure 2" class="teaser-img">
+    <p class="caption">
+      <strong>Figure 2. Overview framework of EvoNav.</strong> 
+      Given panoramic RGB and depth images, a standard waypoint predictor first identifies candidate waypoint images. 
+      These images are then analyzed by the <b>F-CoT</b>, which predicts next-step actions and landmarks as thoughts to guide navigation progress and direction. 
+      Simultaneously, <b>H-CoE</b> retrieves trajectory- and scene-related experience from a dynamic experience bank that continuously summarizes and stores completed trajectories and visited scenes. 
+      Finally, retrieved experiences and future thoughts are fused within the action prediction module to support robust decision-making.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Navigation Visualization</h2>
+    <img src="figure3_demo.png" alt="Figure 3" class="teaser-img">
+    <p class="caption">
+      <strong>Figure 3. Navigation demo in simulated environment on R2R-CE.</strong> 
+      The left denotes navigation trajectories between the SOTA method and our EvoNav. 
+      For a better view, we also provide the navigation decision-making details of the key step, which highlight the effect of the proposed future thoughts and historical experience. 
+      As shown, EvoNav successfully corrects navigation errors by leveraging feedback from history experience and future thoughts.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Experimental Results</h2>
+    <h3>Table 1. Performance comparison on the R2R-CE benchmark</h3>
+    <table>
+      <tr><th>Method</th><th>NE &darr;</th><th>OSR &uarr;</th><th>SR &uarr;</th><th>SPL &uarr;</th></tr>
+      <tr><td>Open-Nav (Gemini-2.5-pro)</td><td>6.77</td><td>44</td><td>24</td><td>13.39</td></tr>
+      <tr class="highlight"><td>EvoNav (Gemini-2.5-pro) (Ours)</td><td>6.20</td><td>51</td><td>30</td><td>17.60</td></tr>
+    </table>
+    <p class="caption" style="margin-top: 10px;">Experimental results demonstrate that EvoNav achieves state-of-the-art results across all metrics on the R2R-CE benchmark.</p>
+
+    <h3 style="margin-top:30px;">Table 2. Performance comparison on the NavRAG-CE benchmark</h3>
+    <table>
+      <tr><th>Method</th><th>NE &darr;</th><th>nDTW &uarr;</th><th>OSR &uarr;</th><th>SR &uarr;</th><th>SPL &uarr;</th></tr>
+      <tr><td>Open-Nav (Gemini-2.5-pro)</td><td>7.28</td><td>49.51</td><td>30</td><td>23</td><td>19.90</td></tr>
+      <tr class="highlight"><td>EvoNav (Gemini-2.5-pro) (Ours)</td><td>5.04</td><td>62.38</td><td>51</td><td>43</td><td>37.77</td></tr>
+    </table>
+    <p class="caption" style="margin-top: 10px;">EvoNav also achieves SOTA results on NavRAG-CE, which requires a deeper understanding of complex user demands.</p>
+  </section>
+
+  <footer style="text-align: center; padding: 40px; color: #888;">
+    &copy; 2026 EvoNav Team. Created for CVPR 2026.
+  </footer>
+
+</body>
+</html>
+
+

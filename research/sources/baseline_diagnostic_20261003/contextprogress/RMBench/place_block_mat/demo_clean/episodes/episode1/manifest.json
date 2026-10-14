@@ -1,0 +1,86 @@
+{
+  "dataset": "RMBench",
+  "task": "place_block_mat",
+  "primary_setting": "state_recall",
+  "episode": "episode1",
+  "original_episode": "episode4",
+  "main_instruction": "Place the one red block onto the green mat, then put the red block on the green mat back to where it came from. Do this to every red block in the order of left-to-right.",
+  "source_video": "full_video.mp4",
+  "source_frame_count": 1056,
+  "fps": 30.0,
+  "boundary_source": "language_annotation.json cumulative frame lengths plus visually validated raw-segment midpoints",
+  "subtasks": [
+    {
+      "subtask_id": "subtask00",
+      "raw_segment_indices": [
+        0
+      ],
+      "raw_labels": [
+        "Pick up the first block and move it onto the green mat and then return it to the original mat."
+      ],
+      "start_frame": 0,
+      "end_frame_exclusive": 174,
+      "instruction": "Move the leftmost red block onto the green mat"
+    },
+    {
+      "subtask_id": "subtask01",
+      "raw_segment_indices": [
+        0
+      ],
+      "raw_labels": [
+        "Pick up the first block and move it onto the green mat and then return it to the original mat."
+      ],
+      "start_frame": 174,
+      "end_frame_exclusive": 349,
+      "instruction": "Move the red block from the green mat back onto the leftmost blue mat"
+    },
+    {
+      "subtask_id": "subtask02",
+      "raw_segment_indices": [
+        1
+      ],
+      "raw_labels": [
+        "Pick up the second block and move it onto the green mat and then return it to the original mat."
+      ],
+      "start_frame": 349,
+      "end_frame_exclusive": 525,
+      "instruction": "Move the middle red block onto the green mat"
+    },
+    {
+      "subtask_id": "subtask03",
+      "raw_segment_indices": [
+        1
+      ],
+      "raw_labels": [
+        "Pick up the second block and move it onto the green mat and then return it to the original mat."
+      ],
+      "start_frame": 525,
+      "end_frame_exclusive": 701,
+      "instruction": "Move the red block from the green mat back onto the middle blue mat"
+    },
+    {
+      "subtask_id": "subtask04",
+      "raw_segment_indices": [
+        2
+      ],
+      "raw_labels": [
+        "Pick up the third block and move it onto the green mat and then return it to the original mat."
+      ],
+      "start_frame": 701,
+      "end_frame_exclusive": 878,
+      "instruction": "Move the rightmost red block onto the green mat"
+    },
+    {
+      "subtask_id": "subtask05",
+      "raw_segment_indices": [
+        2
+      ],
+      "raw_labels": [
+        "Pick up the third block and move it onto the green mat and then return it to the original mat."
+      ],
+      "start_frame": 878,
+      "end_frame_exclusive": 1056,
+      "instruction": "Move the red block from the green mat back onto the rightmost blue mat"
+    }
+  ]
+}

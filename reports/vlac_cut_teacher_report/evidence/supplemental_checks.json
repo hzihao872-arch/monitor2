@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-03",
+  "model_inference_run": false,
+  "cases": [
+    {
+      "example": 1,
+      "frames": 258,
+      "fps": 30.0,
+      "raw_prediction_count": 7,
+      "input_frames": 18,
+      "dense_label_max_difference_from_linear_anchor_curve": 0.04893617021276597,
+      "anchor_directions_correct": 8,
+      "anchor_intervals": 8
+    },
+    {
+      "example": 2,
+      "frames": 289,
+      "fps": 30.0,
+      "raw_prediction_count": 9,
+      "input_frames": 20,
+      "dense_label_max_difference_from_linear_anchor_curve": 0.05000000000000071,
+      "anchor_directions_correct": 3,
+      "anchor_intervals": 5
+    },
+    {
+      "example": 3,
+      "frames": 172,
+      "fps": 30.0,
+      "raw_prediction_count": 8,
+      "input_frames": 12,
+      "dense_label_max_difference_from_linear_anchor_curve": 0.05000000000000071,
+      "anchor_directions_correct": 8,
+      "anchor_intervals": 8
+    }
+  ],
+  "onion_native_transitions": [
+    {
+      "start_sec": 0.0,
+      "end_sec": 2.3,
+      "label_delta": 9.9,
+      "prediction_delta": 5.0
+    },
+    {
+      "start_sec": 2.3,
+      "end_sec": 3.3,
+      "label_delta": 4.0,
+      "prediction_delta": 3.0
+    },
+    {
+      "start_sec": 3.3,
+      "end_sec": 4.3,
+      "label_delta": 3.9999999999999982,
+      "prediction_delta": 2.0
+    },
+    {
+      "start_sec": 4.3,
+      "end_sec": 5.1,
+      "label_delta": -9.2,
+      "prediction_delta": -15.0
+    },
+    {
+      "start_sec": 5.1,
+      "end_sec": 6.1,
+      "label_delta": -6.3999999999999995,
+      "prediction_delta": -3.0
+    },
+    {
+      "start_sec": 6.1,
+      "end_sec": 7.1,
+      "label_delta": -3.8,
+      "prediction_delta": 6.0
+    },
+    {
+      "start_sec": 7.1,
+      "end_sec": 8.3,
+      "label_delta": -4.9,
+      "prediction_delta": 4.0
+    },
+    {
+      "start_sec": 8.3,
+      "end_sec": 9.5,
+      "label_delta": -3.5999999999999996,
+      "prediction_delta": 2.0
+    }
+  ],
+  "alignment_sensitivity": {
+    "type": "label endpoint lookup sensitivity; fixed released predictions, not resampled inference",
+    "max_endpoint_offset_seconds": 0.5,
+    "endpoint_pairs": 961,
+    "min_label_delta": -13.0,
+    "max_label_delta": -4.6000000000000005,
+    "all_label_deltas_negative": true
+  },
+  "nearest_input_frames": {
+    "6.1": [
+      180,
+      195
+    ],
+    "8.3": [
+      255,
+      240
+    ]
+  },
+  "precision_weight_revision_bound": false,
+  "independent_test_videos": 0
+}

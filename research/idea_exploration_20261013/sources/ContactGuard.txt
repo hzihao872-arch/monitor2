@@ -1,0 +1,2088 @@
+0001: ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2608.13438v1 [cs.RO] 13 Aug 2026
+0010: ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models
+0011: Gehan Zheng
+0012: Affiliation:
+0013: College of Connected Computing, Vanderbilt University, USA.
+0014: Matthew Johnson-Roberson
+0015: Affiliation:
+0016: College of Connected Computing, Vanderbilt University, USA.
+0017: Weiming Zhi
+0018: Affiliation:
+0019: College of Connected Computing, Vanderbilt University, USA.
+0020: Affiliation:
+0021: School of Computer Science, The University of Sydney, Australia.
+0022: Affiliation:
+0023: Australian Centre for Robotics, The University of Sydney, Australia.
+0024: Abstract
+0025: Contact-rich manipulation failures are often detected only after the robot has committed to contact. This is especially limiting in wrist-camera setups: close gripper–object views help observe contact, but a poor approach may already push, miss, slip, or disturb the object before conventional detectors react. We introduce
+0026: ContactGuard
+0027: , a pre-contact execution monitor for chunked visuomotor policies. Given the policy’s planned action chunk, ContactGuard predicts its short-horizon consequence in latent visual space and aborts if the predicted future latent indicates likely failure. Its latent world model is trained from unlabelled robot trajectories to predict compact multi-view visual embeddings under planned actions, avoiding pixel-level video prediction. A lightweight failure probe is then trained from a small labelled set of pre-contact clips. At deployment, ContactGuard anchors prediction before an imminent contact event, rolls the model forward under the policy’s own actions, and verifies the predicted post-contact latent. Across real-world contact-rich manipulation tasks, ContactGuard predicts failure more accurately than direct and corrupted-action ablations, and transfers to live robot as a pre-contact abort signal without modifying the underlying policy.
+0028: 1
+0029: Introduction
+0030: Reliable manipulation requires more than visually plausible motion. In contact-rich tasks, small errors near contact can determine success or failure: the gripper may approach off-centre, nudge the object away, pinch only an edge, miss a deformable region, or close before the object is seated. These failures are difficult for visuomotor policies to avoid under occlusion, clutter, deformable objects, and distribution shift, and they are harder to correct once contact has disturbed the scene. This motivates
+0031: pre-contact execution monitoring
+0032: : instead of detecting whether the robot has already failed, the monitor asks whether the action it is about to execute is likely to fail. Chunked visuomotor policies make this question natural, because an action chunk often contains a meaningful interaction event, such as gripper closure or object contact. If the robot can evaluate the consequence of that chunk before contact, it can stop a poor interaction before committing to it.
+0033: A natural way to reason about future consequences is to learn a world model. For manipulation monitoring, however, the model need not generate photorealistic future frames. It only needs a representation that preserves outcome-relevant information: whether the planned interaction is likely to succeed or fail. We therefore use action-conditioned latent prediction, which encodes multi-view observations into compact visual embeddings and learns how those embeddings evolve under robot actions. This follows the Joint-Embedding Predictive Architecture (JEPA) principle
+0034: [
+0035: 1
+0036: ]
+0037: , where a predictor is trained to forecast the embedding of a target signal rather than reconstruct it in pixel space; predicting directly in representation space avoids the cost and ambiguity of pixel-level video generation. We introduce
+0038: ContactGuard
+0039: , a pre-contact monitor built on this principle. A latent world model is trained from unlabelled robot trajectories using next-latent supervision; after training, its encoder and predictor are frozen. A lightweight logistic-regression probe is then trained on labelled pre-contact clips using only the predicted future latent, separating task-agnostic visual dynamics learning from small-data outcome supervision.
+0040: Figure 1:
+0041: Pre-contact online monitoring via action-conditioned latent world models.
+0042: While a visuomotor policy executes an action chunk, ContactGuard conditions a frozen latent world model on the
+0043: same
+0044: planned chunk at an anchor
+0045: k
+0046: k
+0047: steps before the planned gripper closure
+0048: T
+0049: g
+0050: T_{g}
+0051: . It rolls the model forward
+0052: h
+0053: h
+0054: steps and scores the predicted future latent with a lightweight classifier. If
+0055: P
+0056: ⁡
+0057: (
+0058: fail
+0059: )
+0060: >
+0061: τ
+0062: P(\mathrm{fail})>\tau
+0063: , execution is aborted before contact: the decision is made at
+0064: T
+0065: g
+0066: −
+0067: k
+0068: T_{g}{-}k
+0069: and targets the post-contact moment
+0070: T
+0071: g
+0072: −
+0073: k
+0074: +
+0075: h
+0076: T_{g}{-}k{+}h
+0077: , so foreseen failures can be prevented rather than merely detected.
+0078: At deployment, ContactGuard runs alongside an existing chunked visuomotor policy as a
+0079: policy-decoupled predictive verifier
+0080: . The deployed policy is treated as a black-box proposer: ContactGuard consumes only the current observation and the concrete action chunk already emitted by the policy, without accessing policy internals or requiring joint training. It scans the upcoming chunk for an imminent contact event, anchors prediction shortly before that event, rolls the independently trained latent world model forward under the proposed actions, and applies the frozen probe to the predicted post-contact latent. The system aborts before contact if that specific chunk is likely to lead to failure; otherwise the policy continues unchanged.
+0081: Our experiments test whether this action-conditioned future latent contains failure information unavailable from the current observation or planned action alone. Across real-world contact-rich manipulation tasks, predicted future latents improve failure prediction over current-latent and corrupted-action ablations. These results suggest that latent world models can serve not only as planning or representation-learning modules, but also as practical execution monitors for preventing likely failures before physical contact.
+0082: Our contributions are:
+0083: •
+0084: We formulate pre-contact execution monitoring for chunked visuomotor policies, where the robot evaluates the likely consequence of an imminent contact action before committing.
+0085: •
+0086: We introduce
+0087: ContactGuard
+0088: , an action-conditioned latent world-model monitor that rolls out compact multi-view visual embeddings under the policy’s planned action chunk.
+0089: •
+0090: We show that predicted future latents provide failure information beyond current observations and raw planned actions, through current-latent and corrupted-action ablations.
+0091: •
+0092: We demonstrate live real-robot pre-contact aborts without candidate action search, pixel-level video prediction, or modification of the underlying visuomotor policy.
+0093: 2
+0094: Related Work
+0095: Latent world models for robot manipulation:
+0096: Learning compact dynamics from pixels is central to model-based RL
+0097: [
+0098: 2
+0099: ,
+0100: 3
+0101: ]
+0102: . Dreamer
+0103: [
+0104: 4
+0105: ,
+0106: 5
+0107: ]
+0108: imagines trajectories in latent space for policy learning, while TD-MPC
+0109: [
+0110: 6
+0111: ]
+0112: learns task-oriented latent dynamics for model-predictive control. Latent forward models have also been used for visuomotor trajectory optimisation
+0113: [
+0114: 7
+0115: ]
+0116: , and action-conditioned video prediction for model-predictive manipulation
+0117: [
+0118: 8
+0119: ]
+0120: . Recent learned simulators and generative world models extend this direction to richer visual and interaction rollouts for planning, policy learning, and data generation
+0121: [
+0122: 9
+0123: ,
+0124: 10
+0125: ]
+0126: . Most closely related is LeWorldModel
+0127: [
+0128: 11
+0129: ]
+0130: , which trains an end-to-end latent world model with next-embedding prediction and an anti-collapse Gaussian regulariser. We adopt this latent-prediction perspective, but use it for pre-contact failure monitoring rather than planning or policy learning. In contact-rich manipulation, small changes around contact can decide whether an object is nudged, slips, or remains inside the gripper. We therefore ask whether action-conditioned future latents preserve enough outcome information to predict failure before contact occurs.
+0131: Failure prediction and execution monitoring:
+0132: Robust robot deployment has motivated visual and vision-language detectors for manipulation success and failure
+0133: [
+0134: 12
+0135: ,
+0136: 13
+0137: ]
+0138: , as well as robotic reward models learned from comparisons or large reward datasets
+0139: [
+0140: 14
+0141: ,
+0142: 15
+0143: ]
+0144: . Other methods monitor trajectory rarity
+0145: [
+0146: 16
+0147: ]
+0148: , or monitor learned policies during execution: FIPER predicts failures of generative robot policies, while FAIL-Detect detects runtime distribution shift from successful demonstrations
+0149: [
+0150: 17
+0151: ,
+0152: 18
+0153: ]
+0154: ; RND provides another success-only novelty signal
+0155: [
+0156: 19
+0157: ]
+0158: , and SAFE learns a supervised failure detector across manipulation tasks
+0159: [
+0160: 20
+0161: ]
+0162: . Recent work on out-of-distribution metrics for visuomotor policies enables accurate failure prediction, these include Rewind-IL
+0163: [
+0164: 21
+0165: ]
+0166: and PATCH
+0167: [
+0168: 22
+0169: ]
+0170: . Additionally, closely related are SIRIUS and Sirius-Fleet. SIRIUS jointly trains its policy and latent dynamics model in a shared latent embedding space and alternates the policy and dynamics model to simulate future policy rollouts for runtime monitoring
+0171: [
+0172: 23
+0173: ]
+0174: . Sirius-Fleet similarly uses visual world-model predictions for failure monitoring in multi-task interactive robot learning
+0175: [
+0176: 24
+0177: ]
+0178: . We therefore do not claim imagined future-state monitoring itself as novel. ContactGuard addresses a different deployment interface: the underlying policy remains an external black-box proposer, while an independently trained world model verifies the
+0179: concrete action chunk already proposed by that policy
+0180: at a pre-contact commitment point and may veto it before scene-changing contact. This separates predictive verification from policy training and makes the monitor attachable to an otherwise unchanged visuomotor policy. For grasping, prior work has also studied early failure prediction with sequence models and interactive visual predictors, where the robot probes or partially executes an action before completing a pick
+0181: [
+0182: 25
+0183: ]
+0184: . ContactGuard instead predicts failure before contact by rolling the proposed action chunk from a pre-contact observation to a predicted post-contact latent.
+0185: Chunked visuomotor policies and test-time verification:
+0186: Imitation learning
+0187: [
+0188: 26
+0189: ,
+0190: 27
+0191: ,
+0192: 28
+0193: ]
+0194: enables motion generation without requiring structured motion planning
+0195: [
+0196: 29
+0197: ]
+0198: . In imitation learning, action chunks are a natural unit for short-horizon visuomotor prediction. ACT
+0199: [
+0200: 30
+0201: ]
+0202: predicts action sequences with a transformer policy, while Diffusion Policy
+0203: [
+0204: 31
+0205: ]
+0206: generates chunks through conditional denoising. These chunks often contain meaningful interaction events such as approach, gripper closure, and lift, making them suitable for consequence prediction before execution, especially over long horizons
+0207: [
+0208: 32
+0209: ]
+0210: . Recent methods use learned rewards or world models to score multiple candidate actions for test-time verification
+0211: [
+0212: 33
+0213: ]
+0214: or post-training
+0215: [
+0216: 34
+0217: ,
+0218: 35
+0219: ]
+0220: . ContactGuard addresses a different setting: it does not search over candidate chunks or modify the action generator. It monitors the single chunk proposed by an existing policy and uses the predicted future latent as a pre-contact failure signal.
+0221: 3
+0222: Latent World Models for Pre-Contact Grasp Monitoring
+0223: We present
+0224: ContactGuard
+0225: , a pre-contact grasp monitor that predicts whether an imminent grasp is likely to fail before the gripper closes. It combines a JEPA-style latent world model with a frozen linear failure probe. The world model is trained from unlabelled robot trajectories to predict action-conditioned future latents; the probe is trained from a smaller labelled grasp set to score the predicted post-contact latent. At deployment, the frozen model and probe run alongside a visuomotor policy and abort execution when the planned action chunk is predicted to fail.
+0226: We first define the world model and probe data, then describe the LeWM-style latent predictor, its multi-view architecture, the failure probe, and the online pre-contact monitor.
+0227: 3.1
+0228: Problem Setting and Data
+0229: ContactGuard separates unlabelled latent dynamics learning from small-data outcome supervision. The world-model dataset contains robot trajectories
+0230: 𝒟
+0231: wm
+0232: =
+0233: {
+0234: (
+0235: o
+0236: 1
+0237: :
+0238: T
+0239: n
+0240: 1
+0241: :
+0242: V
+0243: ,
+0244: a
+0245: 1
+0246: :
+0247: T
+0248: n
+0249: )
+0250: n
+0251: }
+0252: n
+0253: =
+0254: 1
+0255: N
+0256: ,
+0257: \mathcal{D}_{\mathrm{wm}}=\left\{\left(o_{1:T_{n}}^{1:V},a_{1:T_{n}}\right)_{n}\right\}_{n=1}^{N},
+0258: (1)
+0259: where
+0260: o
+0261: t
+0262: 1
+0263: :
+0264: V
+0265: o_{t}^{1:V}
+0266: are synchronised observations from
+0267: V
+0268: V
+0269: fixed cameras and
+0270: a
+0271: t
+0272: ∈
+0273: ℝ
+0274: d
+0275: a_{t}\in\mathbb{R}^{d}
+0276: is the joint-space action. No grasp-success labels are used to train the world model.
+0277: The probe dataset
+0278: 𝒟
+0279: probe
+0280: \mathcal{D}_{\mathrm{probe}}
+0281: contains labelled pre-contact grasp clips. Each clip includes a short multi-view history
+0282: o
+0283: t
+0284: −
+0285: C
+0286: +
+0287: 1
+0288: :
+0289: t
+0290: 1
+0291: :
+0292: V
+0293: o_{t-C+1:t}^{1:V}
+0294: , the planned action chunk
+0295: a
+0296: t
+0297: :
+0298: t
+0299: +
+0300: K
+0301: −
+0302: 1
+0303: a_{t:t+K-1}
+0304: , and a binary label
+0305: y
+0306: ∈
+0307: {
+0308: 0
+0309: ,
+0310: 1
+0311: }
+0312: y\in\{0,1\}
+0313: , where
+0314: y
+0315: =
+0316: 1
+0317: y{=}1
+0318: denotes failure. After the world model is frozen, the probe learns to map the predicted future latent to failure likelihood.
+0319: 3.2
+0320: Background: LeWM-style Latent Prediction
+0321: Figure
+0322: 2
+0323: shows the ContactGuard architecture; at its core lies a latent JEPA model
+0324: [
+0325: 11
+0326: ]
+0327: . A visual encoder
+0328: E
+0329: ϕ
+0330: E_{\phi}
+0331: maps an observation to a latent embedding
+0332: z
+0333: t
+0334: =
+0335: E
+0336: ϕ
+0337: ​
+0338: (
+0339: o
+0340: t
+0341: )
+0342: ∈
+0343: ℝ
+0344: D
+0345: z_{t}=E_{\phi}(o_{t})\in\mathbb{R}^{D}
+0346: , and an action-conditioned causal predictor
+0347: P
+0348: θ
+0349: P_{\theta}
+0350: predicts the next latent from a length-
+0351: C
+0352: C
+0353: context:
+0354: z
+0355: ^
+0356: t
+0357: +
+0358: 1
+0359: =
+0360: P
+0361: θ
+0362: (
+0363: z
+0364: t
+0365: −
+0366: C
+0367: +
+0368: 1
+0369: :
+0370: t
+0371: ,
+0372: a
+0373: t
+0374: )
+0375: .
+0376: \hat{z}_{t+1}=P_{\theta}(z_{t-C+1:t},a_{t}).
+0377: (2)
+0378: The predictor is a causal Transformer conditioned on actions through AdaLN-zero modulation. It is trained with next-embedding regression and the SIGReg anti-collapse regulariser
+0379: [
+0380: 11
+0381: ]
+0382: , which encourages the latent distribution to match a standard Gaussian on random projections. We reuse this encoder–predictor interface, but adapt it to multi-view observations, action-aligned prediction windows, and downstream pre-contact failure readout.
+0383: Figure 2:
+0384: ContactGuard overview.
+0385: A shared multi-view encoder maps camera observations to a latent context. An action-conditioned predictor rolls this context forward under the policy’s planned action chunk to produce future latents
+0386: z
+0387: ^
+0388: t
+0389: +
+0390: 1
+0391: :
+0392: t
+0393: +
+0394: K
+0395: \hat{z}_{t+1:t+K}
+0396: . A lightweight probe is trained offline on labelled pre-contact clips and used online to score the predicted post-contact latent
+0397: z
+0398: ^
+0399: t
+0400: +
+0401: K
+0402: \hat{z}_{t+K}
+0403: . If the predicted failure probability exceeds threshold
+0404: τ
+0405: \tau
+0406: , execution is aborted before contact. Training uses teacher-forced next-latent prediction; inference uses autoregressive rollout.
+0407: 3.3
+0408: Multi-View Latent World Model
+0409: At each time step, the
+0410: V
+0411: V
+0412: camera observations are encoded independently by a shared ViT-Tiny. The per-view embeddings are mean-pooled and passed through a learned linear projection to produce a single latent
+0413: z
+0414: t
+0415: ∈
+0416: ℝ
+0417: D
+0418: z_{t}\in\mathbb{R}^{D}
+0419: . This keeps the latent dimension fixed as the number of cameras changes, while allowing informative views to compensate for partial occlusions. A shared action embedder maps each joint-space action
+0420: a
+0421: t
+0422: ∈
+0423: ℝ
+0424: d
+0425: a_{t}\in\mathbb{R}^{d}
+0426: into the same
+0427: D
+0428: D
+0429: -dimensional space. The predictor consists of four AdaLN-zero-conditioned Transformer blocks followed by a two-layer prediction MLP. We denote the full Transformer-plus-projection module by
+0430: P
+0431: θ
+0432: P_{\theta}
+0433: . During training,
+0434: P
+0435: θ
+0436: P_{\theta}
+0437: is supervised with teacher-forced one-step transitions over a context window of
+0438: C
+0439: C
+0440: frames and
+0441: L
+0442: L
+0443: rollout targets per sample. At deployment, the same predictor is rolled out autoregressively for
+0444: K
+0445: K
+0446: steps under the planned action chunk.
+0447: We train
+0448: P
+0449: θ
+0450: P_{\theta}
+0451: with the same action-conditioned one-step interface used during rollout. Let
+0452: z
+0453: 0
+0454: ,
+0455: …
+0456: ,
+0457: z
+0458: C
+0459: +
+0460: L
+0461: −
+0462: 1
+0463: z_{0},\ldots,z_{C+L-1}
+0464: be the latents in a training window and let
+0465: u
+0466: i
+0467: u_{i}
+0468: be the action that drives the transition from frame
+0469: i
+0470: +
+0471: C
+0472: −
+0473: 1
+0474: i{+}C{-}1
+0475: to frame
+0476: i
+0477: +
+0478: C
+0479: i{+}C
+0480: . For each supervised step
+0481: i
+0482: ∈
+0483: {
+0484: 0
+0485: ,
+0486: …
+0487: ,
+0488: L
+0489: −
+0490: 1
+0491: }
+0492: i\in\{0,\ldots,L{-}1\}
+0493: , the predictor receives a length-
+0494: C
+0495: C
+0496: real-latent context and the aligned action:
+0497: z
+0498: ^
+0499: i
+0500: +
+0501: C
+0502: =
+0503: P
+0504: θ
+0505: (
+0506: z
+0507: i
+0508: :
+0509: i
+0510: +
+0511: C
+0512: −
+0513: 1
+0514: ,
+0515: u
+0516: i
+0517: )
+0518: .
+0519: \hat{z}_{i+C}=P_{\theta}\bigl(z_{i:i+C-1},u_{i}\bigr).
+0520: (3)
+0521: The objective is next-latent regression with SIGReg regularisation:
+0522: ℒ
+0523: =
+0524: 1
+0525: L
+0526: ​
+0527: ∑
+0528: i
+0529: =
+0530: 0
+0531: L
+0532: −
+0533: 1
+0534: ‖
+0535: z
+0536: ^
+0537: i
+0538: +
+0539: C
+0540: −
+0541: z
+0542: i
+0543: +
+0544: C
+0545: ‖
+0546: 2
+0547: 2
+0548: +
+0549: λ
+0550: ​
+0551: ℒ
+0552: reg
+0553: .
+0554: \mathcal{L}=\frac{1}{L}\sum_{i=0}^{L-1}\bigl\|\hat{z}_{i+C}-z_{i+C}\bigr\|_{2}^{2}+\lambda\mathcal{L}_{\mathrm{reg}}.
+0555: (4)
+0556: Thus each training target matches one inference-time rollout step. Training uses teacher-forced real latents in the sliding context, while deployment replaces future context entries with predicted latents during autoregressive rollout.
+0557: 3.4
+0558: Linear Failure Probe on Predicted Latents
+0559: The world model is task-agnostic. After training, we freeze
+0560: E
+0561: ϕ
+0562: E_{\phi}
+0563: and
+0564: P
+0565: θ
+0566: P_{\theta}
+0567: and use the
+0568: K
+0569: K
+0570: -step predicted latent as the feature for a lightweight failure readout. For each labelled clip, we anchor the rollout at
+0571: t
+0572: =
+0573: T
+0574: g
+0575: −
+0576: k
+0577: pre
+0578: t=T_{g}-k_{\mathrm{pre}}
+0579: , unroll the frozen predictor for
+0580: K
+0581: K
+0582: steps under the recorded action chunk, and use
+0583: z
+0584: ^
+0585: t
+0586: +
+0587: K
+0588: \hat{z}_{t+K}
+0589: as the probe input. We set
+0590: K
+0591: >
+0592: k
+0593: pre
+0594: K>k_{\mathrm{pre}}
+0595: so that the readout lies shortly after the planned gripper closure, where success or failure is more likely to be expressed in the latent.
+0596: Each feature is standardised using training-split statistics,
+0597: z
+0598: ~
+0599: t
+0600: +
+0601: K
+0602: =
+0603: (
+0604: z
+0605: ^
+0606: t
+0607: +
+0608: K
+0609: −
+0610: μ
+0611: )
+0612: /
+0613: σ
+0614: \tilde{z}_{t+K}=(\hat{z}_{t+K}-\mu)/\sigma
+0615: , and scored by a linear logistic probe:
+0616: P
+0617: ⁡
+0618: (
+0619: fail
+0620: ∣
+0621: z
+0622: ^
+0623: t
+0624: +
+0625: K
+0626: )
+0627: =
+0628: σ
+0629: ⁡
+0630: (
+0631: w
+0632: ⊤
+0633: ​
+0634: z
+0635: ~
+0636: t
+0637: +
+0638: K
+0639: +
+0640: b
+0641: )
+0642: .
+0643: P(\mathrm{fail}\mid\hat{z}_{t+K})=\sigma\!\left(w^{\top}\tilde{z}_{t+K}+b\right).
+0644: (5)
+0645: The probe parameters are fit on the training data with an
+0646: ℓ
+0647: 2
+0648: \ell_{2}
+0649: -penalised, class-balanced logistic loss:
+0650: min
+0651: w
+0652: ,
+0653: b
+0654: ⁡
+0655: 1
+0656: 2
+0657: ​
+0658: ‖
+0659: w
+0660: ‖
+0661: 2
+0662: 2
+0663: +
+0664: ρ
+0665: ​
+0666: ∑
+0667: i
+0668: =
+0669: 1
+0670: N
+0671: s
+0672: y
+0673: i
+0674: ​
+0675: log
+0676: ⁡
+0677: (
+0678: 1
+0679: +
+0680: exp
+0681: ⁡
+0682: (
+0683: −
+0684: (
+0685: 2
+0686: ​
+0687: y
+0688: i
+0689: −
+0690: 1
+0691: )
+0692: ​
+0693: (
+0694: w
+0695: ⊤
+0696: ​
+0697: z
+0698: ~
+0699: i
+0700: +
+0701: b
+0702: )
+0703: )
+0704: )
+0705: ,
+0706: s
+0707: c
+0708: =
+0709: N
+0710: 2
+0711: ​
+0712: N
+0713: c
+0714: .
+0715: \min_{w,b}\;\frac{1}{2}\|w\|_{2}^{2}+\rho\sum_{i=1}^{N}s_{y_{i}}\log\!\left(1+\exp\!\left(-(2y_{i}-1)(w^{\top}\tilde{z}_{i}+b)\right)\right),\qquad s_{c}=\frac{N}{2N_{c}}.
+0716: (6)
+0717: Here
+0718: N
+0719: c
+0720: N_{c}
+0721: is the number of samples from class
+0722: c
+0723: c
+0724: , and the class weights compensate for success/failure imbalance. The same frozen
+0725: (
+0726: w
+0727: ,
+0728: b
+0729: )
+0730: (w,b)
+0731: are used for all test-set and online evaluations.
+0732: 3.5
+0733: Online Pre-Contact Grasp Monitor
+0734: The offline failure score becomes an online gate evaluated before a task-defined imminent contact event. ContactGuard separates triggering from evaluation: a lightweight, task-specific trigger decides when the monitor should run, while the action-conditioned latent predictor decides whether the planned chunk should continue or be vetoed. In this paper, we instantiate the trigger for grasp closure using the commanded gripper open-to-close transition, a policy-agnostic cue that requires no learning; designing general-purpose triggers for other contact events is orthogonal to our contribution. The monitor runs alongside a chunked visuomotor policy such as ACT
+0735: [
+0736: 30
+0737: ]
+0738: and maintains the last
+0739: C
+0740: C
+0741: multi-view observations and upcoming actions. Each control step follows four stages.
+0742: Trigger:
+0743: Scan the upcoming chunk for the first open-to-close gripper transition, and denote its offset by
+0744: g
+0745: g
+0746: . If no closure is found, continue execution.
+0747: Anchor:
+0748: Activate the monitor when the planned closure is at most
+0749: k
+0750: pre
+0751: k_{\mathrm{pre}}
+0752: frames ahead, matching the pre-contact offset used for probe training.
+0753: Rollout and score:
+0754: Encode the observation history with
+0755: E
+0756: ϕ
+0757: E_{\phi}
+0758: , roll out
+0759: P
+0760: θ
+0761: P_{\theta}
+0762: for
+0763: K
+0764: K
+0765: steps under the planned actions, and apply the frozen probe to
+0766: z
+0767: ^
+0768: t
+0769: +
+0770: K
+0771: \hat{z}_{t+K}
+0772: .
+0773: Abort decision:
+0774: If
+0775: P
+0776: ⁡
+0777: (
+0778: fail
+0779: )
+0780: >
+0781: τ
+0782: P(\mathrm{fail})>\tau
+0783: , abort before the gripper closes; otherwise continue the policy unchanged. The threshold
+0784: τ
+0785: \tau
+0786: is selected once per task on the validation split and then frozen for test-set and real-robot evaluations. Because the policy executes action chunks, the monitor runs within the chunk execution window and does not stall control unless an abort is issued.
+0787: 4
+0788: Experimental Results
+0789: We instantiate ContactGuard on grasp closure, a canonical short-horizon imminent-contact event with challenging visual geometry, occlusion, object variation, and a strict real-time pre-contact budget. We evaluate four grasp settings with ACT
+0790: [
+0791: 30
+0792: ]
+0793: as the underlying chunked visuomotor policy. All metrics evaluate the predictor’s decision at the triggered pre-contact state, not the trigger itself or post-abort recovery. Our experiments ask four questions:
+0794: 1.
+0795: Prediction quality.
+0796: Can predicted future latents anticipate execution outcomes better than single-view world models, current-state monitoring, and established runtime failure detectors?
+0797: 2.
+0798: Information source.
+0799: Does the signal arise from the imagined consequence of the
+0800: specific proposed action
+0801: , rather than from the current observation, visual shortcuts, or generic motion cues?
+0802: 3.
+0803: Robot-state fusion.
+0804: Does adding proprioceptive state improve grasp-relevant latent prediction?
+0805: 4.
+0806: Runtime.
+0807: Is the forecast fast enough for the pre-contact window before gripper closure?
+0808: (a)
+0809: Pick-and-place (cup)
+0810: (b)
+0811: Pick-and-place (box)
+0812: (c)
+0813: Pencil-and-notebook
+0814: (d)
+0815: Towel-fold
+0816: Figure 3:
+0817: Evaluated tasks. Each panel shows a representative successful rollout from the middle camera, with columns showing the pre-grasp, grasp, and post-grasp phases.
+0818: (a)
+0819: Pick-and-place (cup)
+0820: (b)
+0821: Pick-and-place (box)
+0822: Figure 4:
+0823: Real-robot qualitative examples on the pick-and-place tasks. Each panel shows a live rollout that our monitor classifies correctly: top row is the grasping arm’s wrist camera, bottom row the middle-view camera, with columns showing the pre-grasp, grasp, and post-grasp frames.
+0824: 4.1
+0825: Experimental Setup
+0826: Robot, tasks, and data:
+0827: All experiments use a 14-DoF AgileX Piper dual-arm robot with three synchronized RGB cameras. We evaluate four labelled grasp settings: cup and box grasps in pick-and-place, pencil grasping in pencil-and-notebook, and towel grasping in towel-fold. These settings require precise end-effector–object alignment near contact, where small approach errors cause missed grasps, slips, or object disturbance. The world model is trained on unlabelled real-robot trajectories from ACT rollouts and human teleoperation. For downstream evaluation, we extract grasp attempts, assign binary success/failure labels, and define
+0828: T
+0829: g
+0830: T_{g}
+0831: as the first gripper-command frame crossing the closure threshold. Each labelled set contains roughly 250 attempts; test episodes are collected separately and excluded from world-model training, probe fitting, threshold selection, and ablation tuning.
+0832: Models and baselines:
+0833: Our primary comparisons isolate both the value of latent imagination and the relationship to established runtime failure detectors.
+0834: Ours
+0835: is the multi-view ContactGuard predictor that mean-pools the three camera latents before action-conditioned rollout.
+0836: LeWM
+0837: [
+0838: 11
+0839: ]
+0840: is a capacity-matched single-camera world model trained on the same unlabelled trajectories.
+0841: Direct-linear
+0842: bypasses rollout and predicts failure directly from the anchor latent
+0843: z
+0844: t
+0845: z_{t}
+0846: and planned action chunk using the same frozen multi-view encoder.
+0847: Current latent
+0848: is a tightly matched imagination ablation: it uses the same encoder, labels, probe family, data pools, and cross-validation protocol as ContactGuard, but replaces the predicted future latent with the current latent
+0849: z
+0850: t
+0851: z_{t}
+0852: . We additionally evaluate
+0853: FAIL-Detect
+0854: [
+0855: 18
+0856: ]
+0857: ,
+0858: RND
+0859: [
+0860: 19
+0861: ]
+0862: , and
+0863: SAFE
+0864: [
+0865: 20
+0866: ]
+0867: at the same gripper-closure trigger. FAIL-Detect and RND provide success-only uncertainty/novelty references, whereas SAFE provides an external supervised failure-detection reference. The proprioceptive
+0868: LeWM,+,state
+0869: variant additionally fuses a 28-dimensional vector of joint positions and efforts. All world-model variants use capacity-matched encoder and predictor backbones with the same SIGReg regularizer. Appendix
+0870: B
+0871: reports nonlinear
+0872: Direct
+0873: probes on the same
+0874: (
+0875: z
+0876: t
+0877: ,
+0878: a
+0879: )
+0880: (z_{t},a)
+0881: inputs; despite hyperparameter tuning and early stopping, they generalize poorly and are unstable on the small labelled probe sets.
+0882: Forecasting and probing:
+0883: At evaluation, the monitor triggers when gripper closure is expected within
+0884: k
+0885: pre
+0886: =
+0887: 15
+0888: k_{\mathrm{pre}}{=}15
+0889: frames. We anchor
+0890: 0.5
+0891: 0.5
+0892: s before closure and roll out the world model for
+0893: K
+0894: =
+0895: 30
+0896: K{=}30
+0897: steps, reaching
+0898: 0.5
+0899: 0.5
+0900: s after closure at
+0901: 30
+0902: 30
+0903: Hz. A frozen
+0904: ℓ
+0905: 2
+0906: \ell_{2}
+0907: -regularized logistic-regression probe maps
+0908: z
+0909: ^
+0910: t
+0911: +
+0912: K
+0913: \hat{z}_{t+K}
+0914: to
+0915: P
+0916: ⁡
+0917: (
+0918: fail
+0919: )
+0920: P(\mathrm{fail})
+0921: . The probe is trained on the train split, selected on validation, and fixed for all test and real-robot results. Since the anchor precedes closure, the probe cannot rely on visible closure and must use the action-conditioned latent rollout.
+0922: Closed-loop real-robot evaluation:
+0923: We deploy ContactGuard with ACT using the same trigger, forecast horizon, frozen probe, and per-task threshold
+0924: τ
+0925: \tau
+0926: . For evaluation, when the monitor would abort (
+0927: P
+0928: ⁡
+0929: (
+0930: fail
+0931: )
+0932: >
+0933: τ
+0934: P(\mathrm{fail}){>}\tau
+0935: ) the robot pauses
+0936: 5
+0937: 5
+0938: s with the gripper open and then resumes the remaining chunk to record the would-be outcome; unflagged trials run to completion. Since the pause precedes contact, the resumed attempt is a controlled counterfactual proxy for the abort decision. We collect
+0939: N
+0940: =
+0941: 50
+0942: N{=}50
+0943: live monitored ACT rollouts per setting, with all methods evaluated on the same pre-contact observations and planned chunks. Full operating points are reported in Appendix
+0944: C
+0945: .
+0946: Table 1:
+0947: We report precision, recall, false-abort rate (FAR
+0948: =
+0949: ={}
+0950: FP/(FP+TN); lower is better), ROC AUC, and balanced accuracy over realized
+0951: P
+0952: ⁡
+0953: (
+0954: fail
+0955: )
+0956: P(\mathrm{fail})
+0957: scores from
+0958: N
+0959: =
+0960: 50
+0961: N{=}50
+0962: monitored rollouts per grasp setting.
+0963: Task
+0964: Method
+0965: Precision
+0966: Recall
+0967: FAR
+0968: ↓
+0969: \downarrow
+0970: AUC
+0971: Bal. Acc.
+0972: Cup
+0973: Direct-linear
+0974: 0.545
+0975: 0.960
+0976: 0.800
+0977: 0.661
+0978: 0.580
+0979: LeWM
+0980: 0.706
+0981: 0.960
+0982: 0.400
+0983: 0.928
+0984: 0.780
+0985: Ours
+0986: 0.893
+0987: 1.000
+0988: 0.120
+0989: 0.992
+0990: 0.940
+0991: Box
+0992: Direct-linear
+0993: 0.647
+0994: 0.500
+0995: 0.214
+0996: 0.619
+0997: 0.643
+0998: LeWM
+0999: 0.857
+1000: 0.818
+1001: 0.107
+1002: 0.933
+1003: 0.856
+1004: Ours
+1005: 0.864
+1006: 0.864
+1007: 0.107
+1008: 0.946
+1009: 0.878
+1010: Pencil
+1011: Direct-linear
+1012: 0.468
+1013: 1.000
+1014: 0.893
+1015: 0.732
+1016: 0.554
+1017: LeWM
+1018: 0.679
+1019: 0.864
+1020: 0.321
+1021: 0.872
+1022: 0.771
+1023: Ours
+1024: 0.889
+1025: 0.727
+1026: 0.071
+1027: 0.898
+1028: 0.828
+1029: Towel
+1030: Direct-linear
+1031: 0.759
+1032: 0.880
+1033: 0.280
+1034: 0.841
+1035: 0.800
+1036: LeWM
+1037: 0.750
+1038: 0.600
+1039: 0.200
+1040: 0.794
+1041: 0.700
+1042: Ours
+1043: 0.786
+1044: 0.880
+1045: 0.240
+1046: 0.917
+1047: 0.820
+1048: Figure 5:
+1049: Qualitative examples on the pencil-and-notebook and towel-fold tasks. Each panel shows a rollout that is classified correctly.
+1050: Table 2:
+1051: External detector and matched current-state comparison.
+1052: ROC AUC on larger offline grasp pools
+1053: (
+1054: n
+1055: =
+1056: 101
+1057: /
+1058: 126
+1059: /
+1060: 103
+1061: /
+1062: 144
+1063: n{=}101/126/103/144
+1064: for Cup/Box/Pencil/Towel).
+1065: Supervised rows report mean
+1066: ±
+1067: \pm
+1068: std over five seeded stratified
+1069: 5-fold cross-validation runs.
+1070: Current latent
+1071: uses the same encoder,
+1072: labels, probe, pools, and CV protocol as ContactGuard but omits imagined
+1073: future latents.
+1074: Detector
+1075: Cup
+1076: Box
+1077: Pencil
+1078: Towel
+1079: FAIL-Detect
+1080: .813
+1081: .219
+1082: .533
+1083: .448
+1084: RND
+1085: .840
+1086: .211
+1087: .671
+1088: .417
+1089: SAFE
+1090: .840
+1091: ±
+1092: .009
+1093: .840{\pm}.009
+1094: .925
+1095: ±
+1096: .006
+1097: .925{\pm}.006
+1098: .844
+1099: ±
+1100: .016
+1101: .844{\pm}.016
+1102: .871
+1103: ±
+1104: .017
+1105: .871{\pm}.017
+1106: Current latent
+1107: .840
+1108: ±
+1109: .008
+1110: .840{\pm}.008
+1111: .893
+1112: ±
+1113: .008
+1114: .893{\pm}.008
+1115: .923
+1116: ±
+1117: .010
+1118: .923{\pm}.010
+1119: .871
+1120: ±
+1121: .015
+1122: .871{\pm}.015
+1123: ContactGuard
+1124: .982
+1125: ±
+1126: .003
+1127: \mathbf{.982{\pm}.003}
+1128: .984
+1129: ±
+1130: .005
+1131: \mathbf{.984{\pm}.005}
+1132: .992
+1133: ±
+1134: .001
+1135: \mathbf{.992{\pm}.001}
+1136: .978
+1137: ±
+1138: .004
+1139: \mathbf{.978{\pm}.004}
+1140: 4.2
+1141: Closed-Loop Grasp-Outcome Prediction
+1142: Table
+1143: 1
+1144: reports closed-loop metrics from live rollouts; the world model, probe, and per-task threshold are frozen beforehand. All subsequent diagnostic tables use held-out offline replay splits.
+1145: Multi-view vs. single-view (Table
+1146: 1
+1147: ):
+1148: Multi-view fusion improves both balanced accuracy and AUC over the single-view
+1149: LeWM
+1150: baseline across all four tasks.
+1151: The gain is largest on Towel, where the gripper–cloth contact region is frequently occluded from any single viewpoint, and smallest on Box, where the single-view baseline is already strong. Pencil yields our model’s lowest absolute AUC, consistent with its training trajectories covering only a narrow band of grasp poses so that additional viewpoints add little headroom.
+1152: Direct prediction without imagination:
+1153: The
+1154: Direct-linear
+1155: baseline receives both the same frozen anchor latent and the planned action chunk, but must learn the outcome mapping directly from the small labelled probe set. It trails ContactGuard in AUC on every live task and often produces poorly separated scores, leading to excessive false aborts at the selected threshold. Together with the matched
+1156: Current latent
+1157: comparison in Table
+1158: 2
+1159: , this separates two effects: the gain does not come merely from access to the current representation or planned actions; rolling those actions through the pretrained latent dynamics produces a substantially more decision-ready failure representation.
+1160: External failure detectors (Table
+1161: 2
+1162: ):
+1163: On the larger offline pools, ContactGuard achieves the highest AUC on all four tasks. The comparison to
+1164: Current latent
+1165: is particularly diagnostic: both methods use the same encoder, labels, linear probe family, data pools, and cross-validation protocol, differing only in whether the probe reads the current latent or the action-conditioned imagined future. ContactGuard improves AUC on every task, with paired bootstrap 95% confidence intervals for the difference excluding zero. This is an ablation of imagined consequences, rather than an attempted reproduction of SIRIUS. Against external references, ContactGuard also outperforms SAFE on every task, while FAIL-Detect and RND are not consistently aligned with failure risk in this pre-contact setting.
+1166: Per-task abort behaviour (Table
+1167: 1
+1168: ):
+1169: Behind these aggregate scores, the four tasks abort in distinct ways.
+1170: Cup behaves best, with realised
+1171: P
+1172: ⁡
+1173: (
+1174: fail
+1175: )
+1176: P(\text{fail})
+1177: scores that cleanly rank true failures above true successes and residual errors concentrated near the decision boundary.
+1178: Towel trades precision for coverage: it catches most failures, but has the highest false-abort rate among the four tasks.
+1179: Pencil is asymmetric in the opposite direction: it rarely aborts a successful grasp, but a non-trivial fraction of failures score inside the success range and slip through, giving it the weakest recall, consistent with the narrow grasp-pose training coverage that also leaves it the hardest task by AUC.
+1180: 4.3
+1181: Offline Diagnostics: What Information Does the Monitor Use?
+1182: Table 3:
+1183: Action-conditioning information ablations.
+1184: Current latent
+1185: replaces
+1186: z
+1187: ^
+1188: t
+1189: +
+1190: K
+1191: \hat{z}_{t+K}
+1192: with
+1193: z
+1194: t
+1195: z_{t}
+1196: ;
+1197: Shuffled
+1198: ,
+1199: Zero
+1200: , and
+1201: Mean
+1202: corrupt the action chunk before rollout.
+1203: Task
+1204: Full
+1205: Current
+1206: Shuffled
+1207: Zero
+1208: Mean
+1209: Cup
+1210: 0.965
+1211: 0.758
+1212: 0.535
+1213: 0.847
+1214: 0.842
+1215: Box
+1216: 0.956
+1217: 0.844
+1218: 0.493
+1219: 0.494
+1220: 0.631
+1221: Pencil
+1222: 0.845
+1223: 0.829
+1224: 0.483
+1225: 0.559
+1226: 0.541
+1227: Towel
+1228: 0.959
+1229: 0.801
+1230: 0.493
+1231: 0.659
+1232: 0.417
+1233: Table 4:
+1234: Inference time on RTX 5090.
+1235: Rollout
+1236: reports the rollout alone;
+1237: Full
+1238: reports encode + rollout + classifier.
+1239: K
+1240: K
+1241: Horizon (s)
+1242: Rollout (ms)
+1243: Full (ms)
+1244: 5
+1245: 0.17
+1246: 2.73
+1247: 6.53
+1248: 15
+1249: 0.50
+1250: 7.90
+1251: 11.56
+1252: 25
+1253: 0.83
+1254: 13.01
+1255: 16.63
+1256: 30
+1257: 1.00
+1258: 15.39
+1259: 19.18
+1260: We now ask
+1261: why
+1262: the monitor works: does proprioceptive state help, and does the signal come from the rolled-out latent and aligned actions? Action-corruption variants cannot run on the robot, so Tables
+1263: 5
+1264: and
+1265: 4
+1266: report offline open-loop replay on the held-out test split at
+1267: K
+1268: =
+1269: 30
+1270: K{=}30
+1271: .
+1272: Proprioceptive input (Table
+1273: 5
+1274: ):
+1275: We compare single-view
+1276: LeWM
+1277: with vs. without the 28-d robot state. Counter to the usual intuition, dropping the state improves test AUC on all four tasks. We read this as naive state fusion acting as a domain-specific shortcut in our small-data regime, displacing grasp-relevant visual dynamics; we do not claim proprioception is harmful under richer fusion or larger datasets.
+1278: Action and latent information (Table
+1279: 4
+1280: ):
+1281: We next test whether ContactGuard scores the consequence of the
+1282: specific pending action
+1283: , rather than merely recognizing a risky pre-contact state. Replacing
+1284: z
+1285: ^
+1286: t
+1287: +
+1288: K
+1289: \hat{z}_{t+K}
+1290: with the current anchor latent
+1291: z
+1292: t
+1293: z_{t}
+1294: reduces AUC, especially on Cup, Box, and Towel. Corrupting the proposed actions provides a stronger intervention: shuffling action chunks across episodes collapses AUC to near chance on all four tasks, while zero and mean actions also remain below the correctly aligned rollout.
+1295: Table 5:
+1296: Proprioceptive ablation: held-out AUC for the single-view model with vs. without robot state (
+1297: K
+1298: =
+1299: 30
+1300: K{=}30
+1301: ).
+1302: Task
+1303: w/ state
+1304: img-only
+1305: Cup
+1306: 0.660
+1307: 0.920
+1308: Box
+1309: 0.775
+1310: 0.931
+1311: Pencil
+1312: 0.455
+1313: 0.878
+1314: Towel
+1315: 0.630
+1316: 0.882
+1317: We additionally perform a counterfactual action-swap test while holding the observation fixed. For each successful pre-contact anchor, we replace only its planned chunk with a same-task action chunk logged from a failed attempt at the same trigger. The predicted failure probability increases by
+1318: +
+1319: 0.25
+1320: /
+1321: +
+1322: 0.33
+1323: /
+1324: +
+1325: 0.56
+1326: /
+1327: +
+1328: 0.65
+1329: +0.25/+0.33/+0.56/+0.65
+1330: on Cup/Box/Pencil/Towel, respectively, whereas an action-free current-latent probe is invariant to the swap. Thus the monitor is not simply identifying observations that “look risky”: its verdict changes when the proposed action changes while the visual state is held fixed.
+1331: Pencil remains the task where the held-out current-latent ablation is closest to the full rollout, consistent with its narrow grasp-pose coverage; however, the action-swap intervention shows that the learned predictor still responds strongly to which action is about to be executed.
+1332: Runtime Analysis:
+1333: Online monitoring must return a verdict before the gripper reaches the candidate grasp frame. We benchmark the deployed JEPA model, using a ViT-Tiny encoder and 4-layer transformer predictor, on a single NVIDIA RTX 5090 in FP32 at the deployment input shape; per-horizon costs are reported in Table
+1334: 4
+1335: . History encoding is a one-shot cost shared across rollout horizons, while rollout latency scales nearly linearly with
+1336: K
+1337: K
+1338: because the predictor autoregressively unrolls over cached context tokens. Peak CUDA memory is dominated by encoder activations and remains essentially independent of
+1339: K
+1340: K
+1341: , since each rolled-out latent is only
+1342: D
+1343: D
+1344: -dimensional. At the deployed horizon, the full encode–rollout–probe pass fits comfortably within the pre-closure slack, so the monitor does not bottleneck control.
+1345: 5
+1346: Conclusions, Limitations, and Future Work
+1347: We presented
+1348: ContactGuard
+1349: , a real-time, policy-decoupled predictive verifier for pre-contact manipulation. An independently trained action-conditioned latent world model evaluates the concrete action chunk proposed by an otherwise unchanged visuomotor policy and scores its predicted post-contact consequence with a lightweight failure probe. Across four real-world grasp settings, ContactGuard outperforms matched current-state monitoring and the tested external runtime failure detectors. Holding the observation fixed while replacing only the proposed action also changes the predicted failure probability substantially, confirming that the monitor responds to the pending action rather than only to static visual risk. These results support action-conditioned latent imagination as a practical substrate for vetoing likely failures before scene-changing contact.
+1350: Limitations:
+1351: ContactGuard prevents failures by abstaining, but does not recover from them or complete the task after an abort. Post-abort task completion requires an external recovery module, which we leave for future work. ContactGuard targets imminent contact events whose outcome is determined within the next action chunk; extending it to longer-horizon skills would require hierarchical or repeated event-level monitoring.
+1352: Future work:
+1353: Future work can close the loop after an abort by selecting a new action chunk, replanning from the preserved scene, or coupling the monitor with multi-sample policies such as Diffusion
+1354: [
+1355: 31
+1356: ]
+1357: , Flow Matching
+1358: [
+1359: 36
+1360: ]
+1361: , or Streaming
+1362: [
+1363: 37
+1364: ]
+1365: policies.
+1366: References
+1367: [1]
+1368: M. Assran, Q. Duval, I. Misra, P. Bojanowski, P. Vincent, M. Rabbat, Y. LeCun, and N. Ballas.
+1369: Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture.
+1370: In
+1371: 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1372: . IEEE, 2023.
+1373: [2]
+1374: D. Ha and J. Schmidhuber.
+1375: World Models.
+1376: Mar. 2018.
+1377: arXiv:1803.10122.
+1378: [3]
+1379: D. Hafner, T. Lillicrap, I. Fischer, R. Villegas, D. Ha, H. Lee, and J. Davidson.
+1380: Learning Latent Dynamics for Planning from Pixels, June 2019.
+1381: arXiv:1811.04551.
+1382: [4]
+1383: D. Hafner, T. Lillicrap, J. Ba, and M. Norouzi.
+1384: Dream to Control: Learning Behaviors by Latent Imagination, Mar. 2020.
+1385: arXiv:1912.01603.
+1386: [5]
+1387: D. Hafner, J. Pasukonis, J. Ba, and T. Lillicrap.
+1388: Mastering Diverse Domains through World Models, Apr. 2024.
+1389: arXiv:2301.04104.
+1390: [6]
+1391: N. Hansen, X. Wang, and H. Su.
+1392: Temporal Difference Learning for Model Predictive Control, July 2022.
+1393: arXiv:2203.04955 [cs.LG].
+1394: [7]
+1395: A. Srinivas, A. Jabri, P. Abbeel, S. Levine, and C. Finn.
+1396: Universal Planning Networks: Learning Generalizable Representations for Visuomotor Control.
+1397: In
+1398: Proceedings of the 35th International Conference on Machine Learning
+1399: , pages 4732–4741. PMLR, July 2018.
+1400: [8]
+1401: C. Finn and S. Levine.
+1402: Deep Visual Foresight for Planning Robot Motion, Mar. 2017.
+1403: arXiv:1610.00696 [cs.LG].
+1404: [9]
+1405: F. Zhu, H. Wu, S. Guo, Y. Liu, C. Cheang, and T. Kong.
+1406: IRASim: A Fine-Grained World Model for Robot Manipulation, July 2025.
+1407: arXiv:2406.14540 [cs.RO].
+1408: [10]
+1409: L. Barcellona, A. Zadaianchuk, D. Allegro, S. Papa, S. Ghidoni, and E. Gavves.
+1410: Dream to Manipulate: Compositional World Models Empowering Robot Imitation Learning with Imagination, Mar. 2025.
+1411: arXiv:2412.14957 [cs.RO].
+1412: [11]
+1413: L. Maes, Q. L. Lidec, D. Scieur, Y. LeCun, and R. Balestriero.
+1414: LeWorldModel: Stable End-to-End Joint-Embedding Predictive Architecture from Pixels, Mar. 2026.
+1415: arXiv:2603.19312 [cs.LG].
+1416: [12]
+1417: Y. Du, K. Konyushkova, M. Denil, A. Raju, J. Landon, F. Hill, N. d. Freitas, and S. Cabi.
+1418: Vision-Language Models as Success Detectors, Mar. 2023.
+1419: arXiv:2303.07280.
+1420: [13]
+1421: J. Duan, W. Pumacay, N. Kumar, Y. R. Wang, S. Tian, W. Yuan, R. Krishna, D. Fox, A. Mandlekar, and Y. Guo.
+1422: AHA: A Vision-Language-Model for Detecting and Reasoning Over Failures in Robotic Manipulation, Oct. 2024.
+1423: arXiv:2410.00371.
+1424: [14]
+1425: A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox, Y. Xiang, A. Li, A. Bobu, A. Gupta, S. Tu, E. Biyik, and J. Zhang.
+1426: Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory Comparisons, May 2026.
+1427: [15]
+1428: T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn.
+1429: RoboReward: General-Purpose Vision-Language Reward Models for Robotics, Jan. 2026.
+1430: arXiv:2601.00675.
+1431: [16]
+1432: H. Cheng, T. Zheng, Z. Ma, T. Zhang, M. Johnson-Roberson, and W. Zhi.
+1433: Dose3: Diffusion-based unified out-of-distribution detection on
+1434: 𝕊
+1435: ​
+1436: 𝔼
+1437: ​
+1438: (
+1439: 3
+1440: )
+1441: \mathbb{SE}(3)
+1442: trajectories.
+1443: IEEE Robotics and Automation Letters
+1444: , 11(2), 2026.
+1445: [17]
+1446: R. Römer, A. Kobras, L. Worbis, and A. P. Schoellig.
+1447: Failure Prediction at Runtime for Generative Robot Policies, Oct. 2025.
+1448: arXiv:2510.09459.
+1449: [18]
+1450: C. Xu, T. K. Nguyen, E. Dixon, C. Rodriguez, P. Miller, R. Lee, P. Shah, R. Ambrus, H. Nishimura, and M. Itkina.
+1451: Can we detect failures without failure data?
+1452: In
+1453: RSS
+1454: , 2025.
+1455: [19]
+1456: Y. Burda, H. Edwards, A. Storkey, and O. Klimov.
+1457: Exploration by random network distillation.
+1458: In
+1459: ICLR
+1460: , 2019.
+1461: [20]
+1462: Q. Gu, Y. Ju, S. Sun, I. Gilitschenski, H. Nishimura, M. Itkina, and F. Shkurti.
+1463: SAFE: Multitask failure detection for vision-language-action models.
+1464: In
+1465: NeurIPS
+1466: , 2025.
+1467: [21]
+1468: G. Zheng, S. Seenivasan, M. Johnson-Roberson, and W. Zhi.
+1469: Rewind-il: Online failure detection and state respawning for imitation learning.
+1470: arXiv preprint arXiv:2604.16683
+1471: , 2026.
+1472: [22]
+1473: Y. Zhou, R. Qiu, Y. Chen, J. Cui, and W. Zhi.
+1474: Patch: Action-chunk-conditioned latent patch innovation monitoring for robot manipulation.
+1475: arXiv preprint arXiv:2606.16690
+1476: , 2026.
+1477: [23]
+1478: H. Liu, S. Dass, R. Martín-Martín, and Y. Zhu.
+1479: Model-based runtime monitoring with interactive il.
+1480: In
+1481: ICRA
+1482: , 2024a.
+1483: [24]
+1484: H. Liu, Y. Zhang, V. Betala, E. Zhang, J. Liu, C. Ding, and Y. Zhu.
+1485: Multi-task interactive robot fleet learning with visual world models.
+1486: In
+1487: CoRL
+1488: , 2024b.
+1489: [25]
+1490: K. Damak, M. Boujelbene, C. Acun, A. Alvanpour, S. K. Das, D. O. Popa, and O. Nasraoui.
+1491: Robot failure mode prediction with deep learning sequence models.
+1492: Neural Computing and Applications
+1493: , 37:4291–4302, Feb. 2025.
+1494: [26]
+1495: W. Zhi, T. Lai, L. Ott, and F. Ramos.
+1496: Diffeomorphic transforms for generalised imitation learning.
+1497: In
+1498: Learning for Dynamics and Control Conference, L4DC
+1499: , 2022.
+1500: [27]
+1501: H. Ravichandar, A. S. Polydoros, S. Chernova, and A. Billard.
+1502: Recent advances in robot learning from demonstration.
+1503: Annual review of control, robotics, and autonomous systems
+1504: , 2020.
+1505: [28]
+1506: W. Zhi, H. Tang, T. Zhang, and M. Johnson-Roberson.
+1507: Teaching periodic stable robot motion generation via sketch.
+1508: IEEE Robotics and Automation Letters
+1509: , 2025.
+1510: [29]
+1511: W. Zhi, I. Akinola, K. van Wyk, N. Ratliff, and F. Ramos.
+1512: Global and reactive motion generation with geometric fabric command sequences.
+1513: In
+1514: IEEE International Conference on Robotics and Automation, ICRA
+1515: . IEEE, 2023.
+1516: [30]
+1517: T. Z. Zhao, V. Kumar, S. Levine, and C. Finn.
+1518: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware, Apr. 2023.
+1519: arXiv:2304.13705.
+1520: [31]
+1521: C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and S. Song.
+1522: Diffusion Policy: Visuomotor Policy Learning via Action Diffusion, Mar. 2024.
+1523: arXiv:2303.04137.
+1524: [32]
+1525: Z. Li, Y. Zhou, R. Qiu, H. Wu, G. Ren, and W. Zhi.
+1526: Tripilot-ff: Coordinated whole-body teleoperation with force feedback.
+1527: arXiv preprint arXiv:2602.09888
+1528: , 2026.
+1529: [33]
+1530: M. Dai, L. Liu, Y. Bai, Y. Liu, Z. Wang, R. SU, C. Chen, L. Lin, and X. Wu.
+1531: RoVer: Robot Reward Model as Test-Time Verifier for Vision-Language-Action Model, Oct. 2025.
+1532: arXiv:2510.10975 [cs.RO].
+1533: [34]
+1534: X. Sun, Z. Xu, C. Cao, Z. Liu, Y. Sun, J. Pang, R. Zhang, Z. Yang, K. Pang, D. He, M. Yuan, and J. Chen.
+1535: AtomVLA: Scalable Post-Training for Robotic Manipulation via Predictive Latent World Models, Mar. 2026.
+1536: arXiv:2603.08519 [cs.RO].
+1537: [35]
+1538: J. Tang and W. Zhi.
+1539: Autointervene: Calibrated intervention for action-chunking imitation learning policies.
+1540: arXiv preprint arXiv:2608.07065
+1541: , 2026.
+1542: [36]
+1543: Y. Lipman, R. T. Q. Chen, H. Ben-Hamu, M. Nickel, and M. Le.
+1544: Flow matching for generative modeling.
+1545: In
+1546: The Eleventh International Conference on Learning Representations
+1547: , 2023.
+1548: [37]
+1549: J. Long, D. Liu, W. Cai, I. Manchester, and W. Zhi.
+1550: Safe policies post-training: Constraining streaming flow models for adapting learned robot trajectory distributions.
+1551: IEEE Robotics and Automation Letters
+1552: , 11(9), 2026.
+1553: Appendix A
+1554: Implementation Details
+1555: Encoder and latent dimensions.
+1556: Camera images are resized to
+1557: 224
+1558: ×
+1559: 224
+1560: 224{\times}224
+1561: before encoding.
+1562: Each view is processed independently by a shared ViT-Tiny (patch size 16), producing a
+1563: D
+1564: =
+1565: 192
+1566: D{=}192
+1567: -dimensional per-view embedding.
+1568: Cross-camera mean fusion and the subsequent learned linear projection preserve this 192-dimensional latent space throughout the rollout.
+1569: Action embedder.
+1570: The per-step action embedder is a
+1571: 1
+1572: ×
+1573: 1
+1574: 1{\times}1
+1575: temporal convolution followed by a two-layer MLP that maps each
+1576: ℝ
+1577: d
+1578: \mathbb{R}^{d}
+1579: action to a 192-dimensional embedding.
+1580: Predictor.
+1581: The autoregressive predictor stacks 4 AdaLN-zero conditioned causal Transformer blocks with 8 attention heads of dimension 64 and a feed-forward hidden size of 1024. The Prediction Projection head is a 2-layer MLP with hidden size
+1582: 4
+1583: ​
+1584: D
+1585: =
+1586: 768
+1587: 4D=768
+1588: .
+1589: Horizons.
+1590: We use a training context window
+1591: C
+1592: =
+1593: 3
+1594: C{=}3
+1595: and training rollout length
+1596: L
+1597: =
+1598: 5
+1599: L{=}5
+1600: . At deployment and offline probe evaluation the rollout horizon is
+1601: K
+1602: =
+1603: 30
+1604: K{=}30
+1605: , with anchor offset
+1606: k
+1607: pre
+1608: =
+1609: 15
+1610: k_{\mathrm{pre}}{=}15
+1611: frames before the planned closure event (0.5 s at 30 hz), so the probe reads out
+1612: z
+1613: ^
+1614: t
+1615: +
+1616: K
+1617: \hat{z}_{t+K}
+1618: at
+1619: T
+1620: g
+1621: +
+1622: 15
+1623: T_{g}+15
+1624: frames (0.5 s post-closure).
+1625: Training objective and optimizer.
+1626: The total loss is the per-step MSE of Eq. (
+1627: 4
+1628: ) plus SIGReg with weight
+1629: λ
+1630: =
+1631: 0.09
+1632: \lambda{=}0.09
+1633: , computed with 512 random projections and 17 quadrature knots.
+1634: All world-model variants are trained for 100 epochs with AdamW (learning rate
+1635: 5
+1636: ×
+1637: 10
+1638: −
+1639: 5
+1640: 5{\times}10^{-5}
+1641: , weight decay
+1642: 10
+1643: −
+1644: 3
+1645: 10^{-3}
+1646: ), a cosine learning-rate schedule, batch size 64, gradient clipping at 1.0, and mixed-precision training.
+1647: Probe.
+1648: The logistic regression probe of Eq. (
+1649: 6
+1650: ) uses
+1651: ℓ
+1652: 2
+1653: \ell_{2}
+1654: regularization with
+1655: ρ
+1656: =
+1657: 1
+1658: \rho{=}1
+1659: and class-balanced reweighting. Per-dimension standardization is fit on the train split only and applied to validation, test, and online inputs.
+1660: Table 6:
+1661: Supplementary offline classifier comparison on the per-task split.
+1662: Each row reports test ROC AUC and test balanced accuracy, with thresholds selected by Youden-
+1663: J
+1664: J
+1665: on the validation split. Direct-linear and Direct-MLP variants share ContactGuard’s frozen multi-view encoder but bypass the world-model rollout, classifying directly from the anchor latent
+1666: z
+1667: t
+1668: z_{t}
+1669: and planned action chunk; “small” and “large” denote the validation-selected 2- and 3-layer MLPs. This supplementary split is separate from the live real-robot rollout set in Table
+1670: 8
+1671: ; values are therefore not expected to match the deployment-table AUCs exactly.
+1672: Task (split)
+1673: Model
+1674: test AUC
+1675: test bal-acc
+1676: Cup
+1677: Ours
+1678: 0.965
+1679: 0.918
+1680: LeWM
+1681: 0.920
+1682: 0.774
+1683: Direct-linear
+1684: 0.618
+1685: 0.596
+1686: Direct-MLP small
+1687: 0.497
+1688: 0.671
+1689: Direct-MLP large
+1690: 0.705
+1691: 0.540
+1692: Box
+1693: Ours
+1694: 0.956
+1695: 0.889
+1696: LeWM
+1697: 0.931
+1698: 0.868
+1699: Direct-linear
+1700: 0.452
+1701: 0.484
+1702: Direct-MLP small
+1703: 0.639
+1704: 0.602
+1705: Direct-MLP large
+1706: 0.666
+1707: 0.626
+1708: Pencil
+1709: Ours
+1710: 0.845
+1711: 0.745
+1712: LeWM
+1713: 0.878
+1714: 0.777
+1715: Direct-linear
+1716: 0.684
+1717: 0.503
+1718: Direct-MLP small
+1719: 0.705
+1720: 0.591
+1721: Direct-MLP large
+1722: 0.437
+1723: 0.483
+1724: Towel
+1725: Ours
+1726: 0.959
+1727: 0.886
+1728: LeWM
+1729: 0.882
+1730: 0.741
+1731: Direct-linear
+1732: 0.888
+1733: 0.777
+1734: Direct-MLP small
+1735: 0.625
+1736: 0.605
+1737: Direct-MLP large
+1738: 0.839
+1739: 0.758
+1740: Table 7:
+1741: Validation-selected Direct-MLP hyperparameters
+1742: per task and architecture class. Selection is by internal validation AUC within each architecture class over hidden
+1743: {
+1744: 32
+1745: ,
+1746: 64
+1747: ,
+1748: 128
+1749: }
+1750: \{32,64,128\}
+1751: , dropout
+1752: {
+1753: 0
+1754: ,
+1755: 0.2
+1756: ,
+1757: 0.5
+1758: }
+1759: \{0,0.2,0.5\}
+1760: , weight decay
+1761: {
+1762: 10
+1763: −
+1764: 4
+1765: ,
+1766: 10
+1767: −
+1768: 3
+1769: ,
+1770: 10
+1771: −
+1772: 2
+1773: }
+1774: \{10^{-4},10^{-3},10^{-2}\}
+1775: . Small
+1776: =
+1777: 1
+1778: {=}1
+1779: hidden layer, large
+1780: =
+1781: 2
+1782: {=}2
+1783: hidden layers.
+1784: Variant
+1785: Task
+1786: hidden
+1787: dropout
+1788: weight decay
+1789: Direct-MLP small
+1790: Cup
+1791: 32
+1792: 0.5
+1793: 10
+1794: −
+1795: 4
+1796: 10^{-4}
+1797: Box
+1798: 32
+1799: 0.0
+1800: 10
+1801: −
+1802: 4
+1803: 10^{-4}
+1804: Pencil
+1805: 32
+1806: 0.2
+1807: 10
+1808: −
+1809: 4
+1810: 10^{-4}
+1811: Towel
+1812: 32
+1813: 0.5
+1814: 10
+1815: −
+1816: 4
+1817: 10^{-4}
+1818: Direct-MLP large
+1819: Cup
+1820: 32
+1821: 0.0
+1822: 10
+1823: −
+1824: 4
+1825: 10^{-4}
+1826: Box
+1827: 32
+1828: 0.0
+1829: 10
+1830: −
+1831: 4
+1832: 10^{-4}
+1833: Pencil
+1834: 32
+1835: 0.2
+1836: 10
+1837: −
+1838: 4
+1839: 10^{-4}
+1840: Towel
+1841: 64
+1842: 0.0
+1843: 10
+1844: −
+1845: 3
+1846: 10^{-3}
+1847: Appendix B
+1848: Nonlinear
+1849: Direct
+1850: Variants
+1851: We also evaluated nonlinear
+1852: Direct
+1853: probes that use the same inputs as the linear
+1854: Direct
+1855: baseline: the frozen anchor latent
+1856: z
+1857: t
+1858: z_{t}
+1859: concatenated with the planned action chunk
+1860: a
+1861: t
+1862: :
+1863: t
+1864: +
+1865: K
+1866: −
+1867: 1
+1868: a_{t:t+K-1}
+1869: . We swept 2- and 3-layer MLPs (counting linear layers; “small” = 1 hidden layer, “large” = 2 hidden layers) with hidden widths in
+1870: {
+1871: 32
+1872: ,
+1873: 64
+1874: ,
+1875: 128
+1876: }
+1877: \{32,64,128\}
+1878: , dropout in
+1879: {
+1880: 0
+1881: ,
+1882: 0.2
+1883: ,
+1884: 0.5
+1885: }
+1886: \{0,0.2,0.5\}
+1887: , and weight decay in
+1888: {
+1889: 10
+1890: −
+1891: 4
+1892: ,
+1893: 10
+1894: −
+1895: 3
+1896: ,
+1897: 10
+1898: −
+1899: 2
+1900: }
+1901: \{10^{-4},10^{-3},10^{-2}\}
+1902: , trained with Adam at learning rate
+1903: 10
+1904: −
+1905: 3
+1906: 10^{-3}
+1907: and early stopping (patience 20) on validation AUC. Table
+1908: 6
+1909: shows that these higher-capacity direct probes do not improve held-out performance: their test AUC is unstable and below ContactGuard across all four tasks. This supports our small-data design choice: rather than learning a nonlinear mapping from
+1910: (
+1911: z
+1912: t
+1913: ,
+1914: a
+1915: )
+1916: (z_{t},a)
+1917: directly to grasp outcome, ContactGuard uses the pretrained action-conditioned rollout to produce a future latent where a low-capacity linear probe generalises more reliably. For each task and architecture class, Table
+1918: 7
+1919: reports the validation-selected configuration used in Table
+1920: 6
+1921: .
+1922: Appendix C
+1923: Per-Task Operating Points
+1924: Table
+1925: 8
+1926: expands the real-robot results into the full deployment operating point at the frozen deployment threshold, including class counts, thresholds, confusion matrices, false-abort rates, and classifier metrics.
+1927: Table 8:
+1928: Per-task deployment operating points on real-robot rollouts.
+1929: For each monitor we report the class counts (
+1930: N
+1931: +
+1932: /
+1933: N
+1934: −
+1935: N_{+}/N_{-}
+1936: ), the deployment threshold
+1937: τ
+1938: \tau
+1939: , the full confusion matrix (TP/FP/TN/FN), recall, the false-abort rate (
+1940: FAR
+1941: =
+1942: FP
+1943: /
+1944: (
+1945: FP
+1946: +
+1947: TN
+1948: )
+1949: \mathrm{FAR}{=}\mathrm{FP}/(\mathrm{FP}{+}\mathrm{TN})
+1950: ), balanced accuracy, precision, and ROC AUC. The positive class denotes an imminent failed grasp, so TP is a correctly vetoed failure, FP a false abort, TN a correctly allowed success, and FN a missed failure. Ours is ContactGuard with multi-view action-conditioned JEPA rollout and a linear failure probe; LeWM is the single-view world-model baseline; Direct-linear is the linear classifier on the anchor latent and planned action chunk.
+1951: Task
+1952: Method
+1953: N
+1954: +
+1955: /
+1956: N
+1957: −
+1958: N_{+}/N_{-}
+1959: τ
+1960: \tau
+1961: TP/FP/TN/FN
+1962: Recall
+1963: ↑
+1964: \uparrow
+1965: FAR
+1966: ↓
+1967: \downarrow
+1968: bal-acc
+1969: ↑
+1970: \uparrow
+1971: Precision
+1972: ↑
+1973: \uparrow
+1974: AUC
+1975: ↑
+1976: \uparrow
+1977: Cup
+1978: Ours
+1979: 25/25
+1980: 0.605
+1981: 25/3/22/0
+1982: 1.000
+1983: 0.120
+1984: 0.940
+1985: 0.893
+1986: 0.992
+1987: LeWM
+1988: 25/25
+1989: 0.560
+1990: 24/10/15/1
+1991: 0.960
+1992: 0.400
+1993: 0.780
+1994: 0.706
+1995: 0.928
+1996: Direct-linear
+1997: 25/25
+1998: 0.631
+1999: 24/20/5/1
+2000: 0.960
+2001: 0.800
+2002: 0.580
+2003: 0.545
+2004: 0.661
+2005: Box
+2006: Ours
+2007: 22/28
+2008: 0.487
+2009: 19/3/25/3
+2010: 0.864
+2011: 0.107
+2012: 0.878
+2013: 0.864
+2014: 0.946
+2015: LeWM
+2016: 22/28
+2017: 0.540
+2018: 18/3/25/4
+2019: 0.818
+2020: 0.107
+2021: 0.856
+2022: 0.857
+2023: 0.933
+2024: Direct-linear
+2025: 22/28
+2026: 0.680
+2027: 11/6/22/11
+2028: 0.500
+2029: 0.214
+2030: 0.643
+2031: 0.647
+2032: 0.619
+2033: Pencil
+2034: Ours
+2035: 22/28
+2036: 0.580
+2037: 16/2/26/6
+2038: 0.727
+2039: 0.071
+2040: 0.828
+2041: 0.889
+2042: 0.898
+2043: LeWM
+2044: 22/28
+2045: 0.460
+2046: 19/9/19/3
+2047: 0.864
+2048: 0.321
+2049: 0.771
+2050: 0.679
+2051: 0.872
+2052: Direct-linear
+2053: 22/28
+2054: 0.796
+2055: 22/25/3/0
+2056: 1.000
+2057: 0.893
+2058: 0.554
+2059: 0.468
+2060: 0.732
+2061: Towel
+2062: Ours
+2063: 25/25
+2064: 0.415
+2065: 22/6/19/3
+2066: 0.880
+2067: 0.240
+2068: 0.820
+2069: 0.786
+2070: 0.917
+2071: LeWM
+2072: 25/25
+2073: 0.565
+2074: 15/5/20/10
+2075: 0.600
+2076: 0.200
+2077: 0.700
+2078: 0.750
+2079: 0.794
+2080: Direct-linear
+2081: 25/25
+2082: 0.157
+2083: 22/7/18/3
+2084: 0.880
+2085: 0.280
+2086: 0.800
+2087: 0.759
+2088: 0.841

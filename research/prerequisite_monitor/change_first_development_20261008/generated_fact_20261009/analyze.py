@@ -1,0 +1,12 @@
+import collections,json,pathlib
+H=pathlib.Path(__file__).resolve().parent;rows=[json.loads(p.read_text()) for p in (H/'download/run/results').glob('*.json')];logs=[json.loads(s) for s in (H/'download/run/requests.jsonl').read_text().splitlines()];done=[r for r in logs if r['kind']=='completed'];issued=[r for r in logs if r['kind']=='issued'];pairs=collections.defaultdict(dict);errors=[]
+for r in rows:
+ pairs[(r['query_id'],r['change'])][r['side']]=r
+ if any(m['time_ms']>r['request']['target_ms'] for m in r['request']['image_meta']):errors.append('pixel_future_to_target')
+ if r['request']['as_of_ms']!=14000 or r['request']['generated_from_as_of_ms']!=14000:errors.append('scope')
+comparison=[]
+for (qid,j),p in sorted(pairs.items()):
+ a=p['before'];b=p['after'];values=[a['payload']['value'],b['payload']['value']];same=a['condition']==b['condition'];status='contradicted' if 'False' in values else ('uncertain' if 'Unknown' in values else 'both_supported')
+ comparison.append({'query_id':qid,'change':j,'object':a['object'],'before':a['condition'],'after':b['condition'],'values':values,'verification_status':status,'textually_unchanged':same,'candidate_retained_without_semantic_claim':status=='both_supported' and not same})
+summary={'planned_conditions':len(json.loads((H/'config.json').read_text())['requests']),'result_conditions':len(rows),'issued':len(issued),'completed':len(done),'failed':sum(r['kind']=='failed' for r in logs),'ambiguous':len(issued)-len(done)-sum(r['kind']=='failed' for r in logs),'cached_result_conditions':len(rows)-len(issued),'cumulative':236+len(issued),'value_counts':dict(collections.Counter(r['payload']['value'] for r in rows)),'change_counts':dict(collections.Counter(r['verification_status'] for r in comparison)),'same_text_count':sum(r['textually_unchanged'] for r in comparison),'candidate_retained':sum(r['candidate_retained_without_semantic_claim'] for r in comparison),'changes':comparison,'audit_errors':errors,'wall_seconds':sum(r['seconds'] for r in done),'adapter_seconds':sum(r['metrics']['elapsed_seconds'] for r in done),'input_tokens':sum(r['metrics']['input_tokens'] for r in done),'output_tokens':0,'peak_vram_gib':max([r['metrics']['peak_vram_bytes'] for r in done] or [0])/2**30,'status':'model-generated clause verification only; supported is not accuracy, omitted events cannot be recovered, same model is not independent truth'}
+(H/'ANALYSIS.json').write_text(json.dumps(summary,indent=2),encoding='utf-8');print(json.dumps(summary,indent=2))

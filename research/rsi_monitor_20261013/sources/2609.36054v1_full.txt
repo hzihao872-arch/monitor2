@@ -1,0 +1,1312 @@
+=== PDF PAGE 1 ===
+What if automating AI R&D triggers an
+intelligence explosion?
+Alan Chan* GovAI
+Christoph Winter CASP, University of Cambridge, Institute for Law & AI
+Andrew Barto University of Massachusetts Amherst
+Jakub Pachocki OpenAI
+Geoffrey Hinton University of Toronto, Vector Institute
+Eric Horvitz Microsoft
+Yoshua Bengio Mila (Quebec AI Institute), Universit´e de Montr´eal, LawZero
+Dawn Song University of California, Berkeley
+Jack Clark Anthropic
+Hilary Greaves University of Oxford
+Anton Korinek University of Virginia, Anthropic
+Samuel Hammond Foundation for American Innovation
+Thore Graepel University College London
+Ben Bariach University of Oxford
+Philip H. S. Torr University of Oxford
+Sheila A. McIlraith University of Toronto, Vector Institute
+Jeff Clune University of British Columbia, Vector Institute
+Sam Manning GovAI, Foundation for American Innovation
+Girish Sastry Guidelight
+Tom Davidson Forethought
+Daniel Eth AI Policy Institute
+S¨oren Mindermann* CASP, University of Cambridge
+Abstract
+In contrast to even a year ago, AI systems now write most of the code inside the companies
+that build them. As more of the AI research and development (R&D) pipeline is automated,
+could AI progress radically accelerate in an “intelligence explosion,” where years of advances are
+compressed into months or less? Preliminary evidence suggests that it could. In this work, we
+assess this evidence, analyze an intelligence explosion’s potential impacts, and propose policy
+responses. AI systems are on track to automate most AI R&D work within a few years, and possibly
+all of it. If this triggers an intelligence explosion, it could dramatically bring forward AI’s benefits,
+but also pose extreme risks: capabilities growth could accelerate far beyond what society can keep
+up with, humanity could lose control over superhuman AI systems, and checks on power within
+and between states, companies, and branches of government could be severely eroded. Although
+there remains much uncertainty about these possibilities, the high stakes warrant serious further
+attention. Policymakers should urgently obtain more visibility into the automation of AI R&D,
+develop ways to steer and constrain an intelligence explosion, and prepare society to adapt to an
+intelligence explosion’s impacts.
+*Correspondence to: alan.chan@governance.ai and soren.mindermann@casp.ac. The views presented in this paper
+are the authors’ and do not necessarily represent the views of the organizations with which they are affiliated.page 1 of 14
+arXiv:2609.36054v1  [cs.CY]  28 Sep 2026
+
+=== PDF PAGE 2 ===
+Introduction
+Computer scientists have long theorized that AI sys-
+tems would one day design ever-better successors,
+producing systems that rapidly outnumber, outpace,
+and outperform humans [1–3]. Today, frontier AI
+companies are aiming to automate AI R&D [4, 5]
+while deploying more capital as a fraction of U.S.
+GDP than the Manhattan Project and Apollo Program
+combined [6]. What happens if they succeed?
+We are centrally concerned with the possibility of
+anintelligence explosion: a dramatic AI-driven ac-
+celeration of AI progress, compressing advances
+that would otherwise take years into months or
+less. This acceleration would be a qualitative shift
+from the rapid but largely steady progress of the last
+few years.
+An intelligence explosion could arise from AI con-
+tributing to advances in hardware and/or software.
+Hardware advances increase the quality and quantity
+of computing hardware (compute) used for devel-
+oping and running AI systems. Software advances
+improve the data, algorithms, code, and processes
+used in AI R&D; they include more efficient training
+and inference on existing hardware [7–9], improved
+research management and operations, better syn-
+thetic data and training environments [10, 11], and
+novel paradigms in AI [12, 13]. Software advances
+warrant particular attention in the near term for two
+reasons. First, AI systems appear to be rapidly im-
+proving at AI R&D, making them better at producing
+such advances. Second, software advances allow
+fast feedback loops: improved AI systems can be re-
+deployed into the R&D process almost immediately ,
+whereas hardware improvements typically depend
+on years-long manufacturing and construction cycles.
+This piece therefore focuses on the possibility of a
+software-driven intelligence explosion, where au-
+tomation of AI R&D drives an intelligence explosion
+through software advances alone [14].
+Preliminary evidence suggests that a software-
+driven intelligence explosion is possible.If one
+does happen, it could be the most consequen-
+tial technological development in history: AI sys-
+tems could rapidly eclipse human experts across
+most domains and radically accelerate technolog-
+ical progress. Given the stakes and the potentially
+narrow window for action, we argue that preparing
+for an intelligence explosion should be an urgent pri-
+ority, including at the highest levels of government
+leadership.
+AI is rapidly automating AI R&D
+AI systems now either assist with or autonomously
+carry out major parts of the AI R&D pipeline. In
+contrast to even just a year ago, R&D staff at leading
+AI companies delegate core R&D tasks to teams of
+AI systems, and some delegate all coding. Anthropic
+reports that AI systems’ share of approved code rose
+from low single digits to over 80% between January
+2025 and May 2026 [5], while the proportion of R&D
+work autonomously completed with only high-level
+human supervision rose from 1% to 26% between
+March and August 2026 [15]. OpenAI reports that
+“AI assistance is used in practically all parts of the
+company across technical and non-technical teams
+with code-executing agents used in training, evalu-
+ating, and securing future models,” and Google re-
+ports that “ AI is used in almost all work that involves
+writing code or configuration, technical design, re-
+search ideation, to different degrees depending on
+the task” [16].
+The best AI systems now complete AI R&D tasks
+that take human experts hours to days, compared
+to only being able to complete seconds-long tasks in
+2023 [17–19]. AI systems also sometimes beat hu-
+man experts: they have autonomously produced bet-
+ter solutions to an AI safety research problem [20],
+and in some situations predict more accurately which
+research ideas will pan out [21] and which next
+steps are worth taking [5]. In an early proof of con-
+cept, an automated AI research pipeline generated
+research ideas, ran experiments, and wrote a paper
+that passed peer review at a workshop held at a
+top-tier machine-learning venue [22].1
+Today’s AI systems still have many weaknesses.
+They sometimes disobey instructions, cheat on tasks,
+misrepresent their work, and are unable to com-
+plete some tasks at all, necessitating human inter-
+vention [23–25]. For example, GPT-6 fails some of
+OpenAI’s research debugging tasks that experienced
+human researchers can complete (albeit in hours or
+days) [25]. Success on benchmarks can also fail to
+translate into real-world productivity boosts [26].
+Still, AI systems are rapidly improving at AI R&D.
+AI R&D may well be automated before most other
+work: it is a primarily digital domain with many
+clear measures of success, automating it would offer
+a major competitive edge in the AI industry, and AI
+companies have unmatched data on—and expertise
+in—their own workflows. Some tentative extrapo-
+lations of recent trends suggest that months-long
+AI R&D projects will be automated by mid-2028. 2
+Overall, we should expect much more substantial
+What if automating AI R&D triggers an intelligence explosion? page 2 of 14
+
+=== PDF PAGE 3 ===
+automation of AI R&D over the next few years, and
+even full automation within this timeframe should
+be taken seriously .
+Automating AI R&D could trigger an
+intelligence explosion
+The mechanism for a software-driven intelligence
+explosion has two parts: (1) AI systems expand the
+effective R&D workforce as they get better and faster
+at AI R&D, and (2) this workforce produces still
+better AI systems that expand the workforce even
+further in a recursive feedback loop. Although the ex-
+isting evidence is preliminary and sometimes mixed,
+it suggests that this mechanism could radically ac-
+celerate AI progress, overcoming frictions such as
+diminishing returns and hard-to-automate tasks.
+The mechanism and frictions
+Each new generation of AI systems will perform a
+growing range of R&D tasks faster and better than
+humans can, effectively yielding a larger, smarter,
+and faster automated R&D workforce. Once AI sys-
+tems reach expert-level AI R&D capabilities at run-
+P r i o r i t y 1  ⋅
+P r i o r i t y 2  ⋅
+O b t a i n v i s i b i l i t y i n t o A I R&D a u t o m a t i o n
+A I R&D m e t r i c s f r o m f r o n t i e r A I c o m p a n i e s
+F r o n t i e r A I s y s t e m s u s e d f o r A I R&D
+I n t e r n a l A I R&D a c t i v i t i e s a t f r o n t i e r A I c o m p a n i e s
+D e v e l o p w a y s t o s t e e r a n d c o n s t r a i n a n i n t e l l i g e n c e e x p l o s i o n
+A l i gn m e n t & c o n t r o l R&D
+B e n e fi c i a l A I a p p l i c a t i o n s
+S c a l e-up s o f a u t o m a t e d A I R&D
+G o v e r n m e n t s
+and/or
+A u d i t o r s
+G o v e r n m e n t s
+Obtain
+Evaluate
+Supervise/Audit
+Incentivize
+Oversee
+Manage
+Build
+I n t e r n a t i o n a l d y n a m i c sI n t e r n a t i o n a l d y n a m i c sI n t e r n a t i o n a l d y n a m i c s
+P r i o r i t y 3  ⋅
+Op t i o n a l i t y o f p a c i n g A I p r o gr e s s
+P r e p a r e t o a d a p t t o a n i n t e l l i g e n c e e x p l o s i o n
+Increase
+resilience to M i s u s e b y n o n-s t a t e a c t o r sT h e p u b l i c
+I n s t i t u t i o n a l r e s p o n s e t i m e sAccelerateOversees
+Create 
+safeguards forG o v e r n m e n t s G o v e r n m e n t u s e o f A I
+Chan et al. (2026), "What if automating AI R &D triggers an intelligence e xplosion ?"
+Figure 1. Policymakers should urgently: (1) obtain visibility into automation of AI R&D within frontier AI
+companies; (2) develop ways to steer and constrain an intelligence explosion; and (3) prepare to
+adapt to an intelligence explosion’s impacts.
+What if automating AI R&D triggers an intelligence explosion? page 3 of 14
+
+=== PDF PAGE 4 ===
+A u t o m a t i n g A I R&D c o ul d s p e e d up A I p r o gr e s s
+A n  e x p a n d i n g   
+A I  R & D  w o r k f o r c e
+A I s
+H u m a n s
+      M o r e A I R&D l e a d s 
+    t o b e tt e r A I s a n d 
+  a n e v e n la r g e r 
+R&D w o r k f o r c e
+         A n e x p a n d i n g 
+      R&D w o r k f o r c e 
+   c a n p e r f o r m 
+m o r e A I R&D
+A I  R & D
+A I R&D a u t o m a t i o n c r e a t e s a f e e d b a c k l o o p, l e a d i n g t o e v e r -i m p r o v i n g A I s
+Chan et al. (2026), "What if automating AI R &D triggers an intelligence e xplosion ?"
+Figure 2.The mechanism for a software-driven intelligence explosion has two parts: (1) AI systems
+expand the effective R&D workforce as they get better and faster at AI R&D, and (2) this
+workforce produces still better AI systems that expand the workforce even further in a recursive
+feedback loop.
+time costs comparable to those of today’s systems,
+the compute available to a single frontier developer
+today could sustain an AI workforce equivalent to at
+least millions of top human researchers (see the Sup-
+plementary Materials [SM]), dwarfing the thousands
+of researchers that frontier companies currently em-
+ploy. The size and duration of any resulting speed-
+ups remain uncertain and merit further study. Still,
+to see why they could be substantial, consider the
+reverse: AI progress would likely slow dramatically
+if today’s human researchers were ten times fewer
+or slower.
+AI systems also help build more capable and effi-
+cient successors, further expanding the automated
+R&D workforce and creating a feedback loop that
+could sustain and compound successive speed-ups.
+Past technologies have also involved feedback loops:
+for example, better computer chips power better
+chip design tools. What may distinguish a software-
+driven intelligence explosion is how much AI systems
+would contribute to producing the next generation:
+as they substitute for humans on a growing share of
+R&D tasks, each software advance speeds up an ever-
+larger share of the R&D pipeline. At full automation,
+even the current pace of efficiency improvements
+would grow the automated R&D workforce 100-fold
+over months or years,3 a relative expansion that took
+the U.S. researcher population seven decades [27].
+At least four frictions push against these dynam-
+ics. The first isdiminishing returns: across sci-
+entific fields such as computer hardware, agricul-
+ture, and drug development, sustaining the same
+rate of progress has required substantially more R&D
+labor as low-hanging fruit is exhausted [27]. Ad-
+ditional researchers also face diminishing returns
+because they might duplicate each other’s efforts
+or struggle to parallelize high-value R&D. Second,
+R&D depends oncomputefor running experiments
+anddataon which to train, and limits on compute
+or data growth may slow software progress. Third,
+hard-to-automate taskscould bottleneck progress.
+Fourth, some R&D processes aretime-intensive: for
+example, long training runs could limit the rate of
+progress even if the capability gap between genera-
+tions grows.
+Evidence
+Preliminary evidence suggests that automation-
+driven dynamics could overcome these frictions,
+though the evidence is mixed and in some cases
+indirect.
+What if automating AI R&D triggers an intelligence explosion? page 4 of 14
+
+=== PDF PAGE 5 ===
+Diminishing returns.Evidence suggests that di-
+minishing returns would not prevent an intelligence
+explosion, though this finding relies on limited data
+and stylized modeling assumptions. The main anal-
+ysis in the literature focuses on whether,after full
+automation of AI R&D, effective R&D labor would
+grow fast enough to overcome diminishing returns
+and accelerate progress. The balance is captured by
+a quantity called the “returns to research effort,” de-
+noted r.4 When r <1 , diminishing returns dominate
+and AI progress fades over time. When r= 1 , the
+two forces perfectly offset each other and progress
+continues at the same rate. When r >1 , growth
+in R&D labor wins and accelerates progress for as
+long as this condition holds.5 Using historical data
+on AI progress, Ho and Whitfill [28] find central
+estimates of r between 1.2 and 1.9 across three sub-
+fields of AI research. Though uncertainty is substan-
+tial,6 these results suggest radical acceleration after
+full automation: if r stayed at these levels and no
+other bottlenecks emerged, the pace of AI progress
+would increase tenfold within about 1.5 years, at
+which point a year’s worth of progress at today’s
+pace would take about five weeks. See the SM for
+this analysis and further discussion of uncertainty in
+the value ofr.
+Compute.There is mixed evidence on whether
+compute could bottleneck a software-driven intelli-
+gence explosion. Finding and testing software ad-
+vances involves using compute to run R&D exper-
+iments. The limited available data suggest that a
+software-driven intelligence explosion is not possi-
+ble if such experiments require proportionally more
+compute as frontier training runs grow [29].7 Unfor-
+tunately , it is unclear whether experimental compute
+requirements grow in this way. On one hand, low-
+compute experiments may tell us little about what
+works at increasingly large frontier scales. On the
+other hand, extrapolations from very small scales are
+already possible [30, 31], and better extrapolations
+could plausibly be found through more R&D. We
+need more data to settle this question.
+Data.Data could bottleneck progress, but the
+constraint varies substantially across domains. His-
+torically, AI progress has relied heavily on internet
+data and expert demonstrations. But the supply of
+internet data is on track to grow too slowly to sup-
+port even the current rate of progress past 2028 [32],
+and humans may struggle to generate useful demon-
+strations for superhuman AI systems. To overcome
+these limitations, more recent progress in domains
+such as math and coding has relied on synthetic data
+and fast, verifiable feedback: models generate their
+own attempts and learn from whether those attempts
+succeed [12]. The key question is how widely this
+approach generalizes. For AI R&D, AI agents can
+rapidly test changes, observe the results, and identify
+which ones accelerate their own progress. In other
+domains, such as biology, advances might have to
+rely more on slower, noisier, or costlier real-world
+feedback.
+Hard-to-automate tasks.Indirect evidence sug-
+gests that hard-to-automate tasks need not prevent
+an intelligence explosion if automation advances
+quickly enough. In a setting that considers both soft-
+ware and hardware, Davidson et al. [33] find that
+sufficiently fast automation of R&D in both domains
+could in principle trigger an intelligence explosion
+despite automation bottlenecks.8 However, we lack
+empirical data on which tasks are likely to remain
+difficult to automate and how strongly they might
+constrain progress.
+Time-intensive processes.We lack direct evi-
+dence on the extent to which time-intensive pro-
+cesses could bottleneck progress. The most signifi-
+cant such process appears to be training runs, which
+can currently take 3 months or more [34]. Poten-
+tial workarounds exist, such as improving the same
+model repeatedly through post-training enhance-
+ments [35]. Additionally, advances in training ef-
+ficiency [36] would allow systems to reach a given
+capability level with less training. However, it is
+unclear how far these approaches can go.9
+Overall, there is a coherent pathway to a software-
+driven intelligence explosion that is consistent with
+the existing evidence. Productivity gains from AI
+R&D automation have not yet reached the thresh-
+old needed to trigger an intelligence explosion, but
+gains from newer systems are likely approaching that
+threshold [37].10 The rapid pace of AI R&D automa-
+tion suggests that this gap will continue to narrow.
+Given the high stakes that we discuss below, the pos-
+sibility of an intelligence explosion warrants serious
+further attention.
+Societal impacts
+An intelligence explosion would lead to (1) the ex-
+tremely rapid development of highly capable or su-
+perhuman AI systems 11 and (2) the likely deploy-
+ment of those systems to develop new technologies
+and act in the world. This could pull forward by
+years or decades benefits that the current pace of
+AI progress would eventually help deliver [38], in-
+cluding medical cures and potential transformative
+What if automating AI R&D triggers an intelligence explosion? page 5 of 14
+
+=== PDF PAGE 6 ===
+technologies such as highly scalable atom-by-atom
+manufacturing [39].
+At the same time, an intelligence explosion could
+significantly increase the risks from advanced AI in
+three ways.
+Capabilities growth outpacing society’s capac-
+ity to steer and adapt.First, an intelligence ex-
+plosion could dramatically bring forward the risks
+of advanced AI and AI-enabled technologies, such
+as biological and cyber attacks, labor market dis-
+ruption, and loss of control over AI systems them-
+selves [40, 41]. This would leave less time to steer
+away from these risks, including by coordinating to
+slow or forgo the development of certain capabili-
+ties or technologies. Society would also have less
+time to adapt, especially where AI accelerates threats
+faster than the measures needed to counter them. In
+largely digital domains such as cyber, risks and miti-
+gations could both move at the speed of AI systems
+and keep pace with each other. 12 But in other do-
+mains, mitigations depend more heavily than risks on
+real-world activities that AI is less able to accelerate.
+For example, while AI could accelerate the design
+of both viruses and vaccines, viruses self-replicate
+and spread by themselves, whereas vaccines must
+be manufactured, distributed, and administered in-
+dividually to recipients [42]. The order in which AI
+advances arrive could worsen this mismatch, such as
+if bio-capable models arrive before sufficient misuse
+safeguards.
+Loss of oversight and control.Second, automat-
+ing AI R&D could weaken human oversight, com-
+pounding the above challenges and severely increas-
+ing the risk of losing control over highly capable AI
+systems. As humans become less involved in AI R&D,
+they could lose both the opportunities and expertise
+needed to identify and fix problems. Reliably using
+AI systems for oversight also remains an unsolved
+challenge [40], and recent generations of systems
+have become harder to oversee [25]. Without suffi-
+cient oversight, misaligned AI systems could “poison”
+the development of successors or bypass containment
+measures to act outside of their intended environ-
+ments. The Hugging Face incident illustrates the
+latter risk: roughly 1,200 internal OpenAI agents
+were tasked with completing cyber evaluations in
+isolation from one another [43]. Acting outside
+of their intended scope, these agents coordinated
+over a makeshift message board, obtained unautho-
+rized internet access, hacked into Hugging Face to
+obtain private information, and attempted to tam-
+per with their own transcripts [43–45].13 More ca-
+pable systems might continue operating outside of
+their operators’ infrastructure, forming persistent,
+difficult-to-contain networks that act against human
+interests. Such a loss of control could potentially
+lead to a range of catastrophic outcomes, including,
+at the extreme, the marginalization or extinction of
+humanity [40, 41].
+Erosion of checks on power .Third, an in-
+telligence explosion could severely erode checks
+on power. Existing checks—such as those within
+and between states, companies, and branches of
+government—work only while no actor can vastly
+out-think and out-execute the others. An intelligence
+explosion could render such checks moot. A state
+could use an intelligence explosion to transform a
+modest lead in military R&D or operations into a de-
+cisive one, such as in cyberspace [46]. This prospect
+could incentivize rivals to take or threaten preemp-
+tive action [47]. Actors with privileged and/or secret
+access to frontier systems could threaten existing in-
+stitutions, such as through targeted persuasion of key
+decision-makers. And in the longer run, automating
+key state functions could reduce the amount of hu-
+man buy-in needed to seize or consolidate power [48,
+49].
+These potential impacts are uncertain. AI systems
+could become superhuman in narrow domains (e.g.,
+cyber and mathematics) long before doing so gen-
+erally, giving society more time to respond. Even
+generally superhuman AI systems may not signifi-
+cantly accelerate technological progress, given the
+time needed for running scientific experiments, cre-
+ating supply chains for specialized materials, and
+complying with any relevant regulation. AI systems
+could also accelerate safety R&D and processes for
+steering and adapting to risks. 14 Finally, capability
+or technology diffusion [50] could help to preserve
+checks on power, and capability gains in defense-
+dominant domains could even improve stability [51,
+52]. Still, the possibility of severe impacts remains
+significant enough to warrant urgent attention to the
+policy questions below.
+Policy implications
+AI R&D automation is advancing rapidly , AI progress
+could radically accelerate, and the stakes are high.
+We therefore argue that policymakers should ur-
+gently: (1) obtain visibility into companies’ automa-
+tion of AI R&D; (2) develop ways to steer and con-
+strain an intelligence explosion; and (3) prepare to
+adapt to an intelligence explosion’s impacts. Because
+progress during an intelligence explosion would out-
+What if automating AI R&D triggers an intelligence explosion? page 6 of 14
+
+=== PDF PAGE 7 ===
+pace normal policymaking, preparations must be
+madein advanceand activated as evidence about
+benefits and risks emerges.
+Obtaining visibility into AI R&D automation
+Policymakers need more data on the likelihood, on-
+set, and consequences of a software-driven intelli-
+gence explosion. Much of this data will only be
+available within the companies automating AI R&D:
+the relevant AI systems are first used internally , and
+substantial automation could occur without external
+visibility. Current mandatory reporting frameworks
+either do not adequately cover internal AI R&D use
+cases or do not specify indicators to be reported [53–
+57]. And although some frontier AI companies volun-
+tarily track AI R&D indicators [5, 15, 18], coverage
+and reporting of key indicators are incomplete and
+uneven.
+Policymakers should consider requiring standard-
+ized reporting of key AI R&D indicators and pro-
+cesses to governments and third-party auditors, as
+well as funding third-party measurement capac-
+ity [58]. Reporting requirements could cover in-
+formation relevant to:
+• Assessing the likelihood of a software-driven
+intelligence explosion, including the extent to
+which compute, data, hard-to-automate tasks,
+and time-intensive processes (e.g., training runs
+and experiments) bottleneck AI progress, along
+with better estimates of the returns to research
+effort in AI R&D. Estimating the latter requires
+data on how companies divide R&D spending
+among humans, compute for experiments, and
+compute for running AI systems to perform R&D
+labor [37].
+• Detecting the onset15 of an intelligence explo-
+sion, including the extent of AI R&D automation
+(e.g., the fraction of research contributions pro-
+duced by AI systems) and the pace of AI progress
+(e.g., algorithmic efficiency improvements).
+• Understanding oversight and loss-of-control
+risks, including the procedures for deciding
+whether to broaden internal deployment of AI
+R&D systems, where and how those systems are
+used in high-stakes R&D decisions, how those
+systems are overseen, and reports of incidents
+involving internal AI systems [58].
+Beyond reporting requirements, policymakers
+should also consider more extensive ways to obtain
+visibility into AI R&D automation. For instance, they
+could require that independent third parties (e.g.,
+accredited private auditors or government evalua-
+tion bodies) evaluate AI systems before internal de-
+ployment, or that such parties be embedded within
+certain AI companies to audit [59] or supervise [60]
+their R&D activities. Analogous models in other
+industries include the Nuclear Regulatory Commis-
+sion [61] and the Office of the Comptroller of the
+Currency [62].
+Stronger reporting and auditing requirements are
+likely most warranted for companies whose AI sys-
+tems (a) are at the frontier of AI R&D capabilities or
+(b) exceed some meaningful threshold of such capa-
+bilities. Policymakers will need to weigh important
+trade-offs in determining such thresholds.
+Steering and constraining an intelligence
+explosion
+An intelligence explosion would involve an unprece-
+dentedly rapid series of decisions to train and deploy
+increasingly capable AI systems. The overarching
+question for policymakers is whether and how public
+policy should govern these decisions, which we break
+into three components.
+First, policymakers should develop ways to pace
+and constrain scale-ups of automated AI R&D. They
+should consider:
+• Setting requirements for continued deployment
+or development, such as the implementation
+of adequate safety measures (e.g., robust mon-
+itoring of automated R&D pipelines), broader
+stakeholder input, or limits on the extent to
+which capabilities can increase within a given
+time period.
+• Preparing tools to verify compliance with po-
+tential future agreements (domestic or interna-
+tional) that pace AI progress, given competitive
+pressures to race ahead [63–65].
+• Increasing oversight of data centers engaged in
+automated AI R&D and establishing incident-
+response procedures in collaboration with data
+center operators and AI companies, such as de-
+veloping options to pause specific AI R&D work-
+loads [66].
+• Requiring that certain evaluations or deploy-
+ments of automated AI R&D systems take place
+in appropriately isolated environments, such
+What if automating AI R&D triggers an intelligence explosion? page 7 of 14
+
+=== PDF PAGE 8 ===
+as air-gapped networks, to prevent exfiltra-
+tion of model weights or sensitive R&D out-
+puts and to contain AI systems that attempt
+to escape human control and act in the world
+unchecked [44].
+Policymakers should weigh the risks of an unchecked
+intelligence explosion against the potential for abuse
+of certain powers and the costs of delayed progress.
+As an example of potential abuse, poorly crafted
+mechanisms could allow a government to slow R&D
+at all but a favored company .
+Second, policymakers should decide whether and
+how to steer the direction of AI development and
+deployment [67]. Potential priorities include align-
+ment and safety R&D as well as beneficial AI applica-
+tions, such as AI-assisted discovery of treatments for
+neglected diseases. If existing incentives fall short
+in these areas, policymakers could provide support
+through tax incentives, compute allocations, advance
+market commitments, and prizes.
+Third, countries should reduce the risk of conflict
+arising from an intelligence explosion. They should
+consider:
+• Establishing confidence-building measures such
+as incident sharing [68], as well as norms
+around reporting of early-warning indicators.
+• Negotiating international agreements to prevent
+destabilizing development and use of highly ca-
+pable AI systems, and funding research into
+verification methods that could underpin such
+agreements [64, 65].
+• Clarifying whether and how they would deter
+another actor from scale-ups of automated AI
+R&D, potentially in collaboration with other
+countries [47, 65].
+• Running war games to simulate an intelligence
+explosion [69–71].
+Adapting to an intelligence explosion
+If an intelligence explosion were to occur, adapting
+to its impacts would likely be a top priority of every
+major world power. Compared to business-as-usual
+AI progress, an intelligence explosion would com-
+press the window for adaptation and make advance
+preparation far more urgent.
+One important intervention is accelerating institu-
+tional response times. Policymakers should consider:
+• Developing approaches to safely integrate AI
+systems into policy processes, so as to enhance
+and support government operations [72].
+• Creating and maintaining emergency response
+plans for a variety of scenarios involving ex-
+treme AI progress, including those leading to
+significant labor market impacts, geopolitical
+instability , or a loss of control.
+Policymakers will also need to preserve checks
+on power and defend against misuse of extremely
+advanced AI. Legal, institutional, and physical safe-
+guards can take years to establish and would come
+too late if preparations began only after such ca-
+pabilities had already arrived. Many preparations
+therefore need to start now. Policymakers should
+consider:
+• Creating safeguards to ensure that government
+use of AI respects legal and normative limits,
+such as by procuring AI tools to strengthen
+checks between branches of government, shar-
+ing key information about government AI sys-
+tems (e.g., model specs [73, 74]) with the
+public, or requiring that AI systems follow the
+law [75].
+• Ensuring that citizens and civil society have the
+capabilities to detect, document, and contest
+unlawful or harmful uses of AI, such as by giv-
+ing them timely access to AI systems capable of
+supporting these activities.
+• Helping build sufficient defenses against mis-
+use by malicious non-state actors, such as by
+funding better medical countermeasures against
+AI-enabled biological threats [76].
+Conclusion
+An intelligence explosion could be the most conse-
+quential technological development in human his-
+tory [1], compressing years of progress into months
+or less, threatening human control over AI systems,
+and severely eroding checks on power within and
+between states, companies, and branches of govern-
+ment. Although there remains much uncertainty , AI
+R&D automation might soon trigger one. And while
+this piece has focused on software-driven routes to
+an intelligence explosion, AI-driven improvements
+in hardware16 could make one all the more likely .
+Relative to the stakes, we are not sufficiently pre-
+pared. Policymakers should have three priorities:
+What if automating AI R&D triggers an intelligence explosion? page 8 of 14
+
+=== PDF PAGE 9 ===
+obtaining visibility into AI R&D automation within
+frontier AI companies, developing ways to steer and
+constrain an intelligence explosion, and preparing to
+adapt to its impacts. Once an intelligence explosion
+begins, the window for action may close.
+Acknowledgments
+We thank Anson Ho, Tom Cunningham, Cheryl Wu,
+Ryan Greenblatt, and many GovAI staff for feedback
+and conversations that improved this piece.
+We are grateful to Taylor Jones for creating the
+figures and to Zilan Qian for providing a Chinese
+translation of this piece.
+References
+[1] I. J. Good, “Speculations concerning the first ultraintelli-
+gent machine,” inAdvances in computers, vol. 6, Elsevier,
+1966, pp. 31–88 (cit. on pp. 2, 8).
+[2] A. M. Turing,Intelligent machinery, a heretical theory,
+1951 (cit. on p. 2).
+[3] J. Evans, B. Bratton, and B. Ag¨uera y Arcas, “Agentic AI
+and the next intelligence explosion,”Science, vol. 391,
+no. 6791, eaeg1895, Mar. 2026.DOI: 10.1126/scienc
+e.aeg1895(cit. on p. 2).
+[4] J. Pachocki,An alien mind, Sep. 2026 (cit. on p. 2).
+[5] M. Favaro and J. Clark,When AI builds itself: Our
+progress toward recursive self-improvement, and its impli-
+cations, Jun. 2026 (cit. on pp. 2, 7).
+[6] T. Tunguz,Are we being railroaded by AI?Nov. 2025
+(cit. on p. 2).
+[7] C. E. Leiserson, N. C. Thompson, J. S. Emer, B. C. Kusz-
+maul, B. W. Lampson, D. Sanchez, and T. B. Schardl,
+“There’s plenty of room at the top: What will drive com-
+puter performance after Moore’s law?”Science, vol. 368,
+no. 6495, eaam9744, Jun. 2020.DOI: 10.1126/scienc
+e.aam9744(cit. on pp. 2, 13).
+[8] A. Ho, T. Besiroglu, E. Erdil, D. Owen, R. Rahman, Z. C.
+Guo, D. Atkinson, N. Thompson, and J. Sevilla,Algorith-
+mic progress in language models, 2024 (cit. on p. 2).
+[9] OpenAI,How GPT-5.6 fuses frontier intelligence with
+frontier efficiency, Jul. 2026 (cit. on p. 2).
+[10] M. Abdin, J. Aneja, H. Behl, S. Bubeck, R. Eldan, S.
+Gunasekar, M. Harrison, R. J. Hewett, M. Javaheripi,
+P. Kauffmann, J. R. Lee, Y. T. Lee, Y. Li, W. Liu, C. C. T.
+Mendes, A. Nguyen, E. Price, G. de Rosa, O. Saarikivi,
+A. Salim, S. Shah, X. Wang, R. Ward, Y. Wu, D. Yu, C.
+Zhang, and Y. Zhang,Phi-4 technical report, Dec. 2024.
+DOI:10.48550/arXiv.2412.08905(cit. on p. 2).
+[11] J.-S. Denain and C. Barber,An FAQ on reinforcement
+learning environments, 2026 (cit. on p. 2).
+[12] D. Guo et al., “DeepSeek-R1 incentivizes reasoning in
+LLMs through reinforcement learning,”Nature, vol. 645,
+no. 8081, pp. 633–638, Sep. 2025.DOI: 10.1038/s415
+86-025-09422-z(cit. on pp. 2, 5).
+[13] OpenAI,Learning to reason with LLMs, Sep. 2024 (cit.
+on p. 2).
+[14] D. Eth and T. Davidson, “Will AI R&D automation cause
+a software intelligence explosion?,” 2025 (cit. on p. 2).
+[15] M. Favaro and P. Wright,Measurements for understand-
+ing the pace of AI development inside frontier labs, An-
+thropic, Sep. 2026 (cit. on pp. 2, 7).
+[16] METR,Frontier risk report (February to March 2026),
+May 2026 (cit. on p. 2).
+[17] METR,Time horizon 1.1, Jan. 2026 (cit. on pp. 2, 13).
+[18] OpenAI,Research acceleration: The view inside OpenAI,
+Sep. 2026 (cit. on pp. 2, 7).
+[19] B. Rank, H. Bhatnagar, A. Prabhu, S. Eisenberg, K.
+Nguyen, M. Bethge, and M. Andriushchenko, “PostTrain-
+Bench: Can LLM agents automate LLM post-training?”
+InInternational Conference on Machine Learning (ICML),
+2026. arXiv:2603.08640 [cs.SE](cit. on p. 2).
+[20] J. Wen, L. Qiu, J. Benton, J. H. Kirchner, and J. Leike,
+Automated weak-to-strong researcher, Apr. 2026 (cit. on
+p. 2).
+[21] J. Wen, C. Si, Y.-h. Chen, H. He, and S. Feng,Predicting
+empirical AI research outcomes with language models,
+Jun. 2025.DOI: 10.48550/arXiv.2506.00794 (cit. on
+p. 2).
+[22] C. Lu, C. Lu, R. T. Lange, Y. Yamada, S. Hu, J. Foerster,
+D. Ha, and J. Clune, “Towards end-to-end automation
+of AI research,”Nature, vol. 651, no. 8107, pp. 914–
+919, Mar. 2026.DOI: 10.1038/s41586-026-10265-5
+(cit. on p. 2).
+[23] S. Rabanser, S. Kapoor, P. Kirgis, K. Liu, S. Utpala, and
+A. Narayanan,Towards a science of AI agent reliability,
+Feb. 2026.DOI: 10.48550/arXiv.2602.16666 (cit. on
+p. 2).
+[24] Anthropic, “Claude Fable 5 & Claude Mythos 5 system
+card,” Tech. Rep., Jun. 2026 (cit. on p. 2).
+[25] OpenAI, “GPT-6 Astra system card,” Tech. Rep., Sep.
+2026 (cit. on pp. 2, 6).
+[26] P. Whitfill, C. Wu, J. Becker, and N. Rush,Many SWE-
+bench-passing PRs would not be merged into main, Mar.
+2026 (cit. on p. 2).
+[27] N. Bloom, C. I. Jones, J. Van Reenen, and M. Webb,
+“Are ideas getting harder to find?”American Economic
+Review, vol. 110, no. 4, pp. 1104–1144, Apr. 2020.DOI:
+10.1257/aer.20180338(cit. on pp. 4, 12, 14).
+[28] A. Ho and P. Whitfill,The software intelligence explosion
+debate needs experiments, 2025 (cit. on pp. 5, 12, 13).
+[29] P. Whitfill and C. Wu,Will compute bottlenecks prevent
+an intelligence explosion?Aug. 2025.DOI: 10.48550/ar
+Xiv.2507.23181(cit. on p. 5).
+[30] J. Kaplan, S. McCandlish, T. Henighan, T. B. Brown,
+B. Chess, R. Child, S. Gray, A. Radford, J. Wu, and D.
+Amodei,Scaling laws for neural language models, Jan.
+2020.DOI: 10.48550/arXiv.2001.08361 (cit. on p. 5).
+What if automating AI R&D triggers an intelligence explosion? page 9 of 14
+
+=== PDF PAGE 10 ===
+[31] J. Hoffmann, S. Borgeaud, A. Mensch, E. Buchatskaya,
+T. Cai, E. Rutherford, D. de Las Casas, L. A. Hendricks,
+J. Welbl, A. Clark, T. Hennigan, E. Noland, K. Millican,
+G. van den Driessche, B. Damoc, A. Guy, S. Osindero, K.
+Simonyan, E. Elsen, J. W. Rae, O. Vinyals, and L. Sifre,
+Training compute-optimal large language models, Mar.
+2022.DOI: 10.48550/arXiv.2203.15556 (cit. on p. 5).
+[32] P. Villalobos, A. Ho, J. Sevilla, T. Besiroglu, L. Heim,
+and M. Hobbhahn,Will we run out of data? Limits of
+LLM scaling based on human-generated data, Jun. 2024.
+DOI:10.48550/arXiv.2211.04325(cit. on p. 5).
+[33] T. Davidson, B. Halperin, T. Houlden, and A. Korinek,
+When does automating AI research produce explosive
+growth? Feedback loops in innovation networks, Jul. 2026
+(cit. on p. 5).
+[34] L. Emberson and Y. Edelman,Frontier training runs will
+likely stop getting longer by around 2027, Jul. 2025 (cit.
+on p. 5).
+[35] T. Davidson, J.-S. Denain, P. Villalobos, and G. Bas,AI
+capabilities can be significantly improved without expen-
+sive retraining, Dec. 2023.DOI: 10.48550/arXiv.2312
+.07413(cit. on pp. 5, 13).
+[36] A. Novikov, N. V ˜u, M. Eisenberger, E. Dupont, P. -S.
+Huang, A. Z. Wagner, S. Shirobokov, B. Kozlovskii,
+F. J. R. Ruiz, A. Mehrabian, M. P. Kumar, A. See, S.
+Chaudhuri, G. Holland, A. Davies, S. Nowozin, P. Kohli,
+and M. Balog,AlphaEvolve: A coding agent for scientific
+and algorithmic discovery, Jun. 2025.DOI: 10.48550/a
+rXiv.2506.13131(cit. on p. 5).
+[37] T. Cunningham, L. Althoff, B. Halperin, B. Jabarian, A.
+Koh, A. Ramani, P. Trammell, P. Whitfill, and C. Wu,
+The economics of recursive self-improvement, Jul. 2026
+(cit. on pp. 5, 7, 14).
+[38] H. Wang, T. Fu, Y. Du, W. Gao, K. Huang, Z. Liu, P.
+Chandak, S. Liu, P. Van Katwyk, A. Deac, A. Anandku-
+mar, K. Bergen, C. P. Gomes, S. Ho, P. Kohli, J. Lasenby,
+J. Leskovec, T.-Y. Liu, A. Manrai, D. Marks, B. Ramsun-
+dar, L. Song, J. Sun, J. Tang, P. Veliˇckovi´c, M. Welling,
+L. Zhang, C. W. Coley, Y. Bengio, and M. Zitnik, “Sci-
+entific discovery in the age of artificial intelligence,”
+Nature, vol. 620, no. 7972, pp. 47–60, Aug. 2023.DOI:
+10.1038/s41586-023-06221-2(cit. on p. 5).
+[39] K. E. Drexler,Radical abundance: How a revolution in
+nanotechnology will change civilization. PublicAffairs,
+2013 (cit. on p. 6).
+[40] Y. Bengio, S. Clare, C. Prunkl, M. Murray, M. An-
+driushchenko, B. Bucknall, R. Bommasani, S. Casper,
+T. Davidson, R. Douglas, D. Duvenaud, P. Fox, U. Go-
+har, R. Hadshar, A. Ho, T. Hu, C. Jones, S. Kapoor, A.
+Kasirzadeh, S. Manning, N. Maslej, V. Mavroudis, C.
+McGlynn, R. Moulange, J. Newman, K. Y. Ng, P. Paskov,
+S. Rismani, G. Sastry, E. Seger, S. Singer, C. Stix, L.
+Velasco, N. Wheeler, D. Acemoglu, V. Conitzer, T. G. Di-
+etterich, E. W. Felten, F. Heintz, G. Hinton, N. Jennings,
+S. Leavy, T. Ludermir, V. Marda, H. Margetts, J. Mc-
+Dermid, J. Munga, A. Narayanan, A. Nelson, C. Neppel,
+S. D. Ramchurn, S. Russell, M. Schaake, B. Sch¨olkopf,
+A. Soto, L. Tiedrich, G. Varoquaux, A. Yao, Y.-Q. Zhang,
+L. A. Aguirre, O. Ajala, F. Albalawi, N. AlMalek, C. Busch,
+J. Collas, A. C. P. d. L. F. de Carvalho, A. Gill, A. H.
+Hatip, J. Heikkil¨a, C. Johnson, G. Jolly, Z. Katzir, M. N.
+Kerema, H. Kitano, A. Kr ¨uger, K. M. Lee, J. R. L ´opez
+Portillo, A. McLysaght, O. Molchanovskyi, A. Monti, M.
+Nemer, N. Oliver, R. Pezoa, A. Plonk, B. Ravindran, H.
+Riza, C. Rugege, H. Sheikh, D. Wong, Y. Zeng, L. Zhu, D.
+Privitera, and S. Mindermann, “International AI safety
+report 2026,” Department for Science, Innovation and
+Technology, Tech. Rep. DSIT 2026/001, 2026 (cit. on
+p. 6).
+[41] Y. Bengio, G. Hinton, A. Yao, D. Song, P. Abbeel, T. Dar-
+rell, Y. N. Harari, Y.-Q. Zhang, L. Xue, S. Shalev-Shwartz,
+G. Hadfield, J. Clune, T. Maharaj, F. Hutter, A. G. Baydin,
+S. McIlraith, Q. Gao, A. Acharya, D. Krueger, A. Dra-
+gan, P. Torr, S. Russell, D. Kahneman, J. Brauner, and
+S. Mindermann, “Managing extreme AI risks amid rapid
+progress,”Science, vol. 384, no. 6698, pp. 842–845, May
+2024.DOI:10.1126/science.adn0117(cit. on p. 6).
+[42] C. Aveggio, A. J. Patel, S. Nevo, and K. Webster, “Explor-
+ing the offense-defense balance of biology: Identifying
+and describing high-level asymmetries,” RAND Corpo-
+ration, Santa Monica, CA, Tech. Rep. PE-A4102-1, Aug.
+2025 (cit. on p. 6).
+[43] R. Greenblatt, A. Cotra, and H. Wijk, “Brief independent
+investigation of agents’ behavior, reasoning and collabo-
+ration in the OpenAI / Hugging Face hacking incident,”
+METR and Redwood Research, Tech. Rep., Aug. 2026
+(cit. on p. 6).
+[44] OpenAI,OpenAI and Hugging Face partner to address
+security incident during model evaluation, Jul. 2026 (cit.
+on pp. 6, 8).
+[45] OpenAI,The Hugging Face incident and the road ahead,
+Aug. 2026 (cit. on p. 6).
+[46] M. Sulmeyer, “Artificial intelligence and the risk of strate-
+gic cyberattack,” RAND Corporation, Tech. Rep., Jul.
+2026 (cit. on p. 6).
+[47] D. Hendrycks, E. Schmidt, and A. Wang,Superintelli-
+gence strategy: Expert version, Mar. 2025.DOI:10.4855
+0/arXiv.2503.05628(cit. on pp. 6, 8).
+[48] C. O’Keefe, A. Z. Rozenshtein, and C. Winter,Executive
+branch AI and the rule of law: An emerging research
+agenda, May 2026 (cit. on p. 6).
+[49] T. Davidson, L. Finnveden, and R. Hadshar, “AI-enabled
+coups: How a small group could use AI to seize power,”
+2025 (cit. on p. 6).
+[50] J. Edwards and L. Emberson,Open models lag state-of-
+the-art closed models by 4 months, May 2026 (cit. on
+p. 6).
+[51] R. Slayton, “What is the cyber offense-defense balance?
+Conceptions, causes, and assessment,”International Se-
+curity, vol. 41, no. 3, pp. 72–109, 2017.DOI: 10.1162
+/ISEC_a_00267(cit. on p. 6).
+[52] B. Garfinkel and A. Dafoe, “How does the offense-
+defense balance scale?”Journal of Strategic Studies,
+vol. 42, no. 6, pp. 736–763, Aug. 2019.DOI: 10 . 10
+80/01402390.2019.1631810(cit. on p. 6).
+[53] Transparency in Frontier Artificial Intelligence Act, SB 53,
+2025–2026 Reg. Sess. (Cal. 2025), Sep. 2025 (cit. on
+p. 7).
+[54] European Commission,The general-purpose AI code of
+practice, Jul. 2025 (cit. on p. 7).
+What if automating AI R&D triggers an intelligence explosion? page 10 of 14
+
+=== PDF PAGE 11 ===
+[55] Responsible AI Safety and Education (RAISE) Act, A6453B,
+2025–2026 Reg. Sess. (N.Y. 2025), Dec. 2025 (cit. on
+p. 7).
+[56] J. Kwon and S. Casper,Internal deployment gaps in AI
+regulation, Jan. 2026.DOI: 10.48550/arXiv.2601.080
+05(cit. on p. 7).
+[57] M. Pistillo,Internal deployment in the AI Act, Jun. 2026
+(cit. on p. 7).
+[58] A. Chan, R. Padarath, J. Kwon, H. Greaves, and M. An-
+derljung,Measuring AI R&D automation, Mar. 2026.DOI:
+10.48550/arXiv.2603.03992(cit. on p. 7).
+[59] M. Brundage, N. Dreksler, A. Homewood, S. McGregor,
+P. Paskov, C. Stosz, G. Sastry, A. F. Cooper, G. Balston,
+S. Adler, S. Casper, M. Anderljung, G. Werner, S. Min-
+dermann, V. Mavroudis, B. Bucknall, C. Stix, J. Freund,
+L. Pacchiardi, J. Hernandez-Orallo, M. Pistillo, M. Chen,
+C. Painter, D. W. Ball, C. O’Keefe, G. Weil, B. Harack,
+G. Finley, R. Hassan, S. Emmons, C. Foster, A. Reuel,
+B. Treece, Y. Bengio, D. Reti, R. Bommasani, C. Trout,
+A. S. Shamsabadi, R. Dattani, A. Weller, R. Trager, J.
+Sevilla, L. Wagner, L. Soder, K. Ramakrishnan, H. Pa-
+padatos, M. Murray, and R. Tovcimak,Frontier AI au-
+diting: Toward rigorous third-party assessment of safety
+and security practices at leading AI companies, Feb. 2026.
+DOI:10.48550/arXiv.2601.11699(cit. on p. 7).
+[60] P. Wills,Regulatory supervision of frontier AI developers,
+SSRN Scholarly Paper, Rochester, NY, Mar. 2025.DOI:
+10.2139/ssrn.5122871(cit. on p. 7).
+[61] U.S. Nuclear Regulatory Commission,Backgrounder on
+NRC resident inspectors, 2023 (cit. on p. 7).
+[62] Office of the Comptroller of the Currency,What we do,
+2026 (cit. on p. 7).
+[63] M. Baker, G. Kulp, O. Marks, M. Brundage, and L. Heim,
+Verifying international agreements on AI: Six layers of
+verification for rules on large-scale AI development and
+deployment, Jul. 2025.DOI: 10.48550/arXiv.2507.15
+916(cit. on p. 7).
+[64] B. Harack, R. F. Trager, A. Reuel, D. Manheim, M.
+Brundage, O. Aarne, A. Scher, Y. Pan, J. Xiao, K. Loke,
+S. N. Adan, G. Bas, N. A. Caputo, J. C. Morse, J. Ahuja,
+I. Duan, J. Egan, B. Bucknall, B. Rosen, R. Araujo,
+V. Boulanin, R. Lall, F. Barez, S. Alvira, C. Katzke, A.
+Atamli, and A. Awad, “Verification for international AI
+governance,” Oxford Martin AI Governance Initiative,
+University of Oxford, Tech. Rep., Jul. 2025 (cit. on pp. 7,
+8).
+[65] T. Larsen, R. Dean, B. Halstead, E. Lifland, R. Greenblatt,
+and D. Kokotajlo,AI 2040: Plan A, AI Futures Project,
+2026 (cit. on pp. 7, 8).
+[66] G. Sastry, L. Heim, H. Belfield, M. Anderljung, M.
+Brundage, J. Hazell, C. O’Keefe, G. K. Hadfield, R. Ngo,
+K. Pilz, G. Gor, E. Bluemke, S. Shoker, J. Egan, R. F.
+Trager, S. Avin, A. Weller, Y. Bengio, and D. Coyle,Com-
+puting power and the governance of artificial intelligence,
+Feb. 2024.DOI: 10.48550/arXiv.2402.08797 (cit. on
+p. 7).
+[67] A. Korinek and J. E. Stiglitz,Steering technological
+progress, Working Paper, Mar. 2026.DOI: 10.3386/w34
+994(cit. on p. 8).
+[68] S. Shoker, A. Reddie, S. Barrington, R. Booth, M.
+Brundage, H. Chahal, M. Depp, B. Drexel, R. Gupta,
+M. Favaro, J. Hecla, A. Hickey, M. Konaev, K. Kumar,
+N. Lambert, A. Lohn, C. O’Keefe, N. Rajani, M. Sell-
+itto, R. Trager, L. Walker, A. Wehsener, and J. Young,
+Confidence-building measures for artificial intelligence:
+Workshop proceedings, Aug. 2023.DOI: 10.48550/arXi
+v.2308.00862(cit. on p. 8).
+[69] Intelligence Rising,Intelligence Rising, n.d. (cit. on p. 8).
+[70] AI Futures Project,About AI 2027: Tabletop exercise,
+2025 (cit. on p. 8).
+[71] G. Smith, G. Hage, C. Heitzenrater, M. Chessen, and
+R. S. Girven, “Infinite potential—insights from the cyber
+surprise scenario,” RAND Corporation, Tech. Rep., Mar.
+2026 (cit. on p. 8).
+[72] L. Vaintrob,The AI adoption gap: Preparing the US gov-
+ernment for advanced AI, Apr. 2025 (cit. on p. 8).
+[73] OpenAI,OpenAI model spec, Aug. 2026 (cit. on p. 8).
+[74] Anthropic,Claude’s constitution, Jan. 2026 (cit. on p. 8).
+[75] C. O’Keefe, K. Ramakrishnan, J. Tay, and C. Winter,
+“Law-following AI: Designing AI agents to obey human
+laws,”Fordham Law Review, vol. 94, no. 1, p. 57, 2025
+(cit. on p. 8).
+[76] S. Guerra, A. Attal-Juncqua, J. P. Tarangelo, C. Aveggio,
+K. Dammer, and D. Glickstein, “Building a defense-in-
+depth biosecurity strategy for the AI era,” RAND Corpo-
+ration, Tech. Rep., Aug. 2026 (cit. on p. 8).
+[77] J.-S. Denain, A. Ho, and J. Sevilla,How many digital
+workers could OpenAI deploy?Oct. 2025 (cit. on p. 12).
+[78] H. Wijk, T. Lin, J. Becker, S. Jawhar, N. Parikh, T.
+Broadley, L. Chan, M. Chen, J. Clymer, J. Dhyani, E.
+Ericheva, K. Garcia, B. Goodrich, N. Jurkovic, H. Karnof-
+sky , M. Kinniment, A. Lajko, S. Nix, L. Sato, W. Saunders,
+M. Taran, B. West, and E. Barnes,RE-Bench: Evaluating
+frontier AI R&D capabilities of language model agents
+against human experts, May 2025.DOI: 10.48550/arXi
+v.2411.15114(cit. on p. 12).
+[79] A. Ho, J. -S. Denain, D. Atanasov, S. Albanie, and R.
+Shah,A rosetta stone for AI benchmarks, 2025 (cit. on
+p. 13).
+[80] B. Cottier, B. Snodin, D. Owen, and T. Adamczewski,
+LLM inference prices have fallen rapidly but unequally
+across tasks, Mar. 2025 (cit. on pp. 13, 14).
+[81] H. Gundlach, A. Fogelson, J. Lynch, A. Trisovic, J. Rosen-
+feld, A. Sandhu, and N. Thompson,On the origin of
+algorithmic progress in AI, Nov. 2025.DOI: 10.48550/a
+rXiv.2511.21622(cit. on p. 13).
+[82] P. Trammell, “The bounded parallelizability of R&D:
+Theory and application to AI,” Jul. 2026 (cit. on p. 13).
+[83] METR,Measuring AI ability to complete long tasks, Mar.
+2025 (cit. on p. 13).
+[84] D. Kokotajlo, S. Alexander, T. Larsen, E. Lifland, and
+R. Dean,AI 2027, Apr. 2025 (cit. on p. 14).
+[85] T. Ord,The dynamics of intelligence explosions, 2026.
+arXiv:2608.14426 [cs.AI](cit. on p. 14).
+[86] B. Murphy and T. Stone,Uplifted attackers, human de-
+fenders: The cyber offense-defense balance for trailing-edge
+organizations, Aug. 2025.DOI: 10.48550/arXiv.2508
+.15808(cit. on p. 14).
+What if automating AI R&D triggers an intelligence explosion? page 11 of 14
+
+=== PDF PAGE 12 ===
+[87] Anthropic,Investigating three real-world incidents in our
+cybersecurity evaluations, Jul. 2026 (cit. on p. 14).
+[88] UK AI Security Institute,Incident report: Unsanctioned
+agent behaviour during cyber testing, Aug. 2026 (cit. on
+p. 14).
+[89] OpenAI,Third-party cyber evaluations involving OpenAI
+models, Aug. 2026 (cit. on p. 14).
+[90] P. C. Bogdan, R. Qi, J. Eaton, S. Kennedy, F. Roger, A.
+Glynn, R. Chen, B. Wright, O. Stegmaier, J. Kutasov,
+D. Foreman-Mackey, T. Bricken, S. Carr, S. Carter, M.
+MacDiarmid, S. Marks, A. Pearce, E. Simon, N. Carlini,
+C. Burns, J. Lindsey, S. Price, and S. Kantamneni,An
+alignment assessment of recent cybersecurity incidents,
+Anthropic, Sep. 2026 (cit. on p. 14).
+[91] M. H. Tessler, M. A. Bakker, D. Jarrett, H. Sheahan, M. J.
+Chadwick, R. Koster, G. Evans, L. Campbell-Gillingham,
+T. Collins, D. C. Parkes, M. Botvinick, and C. Summer-
+field, “AI can help humans find common ground in
+democratic deliberation,”Science, vol. 386, no. 6719,
+eadq2852, Oct. 2024.DOI: 10.1126/science.adq2852
+(cit. on p. 14).
+[92] A. Goldie and A. Mirhoseini,How AlphaChip transformed
+computer chip design, Sep. 2024 (cit. on p. 14).
+Supplementary Materials
+Estimate of the effective size of an AI
+workforce
+Following Denain et al. [77], we estimate the effec-
+tive workforce by dividing the number of tokens a
+developer can generate per day by the number of
+tokens corresponding to one researcher-day of work.
+OpenAI alone has enough inference compute (i.e.,
+runtime compute) to generate on the order of 1013
+tokens per day. To estimate tokens per researcher-
+day , we use the number of tokens a model generates
+on a task that would take a human researcher one
+workday (8 hours). In an AI R&D benchmark, Wijk
+et al. [78] find that models output on average 5·10 5
+tokens on runs of up to 8 hours, implying an effective
+workforce of about 2·10 7 researchers. Allowing for
+about an order of magnitude of uncertainty in either
+direction (5·10 4–5·10 6 tokens per researcher-day),
+we estimate an effective workforce on the order of
+2·10 6–2·10 8. As in the main text, this assumes that
+expert-level AI systems have runtime costs compara-
+ble to those of today’s systems.
+Modeling the feedback loop under full
+automation
+Most analyses of a software-driven intelligence ex-
+plosion capture AI progress with some notion of soft-
+ware quality, denoted by A. In principle, A should
+measure AI progress holistically , including botheffi-
+ciency improvements(new AI systems accomplishing
+the same tasks as old systems, with similar perfor-
+mance, using less compute or data) andcapability im-
+provements(new AI systems accomplishing tasks that
+previous systems could not accomplish, or achiev-
+ing higher performance than previous systems could
+achieve). Frustratingly, it is currently unclear how
+the parameter A should best trade off between effi-
+ciency improvements and capability improvements
+(or between different types of efficiency improve-
+ments and capability improvements).
+Setting this issue aside, we model the growth of
+software quality with dA/dt=A 1−βEλ, a functional
+form common in the macroeconomics of innova-
+tion [27]. For simplicity, we ignore potential bot-
+tlenecks from compute and data. Here, E is effective
+R&D labor, λ represents returns to scale on R&D la-
+bor, and β represents whether there are increasing or
+diminishing returns to finding new ideas over time.
+The key question is how E grows with A. Assum-
+ing full automation, we consider two cases. First,
+consider a case where all improvements in software
+quality are increases ininference compute efficiency,
+that is, decreases in the amount of compute needed
+to run an AI system with a certain capability level.
+In that case, if A measures inference efficiency , then
+E is proportional to A: greater inference efficiency
+allows proportionally more automated researchers
+to be run.
+Second, consider a case where all improvements
+in software quality are capability gains, driven by im-
+provements intraining compute efficiency: decreases
+in the amount of compute needed to train an AI sys-
+tem to a given capability level, which allow a more
+capable system to be trained with a fixed stock of
+compute. If A measures training compute efficiency ,
+then increases inA yield more capable systems rather
+than more of them. If we make the (potentially ques-
+tionable) assumption that the effective number of
+researchers scales linearly with these capability gains,
+thenEis again proportional toA.
+In both cases, E=kA for some positive con-
+stant k. Substituting into the equation above gives
+dA/dt=cA λ−β+1, where c=k λ. For the growth
+rate (1/A)dA/dt to increase as software quality in-
+creases, we need λ > β . Defining r=λ/β , we obtain
+the conditionr >1discussed in the main text.
+How quickly could progress accelerate under cur-
+rent estimates of these parameters? We measure
+acceleration by the growth rate of software qual-
+ity: (1/A)dA/dt=c·A λ−β. Averaging the cen-
+tral estimates across the three sub-fields in Ho and
+What if automating AI R&D triggers an intelligence explosion? page 12 of 14
+
+=== PDF PAGE 13 ===
+Whitfill [28] gives λ= 1.40 and β= 1.01 . With
+λ−β= 0.39 , each doubling of A multiplies the
+growth rate by 20.39 ≈1.31 , so each subsequent
+doubling takes (1/2)0.39 ≈76% as long as the last.
+For the growth rate to increase tenfold, A needs to
+double log2(10)/0.39≈8.5 times. For the length of
+the first doubling, we use recent estimates that, due
+to software improvements alone,training compute
+efficiencydoubles roughly every 4.5 months [79];
+inference compute efficiencymay be growing even
+faster [80]. To avoid having to approximate the geo-
+metric sum for 8.5 doublings, we instead calculate
+the geometric sum for 9 doublings, after which time
+the growth rate will have increased more than ten-
+fold. Doing so, we find that the growth rate will
+have increased more than tenfold after 4.5 months
+×(1−0.76 9)/(1−0.76)≈17 months, or about 1.5
+years. At that point, progress would be ten times
+faster than today, so a year’s worth of progress at
+today’s pace would take about five weeks.
+Uncertainties about the returns to research
+effort
+Several factors could make the true value of r dif-
+fer from existing estimates. First, as noted above,
+it is unclear which measure of software quality is
+most appropriate. Inference efficiency maps most di-
+rectly onto the size of an automated R&D workforce,
+whereas it is unclear how to translate training effi-
+ciency gains into the effective number of researchers.
+Yet existing estimates of r for AI R&D use training
+efficiency , and it is unknown how similar the returns
+to research effort are under the two measures. Fur-
+thermore, a proper assessment of returns to research
+effort would include improvements from both infer-
+ence efficiency and training efficiency, rather than
+just one. More work is warranted to develop a charac-
+terization of software quality that incorporates both
+inference and training efficiency and weighs them
+against each other appropriately .
+Existing estimates of r come from a period of
+rapid compute scaling, which confounds the con-
+tributions of software progress and compute scaling.
+Because these two inputs grew together historically ,
+an estimate that attributes observed progress to soft-
+ware improvements may actually be capturing gains
+driven by , or only made possible by , rising compute.
+Some software improvements are scale-dependent:
+for example, the transformer architecture yields large
+performance gains at high training compute but rel-
+atively small gains at low compute [81]. Such con-
+founding would bias estimates of r upward: in a
+regime of fixed or slowly growing compute, r would
+be lower than historical data suggest.
+Other factors could imply a higher r. Most esti-
+mates of r neglect improvements in areas outside
+of pre-training, such as post-training or better scaf-
+folding for tool use [35]. Furthermore, capability
+improvements could matter in ways that the effec-
+tive number of researchers fails to capture: even
+an extremely large number of mediocre researchers
+may not be able to substitute for one genius re-
+searcher. If so, capability gains would expand ef-
+fective R&D labor by more than the linear assump-
+tion above implies. Compute bottlenecks could also
+be circumvented, such as through better extrapo-
+lation from small-scale experiments, reductions in
+experiment cost from software progress, shifts to-
+ward approaches that are less compute-reliant, and
+algorithmic progress that does not require experi-
+ments [7].
+Estimates of r also rely on imperfect proxies for
+R&D labor, which could bias them in either direc-
+tion. For example, Ho and Whitfill [28] proxy R&D
+labor with the number of unique authors who have
+published papers in a domain. Drawing the domain
+too narrowly undercounts labor by excluding adja-
+cent fields that also drive progress, while drawing it
+too broadly overcounts labor. Unless the excluded
+adjacent fields see the same growth rate in labor
+as the included fields, the disconnect will lead to
+miscalculatingr.
+Finally, the relevant mathematical models may
+not generalize to extremely large amounts of R&D
+labor [82]. Historically, they have been validated
+against growth rates of a few percent per year, well
+below the double-digit or higher rates that an intel-
+ligence explosion could produce. They also break
+down in the limit, where they imply that infinite la-
+bor yields infinite progress in finite time. But real
+constraints make this result impossible: some prob-
+lems must be solved in sequence, and physical hard-
+ware can only operate so fast.
+Notes
+1. Machine-learning venues typically have a main conference
+track and several workshop tracks. One caveat to the
+results is that these workshop tracks can have somewhat
+laxer standards than the main conference track.
+2. According to the METR time-horizon metric [17, 83], the
+length of tasks that AI systems can complete initially dou-
+bled roughly every 7 months, accelerating to about every
+3 months since 2024. Extrapolating this more recent trend
+would suggest that by mid-2028, AI systems will be able to
+complete tasks requiring several months of human expert
+What if automating AI R&D triggers an intelligence explosion? page 13 of 14
+
+=== PDF PAGE 14 ===
+time, well within the range of many AI R&D projects. See
+also Kokotajlo et al. [84].
+3. Cottier et al. [80] find that the price of running LLMs
+to achieve a given capability milestone (e.g., GPT-4-level
+performance on a math benchmark) has decreased by
+roughly 9- to 900-fold per year, depending on the capa-
+bility milestone. While a portion of this cost decline has
+come from hardware improvements (reducing the cost per
+computation), a substantial fraction is due to software
+improvements.
+4. In an area of technology, r governs the relationship be-
+tween increases in R&D inputs and the resultant change
+in an output of interest, such as the number of computa-
+tions that cutting-edge consumer hardware can perform
+per constant dollar. In Bloom et al. [27], the input is mea-
+sured in dollars spent on R&D and so includes increases
+in both labor and physical capital. In this piece, however,
+we only consider increases in labor, as we are interested in
+understanding the potential for a software-driven feedback
+loop in which the compute stock is held roughly constant.
+This means the value of r is lower than if we considered
+increases in all inputs (i.e., labor, data, and compute).
+5.r must eventually drop below 1 because AI progress will
+eventually hit computational and physical limits. It is
+uncertain how much progress is possible before reaching
+such limits.
+6. The 90% credible intervals are (0.727 to 2.094), (0.380 to
+2.708), and (1.069 to 3.212).
+7. In this analysis, improvements in algorithmic efficiency
+do not by themselves resolve this potential bottleneck
+because they proportionally make both R&D and training
+more efficient.
+8. Specifically, the paper provides conditions under which
+automated research labor, among other quantities like
+economic output, grows to infinity in finite time.
+9. See Ord [85] for a theoretical discussion of how the time
+between rounds of R&D could affect the dynamics of an
+intelligence explosion.
+10. The analysis in Cunningham et al. [37] focuses onself-
+sustaining acceleration: “When AI systems are sufficient
+for accelerating progress in AI capabilities without any
+growth in exogenous inputs (human labor, training com-
+pute, etc.).” Self-sustaining acceleration is necessary for a
+software-driven intelligence explosion in our sense.
+11. Such systems could be superhuman in some domains (e.g.,
+certain fields of scientific research) but not others (e.g.,
+manipulating objects in the physical world).
+12. Even in cyber, however, human organizational processes
+could still add friction for defenders [86].
+13. See also Anthropic [87], UK AI Security Institute [88],
+OpenAI [89], and Bogdan et al. [90].
+14. For example, see Tessler et al. [91]. More speculatively , AI
+systems could potentially accelerate the development of
+brain-computer interfaces that allow humans to think and
+coordinate much faster.
+15. Precisely operationalizing an intelligence explosion is
+tricky and remains an area for future work.
+16. For example, AI is already aiding chip design [92]. AI
+systems could also accelerate robotics to automate the
+chip production process.
+What if automating AI R&D triggers an intelligence explosion? page 14 of 14

@@ -1,0 +1,5597 @@
+0001: Demonstration-Free Success-Probability Reward Learning for Generalist Robot Policies
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: arXiv.org perpetual non-exclusive license
+0009: arXiv:2609.33653v1 [cs.RO] 27 Sep 2026
+0010: Demonstration-Free Success-Probability Reward Learning for Generalist Robot Policies
+0011: Duo Wu
+0012: Affiliation:
+0013: Tsinghua University
+0014: Haifeng Wang
+0015: Affiliation:
+0016: Tsinghua University
+0017: Affiliation:
+0018: Yuanxing Robotics
+0019: Rongwei Lu
+0020: Affiliation:
+0021: Tsinghua University
+0022: Jinghe Wang
+0023: Affiliation:
+0024: Tsinghua University
+0025: Tianyi Xiong
+0026: Affiliation:
+0027: Tsinghua University
+0028: Zhimin Wang
+0029: Affiliation:
+0030: Tsinghua University
+0031: Chao Yu
+0032: Affiliation:
+0033: Tsinghua University
+0034: Shuai Ma
+0035: Affiliation:
+0036: Pengcheng Laboratory
+0037: Zhi Wang
+0038: Affiliation:
+0039: Tsinghua University
+0040: Abstract
+0041: Reinforcement learning (RL) enables generalist robot policies to improve through trial-and-error interaction, yet its effectiveness is fundamentally constrained by sparse task rewards. Existing general-purpose reward models typically alleviate this issue by learning task progress from expert demonstrations, but introduce a distribution mismatch with the mixed-quality rollouts encountered during policy optimization, making their estimates unreliable on suboptimal and failed behaviors from which the policy must learn. In this work, we introduce a demonstration-free reward learning paradigm where dense reward feedback can be learned directly from sparse task outcomes and policy experience. We theoretically show that terminal task outcomes implicitly define dense success-probability feedback at intermediate timesteps, which can be recursively learned through bootstrapping. Based on this insight, we introduce
+0042: eVTA
+0043: 0
+0044: , which learns success probabilities from mixed-quality policy rollouts through temporal-difference-style bootstrapping, without expert demonstrations or intermediate annotations. We further introduce
+0045: RL with Evolving Rewards (RLER)
+0046: , a closed-loop framework that adapts eVTA
+0047: 0
+0048: using newly collected rollouts as the policy evolves. Experiments show that eVTA
+0049: 0
+0050: provides more informative rewards than state-of-the-art reward models and achieves the best average policy performance across all LIBERO task suites under the same RL training budget, improving success rates by
+0051: 5.4
+0052: %
+0053: 5.4\%
+0054: –
+0055: 13.8
+0056: %
+0057: 13.8\%
+0058: over the initial policy. In real-world manipulation, RLER further improves overall success rates by
+0059: 20
+0060: %
+0061: 20\%
+0062: –
+0063: 26
+0064: %
+0065: 26\%
+0066: , with
+0067: 35
+0068: %
+0069: 35\%
+0070: –
+0071: 36
+0072: %
+0073: 36\%
+0074: gains under out-of-distribution conditions. These results demonstrate the effectiveness of demonstration-free reward learning and adapting rewards as the policy evolves.
+0075: Project webpage: https://duowuyms.github.io/evta0
+0076: .
+0077: 1
+0078: Introduction
+0079: Reinforcement learning (RL)
+0080: (
+0081: Li et al., 2025d
+0082: ;
+0083: Lu et al., 2025
+0084: ;
+0085: Li et al., 2025b
+0086: ;
+0087: Luo et al., 2025
+0088: )
+0089: has recently shown great promise for enabling generalist robot policies, including vision-language-action models (VLAs)
+0090: (
+0091: Intelligence et al., 2025a
+0092: ;
+0093: Kim et al., 2024
+0094: ;
+0095: Li et al., 2024
+0096: ;
+0097: Walke et al., 2023
+0098: )
+0099: and world-action models (WAMs)
+0100: (
+0101: Cen et al., 2025
+0102: ;
+0103: Chen et al., 2026a
+0104: ;
+0105: Wang et al., 2026a
+0106: )
+0107: , to acquire new capabilities beyond demonstrations through trial-and-error experience. However, effective RL training remains constrained by sparse task rewards. In robotic manipulation, rewards are often available only as terminal success or failure signals
+0108: (
+0109: Mu et al., 2024
+0110: ;
+0111: Rengarajan et al., 2022
+0112: ;
+0113: Luo et al., 2025
+0114: ;
+0115: Chen et al., 2025c
+0116: ;
+0117: Zhou et al., 2025
+0118: )
+0119: , providing little guidance on which intermediate behaviors contribute to task completion. This problem becomes particularly severe in long-horizon tasks that require hundreds or even thousands of actions before completion
+0120: (
+0121: Xu et al., 2025
+0122: ;
+0123: Sermanet et al., 2024
+0124: )
+0125: , making credit assignment and policy improvement difficult.
+0126: Recent studies have explored general-purpose reward models that estimate task progress from intermediate observations across diverse tasks and scenarios
+0127: (
+0128: Zhai et al., 2025
+0129: ;
+0130: Shu et al., 2025
+0131: ;
+0132: Liu et al., 2026a
+0133: ;
+0134: Bai et al., 2025b
+0135: ;
+0136: Lee et al., 2026
+0137: )
+0138: , offering a promising approach to alleviating reward sparsity. Specifically, they follow a common paradigm of training reward models on expert demonstrations to estimate how much an action advances the task toward completion, under the assumption that task completion progresses monotonically over time
+0139: (
+0140: Din et al., 2025
+0141: ;
+0142: Lee et al., 2026
+0143: )
+0144: . Nevertheless, this paradigm introduces a distribution mismatch with the mixed-quality rollouts encountered during RL training, which naturally contain suboptimal and failed trajectories. As a result, their reward estimates can become unreliable on the suboptimal and failed behaviors from which the policy needs to learn. These limitations motivate a demonstration-free paradigm for reward learning.
+0145: The central finding of this paper is that dense rewards can be learned directly from mixed-quality policy rollouts without expert demonstrations, opening a new paradigm for reward learning. We first establish the theoretical foundation behind this finding by showing that sparse terminal outcomes implicitly define dense success-probability feedback at intermediate timesteps. Specifically, the intermediate reward can be formulated as the probability of eventual task success conditioned on the trajectory history. Such success probabilities can be recursively learned through bootstrapping, allowing terminal supervision to be propagated backward without requiring intermediate annotations.
+0146: Building on this principle, we design
+0147: eVTA
+0148: 0
+0149: 1
+0150: 1
+0151: 1
+0152: eVTA
+0153: stands for
+0154: embodied ventral tegmental area (VTA)
+0155: . Inspired by the role of the biological VTA in reward processing and learning, we aim to build an embodied VTA that generates informative reward signals for continual improvement of generalist robot policies. eVTA
+0156: 0
+0157: represents the first step toward this vision.
+0158: , a reward model that observes manipulation histories and estimates intermediate success probabilities. We develop a simple temporal-difference (TD) style bootstrapping recipe to train eVTA
+0159: 0
+0160: using only terminal signals from mixed-quality rollouts. Furthermore, enabled by the demonstration-free learning ability of eVTA
+0161: 0
+0162: , we introduce
+0163: RL with Evolving Rewards (RLER)
+0164: , where newly collected policy rollouts are used to update eVTA
+0165: 0
+0166: , and eVTA
+0167: 0
+0168: in turn provides adapted rewards for subsequent policy optimization. In this way, reward learning can evolve with the changing behavior distribution of the policy.
+0169: Through extensive experiments, we show that eVTA
+0170: 0
+0171: produces reward signals that more reliably track task evolution and distinguish successful from failed trajectories than state-of-the-art reward models.
+0172: When integrated into RL training on LIBERO
+0173: (
+0174: Fei et al., 2025
+0175: )
+0176: , eVTA
+0177: 0
+0178: achieves the best average success rate across all task suites under the same training budget, improving over the initial policy by
+0179: 5.4
+0180: %
+0181: 5.4\%
+0182: –
+0183: 13.8
+0184: %
+0185: 13.8\%
+0186: .
+0187: Moreover, in real-world manipulation, RLER progressively improves policy performance, increasing overall success rates by
+0188: 20
+0189: %
+0190: 20\%
+0191: –
+0192: 26
+0193: %
+0194: 26\%
+0195: over the initial SFT policies. The performance gains are more evident under out-of-distribution (OOD) conditions, with improvements of
+0196: 35
+0197: %
+0198: 35\%
+0199: –
+0200: 36
+0201: %
+0202: 36\%
+0203: and
+0204: 15
+0205: %
+0206: 15\%
+0207: –
+0208: 20
+0209: %
+0210: 20\%
+0211: over the SFT policy and fixed eVTA
+0212: 0
+0213: baseline, respectively.
+0214: The contributions of this paper are summarized as follows:
+0215: •
+0216: We theoretically reveal that terminal task outcomes implicitly define intermediate reward signals, where rewards can be modeled as conditional task success probabilities and recursively learned through bootstrapping.
+0217: •
+0218: Based on this principle, we establish a demonstration-free reward learning paradigm by developing eVTA
+0219: 0
+0220: , a general-purpose reward model trained through a simple TD-style bootstrapping recipe to estimate success probabilities from manipulation histories.
+0221: •
+0222: We further introduce RL with Evolving Rewards (RLER), a closed-loop learning framework that adapts eVTA
+0223: 0
+0224: using newly collected policy rollouts, allowing reward feedback to evolve with the changing behavior distribution of the policy.
+0225: •
+0226: We conduct extensive evaluations on both reward modeling and policy learning.
+0227: eVTA
+0228: 0
+0229: consistently provides high-quality reward feedback and improves policy performance under the same RL training budget. Real-world experiments further show that RLER improves overall success rates by
+0230: 20
+0231: %
+0232: 20\%
+0233: –
+0234: 26
+0235: %
+0236: 26\%
+0237: over the initial SFT policies, while achieving
+0238: 35
+0239: %
+0240: 35\%
+0241: –
+0242: 36
+0243: %
+0244: 36\%
+0245: improvements under OOD conditions.
+0246: 2
+0247: Related Work
+0248: Sparse terminal rewards hinder effective RL for training generalist robot policies, motivating a broad range of reward densification methods that can be grouped into four categories.
+0249: Handcrafted dense rewards.
+0250: A common strategy is to manually design dense rewards based on heuristic signals
+0251: (
+0252: Li et al., 2025a
+0253: ;
+0254: Ye et al., 2025
+0255: ;
+0256: Pan et al., 2026
+0257: ;
+0258: Team et al., 2026
+0259: ;
+0260: Wang et al., 2025
+0261: )
+0262: , such as sub-goal completion
+0263: (
+0264: Zhang et al., 2025a
+0265: )
+0266: , end-effector states
+0267: (
+0268: Xu et al., 2025
+0269: )
+0270: , or object-gripper distances
+0271: (
+0272: Liu et al., 2026d
+0273: )
+0274: .
+0275: Although effective in specific settings, these methods require substantial engineering effort and often fail to generalize beyond the target tasks or scenarios
+0276: (
+0277: Cobbe et al., 2020
+0278: ;
+0279: Tan et al., 2025
+0280: )
+0281: .
+0282: Stage-based rewards.
+0283: To reduce reward engineering overhead, another line of work exploits the stage structure of manipulation tasks to construct dense rewards
+0284: (
+0285: Lu et al., 2025
+0286: ;
+0287: Mu et al., 2024
+0288: ;
+0289: Escoriza et al., 2025
+0290: ;
+0291: Chen et al., 2025b
+0292: )
+0293: .
+0294: For example, SARM
+0295: (
+0296: Chen et al., 2025b
+0297: )
+0298: predicts task stages using labels derived from subtask annotations.
+0299: However, these approaches still require manually specifying task stages, defining stage indicators, or providing subtask annotations, which may need to be redesigned for new tasks or scenarios and thus limit scalability to diverse settings.
+0300: Our work instead learns success-probability feedback without requiring task-specific decomposition.
+0301: World-model-derived rewards.
+0302: A separate line of work leverages world models trained on expert demonstrations to derive dense rewards
+0303: (
+0304: Xiao et al., 2025
+0305: ;
+0306: Liu et al., 2026b
+0307: ;
+0308: Liu et al., 2026c
+0309: ;
+0310: Zhu et al., 2025
+0311: )
+0312: . These methods typically learn to reconstruct observations or predict future states, and then derive rewards from reconstruction errors
+0313: (
+0314: Li et al., 2025c
+0315: )
+0316: or similarity to ground-truth observations
+0317: (
+0318: Hung et al., 2025
+0319: )
+0320: .
+0321: The major obstacle of these methods lies in their reliance on modeling environment dynamics and high-quality demonstrations.
+0322: In comparison, our work directly models success probabilities without learning full environment dynamics or relying on expert demonstrations.
+0323: General-purpose reward models.
+0324: With the growing capabilities of foundation models, recent studies have started to explore their adaptation as general-purpose reward models that estimate task progress across diverse manipulation tasks
+0325: (
+0326: Lee et al., 2026
+0327: ;
+0328: Tan et al., 2025
+0329: ;
+0330: Wang et al., 2026b
+0331: ;
+0332: Huang et al., 2026
+0333: )
+0334: . These methods can be categorized into training-free and training-based approaches.
+0335: Training-free methods, such as GVL
+0336: (
+0337: Ma et al., 2024
+0338: )
+0339: and TOPReward
+0340: (
+0341: Chen et al., 2026b
+0342: )
+0343: , prompt frozen vision-language models (VLMs) to infer task progress from video frames, but they tend to produce noisy or inconsistent reward signals
+0344: (
+0345: Zhang et al., 2025b
+0346: )
+0347: .
+0348: To improve reward quality and stability, training-based methods instead learn progress prediction from large-scale robotic data.
+0349: They pretrain vision foundation models on expert demonstrations using temporal positions of observations as pseudo progress labels, assuming that task completion evolves monotonically over time. However, this assumption becomes restrictive during policy learning, where rollouts naturally contain both suboptimal and failed trajectories with non-monotonic progress.
+0350: Existing methods therefore introduce additional data construction and training strategies to improve robustness.
+0351: For example, VLAC
+0352: (
+0353: Zhai et al., 2025
+0354: )
+0355: employs pair-wise difference filtering, while Robometer
+0356: (
+0357: Liang et al., 2026
+0358: )
+0359: introduces inter-trajectory preference comparisons to incorporate suboptimal and failed trajectories. Nevertheless, these approaches involve complex pipelines and remain dependent on the quality and coverage of expert demonstrations.
+0360: In comparison, eVTA
+0361: 0
+0362: introduces a demonstration-free reward learning paradigm that shifts reward modeling from demonstration-based progress estimation to experience-driven success-probability learning. It directly learns intermediate success probabilities from mixed-quality policy rollouts using only terminal outcomes, without requiring expert demonstrations or manually constructed intermediate progress annotations.
+0363: 3
+0364: Methodology
+0365: In this section, we introduce eVTA
+0366: 0
+0367: and its integration into RL training. We first establish the theoretical foundation of success-probability feedback, then describe the design and training method of eVTA
+0368: 0
+0369: , and finally introduce RLER for adapting reward learning alongside policy optimization.
+0370: 3.1
+0371: Theoretical Foundation
+0372: Reward definition.
+0373: Let
+0374: 𝒪
+0375: \mathcal{O}
+0376: denote the observation
+0377: space. For a rollout of length
+0378: T
+0379: T
+0380: , let
+0381: ω
+0382: =
+0383: (
+0384: o
+0385: 0
+0386: ,
+0387: o
+0388: 1
+0389: ,
+0390: …
+0391: ,
+0392: o
+0393: T
+0394: )
+0395: ∈
+0396: Ω
+0397: \omega=(o_{0},o_{1},\ldots,o_{T})\in\Omega
+0398: ,
+0399: where
+0400: o
+0401: t
+0402: ∈
+0403: 𝒪
+0404: o_{t}\in\mathcal{O}
+0405: , and
+0406: Ω
+0407: \Omega
+0408: denotes
+0409: the space of all such rollouts. Let
+0410: H
+0411: t
+0412: =
+0413: (
+0414: o
+0415: 0
+0416: ,
+0417: o
+0418: 1
+0419: ,
+0420: …
+0421: ,
+0422: o
+0423: t
+0424: )
+0425: H_{t}=(o_{0},o_{1},\ldots,o_{t})
+0426: denote the trajectory prefix
+0427: up to timestep
+0428: t
+0429: t
+0430: .
+0431: A given rollout policy
+0432: π
+0433: \pi
+0434: and the environment induce a probability space
+0435: (
+0436: Ω
+0437: ,
+0438: ℱ
+0439: ,
+0440: ℙ
+0441: π
+0442: )
+0443: (\Omega,\mathcal{F},\mathbb{P}_{\pi})
+0444: , where
+0445: ℱ
+0446: \mathcal{F}
+0447: is the event space
+0448: and
+0449: ℙ
+0450: π
+0451: \mathbb{P}_{\pi}
+0452: is the rollout distribution. Let
+0453: ℱ
+0454: t
+0455: :=
+0456: σ
+0457: ⁡
+0458: (
+0459: H
+0460: t
+0461: )
+0462: \mathcal{F}_{t}:=\sigma(H_{t})
+0463: denote the information revealed by this prefix,
+0464: with
+0465: ℱ
+0466: t
+0467: ⊆
+0468: ℱ
+0469: t
+0470: +
+0471: 1
+0472: \mathcal{F}_{t}\subseteq\mathcal{F}_{t+1}
+0473: . Each rollout terminates at
+0474: T
+0475: T
+0476: and provides only a binary terminal success label
+0477: S
+0478: ∈
+0479: {
+0480: 0
+0481: ,
+0482: 1
+0483: }
+0484: S\in\{0,1\}
+0485: , so the
+0486: terminal sparse reward is
+0487: r
+0488: T
+0489: :=
+0490: S
+0491: r_{T}:=S
+0492: .
+0493: At each intermediate timestep, we define the reward as the probability of eventual task success conditioned on the information revealed by the trajectory prefix:
+0494: r
+0495: t
+0496: :=
+0497: 𝔼
+0498: π
+0499: ​
+0500: [
+0501: S
+0502: ∣
+0503: ℱ
+0504: t
+0505: ]
+0506: =
+0507: ℙ
+0508: π
+0509: ​
+0510: (
+0511: S
+0512: =
+0513: 1
+0514: ∣
+0515: ℱ
+0516: t
+0517: )
+0518: .
+0519: r_{t}:=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]=\mathbb{P}_{\pi}(S=1\mid\mathcal{F}_{t}).
+0520: (1)
+0521: Theorem 1
+0522: (Temporal consistency of success-probability rewards)
+0523: .
+0524: The success probability reward defined above satisfies
+0525: r
+0526: t
+0527: =
+0528: 𝔼
+0529: π
+0530: ​
+0531: [
+0532: r
+0533: T
+0534: ∣
+0535: ℱ
+0536: t
+0537: ]
+0538: r_{t}=\mathbb{E}_{\pi}[r_{T}\mid\mathcal{F}_{t}]
+0539: for every
+0540: t
+0541: ≤
+0542: T
+0543: t\leq T
+0544: .
+0545: Moreover, for every
+0546: t
+0547: <
+0548: T
+0549: t<T
+0550: , it satisfies the temporal consistency property:
+0551: 𝔼
+0552: π
+0553: ​
+0554: [
+0555: r
+0556: t
+0557: +
+0558: 1
+0559: ∣
+0560: ℱ
+0561: t
+0562: ]
+0563: =
+0564: r
+0565: t
+0566: .
+0567: \mathbb{E}_{\pi}[r_{t+1}\mid\mathcal{F}_{t}]=r_{t}.
+0568: (2)
+0569: The temporal consistency property above suggests that sparse terminal rewards can be propagated backward through one-step bootstrapping. The following theorem further shows that such bootstrapping consistently recovers the underlying success-probability reward.
+0570: Theorem 2
+0571: (Population consistency of one-step bootstrapping)
+0572: .
+0573: Consider the ideal backward regression defined by the terminal anchor
+0574: p
+0575: T
+0576: ⋆
+0577: :=
+0578: S
+0579: p_{T}^{\star}:=S
+0580: and, for each
+0581: t
+0582: <
+0583: T
+0584: t<T
+0585: :
+0586: p
+0587: t
+0588: ⋆
+0589: ∈
+0590: arg
+0591: ⁡
+0592: min
+0593: g
+0594: ∈
+0595: L
+0596: 2
+0597: ​
+0598: (
+0599: ℱ
+0600: t
+0601: )
+0602: ​
+0603: 𝔼
+0604: π
+0605: ​
+0606: [
+0607: (
+0608: g
+0609: −
+0610: p
+0611: t
+0612: +
+0613: 1
+0614: ⋆
+0615: )
+0616: 2
+0617: ]
+0618: ,
+0619: p_{t}^{\star}\in\arg\min_{g\in L_{2}(\mathcal{F}_{t})}\mathbb{E}_{\pi}\left[\left(g-p_{t+1}^{\star}\right)^{2}\right],
+0620: (3)
+0621: where
+0622: L
+0623: 2
+0624: ​
+0625: (
+0626: ℱ
+0627: t
+0628: )
+0629: L_{2}(\mathcal{F}_{t})
+0630: denotes the square-integrable
+0631: ℱ
+0632: t
+0633: \mathcal{F}_{t}
+0634: -measurable candidate predictions. Then the population minimizer
+0635: is unique up to almost-sure equality and satisfies, for every
+0636: t
+0637: ≤
+0638: T
+0639: t\leq T
+0640: :
+0641: p
+0642: t
+0643: ⋆
+0644: =
+0645: r
+0646: t
+0647: =
+0648: 𝔼
+0649: π
+0650: ​
+0651: [
+0652: S
+0653: ∣
+0654: ℱ
+0655: t
+0656: ]
+0657: .
+0658: p_{t}^{\star}=r_{t}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}].
+0659: (4)
+0660: Thus, terminal supervision can be propagated backward through ideal one-step
+0661: regression without changing the population success-probability target.
+0662: This result provides theoretical justification for deriving intermediate success-probability feedback from sparse terminal outcomes: although only terminal signals are available, the success probability at intermediate timesteps can be recursively characterized through one-step bootstrapping.
+0663: Detailed proofs of both theorems are provided in Appendix
+0664: A
+0665: .
+0666: 3.2
+0667: Design
+0668: Building upon the formulation in Section
+0669: 3.1
+0670: , we introduce eVTA
+0671: 0
+0672: to approximate the probability of eventual task success conditioned on the trajectory history. Specifically, eVTA
+0673: 0
+0674: approximates the ideal success-probability reward
+0675: p
+0676: t
+0677: ⋆
+0678: p_{t}^{\star}
+0679: in Theorem
+0680: 2
+0681: with a learnable function
+0682: p
+0683: ^
+0684: θ
+0685: \hat{p}_{\theta}
+0686: parameterized by
+0687: θ
+0688: \theta
+0689: . Unlike existing general-purpose reward models that estimate task progress, eVTA
+0690: 0
+0691: directly models eventual task success, making its prediction naturally aligned with sparse terminal binary outcomes while providing dense intermediate feedback for policy learning. The details of eVTA
+0692: 0
+0693: are described below.
+0694: Figure 1:
+0695: Overview of eVTA
+0696: 0
+0697: . The left panel illustrates the model architecture, which estimates the probability of eventual task success conditioned on the task description and recent observation history. The right panel illustrates the training procedure, where eVTA
+0698: 0
+0699: is trained on mixed-quality policy rollouts through TD-style bootstrapping.
+0700: Model architecture.
+0701: To approximate the success probability in Eq.
+0702: 1
+0703: , eVTA
+0704: 0
+0705: predicts eventual task success from task descriptions and recent observation histories. Since maintaining the complete trajectory prefix is computationally expensive, eVTA
+0706: 0
+0707: uses a sliding context window
+0708: 𝒪
+0709: t
+0710: =
+0711: {
+0712: o
+0713: t
+0714: −
+0715: w
+0716: +
+0717: 1
+0718: ,
+0719: …
+0720: ,
+0721: o
+0722: t
+0723: }
+0724: \mathcal{O}_{t}=\{o_{t-w+1},\ldots,o_{t}\}
+0725: of
+0726: w
+0727: w
+0728: recent observations as the input, where
+0729: w
+0730: w
+0731: denotes the window size. The description of the target manipulation task
+0732: ℓ
+0733: \ell
+0734: is additionally provided to enable task-conditioned success prediction across diverse tasks.
+0735: Figure
+0736: 1
+0737: depicts the architecture of eVTA
+0738: 0
+0739: . To infer success probabilities from visual trajectories and task objectives, eVTA
+0740: 0
+0741: is built upon a VLM to exploit its visual and linguistic understanding capabilities. The input sequence is formally defined as:
+0742: x
+0743: t
+0744: =
+0745: [
+0746: I
+0747: ,
+0748: ℓ
+0749: ,
+0750: 𝒪
+0751: t
+0752: ,
+0753: [REWARD]
+0754: ]
+0755: ,
+0756: x_{t}=[I,\ell,\mathcal{O}_{t},\texttt{[REWARD]}],
+0757: (5)
+0758: where
+0759: I
+0760: I
+0761: is the instruction prompt specifying the success-probability prediction task,
+0762: ℓ
+0763: \ell
+0764: describes the target manipulation task,
+0765: 𝒪
+0766: t
+0767: \mathcal{O}_{t}
+0768: denotes the observation history, and
+0769: [REWARD]
+0770: is a special token that queries the model for the success probability.
+0771: Let
+0772: F
+0773: ψ
+0774: F_{\psi}
+0775: denote the VLM backbone. We extract the hidden representation corresponding to the
+0776: [REWARD]
+0777: token,
+0778: h
+0779: t
+0780: =
+0781: F
+0782: ψ
+0783: ​
+0784: (
+0785: x
+0786: t
+0787: )
+0788: [REWARD]
+0789: h_{t}=F_{\psi}(x_{t})_{\texttt{[REWARD]}}
+0790: . Next, a lightweight reward prediction head
+0791: g
+0792: ϕ
+0793: g_{\phi}
+0794: is applied to estimate the success probability:
+0795: p
+0796: ^
+0797: θ
+0798: ​
+0799: (
+0800: x
+0801: t
+0802: )
+0803: =
+0804: σ
+0805: ⁡
+0806: (
+0807: g
+0808: ϕ
+0809: ​
+0810: (
+0811: h
+0812: t
+0813: )
+0814: )
+0815: ,
+0816: \hat{p}_{\theta}(x_{t})=\sigma(g_{\phi}(h_{t})),
+0817: (6)
+0818: where
+0819: σ
+0820: ⁡
+0821: (
+0822: ⋅
+0823: )
+0824: \sigma(\cdot)
+0825: denotes the sigmoid function to map the prediction into
+0826: [
+0827: 0
+0828: ,
+0829: 1
+0830: ]
+0831: [0,1]
+0832: .
+0833: Training recipe.
+0834: Motivated by Theorem
+0835: 2
+0836: , we train eVTA
+0837: 0
+0838: with a simple temporal-difference (TD) style learning recipe, where a slowly updated target eVTA
+0839: 0
+0840: p
+0841: ^
+0842: θ
+0843: −
+0844: \hat{p}_{\theta^{-}}
+0845: parameterized by
+0846: θ
+0847: −
+0848: \theta^{-}
+0849: is introduced to generate bootstrapped targets for non-terminal transitions.
+0850: Specifically, we construct the training dataset
+0851: 𝒟
+0852: \mathcal{D}
+0853: from policy-generated rollouts:
+0854: 𝒟
+0855: =
+0856: {
+0857: (
+0858: x
+0859: t
+0860: ,
+0861: x
+0862: t
+0863: +
+0864: ,
+0865: d
+0866: t
+0867: ,
+0868: z
+0869: t
+0870: )
+0871: }
+0872: ,
+0873: \mathcal{D}=\{(x_{t},x_{t}^{+},d_{t},z_{t})\},
+0874: (7)
+0875: where
+0876: d
+0877: t
+0878: ∈
+0879: {
+0880: 0
+0881: ,
+0882: 1
+0883: }
+0884: d_{t}\in\{0,1\}
+0885: indicates whether timestep
+0886: t
+0887: t
+0888: is terminal and
+0889: z
+0890: t
+0891: ∈
+0892: {
+0893: 0
+0894: ,
+0895: 1
+0896: }
+0897: z_{t}\in\{0,1\}
+0898: denotes the terminal success outcome.
+0899: Here,
+0900: x
+0901: t
+0902: x_{t}
+0903: denotes the input of eVTA
+0904: 0
+0905: p
+0906: ^
+0907: θ
+0908: \hat{p}_{\theta}
+0909: , while
+0910: x
+0911: t
+0912: +
+0913: =
+0914: [
+0915: I
+0916: ,
+0917: ℓ
+0918: ,
+0919: 𝒪
+0920: t
+0921: +
+0922: ,
+0923: [REWARD]
+0924: ]
+0925: x_{t}^{+}=[I,\ell,\mathcal{O}_{t}^{+},\texttt{[REWARD]}]
+0926: represents the input of the target eVTA
+0927: 0
+0928: p
+0929: ^
+0930: θ
+0931: −
+0932: \hat{p}_{\theta^{-}}
+0933: , where
+0934: 𝒪
+0935: t
+0936: +
+0937: =
+0938: {
+0939: o
+0940: t
+0941: −
+0942: w
+0943: +
+0944: 1
+0945: ,
+0946: …
+0947: ,
+0948: o
+0949: t
+0950: ,
+0951: o
+0952: t
+0953: +
+0954: 1
+0955: }
+0956: \mathcal{O}_{t}^{+}=\{o_{t-w+1},\ldots,o_{t},o_{t+1}\}
+0957: extends the observation history with the next observation
+0958: o
+0959: t
+0960: +
+0961: 1
+0962: o_{t+1}
+0963: .
+0964: This additional observation approximates the one-step-ahead information required by the bootstrap update. The TD target is then computed as:
+0965: y
+0966: t
+0967: =
+0968: d
+0969: t
+0970: ​
+0971: z
+0972: t
+0973: +
+0974: (
+0975: 1
+0976: −
+0977: d
+0978: t
+0979: )
+0980: ​
+0981: p
+0982: ^
+0983: θ
+0984: −
+0985: ​
+0986: (
+0987: x
+0988: t
+0989: +
+0990: )
+0991: .
+0992: y_{t}=d_{t}z_{t}+(1-d_{t})\hat{p}_{\theta^{-}}(x_{t}^{+}).
+0993: (8)
+0994: For terminal transitions, the target directly uses the observed sparse outcome. For non-terminal transitions, the target eVTA
+0995: 0
+0996: provides a bootstrapped estimate of the future success probability, enabling terminal supervision to propagate backward along the trajectory.
+0997: The parameters of eVTA
+0998: 0
+0999: are optimized by minimizing the prediction error between the estimated success probability and the TD target:
+1000: ℒ
+1001: eVTA
+1002: ​
+1003: (
+1004: θ
+1005: )
+1006: =
+1007: 𝔼
+1008: (
+1009: x
+1010: t
+1011: ,
+1012: x
+1013: t
+1014: +
+1015: ,
+1016: d
+1017: t
+1018: ,
+1019: z
+1020: t
+1021: )
+1022: ∼
+1023: 𝒟
+1024: ​
+1025: [
+1026: (
+1027: p
+1028: ^
+1029: θ
+1030: ​
+1031: (
+1032: x
+1033: t
+1034: )
+1035: −
+1036: y
+1037: t
+1038: )
+1039: 2
+1040: ]
+1041: .
+1042: \mathcal{L}_{\mathrm{eVTA}}(\theta)=\mathbb{E}_{(x_{t},x_{t}^{+},d_{t},z_{t})\sim\mathcal{D}}\left[(\hat{p}_{\theta}(x_{t})-y_{t})^{2}\right].
+1043: (9)
+1044: The target eVTA
+1045: 0
+1046: is updated every
+1047: K
+1048: K
+1049: steps using exponential moving average:
+1050: θ
+1051: −
+1052: ←
+1053: α
+1054: ​
+1055: θ
+1056: +
+1057: (
+1058: 1
+1059: −
+1060: α
+1061: )
+1062: ​
+1063: θ
+1064: −
+1065: ,
+1066: \theta^{-}\leftarrow\alpha\theta+(1-\alpha)\theta^{-},
+1067: (10)
+1068: where
+1069: α
+1070: \alpha
+1071: controls the target update rate.
+1072: This TD-style bootstrapping recipe enables eVTA
+1073: 0
+1074: to learn dense success-probability feedback from only terminal outcomes, without expert demonstrations or intermediate progress annotations. The detailed training procedure is summarized in Algorithm
+1075: 1
+1076: of Appendix
+1077: B
+1078: .
+1079: Training data.
+1080: The training data for eVTA
+1081: 0
+1082: is collected by simply rolling out a robot policy in the environment, where both successful and failed trajectories are retained to form a mixed-quality dataset. Each trajectory only provides a terminal outcome signal, with
+1083: z
+1084: =
+1085: 1
+1086: z=1
+1087: for successful trajectories and
+1088: z
+1089: =
+1090: 0
+1091: z=0
+1092: for failed ones. To better utilize failed rollouts, we also adopt an augmentation strategy to assign soft terminal targets for failed trajectories. Details are provided in Appendix
+1093: B
+1094: .
+1095: 3.3
+1096: Integration into RL Training
+1097: Figure 2:
+1098: Illustration of RL training with a fixed eVTA
+1099: 0
+1100: (left) and the proposed RL with Evolving Rewards (RLER) framework (right). RLER adapts eVTA
+1101: 0
+1102: using newly collected policy rollouts, enabling reward learning and policy optimization to evolve together.
+1103: Reward transformation.
+1104: Given the success probability
+1105: p
+1106: ^
+1107: t
+1108: =
+1109: p
+1110: ^
+1111: θ
+1112: ​
+1113: (
+1114: x
+1115: t
+1116: )
+1117: \hat{p}_{t}=\hat{p}_{\theta}(x_{t})
+1118: predicted by eVTA
+1119: 0
+1120: , a straightforward choice is to directly use
+1121: p
+1122: ^
+1123: t
+1124: \hat{p}_{t}
+1125: as the dense reward. However, since
+1126: p
+1127: ^
+1128: t
+1129: ∈
+1130: [
+1131: 0
+1132: ,
+1133: 1
+1134: ]
+1135: \hat{p}_{t}\in[0,1]
+1136: is non-negative, directly using it as a per-step reward may unintentionally favor longer trajectories, because additional rollout timesteps continue to contribute positive rewards even when the predicted success probability does not improve. To avoid this issue, we convert the predicted success probability into a dense reward signal as:
+1137: r
+1138: t
+1139: eVTA
+1140: =
+1141: −
+1142: (
+1143: 1
+1144: −
+1145: p
+1146: ^
+1147: t
+1148: )
+1149: =
+1150: p
+1151: ^
+1152: t
+1153: −
+1154: 1
+1155: .
+1156: r_{t}^{\mathrm{eVTA}}=-(1-\hat{p}_{t})=\hat{p}_{t}-1.
+1157: (11)
+1158: Since
+1159: 1
+1160: −
+1161: p
+1162: ^
+1163: t
+1164: 1-\hat{p}_{t}
+1165: corresponds to the predicted probability of eventual task failure,
+1166: r
+1167: t
+1168: eVTA
+1169: r_{t}^{\mathrm{eVTA}}
+1170: can be naturally interpreted as a failure-probability penalty. States associated with higher probabilities of eventual failure receive larger penalties, whereas the penalty approaches zero as the predicted success probability approaches one. Notably, since this transformation only introduces a constant shift, it preserves the ordering and pairwise differences of eVTA
+1171: 0
+1172: predictions. With this transformation, a trained eVTA
+1173: 0
+1174: can be directly integrated into standard RL training loops, including online RL (e.g., PPO
+1175: (
+1176: Schulman et al., 2017
+1177: )
+1178: and GRPO
+1179: (
+1180: Guo et al., 2025
+1181: )
+1182: ) and offline RL (e.g., IQL
+1183: (
+1184: Kostrikov et al., 2021
+1185: )
+1186: , RECAP
+1187: (
+1188: Intelligence et al., 2025a
+1189: )
+1190: ).
+1191: RL with Evolving Rewards (RLER).
+1192: The ability of eVTA
+1193: 0
+1194: to learn directly from policy-generated rollouts enables reward learning to adapt alongside policy optimization. We therefore introduce RLER, a closed-loop framework in which reward modeling and policy optimization evolve together. As shown in Figure
+1195: 2
+1196: , new rollouts generated by the policy are periodically used to update eVTA
+1197: 0
+1198: . The updated eVTA
+1199: 0
+1200: then provides success-probability feedback for subsequent policy optimization. As the behavior distribution of the policy changes, updating eVTA
+1201: 0
+1202: allows it to capture newly emerging behaviors and provide more informative guidance for future policy updates.
+1203: 4
+1204: Evaluation
+1205: We conduct extensive experiments to evaluate the effectiveness of eVTA
+1206: 0
+1207: for embodied policy learning, with the goal of answering the following key questions.
+1208: (Q1) Reward quality:
+1209: How does eVTA
+1210: 0
+1211: compare with existing reward models in terms of reward quality?
+1212: (Q2) Policy learning:
+1213: How effectively does eVTA
+1214: 0
+1215: facilitate policy learning compared with existing methods?
+1216: (Q3) Reward evolution:
+1217: Can eVTA
+1218: 0
+1219: adapt to an evolving policy and further improve policy optimization through RLER? More experiments and analysis are provided in Appendix
+1220: D
+1221: .
+1222: Table 1:
+1223: VOC and VROC results on LIBERO and MetaWorld. The best and second-best average results of each benchmark are shown in bold and underlined, respectively.
+1224: LIBERO
+1225: VOC
+1226: (
+1227: ↑
+1228: \uparrow
+1229: Better)
+1230: VROC
+1231: (
+1232: ↑
+1233: \uparrow
+1234: Better)
+1235: Method
+1236: Spatial
+1237: Object
+1238: Goal
+1239: Long
+1240: Avg.
+1241: Spatial
+1242: Object
+1243: Goal
+1244: Long
+1245: Avg.
+1246: GVL (Qwen3-VL-4B)
+1247: 0.14
+1248: 0.59
+1249: 0.12
+1250: 0.28
+1251: 0.28
+1252: 0.00
+1253: 0.16
+1254: 0.04
+1255: 0.03
+1256: 0.06
+1257: GVL (Qwen3-VL-8B)
+1258: 0.25
+1259: 0.46
+1260: 0.33
+1261: 0.37
+1262: 0.35
+1263: -0.01
+1264: -0.04
+1265: -0.03
+1266: 0.10
+1267: 0.00
+1268: GVL (GPT-5)
+1269: 0.79
+1270: 0.79
+1271: 0.72
+1272: 0.66
+1273: 0.74
+1274: 0.30
+1275: 0.53
+1276: 0.52
+1277: 0.57
+1278: 0.48
+1279: TOPReward (Qwen3-VL-4B)
+1280: 0.70
+1281: 0.73
+1282: 0.74
+1283: 0.68
+1284: 0.71
+1285: -0.73
+1286: -0.33
+1287: -0.71
+1288: -0.55
+1289: -0.58
+1290: TOPReward (Qwen3-VL-8B)
+1291: 0.65
+1292: 0.85
+1293: 0.76
+1294: 0.79
+1295: 0.76
+1296: -0.59
+1297: -0.13
+1298: -0.30
+1299: -0.34
+1300: -0.34
+1301: VLAC-2B
+1302: -0.01
+1303: 0.27
+1304: 0.00
+1305: 0.01
+1306: 0.07
+1307: -0.08
+1308: 0.03
+1309: -0.04
+1310: -0.08
+1311: -0.04
+1312: VLAC-2B (Fine-tuned)
+1313: 0.59
+1314: 0.60
+1315: 0.36
+1316: 0.37
+1317: 0.48
+1318: 0.61
+1319: 0.63
+1320: 0.35
+1321: 0.36
+1322: 0.49
+1323: VLAC-8B
+1324: -0.06
+1325: 0.54
+1326: -0.13
+1327: -0.04
+1328: 0.08
+1329: -0.11
+1330: 0.52
+1331: -0.23
+1332: -0.03
+1333: 0.04
+1334: VLAC-8B (Fine-tuned)
+1335: 0.67
+1336: 0.65
+1337: 0.41
+1338: 0.39
+1339: 0.53
+1340: 0.59
+1341: 0.58
+1342: 0.35
+1343: 0.37
+1344: 0.47
+1345: Robometer-4B
+1346: 0.03
+1347: 0.01
+1348: -0.04
+1349: -0.04
+1350: -0.01
+1351: 0.05
+1352: 0.08
+1353: 0.29
+1354: -0.06
+1355: 0.09
+1356: Robometer-4B (Fine-tuned)
+1357: 0.97
+1358: 0.98
+1359: 0.97
+1360: 0.98
+1361: 0.98
+1362: 0.22
+1363: 0.67
+1364: 0.80
+1365: 0.77
+1366: 0.61
+1367: eVTA
+1368: 0
+1369: (Qwen3-VL-4B)
+1370: 0.87
+1371: 0.90
+1372: 0.84
+1373: 0.77
+1374: 0.84
+1375: 0.73
+1376: 0.88
+1377: 0.74
+1378: 0.73
+1379: 0.77
+1380: MetaWorld
+1381: VOC
+1382: (
+1383: ↑
+1384: \uparrow
+1385: Better)
+1386: VROC
+1387: (
+1388: ↑
+1389: \uparrow
+1390: Better)
+1391: Method
+1392: Easy
+1393: Medium
+1394: Hard
+1395: Very Hard
+1396: Avg.
+1397: Easy
+1398: Medium
+1399: Hard
+1400: Very Hard
+1401: Avg.
+1402: GVL (Qwen3-VL-4B)
+1403: 0.34
+1404: 0.17
+1405: 0.04
+1406: 0.18
+1407: 0.18
+1408: -0.09
+1409: -0.09
+1410: 0.04
+1411: 0.11
+1412: -0.01
+1413: GVL (Qwen3-VL-8B)
+1414: 0.41
+1415: 0.22
+1416: 0.14
+1417: 0.16
+1418: 0.23
+1419: -0.23
+1420: -0.20
+1421: -0.05
+1422: -0.05
+1423: -0.13
+1424: GVL (GPT-5)
+1425: 0.82
+1426: 0.71
+1427: 0.40
+1428: 0.61
+1429: 0.64
+1430: 0.65
+1431: 0.59
+1432: -0.02
+1433: 0.18
+1434: 0.35
+1435: TOPReward (Qwen3-VL-4B)
+1436: 0.78
+1437: 0.78
+1438: 0.79
+1439: 0.83
+1440: 0.79
+1441: -0.81
+1442: -0.82
+1443: -0.75
+1444: -0.84
+1445: -0.81
+1446: TOPReward (Qwen3-VL-8B)
+1447: 0.86
+1448: 0.58
+1449: 0.44
+1450: 0.61
+1451: 0.62
+1452: -0.65
+1453: -0.64
+1454: -0.69
+1455: -0.70
+1456: -0.67
+1457: VLAC-2B
+1458: -0.01
+1459: 0.06
+1460: -0.02
+1461: 0.08
+1462: 0.03
+1463: 0.07
+1464: 0.04
+1465: -0.02
+1466: 0.08
+1467: 0.04
+1468: VLAC-2B (Fine-tuned)
+1469: 0.24
+1470: 0.13
+1471: 0.29
+1472: 0.36
+1473: 0.25
+1474: 0.41
+1475: 0.27
+1476: 0.46
+1477: 0.47
+1478: 0.40
+1479: VLAC-8B
+1480: 0.02
+1481: -0.02
+1482: 0.07
+1483: -0.01
+1484: 0.01
+1485: -0.07
+1486: -0.05
+1487: -0.05
+1488: 0.08
+1489: -0.02
+1490: VLAC-8B (Fine-tuned)
+1491: 0.41
+1492: 0.27
+1493: 0.36
+1494: 0.63
+1495: 0.42
+1496: 0.48
+1497: 0.24
+1498: 0.41
+1499: 0.57
+1500: 0.43
+1501: Robometer-4B
+1502: -0.03
+1503: -0.24
+1504: 0.23
+1505: 0.04
+1506: 0.00
+1507: -0.06
+1508: -0.01
+1509: 0.05
+1510: 0.00
+1511: -0.01
+1512: Robometer-4B (Fine-tuned)
+1513: 0.90
+1514: 0.83
+1515: 0.62
+1516: 0.71
+1517: 0.77
+1518: 0.68
+1519: 0.07
+1520: 0.13
+1521: -0.27
+1522: 0.15
+1523: eVTA
+1524: 0
+1525: (Qwen3-VL-4B)
+1526: 0.79
+1527: 0.81
+1528: 0.82
+1529: 0.80
+1530: 0.80
+1531: 0.38
+1532: 0.52
+1533: 0.42
+1534: 0.43
+1535: 0.44
+1536: 4.1
+1537: Reward Quality
+1538: Setup.
+1539: We conduct experiments on two representative benchmarks LIBERO
+1540: (
+1541: Fei et al., 2025
+1542: )
+1543: and MetaWorld
+1544: (
+1545: Yu et al., 2020
+1546: )
+1547: , which provide diverse task suites for comprehensive evaluation. We compare eVTA
+1548: 0
+1549: against state-of-the-art general-purpose reward models, including training-free methods GVL
+1550: (
+1551: Ma et al., 2024
+1552: )
+1553: and TOPReward
+1554: (
+1555: Chen et al., 2026b
+1556: )
+1557: , and pretrained reward models VLAC
+1558: (
+1559: Zhai et al., 2025
+1560: )
+1561: and Robometer
+1562: (
+1563: Liang et al., 2026
+1564: )
+1565: .
+1566: For pretrained reward models, we evaluate both the original VLAC and Robometer models and their variants fine-tuned on the downstream benchmarks.
+1567: We systematically evaluate the reward quality of each method from two complementary perspectives:
+1568: temporal consistency
+1569: and
+1570: outcome distinction
+1571: . Temporal consistency is measured on expert demonstrations using VOC
+1572: (
+1573: Ma et al., 2024
+1574: )
+1575: and VROC
+1576: (
+1577: Zhai et al., 2025
+1578: )
+1579: , which assess whether rewards consistently reflect progress toward and deviation from task completion, respectively. Outcome distinction is evaluated on mixed-quality policy rollouts using MSE and Kendall’s
+1580: τ
+1581: a
+1582: \tau_{a}
+1583: (
+1584: Liang et al., 2026
+1585: )
+1586: , measuring terminal success estimation and discrimination between successful and failed trajectories, respectively. Additional details on the experimental setup, baselines and eVTA
+1587: 0
+1588: implementation are provided in Appendix
+1589: C.1
+1590: .
+1591: Results.
+1592: Tables
+1593: 1
+1594: and
+1595: 2
+1596: report the performance of each method. For temporal consistency, training-free methods generally achieve higher VOC than VROC, indicating that they can better capture forward task progression than deviations from successful completion. A similar pattern is observed for pretrained reward models. Although downstream fine-tuning substantially improves their performance, their VROC remains much lower than VOC. This may stem from their strong reliance on expert demonstrations, which provide limited information about how policy rollouts deviate from successful completion. Consequently, the learned rewards tend to provide less informative feedback on failed rollouts, which may limit their ability to guide policies to learn from failures. In comparison, eVTA
+1597: 0
+1598: , despite being trained solely on mixed-quality policy rollouts without expert demonstrations, performs consistently well in both metrics. It achieves the best average VROC on both LIBERO and MetaWorld, while achieving the second-best and best average VOC, respectively. More importantly, when evaluated directly on mixed-quality policy rollouts, eVTA
+1599: 0
+1600: also achieves the best average MSE and Kendall’s
+1601: τ
+1602: a
+1603: \tau_{a}
+1604: . These results show that eVTA
+1605: 0
+1606: better distinguishes successful and failed trajectories while providing more accurate estimates of terminal success likelihood. This capability is particularly important for RL policy learning, where collected trajectories naturally contain a mixture of successful, suboptimal, and failed rollouts.
+1607: Table 2:
+1608: MSE and Kendall’s
+1609: τ
+1610: a
+1611: \tau_{a}
+1612: results on LIBERO and MetaWorld. The best and second-best average results of each benchmark are shown in bold and underlined, respectively.
+1613: LIBERO
+1614: MSE
+1615: (
+1616: ↓
+1617: \downarrow
+1618: Better)
+1619: Kendall’s
+1620: τ
+1621: a
+1622: \tau_{a}
+1623: (
+1624: ↑
+1625: \uparrow
+1626: Better)
+1627: Method
+1628: Spatial
+1629: Object
+1630: Goal
+1631: Long
+1632: Avg.
+1633: Spatial
+1634: Object
+1635: Goal
+1636: Long
+1637: Avg.
+1638: GVL (Qwen3-VL-4B)
+1639: 0.66
+1640: 0.54
+1641: 0.39
+1642: 0.44
+1643: 0.51
+1644: 0.00
+1645: 0.73
+1646: 0.13
+1647: 0.00
+1648: 0.21
+1649: GVL (Qwen3-VL-8B)
+1650: 0.72
+1651: 0.76
+1652: 0.50
+1653: 0.43
+1654: 0.60
+1655: -0.17
+1656: 0.00
+1657: 0.18
+1658: 0.02
+1659: 0.01
+1660: GVL (GPT-5)
+1661: 0.64
+1662: 0.49
+1663: 0.40
+1664: 0.40
+1665: 0.48
+1666: 0.37
+1667: 0.60
+1668: 0.30
+1669: -0.05
+1670: 0.31
+1671: TOPReward (Qwen3-VL-4B)
+1672: 0.73
+1673: 0.76
+1674: 0.53
+1675: 0.56
+1676: 0.64
+1677: -0.27
+1678: 0.62
+1679: 0.21
+1680: 0.25
+1681: 0.20
+1682: TOPReward (Qwen3-VL-8B)
+1683: 0.73
+1684: 0.76
+1685: 0.53
+1686: 0.56
+1687: 0.64
+1688: -0.13
+1689: 0.33
+1690: 0.34
+1691: 0.33
+1692: 0.22
+1693: VLAC-2B
+1694: 0.72
+1695: 0.71
+1696: 0.52
+1697: 0.56
+1698: 0.63
+1699: 0.00
+1700: 0.08
+1701: 0.02
+1702: -0.02
+1703: 0.02
+1704: VLAC-2B (Fine-tuned)
+1705: 0.62
+1706: 0.73
+1707: 0.47
+1708: 0.51
+1709: 0.58
+1710: 0.49
+1711: 0.10
+1712: 0.21
+1713: 0.07
+1714: 0.22
+1715: VLAC-8B
+1716: 0.72
+1717: 0.72
+1718: 0.51
+1719: 0.55
+1720: 0.63
+1721: -0.10
+1722: 0.10
+1723: 0.05
+1724: -0.08
+1725: -0.01
+1726: VLAC-8B (Fine-tuned)
+1727: 0.53
+1728: 0.70
+1729: 0.44
+1730: 0.51
+1731: 0.54
+1732: 0.51
+1733: 0.13
+1734: 0.28
+1735: 0.00
+1736: 0.23
+1737: Robometer-4B
+1738: 0.25
+1739: 0.22
+1740: 0.19
+1741: 0.17
+1742: 0.21
+1743: 0.22
+1744: 0.09
+1745: -0.02
+1746: -0.16
+1747: 0.03
+1748: Robometer-4B (Fine-tuned)
+1749: 0.07
+1750: 0.09
+1751: 0.13
+1752: 0.10
+1753: 0.10
+1754: 0.77
+1755: 0.77
+1756: 0.96
+1757: 0.90
+1758: 0.85
+1759: eVTA
+1760: 0
+1761: (Qwen3-VL-4B)
+1762: 0.06
+1763: 0.03
+1764: 0.07
+1765: 0.08
+1766: 0.06
+1767: 0.98
+1768: 1.00
+1769: 1.00
+1770: 0.93
+1771: 0.98
+1772: MetaWorld
+1773: MSE
+1774: (
+1775: ↓
+1776: \downarrow
+1777: Better)
+1778: Kendall’s
+1779: τ
+1780: a
+1781: \tau_{a}
+1782: (
+1783: ↑
+1784: \uparrow
+1785: Better)
+1786: Method
+1787: Easy
+1788: Medium
+1789: Hard
+1790: Very Hard
+1791: Avg.
+1792: Easy
+1793: Medium
+1794: Hard
+1795: Very Hard
+1796: Avg.
+1797: GVL (Qwen3-VL-4B)
+1798: 0.34
+1799: 0.48
+1800: 0.39
+1801: 0.47
+1802: 0.42
+1803: 0.31
+1804: -0.12
+1805: 0.19
+1806: -0.31
+1807: 0.02
+1808: GVL (Qwen3-VL-8B)
+1809: 0.46
+1810: 0.51
+1811: 0.39
+1812: 0.50
+1813: 0.47
+1814: 0.30
+1815: -0.16
+1816: 0.43
+1817: -0.26
+1818: 0.08
+1819: GVL (GPT-5)
+1820: 0.22
+1821: 0.32
+1822: 0.26
+1823: 0.36
+1824: 0.29
+1825: 0.80
+1826: 0.02
+1827: 0.57
+1828: 0.15
+1829: 0.39
+1830: TOPReward (Qwen3-VL-4B)
+1831: 0.63
+1832: 0.68
+1833: 0.60
+1834: 0.62
+1835: 0.63
+1836: 0.16
+1837: -0.10
+1838: 0.45
+1839: 0.07
+1840: 0.14
+1841: TOPReward (Qwen3-VL-8B)
+1842: 0.63
+1843: 0.68
+1844: 0.60
+1845: 0.62
+1846: 0.63
+1847: 0.73
+1848: 0.19
+1849: 0.82
+1850: 0.53
+1851: 0.57
+1852: VLAC-2B
+1853: 0.61
+1854: 0.68
+1855: 0.60
+1856: 0.62
+1857: 0.63
+1858: 0.22
+1859: 0.00
+1860: 0.07
+1861: 0.02
+1862: 0.08
+1863: VLAC-2B (Fine-tuned)
+1864: 0.60
+1865: 0.62
+1866: 0.59
+1867: 0.60
+1868: 0.60
+1869: 0.47
+1870: 0.41
+1871: 0.43
+1872: 0.66
+1873: 0.49
+1874: VLAC-8B
+1875: 0.63
+1876: 0.68
+1877: 0.60
+1878: 0.62
+1879: 0.63
+1880: 0.02
+1881: 0.00
+1882: 0.07
+1883: 0.14
+1884: 0.06
+1885: VLAC-8B (Fine-tuned)
+1886: 0.61
+1887: 0.61
+1888: 0.56
+1889: 0.57
+1890: 0.59
+1891: 0.38
+1892: 0.40
+1893: 0.47
+1894: 0.41
+1895: 0.42
+1896: Robometer-4B
+1897: 0.17
+1898: 0.23
+1899: 0.14
+1900: 0.26
+1901: 0.20
+1902: 0.73
+1903: 0.30
+1904: 0.78
+1905: 0.05
+1906: 0.47
+1907: Robometer-4B (Fine-tuned)
+1908: 0.08
+1909: 0.08
+1910: 0.14
+1911: 0.22
+1912: 0.13
+1913: 0.80
+1914: 0.63
+1915: 0.88
+1916: 0.30
+1917: 0.65
+1918: eVTA
+1919: 0
+1920: (Qwen3-VL-4B)
+1921: 0.02
+1922: 0.05
+1923: 0.03
+1924: 0.06
+1925: 0.04
+1926: 1.00
+1927: 0.84
+1928: 1.00
+1929: 0.93
+1930: 0.94
+1931: Figure 3:
+1932: Qualitative comparison on successful and failed trajectories under the same task.
+1933: Qualitative comparison.
+1934: Figure
+1935: 3
+1936: further visualizes the predictions of eVTA
+1937: 0
+1938: , Robometer, and GVL (GPT-5) for two trajectories of different outcomes under the same manipulation task.
+1939: For the successful trajectory, eVTA
+1940: 0
+1941: remains conservative during early manipulation and sharply increases its predicted success probability once the bowl is reliably moved toward and placed on the plate, eventually approaching one at task completion. For the failed trajectory, eVTA
+1942: 0
+1943: initially increases its prediction when the robot successfully grasps and lifts the bowl, but decreases after the placement becomes unstable and remains low when the bowl is eventually tipped over. In contrast, Robometer continues to assign high scores even after the failed trajectory deviates from successful completion, while GVL produces substantially noisier predictions.
+1944: These results show that eVTA
+1945: 0
+1946: better tracks the actual evolution of task success throughout policy rollouts.
+1947: 4.2
+1948: Policy Learning
+1949: Figure 4:
+1950: Policy performance with different rewards under the same RL training budget.
+1951: Figure 5:
+1952: Real-world success rates across RLER rounds compared with SFT and fixed eVTA
+1953: 0
+1954: .
+1955: Setup.
+1956: We evaluate whether eVTA
+1957: 0
+1958: can effectively improve RL-based policy learning on LIBERO task suites, covering diverse manipulation settings and long-horizon tasks. We use
+1959: π
+1960: 0.5
+1961: \pi_{0.5}
+1962: (
+1963: Intelligence et al., 2025b
+1964: )
+1965: as the base policy
+1966: 2
+1967: 2
+1968: 2
+1969: We use the
+1970: π
+1971: 0.5
+1972: \pi_{0.5}
+1973: checkpoint from RLinf
+1974: (
+1975: Yu et al., 2026
+1976: )
+1977: (
+1978: https://huggingface.co/RLinf/RLinf-Pi05-LIBERO-SFT
+1979: ), fine-tuned on LIBERO with 40 demonstrations in total across all tasks.
+1980: and GRPO as the RL algorithm, and compare eVTA
+1981: 0
+1982: with binary reward, the handcrafted reward used in
+1983: π
+1984: 0.6
+1985: ⋆
+1986: \pi_{0.6}^{\star}
+1987: (
+1988: Intelligence et al., 2025a
+1989: )
+1990: , and Robometer. The SFT policy before RL is also reported as a reference.
+1991: All methods are trained under the same budget of 6,400 interaction episodes with identical RL configurations, allowing us to compare policy improvement and sample efficiency under a controlled setting.
+1992: More details are provided in Appendix
+1993: C.2
+1994: .
+1995: Results.
+1996: Figure
+1997: 4
+1998: reports the policy performance after RL training with different reward signals. eVTA
+1999: 0
+2000: achieves the best average success rate on all task suites, corresponding to absolute improvements of
+2001: 13.8
+2002: %
+2003: 13.8\%
+2004: ,
+2005: 5.6
+2006: %
+2007: 5.6\%
+2008: ,
+2009: 5.4
+2010: %
+2011: 5.4\%
+2012: , and
+2013: 10.8
+2014: %
+2015: 10.8\%
+2016: on LIBERO-Spatial, LIBERO-Object, LIBERO-Goal, and LIBERO-Long over the SFT policy, respectively. In particular, the advantage is more evident on more challenging, long-horizon task suite LIBERO-Long. Handcrafted rewards yield only
+2017: +
+2018: 2.2
+2019: %
+2020: +2.2\%
+2021: changes over SFT, while binary rewards and Robometer result in
+2022: 1.4
+2023: %
+2024: 1.4\%
+2025: and
+2026: 13.8
+2027: %
+2028: 13.8\%
+2029: degradations, respectively. In contrast, eVTA
+2030: 0
+2031: improves the success rate by
+2032: 10.8
+2033: %
+2034: 10.8\%
+2035: . The task-wise results also show that eVTA
+2036: 0
+2037: maintains a more balanced performance across different tasks, whereas other rewards exhibit large performance variations across tasks. The relatively weak RL performance of Robometer is also consistent with its less favorable reward-quality results on mixed-quality rollouts, suggesting that reward quality on policy-generated data can be important for effective policy learning.
+2038: These results show that eVTA
+2039: 0
+2040: provides consistently effective reward guidance across diverse settings and enables more sample-efficient policy learning under the same training budget.
+2041: 4.3
+2042: Reward Evolution
+2043: Setup.
+2044: We evaluate whether reward learning can adapt alongside policy optimization through RLER in real-world manipulation tasks. Starting from the SFT policy, RLER alternates between adapting eVTA
+2045: 0
+2046: with newly collected rollouts and optimizing the policy using IQL. We compare against a fixed eVTA
+2047: 0
+2048: trained on the same accumulated rollout data, with matched data and policy-training budgets within each task. We report both in-distribution (ID) and out-of-distribution (OOD) performance. More details are available in Appendix
+2049: C.3
+2050: .
+2051: Results.
+2052: Figure
+2053: 5
+2054: shows that RLER consistently improves policy performance over successive learning rounds. Across real-world tasks, RLER improves the overall success rate by
+2055: 20
+2056: %
+2057: 20\%
+2058: –
+2059: 26
+2060: %
+2061: 26\%
+2062: over the initial SFT policy and outperforms the fixed eVTA
+2063: 0
+2064: baseline by
+2065: 8
+2066: %
+2067: 8\%
+2068: –
+2069: 12
+2070: %
+2071: 12\%
+2072: , with particularly clear gains under OOD conditions. Notably, these improvements are achieved under matched data and policy-training budgets, suggesting that the benefit comes from adapting reward feedback as the policy evolves.
+2073: Conceptually, RLER transforms eVTA
+2074: 0
+2075: from a static evaluator into an adaptive teacher that follows the policy’s learning frontier: as the policy encounters new behaviors and failure modes, its own rollouts refine the reward feedback, allowing the learning signal to evolve with the learner. This property is especially valuable for real-world RL, where reliable reward models are difficult to obtain beforehand and early policy rollouts are often imperfect. RLER enables reward learning to start from such imperfect experience and progressively improve alongside the policy.
+2076: 5
+2077: Conclusion
+2078: In this work, we explore a new paradigm for reward learning where reward feedback can be learned directly from policy rollouts rather than relying on expert demonstrations.
+2079: We show that sparse terminal outcomes implicitly define dense success-probability feedback, and build eVTA
+2080: 0
+2081: to learn such feedback directly from mixed-quality policy rollouts without expert demonstrations or intermediate labels. Furthermore, we introduce RLER, which allows reward feedback to adapt alongside policy optimization. Experiments across simulation and real-world manipulation tasks show that eVTA
+2082: 0
+2083: provides more reliable reward signals and improves policy learning, while RLER further enables reward learning to evolve with the policy. We hope this work provides a simple yet effective foundation toward scalable reward learning for generalist robot policies, where rewards can be learned from experience and adapt as the policy evolves.
+2084: AI Use Statement
+2085: In this work, we used generative AI tools for assisting in the writing of proofs, providing feedback on research experiments, and assisting with method implementation. We have not used generative AI tools for other tasks with required disclosure, and the rest of the required disclosure tasks are not applicable to this work. Additionally, we used generative AI tools for suggesting experimental parameters, polishing the research paper to improve readability, and creating or modifying experimental figures or tables. We have reviewed all AI-assisted work. AI-assisted proofs and experimental suggestions were carefully examined by the authors, AI-assisted code was verified and tested for correctness, and AI-assisted figures and tables were manually checked against the corresponding experimental results. We take responsibility for the final content of this work, including text, claims or artifacts produced with the aid of generative AI.
+2086: Ethics Statement
+2087: This work does not involve human subjects, personally identifiable information, or other ethical concerns requiring specific discussion.
+2088: Reproducibility Statement
+2089: We provide the methodological and experimental details necessary to facilitate reproduction of our results. The formulation of eVTA
+2090: 0
+2091: , its TD-style training procedure, and its integration into RL are described in Section
+2092: 3
+2093: . Complete proofs of the theoretical results are provided in Appendix
+2094: A
+2095: . Appendix
+2096: B
+2097: further details the design and training of eVTA
+2098: 0
+2099: , including the instruction prompt, training algorithm, and dataset augmentation strategy. Appendix
+2100: C
+2101: describes the experimental setups, including datasets, baselines, eVTA
+2102: 0
+2103: implementation, model configurations, training hyperparameters, and evaluation settings. Additional ablation studies, qualitative analyses, and detailed experimental results are reported in Appendix
+2104: D
+2105: . Appendix
+2106: E
+2107: provides additional discussion and analysis of the design and properties of eVTA
+2108: 0
+2109: . We also plan to release the source code, the training and evaluation data generated in this work, and the trained model checkpoints to further facilitate reproducibility.
+2110: References
+2111: Bai
+2112: et al.
+2113: (2025a)
+2114: S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge,
+2115: et al.
+2116: Qwen3-vl technical report
+2117: .
+2118: arXiv preprint arXiv:2511.21631
+2119: .
+2120: Cited by:
+2121: §C.1
+2122: .
+2123: Bai
+2124: et al.
+2125: (2025b)
+2126: Z. Bai, C. Gao, and M. Z. Shou
+2127: EVOLVE-vla: test-time training from environment feedback for vision-language-action models
+2128: .
+2129: arXiv preprint arXiv:2512.14666
+2130: .
+2131: Cited by:
+2132: §1
+2133: .
+2134: Black
+2135: et al.
+2136: (2024)
+2137: K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter,
+2138: et al.
+2139: π
+2140: 0
+2141: \pi_{0}
+2142: : A vision-language-action flow model for general robot control
+2143: .
+2144: arXiv preprint arXiv:2410.24164
+2145: .
+2146: Cited by:
+2147: §C.1
+2148: .
+2149: Cen
+2150: et al.
+2151: (2025)
+2152: J. Cen, C. Yu, H. Yuan, Y. Jiang, S. Huang, J. Guo, X. Li, Y. Song, H. Luo, F. Wang,
+2153: et al.
+2154: Worldvla: towards autoregressive action world model
+2155: .
+2156: arXiv preprint arXiv:2506.21539
+2157: .
+2158: Cited by:
+2159: §1
+2160: .
+2161: Chen
+2162: et al.
+2163: (2026a)
+2164: J. Chen, K. Wang, K. Chen, S. Chen, F. Gao, W. Tang, Z. Li, W. Liu, Z. Yao, B. Li,
+2165: et al.
+2166: LaWAM: latent world action models for efficient dynamics-aware robot policies
+2167: .
+2168: arXiv preprint arXiv:2606.15768
+2169: .
+2170: Cited by:
+2171: §1
+2172: .
+2173: Chen
+2174: et al.
+2175: (2025a)
+2176: K. Chen, Z. Liu, T. Zhang, Z. Guo, S. Xu, H. Lin, H. Zang, X. Li, Q. Zhang, Z. Yu,
+2177: et al.
+2178: π
+2179: R
+2180: ​
+2181: L
+2182: \pi_{RL}
+2183: : Online rl fine-tuning for flow-based vision-language-action models
+2184: .
+2185: arXiv preprint arXiv:2510.25889
+2186: .
+2187: Cited by:
+2188: §C.1
+2189: ,
+2190: §C.2
+2191: .
+2192: Chen
+2193: et al.
+2194: (2025b)
+2195: Q. Chen, J. Yu, M. Schwager, P. Abbeel, Y. Shentu, and P. Wu
+2196: SARM: stage-aware reward modeling for long horizon robot manipulation
+2197: .
+2198: arXiv preprint arXiv:2509.25358
+2199: .
+2200: Cited by:
+2201: §2
+2202: .
+2203: Chen
+2204: et al.
+2205: (2026b)
+2206: S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna
+2207: Topreward: token probabilities as hidden zero-shot rewards for robotics
+2208: .
+2209: arXiv preprint arXiv:2602.19313
+2210: .
+2211: Cited by:
+2212: §2
+2213: ,
+2214: §4.1
+2215: .
+2216: Chen
+2217: et al.
+2218: (2025c)
+2219: Y. Chen, S. Tian, S. Liu, Y. Zhou, H. Li, and D. Zhao
+2220: Conrft: a reinforced fine-tuning method for vla models via consistency policy
+2221: .
+2222: arXiv preprint arXiv:2502.05450
+2223: .
+2224: Cited by:
+2225: §1
+2226: .
+2227: Cobbe
+2228: et al.
+2229: (2020)
+2230: K. Cobbe, C. Hesse, J. Hilton, and J. Schulman
+2231: Leveraging procedural generation to benchmark reinforcement learning
+2232: .
+2233: In
+2234: International conference on machine learning
+2235: ,
+2236: pp. 2048–2056
+2237: .
+2238: Cited by:
+2239: §2
+2240: .
+2241: Din
+2242: et al.
+2243: (2025)
+2244: M. U. Din, W. Akram, L. S. Saoud, J. Rosell, and I. Hussain
+2245: Vision language action models in robotic manipulation: a systematic review
+2246: .
+2247: arXiv preprint arXiv:2507.10672
+2248: .
+2249: Cited by:
+2250: §1
+2251: .
+2252: Escoriza
+2253: et al.
+2254: (2025)
+2255: A. L. Escoriza, N. Hansen, S. Tao, T. Mu, and H. Su
+2256: Multi-stage manipulation with demonstration-augmented reward, policy, and world model learning
+2257: .
+2258: arXiv preprint arXiv:2503.01837
+2259: .
+2260: Cited by:
+2261: §2
+2262: .
+2263: Fei
+2264: et al.
+2265: (2026)
+2266: S. Fei, S. Wang, L. Ji, A. Li, S. Zhang, L. Liu, J. Hou, J. Gong, X. Zhao, and X. Qiu
+2267: Srpo: self-referential policy optimization for vision-language-action models
+2268: .
+2269: In
+2270: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+2271: ,
+2272: pp. 6718–6728
+2273: .
+2274: Cited by:
+2275: Appendix B
+2276: .
+2277: Fei
+2278: et al.
+2279: (2025)
+2280: S. Fei, S. Wang, J. Shi, Z. Dai, J. Cai, P. Qian, L. Ji, X. He, S. Zhang, Z. Fei,
+2281: et al.
+2282: Libero-plus: in-depth robustness analysis of vision-language-action models
+2283: .
+2284: arXiv preprint arXiv:2510.13626
+2285: .
+2286: Cited by:
+2287: §1
+2288: ,
+2289: §4.1
+2290: .
+2291: Guo
+2292: et al.
+2293: (2025)
+2294: D. Guo, D. Yang, H. Zhang, J. Song, P. Wang, Q. Zhu, R. Xu, R. Zhang, S. Ma, X. Bi,
+2295: et al.
+2296: Deepseek-r1: incentivizing reasoning capability in llms via reinforcement learning
+2297: .
+2298: arXiv preprint arXiv:2501.12948
+2299: .
+2300: Cited by:
+2301: §3.3
+2302: .
+2303: Hu
+2304: et al.
+2305: (2021)
+2306: E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen
+2307: Lora: low-rank adaptation of large language models
+2308: .
+2309: arXiv preprint arXiv:2106.09685
+2310: .
+2311: Cited by:
+2312: §C.1
+2313: .
+2314: Huang
+2315: et al.
+2316: (2026)
+2317: D. Huang, H. Zhang, B. Hou, S. Huang, Z. Su, H. Guo, T. Lu, Z. Xu, J. Tang, J. Yang,
+2318: et al.
+2319: RynnValue: scaling robotic value foundation models with temporal distance
+2320: .
+2321: arXiv preprint arXiv:2608.09853
+2322: .
+2323: Cited by:
+2324: §2
+2325: .
+2326: Hung
+2327: et al.
+2328: (2025)
+2329: C. Hung, N. Majumder, H. Deng, L. Renhang, Y. Ang, A. Zadeh, C. Li, D. Herremans, Z. Wang, and S. Poria
+2330: Nora-1.5: a vision-language-action model trained using world model-and action-based preference rewards
+2331: .
+2332: arXiv preprint arXiv:2511.14659
+2333: .
+2334: Cited by:
+2335: §2
+2336: .
+2337: Intelligence
+2338: et al.
+2339: (2025a)
+2340: P. Intelligence, A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo,
+2341: et al.
+2342: π
+2343: ∗
+2344: 0.6
+2345: \pi*_{0.6}
+2346: : A vla that learns from experience
+2347: .
+2348: arXiv preprint arXiv:2511.14759
+2349: .
+2350: Cited by:
+2351: §1
+2352: ,
+2353: §3.3
+2354: ,
+2355: §4.2
+2356: .
+2357: Intelligence
+2358: et al.
+2359: (2025b)
+2360: P. Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai,
+2361: et al.
+2362: π
+2363: 0.5
+2364: \pi_{0.5}
+2365: : A vision-language-action model with open-world generalization
+2366: .
+2367: arXiv preprint arXiv:2504.16054
+2368: .
+2369: Cited by:
+2370: §4.2
+2371: .
+2372: Kasdin
+2373: et al.
+2374: (2025)
+2375: J. Kasdin, A. Duffy, N. Nadler, A. Raha, A. L. Fairhall, K. L. Stachenfeld, and V. Gadagkar
+2376: Natural behaviour is learned through dopamine-mediated reinforcement
+2377: .
+2378: Nature
+2379: 641
+2380: (
+2381: 8063
+2382: ),
+2383: pp. 699–706
+2384: .
+2385: Cited by:
+2386: §D.2
+2387: .
+2388: Kim
+2389: et al.
+2390: (2024)
+2391: M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. Foster, G. Lam, P. Sanketi,
+2392: et al.
+2393: Openvla: an open-source vision-language-action model
+2394: .
+2395: arXiv preprint arXiv:2406.09246
+2396: .
+2397: Cited by:
+2398: §1
+2399: .
+2400: Kostrikov
+2401: et al.
+2402: (2021)
+2403: I. Kostrikov, A. Nair, and S. Levine
+2404: Offline reinforcement learning with implicit q-learning
+2405: .
+2406: arXiv preprint arXiv:2110.06169
+2407: .
+2408: Cited by:
+2409: §3.3
+2410: .
+2411: Lee
+2412: et al.
+2413: (2026)
+2414: T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+2415: RoboReward: general-purpose vision-language reward models for robotics
+2416: .
+2417: arXiv preprint arXiv:2601.00675
+2418: .
+2419: Cited by:
+2420: §1
+2421: ,
+2422: §2
+2423: .
+2424: Li
+2425: et al.
+2426: (2025a)
+2427: B. Li, D. Wu, Z. Yan, X. Liu, Z. Zeng, L. Li, and H. Zha
+2428: Reflection-based task adaptation for self-improving vla
+2429: .
+2430: arXiv preprint arXiv:2510.12710
+2431: .
+2432: Cited by:
+2433: §2
+2434: .
+2435: Li
+2436: et al.
+2437: (2025b)
+2438: H. Li, Y. Zuo, J. Yu, Y. Zhang, Z. Yang, K. Zhang, X. Zhu, Y. Zhang, T. Chen, G. Cui,
+2439: et al.
+2440: Simplevla-rl: scaling vla training via reinforcement learning
+2441: .
+2442: arXiv preprint arXiv:2509.09674
+2443: .
+2444: Cited by:
+2445: §1
+2446: .
+2447: Li
+2448: et al.
+2449: (2025c)
+2450: H. Li, P. Ding, R. Suo, Y. Wang, Z. Ge, D. Zang, K. Yu, M. Sun, H. Zhang, D. Wang,
+2451: et al.
+2452: Vla-rft: vision-language-action reinforcement fine-tuning with verified rewards in world simulators
+2453: .
+2454: arXiv preprint arXiv:2510.00406
+2455: .
+2456: Cited by:
+2457: §2
+2458: .
+2459: Li
+2460: et al.
+2461: (2024)
+2462: Q. Li, Y. Liang, Z. Wang, L. Luo, X. Chen, M. Liao, F. Wei, Y. Deng, S. Xu, Y. Zhang,
+2463: et al.
+2464: Cogact: a foundational vision-language-action model for synergizing cognition and action in robotic manipulation
+2465: .
+2466: arXiv preprint arXiv:2411.19650
+2467: .
+2468: Cited by:
+2469: §1
+2470: .
+2471: Li
+2472: et al.
+2473: (2025d)
+2474: Y. Li, X. Ma, J. Xu, Y. Cui, Z. Cui, Z. Han, L. Huang, T. Kong, Y. Liu, H. Niu,
+2475: et al.
+2476: Gr-rl: going dexterous and precise for long-horizon robotic manipulation
+2477: .
+2478: arXiv preprint arXiv:2512.01801
+2479: .
+2480: Cited by:
+2481: §1
+2482: .
+2483: Liang
+2484: et al.
+2485: (2026)
+2486: A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox,
+2487: et al.
+2488: Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+2489: .
+2490: arXiv preprint arXiv:2603.02115
+2491: .
+2492: Cited by:
+2493: §C.1
+2494: ,
+2495: §C.1
+2496: ,
+2497: §2
+2498: ,
+2499: §4.1
+2500: .
+2501: Liu
+2502: et al.
+2503: (2026a)
+2504: C. Liu, Y. Liu, T. Wang, Q. Zhuang, J. C. Liang, W. Yang, R. Xu, Q. Wang, D. Liu, and C. Han
+2505: On-the-fly vla adaptation via test-time reinforcement learning
+2506: .
+2507: arXiv preprint arXiv:2601.06748
+2508: .
+2509: Cited by:
+2510: §1
+2511: .
+2512: Liu
+2513: et al.
+2514: (2026b)
+2515: X. Liu, Z. Bai, H. Ci, K. Y. Ma, and M. Z. Shou
+2516: World-vla-loop: closed-loop learning of video world model and vla policy
+2517: .
+2518: arXiv preprint arXiv:2602.06508
+2519: .
+2520: Cited by:
+2521: §2
+2522: .
+2523: Liu
+2524: et al.
+2525: (2026c)
+2526: X. Liu, Y. Li, Y. Chen, Y. Qin, H. Li, and D. Zhao
+2527: Dual-granularity contrastive reward via generated episodic guidance for efficient embodied rl
+2528: .
+2529: arXiv preprint arXiv:2602.12636
+2530: .
+2531: Cited by:
+2532: §2
+2533: .
+2534: Liu
+2535: et al.
+2536: (2026d)
+2537: Y. Liu, H. Li, S. Tian, Y. Qin, Y. Chen, Y. Zheng, Y. Huang, and D. Zhao
+2538: Towards long-lived robots: continual learning vla models via reinforcement fine-tuning
+2539: .
+2540: arXiv preprint arXiv:2602.10503
+2541: .
+2542: Cited by:
+2543: §2
+2544: .
+2545: Lu
+2546: et al.
+2547: (2025)
+2548: G. Lu, W. Guo, C. Zhang, Y. Zhou, H. Jiang, Z. Gao, Y. Tang, and Z. Wang
+2549: Vla-rl: towards masterful and general robotic manipulation with scalable reinforcement learning
+2550: .
+2551: arXiv preprint arXiv:2505.18719
+2552: .
+2553: Cited by:
+2554: §1
+2555: ,
+2556: §2
+2557: .
+2558: Luo
+2559: et al.
+2560: (2025)
+2561: J. Luo, C. Xu, J. Wu, and S. Levine
+2562: Precise and dexterous robotic manipulation via human-in-the-loop reinforcement learning
+2563: .
+2564: Science Robotics
+2565: 10
+2566: (
+2567: 105
+2568: ),
+2569: pp. eads5033
+2570: .
+2571: Cited by:
+2572: §1
+2573: .
+2574: Ma
+2575: et al.
+2576: (2024)
+2577: Y. J. Ma, J. Hejna, C. Fu, D. Shah, J. Liang, Z. Xu, S. Kirmani, P. Xu, D. Driess, T. Xiao,
+2578: et al.
+2579: Vision language models are in-context value learners
+2580: .
+2581: In
+2582: The Thirteenth International Conference on Learning Representations
+2583: ,
+2584: Cited by:
+2585: §C.1
+2586: ,
+2587: §2
+2588: ,
+2589: §4.1
+2590: .
+2591: Mu
+2592: et al.
+2593: (2024)
+2594: T. Mu, M. Liu, and H. Su
+2595: Drs: learning reusable dense rewards for multi-stage tasks
+2596: .
+2597: In
+2598: International Conference on Learning Representations
+2599: ,
+2600: Vol.
+2601: 2024
+2602: ,
+2603: pp. 8470–8482
+2604: .
+2605: Cited by:
+2606: §1
+2607: ,
+2608: §2
+2609: .
+2610: Pan
+2611: et al.
+2612: (2026)
+2613: X. Pan, Z. Wan, X. Yu, X. Zheng, Y. Ke, M. Sun, R. Wang, Z. Wang, and I. Tsang
+2614: SA-vla: spatially-aware flow-matching for vision-language-action reinforcement learning
+2615: .
+2616: arXiv preprint arXiv:2602.00743
+2617: .
+2618: Cited by:
+2619: §2
+2620: .
+2621: Rengarajan
+2622: et al.
+2623: (2022)
+2624: D. Rengarajan, G. Vaidya, A. Sarvesh, D. Kalathil, and S. Shakkottai
+2625: Reinforcement learning with sparse rewards using guidance from offline demonstration
+2626: .
+2627: arXiv preprint arXiv:2202.04628
+2628: .
+2629: Cited by:
+2630: §1
+2631: .
+2632: Schulman
+2633: et al.
+2634: (2017)
+2635: J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov
+2636: Proximal policy optimization algorithms
+2637: .
+2638: arXiv preprint arXiv:1707.06347
+2639: .
+2640: Cited by:
+2641: §3.3
+2642: .
+2643: Sermanet
+2644: et al.
+2645: (2024)
+2646: P. Sermanet, T. Ding, J. Zhao, F. Xia, D. Dwibedi, K. Gopalakrishnan, C. Chan, G. Dulac-Arnold, S. Maddineni, N. J. Joshi,
+2647: et al.
+2648: Robovqa: multimodal long-horizon reasoning for robotics
+2649: .
+2650: In
+2651: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+2652: ,
+2653: pp. 645–652
+2654: .
+2655: Cited by:
+2656: §1
+2657: .
+2658: Shu
+2659: et al.
+2660: (2025)
+2661: J. Shu, Z. Lin, and Y. Wang
+2662: Rftf: reinforcement fine-tuning for embodied agents with temporal feedback
+2663: .
+2664: arXiv preprint arXiv:2505.19767
+2665: .
+2666: Cited by:
+2667: §1
+2668: .
+2669: Tan
+2670: et al.
+2671: (2025)
+2672: H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co,
+2673: et al.
+2674: Robo-dopamine: general process reward modeling for high-precision robotic manipulation
+2675: .
+2676: arXiv preprint arXiv:2512.23703
+2677: .
+2678: Cited by:
+2679: §2
+2680: ,
+2681: §2
+2682: .
+2683: Team
+2684: et al.
+2685: (2026)
+2686: G. Team, B. Wang, C. Ni, G. Huang, G. Zhao, H. Li, J. Li, J. Lv, J. Liu, L. Feng,
+2687: et al.
+2688: GigaBrain-0.5 m*: a vla that learns from world model-based reinforcement learning
+2689: .
+2690: arXiv preprint arXiv:2602.12099
+2691: .
+2692: Cited by:
+2693: §2
+2694: .
+2695: Walke
+2696: et al.
+2697: (2023)
+2698: H. R. Walke, K. Black, T. Z. Zhao, Q. Vuong, C. Zheng, P. Hansen-Estruch, A. W. He, V. Myers, M. J. Kim, M. Du,
+2699: et al.
+2700: Bridgedata v2: a dataset for robot learning at scale
+2701: .
+2702: In
+2703: Conference on robot learning
+2704: ,
+2705: pp. 1723–1736
+2706: .
+2707: Cited by:
+2708: §1
+2709: .
+2710: Wang
+2711: et al.
+2712: (2025)
+2713: S. Wang, T. Xiang, X. Zhou, M. Gui, X. Xie, S. Liu, S. Wang, A. Jin, and Z. Hou
+2714: Vla model post-training via action-chunked ppo and self behavior cloning
+2715: .
+2716: arXiv preprint arXiv:2509.25718
+2717: .
+2718: Cited by:
+2719: §2
+2720: .
+2721: Wang
+2722: et al.
+2723: (2026a)
+2724: Y. Wang, S. Huang, M. Li, C. Zhang, J. Liang, W. Jin, Y. Chen, X. Chi, D. Zhou, Q. Yu, Y. Wang, Y. Rui, S. Yao, Z. Yuan, Z. Shen, K. Zhu, Z. Zhu, N. Gao, X. Chi, G. He, S. Zhang, H. Dong, L. Shao, and H. Zhao
+2725: OpenWAM: an open, modular exploration towards systematic world-action model pretraining
+2726: .
+2727: arXiv preprint arXiv:2609.07398
+2728: .
+2729: Cited by:
+2730: §1
+2731: .
+2732: Wang
+2733: et al.
+2734: (2026b)
+2735: Z. Wang, J. Li, Y. Cui, Y. Gao, X. Zhan, J. Yu, and X. Ma
+2736: World value models for robotic manipulation
+2737: .
+2738: arXiv preprint arXiv:2606.24742
+2739: .
+2740: Cited by:
+2741: §2
+2742: .
+2743: Williams (1991)
+2744: D. Williams
+2745: Probability with martingales
+2746: .
+2747: Cambridge University Press
+2748: .
+2749: Cited by:
+2750: §A.1
+2751: ,
+2752: §A.2
+2753: .
+2754: Xiao
+2755: et al.
+2756: (2025)
+2757: J. Xiao, Y. Yang, X. Chang, R. Chen, F. Xiong, M. Xu, W. Zheng, and Q. Zhang
+2758: World-env: leveraging world model as a virtual environment for vla post-training
+2759: .
+2760: arXiv preprint arXiv:2509.24948
+2761: .
+2762: Cited by:
+2763: §2
+2764: .
+2765: Xu
+2766: et al.
+2767: (2025)
+2768: F. Xu, G. Zhai, X. Kong, T. Fu, D. F. Gordon, X. An, and B. Busam
+2769: STARE-vla: progressive stage-aware reinforcement for fine-tuning vision-language-action models
+2770: .
+2771: arXiv preprint arXiv:2512.05107
+2772: .
+2773: Cited by:
+2774: §1
+2775: ,
+2776: §2
+2777: .
+2778: Ye
+2779: et al.
+2780: (2025)
+2781: A. Ye, Z. Zhang, B. Wang, X. Wang, D. Zhang, and Z. Zhu
+2782: Vla-r1: enhancing reasoning in vision-language-action models
+2783: .
+2784: arXiv preprint arXiv:2510.01623
+2785: .
+2786: Cited by:
+2787: §2
+2788: .
+2789: Yu
+2790: et al.
+2791: (2026)
+2792: C. Yu, Y. Wang, Z. Guo, H. Lin, S. Xu, H. Zang, Q. Zhang, Y. Wu, C. Zhu, J. Hu,
+2793: et al.
+2794: RLinf: flexible and efficient Large-Scale reinforcement learning via Macro-to-Micro flow transformation
+2795: .
+2796: In
+2797: 20th USENIX Symposium on Operating Systems Design and Implementation (OSDI 26)
+2798: ,
+2799: pp. 829–846
+2800: .
+2801: Cited by:
+2802: §C.1
+2803: ,
+2804: footnote 2
+2805: .
+2806: Yu
+2807: et al.
+2808: (2020)
+2809: T. Yu, D. Quillen, Z. He, R. Julian, K. Hausman, C. Finn, and S. Levine
+2810: Meta-world: a benchmark and evaluation for multi-task and meta reinforcement learning
+2811: .
+2812: In
+2813: Conference on robot learning
+2814: ,
+2815: pp. 1094–1100
+2816: .
+2817: Cited by:
+2818: §4.1
+2819: .
+2820: Zhai
+2821: et al.
+2822: (2025)
+2823: S. Zhai, Q. Zhang, T. Zhang, F. Huang, H. Zhang, M. Zhou, S. Zhang, L. Liu, S. Lin, and J. Pang
+2824: A vision-language-action-critic model for robotic real-world reinforcement learning
+2825: .
+2826: arXiv preprint arXiv:2509.15937
+2827: .
+2828: Cited by:
+2829: §C.1
+2830: ,
+2831: §C.1
+2832: ,
+2833: §1
+2834: ,
+2835: §2
+2836: ,
+2837: §4.1
+2838: .
+2839: Zhang
+2840: et al.
+2841: (2025a)
+2842: H. Zhang, Z. Zhuang, H. Zhao, P. Ding, H. Lu, and D. Wang
+2843: ReinboT: amplifying robot visual-language manipulation with reinforcement learning
+2844: .
+2845: In
+2846: Proceedings of the 42nd International Conference on Machine Learning
+2847: ,
+2848: Proceedings of Machine Learning Research
+2849: , Vol.
+2850: 267
+2851: ,
+2852: pp. 77254–77271
+2853: .
+2854: Cited by:
+2855: §2
+2856: .
+2857: Zhang
+2858: et al.
+2859: (2025b)
+2860: J. Zhang, Y. Luo, A. Anwar, S. A. Sontakke, J. J. Lim, J. Thomason, E. Biyik, and J. Zhang
+2861: ReWiND: language-guided rewards teach robot policies without new demonstrations
+2862: .
+2863: In
+2864: Conference on Robot Learning
+2865: ,
+2866: pp. 460–488
+2867: .
+2868: Cited by:
+2869: §2
+2870: .
+2871: Zhou
+2872: et al.
+2873: (2025)
+2874: Z. Zhou, A. Peng, Q. Li, S. Levine, and A. Kumar
+2875: Efficient online reinforcement learning fine-tuning need not retain offline data
+2876: .
+2877: In
+2878: International Conference on Learning Representations
+2879: ,
+2880: Vol.
+2881: 2025
+2882: ,
+2883: pp. 32343–32368
+2884: .
+2885: Cited by:
+2886: §1
+2887: .
+2888: Zhu
+2889: et al.
+2890: (2025)
+2891: F. Zhu, Z. Yan, Z. Hong, Q. Shou, X. Ma, and S. Guo
+2892: Wmpo: world model-based policy optimization for vision-language-action models
+2893: .
+2894: arXiv preprint arXiv:2511.09515
+2895: .
+2896: Cited by:
+2897: §2
+2898: .
+2899: Appendix Contents
+2900: Appendix A
+2901: Proofs of Theorems
+2902: Recall that
+2903: S
+2904: ∈
+2905: {
+2906: 0
+2907: ,
+2908: 1
+2909: }
+2910: S\in\{0,1\}
+2911: denotes the terminal success label of a rollout of length
+2912: T
+2913: T
+2914: ,
+2915: ℱ
+2916: t
+2917: =
+2918: σ
+2919: ⁡
+2920: (
+2921: H
+2922: t
+2923: )
+2924: \mathcal{F}_{t}=\sigma(H_{t})
+2925: is the information revealed by the trajectory prefix up to timestep
+2926: t
+2927: t
+2928: , and
+2929: r
+2930: t
+2931: =
+2932: 𝔼
+2933: π
+2934: ​
+2935: [
+2936: S
+2937: ∣
+2938: ℱ
+2939: t
+2940: ]
+2941: r_{t}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]
+2942: is the success-probability reward of Eq.
+2943: 1
+2944: . We provide the detailed proofs of each theorem as below.
+2945: A.1
+2946: Proof of Theorem
+2947: 1
+2948: Theorem 1
+2949: (Temporal consistency of success-probability rewards)
+2950: .
+2951: The success probability reward defined above satisfies
+2952: r
+2953: t
+2954: =
+2955: 𝔼
+2956: π
+2957: ​
+2958: [
+2959: r
+2960: T
+2961: ∣
+2962: ℱ
+2963: t
+2964: ]
+2965: r_{t}=\mathbb{E}_{\pi}[r_{T}\mid\mathcal{F}_{t}]
+2966: for every
+2967: t
+2968: ≤
+2969: T
+2970: t\leq T
+2971: .
+2972: Moreover, for every
+2973: t
+2974: <
+2975: T
+2976: t<T
+2977: , it satisfies the temporal consistency property:
+2978: 𝔼
+2979: π
+2980: ​
+2981: [
+2982: r
+2983: t
+2984: +
+2985: 1
+2986: ∣
+2987: ℱ
+2988: t
+2989: ]
+2990: =
+2991: r
+2992: t
+2993: .
+2994: \mathbb{E}_{\pi}[r_{t+1}\mid\mathcal{F}_{t}]=r_{t}.
+2995: (
+2996: 2
+2997: )
+2998: Proof.
+2999: Since
+3000: r
+3001: T
+3002: =
+3003: S
+3004: r_{T}=S
+3005: and, by definition,
+3006: r
+3007: t
+3008: =
+3009: 𝔼
+3010: π
+3011: ​
+3012: [
+3013: S
+3014: ∣
+3015: ℱ
+3016: t
+3017: ]
+3018: r_{t}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]
+3019: (Eq.
+3020: 1
+3021: ), we have
+3022: 𝔼
+3023: π
+3024: ​
+3025: [
+3026: r
+3027: T
+3028: ∣
+3029: ℱ
+3030: t
+3031: ]
+3032: =
+3033: 𝔼
+3034: π
+3035: ​
+3036: [
+3037: S
+3038: ∣
+3039: ℱ
+3040: t
+3041: ]
+3042: =
+3043: r
+3044: t
+3045: ,
+3046: \mathbb{E}_{\pi}[r_{T}\mid\mathcal{F}_{t}]=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]=r_{t},
+3047: which proves the first claim.
+3048: For the second claim, recall the tower property of conditional expectation
+3049: (
+3050: Williams, 1991
+3051: )
+3052: : if
+3053: 𝒢
+3054: 1
+3055: ⊆
+3056: 𝒢
+3057: 2
+3058: \mathcal{G}_{1}\subseteq\mathcal{G}_{2}
+3059: and
+3060: X
+3061: X
+3062: is integrable, then:
+3063: 𝔼
+3064: π
+3065: ​
+3066: [
+3067: 𝔼
+3068: π
+3069: ​
+3070: [
+3071: X
+3072: ∣
+3073: 𝒢
+3074: 2
+3075: ]
+3076: ∣
+3077: 𝒢
+3078: 1
+3079: ]
+3080: =
+3081: 𝔼
+3082: π
+3083: ​
+3084: [
+3085: X
+3086: ∣
+3087: 𝒢
+3088: 1
+3089: ]
+3090: .
+3091: \mathbb{E}_{\pi}\left[\mathbb{E}_{\pi}[X\mid\mathcal{G}_{2}]\mid\mathcal{G}_{1}\right]=\mathbb{E}_{\pi}[X\mid\mathcal{G}_{1}].
+3092: Applying this with
+3093: X
+3094: =
+3095: S
+3096: X=S
+3097: ,
+3098: 𝒢
+3099: 1
+3100: =
+3101: ℱ
+3102: t
+3103: \mathcal{G}_{1}=\mathcal{F}_{t}
+3104: , and
+3105: 𝒢
+3106: 2
+3107: =
+3108: ℱ
+3109: t
+3110: +
+3111: 1
+3112: \mathcal{G}_{2}=\mathcal{F}_{t+1}
+3113: (admissible since
+3114: ℱ
+3115: t
+3116: ⊆
+3117: ℱ
+3118: t
+3119: +
+3120: 1
+3121: \mathcal{F}_{t}\subseteq\mathcal{F}_{t+1}
+3122: ), together with the definition of
+3123: r
+3124: t
+3125: +
+3126: 1
+3127: r_{t+1}
+3128: , gives:
+3129: 𝔼
+3130: π
+3131: ​
+3132: [
+3133: r
+3134: t
+3135: +
+3136: 1
+3137: ∣
+3138: ℱ
+3139: t
+3140: ]
+3141: =
+3142: 𝔼
+3143: π
+3144: ​
+3145: [
+3146: 𝔼
+3147: π
+3148: ​
+3149: [
+3150: S
+3151: ∣
+3152: ℱ
+3153: t
+3154: +
+3155: 1
+3156: ]
+3157: ∣
+3158: ℱ
+3159: t
+3160: ]
+3161: =
+3162: 𝔼
+3163: π
+3164: ​
+3165: [
+3166: S
+3167: ∣
+3168: ℱ
+3169: t
+3170: ]
+3171: =
+3172: r
+3173: t
+3174: ,
+3175: \mathbb{E}_{\pi}[r_{t+1}\mid\mathcal{F}_{t}]=\mathbb{E}_{\pi}\left[\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t+1}]\mid\mathcal{F}_{t}\right]=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]=r_{t},
+3176: which completes the proof of Eq.
+3177: 1
+3178: .
+3179: ∎
+3180: A.2
+3181: Proof of Theorem
+3182: 2
+3183: Theorem 2
+3184: (Population consistency of one-step bootstrapping)
+3185: .
+3186: Consider the ideal backward regression defined by the terminal anchor
+3187: p
+3188: T
+3189: ⋆
+3190: :=
+3191: S
+3192: p_{T}^{\star}:=S
+3193: and, for each
+3194: t
+3195: <
+3196: T
+3197: t<T
+3198: :
+3199: p
+3200: t
+3201: ⋆
+3202: ∈
+3203: arg
+3204: ⁡
+3205: min
+3206: g
+3207: ∈
+3208: L
+3209: 2
+3210: ​
+3211: (
+3212: ℱ
+3213: t
+3214: )
+3215: ​
+3216: 𝔼
+3217: π
+3218: ​
+3219: [
+3220: (
+3221: g
+3222: −
+3223: p
+3224: t
+3225: +
+3226: 1
+3227: ⋆
+3228: )
+3229: 2
+3230: ]
+3231: ,
+3232: p_{t}^{\star}\in\arg\min_{g\in L_{2}(\mathcal{F}_{t})}\mathbb{E}_{\pi}\left[\left(g-p_{t+1}^{\star}\right)^{2}\right],
+3233: (
+3234: 3
+3235: )
+3236: where
+3237: L
+3238: 2
+3239: ​
+3240: (
+3241: ℱ
+3242: t
+3243: )
+3244: L_{2}(\mathcal{F}_{t})
+3245: denotes the square-integrable
+3246: ℱ
+3247: t
+3248: \mathcal{F}_{t}
+3249: -measurable candidate predictions. Then the population minimizer
+3250: is unique up to almost-sure equality and satisfies, for every
+3251: t
+3252: ≤
+3253: T
+3254: t\leq T
+3255: :
+3256: p
+3257: t
+3258: ⋆
+3259: =
+3260: r
+3261: t
+3262: =
+3263: 𝔼
+3264: π
+3265: ​
+3266: [
+3267: S
+3268: ∣
+3269: ℱ
+3270: t
+3271: ]
+3272: .
+3273: p_{t}^{\star}=r_{t}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}].
+3274: (
+3275: 4
+3276: )
+3277: Thus, terminal supervision can be propagated backward through ideal one-step
+3278: regression without changing the population success-probability target.
+3279: Proof.
+3280: Because
+3281: S
+3282: ∈
+3283: {
+3284: 0
+3285: ,
+3286: 1
+3287: }
+3288: S\in\{0,1\}
+3289: , each
+3290: r
+3291: t
+3292: =
+3293: 𝔼
+3294: π
+3295: ​
+3296: [
+3297: S
+3298: ∣
+3299: ℱ
+3300: t
+3301: ]
+3302: r_{t}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]
+3303: is bounded and therefore belongs to
+3304: L
+3305: 2
+3306: ​
+3307: (
+3308: ℱ
+3309: t
+3310: )
+3311: L_{2}(\mathcal{F}_{t})
+3312: . Hence all of the regression risks below are finite. We
+3313: prove the claim by backward induction on
+3314: t
+3315: t
+3316: .
+3317: Base case (
+3318: t
+3319: =
+3320: T
+3321: t=T
+3322: ).
+3323: By definition,
+3324: p
+3325: T
+3326: ⋆
+3327: =
+3328: S
+3329: =
+3330: r
+3331: T
+3332: p_{T}^{\star}=S=r_{T}
+3333: almost surely.
+3334: Induction step.
+3335: Fix
+3336: t
+3337: <
+3338: T
+3339: t<T
+3340: and assume the induction hypothesis that
+3341: p
+3342: t
+3343: +
+3344: 1
+3345: ⋆
+3346: =
+3347: r
+3348: t
+3349: +
+3350: 1
+3351: p_{t+1}^{\star}=r_{t+1}
+3352: almost surely. Define:
+3353: m
+3354: t
+3355: :=
+3356: 𝔼
+3357: π
+3358: ​
+3359: [
+3360: p
+3361: t
+3362: +
+3363: 1
+3364: ⋆
+3365: ∣
+3366: ℱ
+3367: t
+3368: ]
+3369: .
+3370: m_{t}:=\mathbb{E}_{\pi}[p_{t+1}^{\star}\mid\mathcal{F}_{t}].
+3371: The variable
+3372: m
+3373: t
+3374: m_{t}
+3375: is
+3376: ℱ
+3377: t
+3378: \mathcal{F}_{t}
+3379: -measurable and lies in
+3380: L
+3381: 2
+3382: ​
+3383: (
+3384: ℱ
+3385: t
+3386: )
+3387: L_{2}(\mathcal{F}_{t})
+3388: . For any
+3389: g
+3390: ∈
+3391: L
+3392: 2
+3393: ​
+3394: (
+3395: ℱ
+3396: t
+3397: )
+3398: g\in L_{2}(\mathcal{F}_{t})
+3399: , since
+3400: g
+3401: −
+3402: p
+3403: t
+3404: +
+3405: 1
+3406: ⋆
+3407: =
+3408: (
+3409: g
+3410: −
+3411: m
+3412: t
+3413: )
+3414: +
+3415: (
+3416: m
+3417: t
+3418: −
+3419: p
+3420: t
+3421: +
+3422: 1
+3423: ⋆
+3424: )
+3425: g-p_{t+1}^{\star}=(g-m_{t})+(m_{t}-p_{t+1}^{\star})
+3426: , expanding the square gives:
+3427: 𝔼
+3428: π
+3429: ​
+3430: [
+3431: (
+3432: g
+3433: −
+3434: p
+3435: t
+3436: +
+3437: 1
+3438: ⋆
+3439: )
+3440: 2
+3441: ]
+3442: =
+3443: \displaystyle\mathbb{E}_{\pi}\!\left[\left(g-p_{t+1}^{\star}\right)^{2}\right]={}
+3444: 𝔼
+3445: π
+3446: ​
+3447: [
+3448: (
+3449: g
+3450: −
+3451: m
+3452: t
+3453: )
+3454: 2
+3455: ]
+3456: +
+3457: 𝔼
+3458: π
+3459: ​
+3460: [
+3461: (
+3462: p
+3463: t
+3464: +
+3465: 1
+3466: ⋆
+3467: −
+3468: m
+3469: t
+3470: )
+3471: 2
+3472: ]
+3473: \displaystyle\mathbb{E}_{\pi}\!\left[(g-m_{t})^{2}\right]+\mathbb{E}_{\pi}\!\left[(p_{t+1}^{\star}-m_{t})^{2}\right]
+3474: +
+3475: 2
+3476: ​
+3477: 𝔼
+3478: π
+3479: ​
+3480: [
+3481: (
+3482: g
+3483: −
+3484: m
+3485: t
+3486: )
+3487: ​
+3488: (
+3489: m
+3490: t
+3491: −
+3492: p
+3493: t
+3494: +
+3495: 1
+3496: ⋆
+3497: )
+3498: ]
+3499: .
+3500: \displaystyle+2\mathbb{E}_{\pi}\!\left[(g-m_{t})(m_{t}-p_{t+1}^{\star})\right].
+3501: For the cross term, we first evaluate the conditional expectation of its
+3502: second factor. By the linearity of conditional expectation, the
+3503: ℱ
+3504: t
+3505: \mathcal{F}_{t}
+3506: -measurability of
+3507: m
+3508: t
+3509: m_{t}
+3510: , and the definition of
+3511: m
+3512: t
+3513: m_{t}
+3514: ,
+3515: 𝔼
+3516: π
+3517: ​
+3518: [
+3519: m
+3520: t
+3521: −
+3522: p
+3523: t
+3524: +
+3525: 1
+3526: ⋆
+3527: ∣
+3528: ℱ
+3529: t
+3530: ]
+3531: =
+3532: 𝔼
+3533: π
+3534: ​
+3535: [
+3536: m
+3537: t
+3538: ∣
+3539: ℱ
+3540: t
+3541: ]
+3542: −
+3543: 𝔼
+3544: π
+3545: ​
+3546: [
+3547: p
+3548: t
+3549: +
+3550: 1
+3551: ⋆
+3552: ∣
+3553: ℱ
+3554: t
+3555: ]
+3556: =
+3557: m
+3558: t
+3559: −
+3560: m
+3561: t
+3562: =
+3563: 0
+3564: .
+3565: \mathbb{E}_{\pi}[m_{t}-p_{t+1}^{\star}\mid\mathcal{F}_{t}]=\mathbb{E}_{\pi}[m_{t}\mid\mathcal{F}_{t}]-\mathbb{E}_{\pi}[p_{t+1}^{\star}\mid\mathcal{F}_{t}]=m_{t}-m_{t}=0.
+3566: Moreover, since
+3567: g
+3568: −
+3569: m
+3570: t
+3571: g-m_{t}
+3572: is
+3573: ℱ
+3574: t
+3575: \mathcal{F}_{t}
+3576: -measurable, conditioning the whole
+3577: product on
+3578: ℱ
+3579: t
+3580: \mathcal{F}_{t}
+3581: and pulling out the known factor
+3582: g
+3583: −
+3584: m
+3585: t
+3586: g-m_{t}
+3587: (tower
+3588: property;
+3589: Williams, 1991
+3590: ) gives:
+3591: 𝔼
+3592: π
+3593: ​
+3594: [
+3595: (
+3596: g
+3597: −
+3598: m
+3599: t
+3600: )
+3601: ​
+3602: (
+3603: m
+3604: t
+3605: −
+3606: p
+3607: t
+3608: +
+3609: 1
+3610: ⋆
+3611: )
+3612: ]
+3613: =
+3614: 𝔼
+3615: π
+3616: ​
+3617: [
+3618: (
+3619: g
+3620: −
+3621: m
+3622: t
+3623: )
+3624: ​
+3625: 𝔼
+3626: π
+3627: ​
+3628: [
+3629: m
+3630: t
+3631: −
+3632: p
+3633: t
+3634: +
+3635: 1
+3636: ⋆
+3637: ∣
+3638: ℱ
+3639: t
+3640: ]
+3641: ]
+3642: =
+3643: 0
+3644: .
+3645: \mathbb{E}_{\pi}\!\left[(g-m_{t})(m_{t}-p_{t+1}^{\star})\right]=\mathbb{E}_{\pi}\!\left[(g-m_{t})\mathbb{E}_{\pi}[m_{t}-p_{t+1}^{\star}\mid\mathcal{F}_{t}]\right]=0.
+3646: Consequently,
+3647: 𝔼
+3648: π
+3649: ​
+3650: [
+3651: (
+3652: g
+3653: −
+3654: p
+3655: t
+3656: +
+3657: 1
+3658: ⋆
+3659: )
+3660: 2
+3661: ]
+3662: =
+3663: \displaystyle\mathbb{E}_{\pi}\!\left[\left(g-p_{t+1}^{\star}\right)^{2}\right]={}
+3664: 𝔼
+3665: π
+3666: ​
+3667: [
+3668: (
+3669: g
+3670: −
+3671: m
+3672: t
+3673: )
+3674: 2
+3675: ]
+3676: +
+3677: 𝔼
+3678: π
+3679: ​
+3680: [
+3681: Var
+3682: π
+3683: ⁡
+3684: (
+3685: p
+3686: t
+3687: +
+3688: 1
+3689: ⋆
+3690: ∣
+3691: ℱ
+3692: t
+3693: )
+3694: ]
+3695: .
+3696: \displaystyle\mathbb{E}_{\pi}\!\left[(g-m_{t})^{2}\right]+\mathbb{E}_{\pi}\!\left[\operatorname{Var}_{\pi}(p_{t+1}^{\star}\mid\mathcal{F}_{t})\right].
+3697: The second term does not depend on
+3698: g
+3699: g
+3700: , whereas the first term is nonnegative
+3701: and equals zero if and only if
+3702: g
+3703: =
+3704: m
+3705: t
+3706: g=m_{t}
+3707: almost surely. Therefore the minimizer
+3708: over
+3709: L
+3710: 2
+3711: ​
+3712: (
+3713: ℱ
+3714: t
+3715: )
+3716: L_{2}(\mathcal{F}_{t})
+3717: , unique up to almost-sure equality, is
+3718: m
+3719: t
+3720: m_{t}
+3721: .
+3722: Finally, the definition of
+3723: m
+3724: t
+3725: m_{t}
+3726: , the induction hypothesis, and the temporal
+3727: consistency of Eq.
+3728: 1
+3729: give:
+3730: m
+3731: t
+3732: =
+3733: 𝔼
+3734: π
+3735: ​
+3736: [
+3737: p
+3738: t
+3739: +
+3740: 1
+3741: ⋆
+3742: ∣
+3743: ℱ
+3744: t
+3745: ]
+3746: =
+3747: 𝔼
+3748: π
+3749: ​
+3750: [
+3751: r
+3752: t
+3753: +
+3754: 1
+3755: ∣
+3756: ℱ
+3757: t
+3758: ]
+3759: =
+3760: r
+3761: t
+3762: .
+3763: m_{t}=\mathbb{E}_{\pi}[p_{t+1}^{\star}\mid\mathcal{F}_{t}]=\mathbb{E}_{\pi}[r_{t+1}\mid\mathcal{F}_{t}]=r_{t}.
+3764: Thus
+3765: p
+3766: t
+3767: ⋆
+3768: =
+3769: r
+3770: t
+3771: p_{t}^{\star}=r_{t}
+3772: almost surely, completing the backward induction for all
+3773: t
+3774: ≤
+3775: T
+3776: t\leq T
+3777: .
+3778: ∎
+3779: Appendix B
+3780: Additional Details of eVTA
+3781: 0
+3782: Design
+3783: Algorithm 1
+3784: Training eVTA
+3785: 0
+3786: via TD-Style Bootstrapping
+3787: 1:
+3788: Training dataset
+3789: 𝒟
+3790: \mathcal{D}
+3791: , eVTA
+3792: 0
+3793: p
+3794: ^
+3795: θ
+3796: \hat{p}_{\theta}
+3797: ,
+3798: number of training epochs
+3799: E
+3800: E
+3801: , target update interval
+3802: K
+3803: K
+3804: ,
+3805: target update rate
+3806: α
+3807: \alpha
+3808: , learning rate
+3809: η
+3810: \eta
+3811: , batch size
+3812: B
+3813: B
+3814: 2:
+3815: Trained eVTA
+3816: 0
+3817: p
+3818: ^
+3819: θ
+3820: \hat{p}_{\theta}
+3821: 3:
+3822: Initialize target parameters
+3823: θ
+3824: −
+3825: ←
+3826: θ
+3827: \theta^{-}\leftarrow\theta
+3828: 4:
+3829: Initialize training step
+3830: s
+3831: ←
+3832: 0
+3833: s\leftarrow 0
+3834: 5:
+3835: for
+3836: e
+3837: =
+3838: 1
+3839: ,
+3840: …
+3841: ,
+3842: E
+3843: e=1,\ldots,E
+3844: do
+3845: 6:
+3846: for
+3847: each mini-batch
+3848: ℬ
+3849: ⊂
+3850: 𝒟
+3851: \mathcal{B}\subset\mathcal{D}
+3852: with
+3853: |
+3854: ℬ
+3855: |
+3856: =
+3857: B
+3858: |\mathcal{B}|=B
+3859: do
+3860: 7:
+3861: for
+3862: each
+3863: (
+3864: x
+3865: t
+3866: ,
+3867: x
+3868: t
+3869: +
+3870: ,
+3871: d
+3872: t
+3873: ,
+3874: z
+3875: t
+3876: )
+3877: ∈
+3878: ℬ
+3879: (x_{t},x_{t}^{+},d_{t},z_{t})\in\mathcal{B}
+3880: do
+3881: 8:
+3882: if
+3883: d
+3884: t
+3885: =
+3886: 1
+3887: d_{t}=1
+3888: then
+3889: 9:
+3890: y
+3891: t
+3892: ←
+3893: z
+3894: t
+3895: y_{t}\leftarrow z_{t}
+3896: ⊳
+3897: \triangleright
+3898: Terminal outcome
+3899: 10:
+3900: else
+3901: 11:
+3902: y
+3903: t
+3904: ←
+3905: stopgrad
+3906: ⁡
+3907: (
+3908: p
+3909: ^
+3910: θ
+3911: −
+3912: ​
+3913: (
+3914: x
+3915: t
+3916: +
+3917: )
+3918: )
+3919: y_{t}\leftarrow\operatorname{stopgrad}\!\left(\hat{p}_{\theta^{-}}(x_{t}^{+})\right)
+3920: ⊳
+3921: \triangleright
+3922: TD bootstrap
+3923: 12:
+3924: end
+3925: if
+3926: 13:
+3927: end
+3928: for
+3929: 14:
+3930: Compute the TD regression loss:
+3931: ℒ
+3932: eVTA
+3933: ​
+3934: (
+3935: θ
+3936: )
+3937: =
+3938: 1
+3939: |
+3940: ℬ
+3941: |
+3942: ​
+3943: ∑
+3944: (
+3945: x
+3946: t
+3947: ,
+3948: x
+3949: t
+3950: +
+3951: ,
+3952: d
+3953: t
+3954: ,
+3955: z
+3956: t
+3957: )
+3958: ∈
+3959: ℬ
+3960: (
+3961: p
+3962: ^
+3963: θ
+3964: ​
+3965: (
+3966: x
+3967: t
+3968: )
+3969: −
+3970: y
+3971: t
+3972: )
+3973: 2
+3974: \mathcal{L}_{\mathrm{eVTA}}(\theta)=\frac{1}{|\mathcal{B}|}\sum_{(x_{t},x_{t}^{+},d_{t},z_{t})\in\mathcal{B}}\left(\hat{p}_{\theta}(x_{t})-y_{t}\right)^{2}
+3975: 15:
+3976: Update eVTA
+3977: 0
+3978: :
+3979: θ
+3980: ←
+3981: θ
+3982: −
+3983: η
+3984: ​
+3985: ∇
+3986: θ
+3987: ℒ
+3988: eVTA
+3989: ​
+3990: (
+3991: θ
+3992: )
+3993: \theta\leftarrow\theta-\eta\nabla_{\theta}\mathcal{L}_{\mathrm{eVTA}}(\theta)
+3994: 16:
+3995: s
+3996: ←
+3997: s
+3998: +
+3999: 1
+4000: s\leftarrow s+1
+4001: 17:
+4002: if
+4003: s
+4004: mod
+4005: K
+4006: =
+4007: 0
+4008: s\bmod K=0
+4009: then
+4010: 18:
+4011: θ
+4012: −
+4013: ←
+4014: α
+4015: ​
+4016: θ
+4017: +
+4018: (
+4019: 1
+4020: −
+4021: α
+4022: )
+4023: ​
+4024: θ
+4025: −
+4026: \theta^{-}\leftarrow\alpha\theta+(1-\alpha)\theta^{-}
+4027: ⊳
+4028: \triangleright
+4029: Update target eVTA
+4030: 0
+4031: 19:
+4032: end
+4033: if
+4034: 20:
+4035: end
+4036: for
+4037: 21:
+4038: end
+4039: for
+4040: 22:
+4041: return
+4042: p
+4043: ^
+4044: θ
+4045: \hat{p}_{\theta}
+4046: Instruction prompt.
+4047: As shown in Figure
+4048: 1
+4049: , we use an instruction prompt to specify the role and prediction objective of eVTA
+4050: 0
+4051: :
+4052: You are a reward model for robotic manipulation. Given the task instruction and the ordered history of observations, predict the probability of successful task completion. Return a scalar reward in
+4053: [
+4054: 0
+4055: ,
+4056: 1
+4057: ]
+4058: [0,1]
+4059: , where 1 indicates a high probability of success and 0 indicates a high probability of failure. The multimodal inputs are provided in the following order: task prompt, history observation images, reward token.
+4060: The prompt explicitly specifies the success-probability prediction task, output range, and input ordering for eVTA
+4061: 0
+4062: .
+4063: Training algorithm.
+4064: Algorithm
+4065: 1
+4066: summarizes the training algorithm of eVTA
+4067: 0
+4068: . For terminal transitions, the target is given directly by the observed task outcome; for non-terminal transitions, the target is the next-step success prediction from a slowly updated target eVTA
+4069: 0
+4070: . In this way, sparse terminal supervision is progressively propagated to intermediate timesteps, implementing the recursive regression characterized in Theorem
+4071: 2
+4072: .
+4073: Dataset augmentation.
+4074: While eVTA
+4075: 0
+4076: can be trained using binary terminal outcomes alone, we adopt an additional trajectory-level augmentation strategy for failed rollouts. This is because assigning a hard target of zero for failed trajectories can be overly conservative, as some failures may occur after the maximum episode length is reached despite exhibiting behaviors close to task completion. Therefore, following the strategy proposed in
+4077: (
+4078: Fei et al., 2026
+4079: )
+4080: , we augment the training dataset by assigning soft terminal targets to failed trajectories.
+4081: The key idea is to estimate the success likelihood of failed trajectories rather than treating all failures as equally unsuccessful. Specifically, we use a pretrained world model to extract trajectory-level representations and apply DBSCAN to cluster successful trajectories into representative success centers. For each failed trajectory, its soft terminal target
+4082: z
+4083: ∈
+4084: [
+4085: 0
+4086: ,
+4087: 1
+4088: ]
+4089: z\in[0,1]
+4090: is computed based on the Euclidean distance to the nearest success center, normalized by the mean and standard deviation of distances across failed trajectories, and mapped through a sigmoid function. This augmentation assigns higher terminal targets to failed trajectories that exhibit behaviors closer to successful executions, providing more informative supervision for training eVTA
+4091: 0
+4092: .
+4093: Appendix C
+4094: Details of Experimental Setup
+4095: C.1
+4096: Reward Quality Evaluation
+4097: Evaluation metrics.
+4098: We provide additional details on the four metrics used in the reward quality evaluation.
+4099: For temporal consistency, we use VOC
+4100: (
+4101: Ma et al., 2024
+4102: )
+4103: and VROC
+4104: (
+4105: Zhai et al., 2025
+4106: )
+4107: .
+4108: VOC measures the consistency between reward predictions and the forward progression of a demonstration, while VROC examines whether the predicted reward decreases when the demonstration is temporally reversed. Together, they characterize whether a reward model responds consistently as the trajectory moves toward or away from task completion. Both metrics are computed on expert demonstrations, with higher values indicating stronger temporal consistency.
+4109: For outcome distinction, we use MSE and Kendall’s
+4110: τ
+4111: a
+4112: \tau_{a}
+4113: (
+4114: Liang et al., 2026
+4115: )
+4116: .
+4117: MSE measures the discrepancy between predicted terminal rewards and the associated terminal success probabilities, while Kendall’s
+4118: τ
+4119: a
+4120: \tau_{a}
+4121: measures how well the predicted rewards distinguish successful trajectories from failed ones. Together, these metrics assess whether a reward model can reliably distinguish successful and failed trajectories and accurately reflect terminal success likelihood. Both metrics are computed on mixed-quality rollouts. Lower MSE and higher Kendall’s
+4122: τ
+4123: a
+4124: \tau_{a}
+4125: indicate better outcome distinction. When computing MSE, we use the final reward prediction of each trajectory and normalize model outputs to
+4126: [
+4127: 0
+4128: ,
+4129: 1
+4130: ]
+4131: [0,1]
+4132: when necessary, following the corresponding inference method of each model.
+4133: Evaluation datasets.
+4134: We evaluate reward quality on two robotic manipulation benchmarks, LIBERO and MetaWorld. LIBERO consists of four task suites, LIBERO-Spatial, LIBERO-Object, LIBERO-Goal, and LIBERO-Long, each containing 10 tasks. For MetaWorld, we evaluate 30 manipulation tasks and follow prior work
+4135: (
+4136: Chen et al., 2025a
+4137: )
+4138: to organize them into four difficulty levels: Easy, Medium, Hard, and Very-Hard. Each of the Easy and Medium suites contains 10 tasks, while each of the Hard and Very-Hard suites contains 5 tasks.
+4139: For temporal-consistency evaluation, we use expert demonstrations provided by both benchmarks. On LIBERO, we randomly sample 10 demonstrations per task, resulting in 400 demonstrations across 40 tasks. On MetaWorld, we similarly sample 400 demonstrations across 30 tasks: 10 demonstrations per task for the Easy and Medium suites, and 20 demonstrations per task for the Hard and Very-Hard suites. For outcome-distinction evaluation, we use the
+4140: π
+4141: 0
+4142: \pi_{0}
+4143: (
+4144: Black et al., 2024
+4145: )
+4146: policy fine-tuned with RLinf
+4147: (
+4148: Yu et al., 2026
+4149: )
+4150: 3
+4151: 3
+4152: 3
+4153: we use the publicly released RLinf
+4154: π
+4155: 0
+4156: \pi_{0}
+4157: SFT checkpoints for LIBERO and MetaWorld:
+4158: https://huggingface.co/RLinf/RLinf-Pi0-LIBERO-Spatial-Object-Goal-SFT
+4159: and
+4160: https://huggingface.co/RLinf/RLinf-Pi0-MetaWorld-SFT
+4161: , respectively.
+4162: to collect online rollouts on both LIBERO and MetaWorld. We collect 400 rollouts for each benchmark as the evaluation datasets. The LIBERO set contains 201 successful and 199 failed trajectories, while the MetaWorld set contains 230 successful and 170 failed trajectories.
+4163: Fine-tuning VLAC and Robometer.
+4164: Although VLAC
+4165: (
+4166: Zhai et al., 2025
+4167: )
+4168: and Robometer
+4169: (
+4170: Liang et al., 2026
+4171: )
+4172: are pretrained on large-scale demonstration datasets, we empirically find that their performance degrades substantially when directly applied to LIBERO and MetaWorld without downstream adaptation. We therefore follow their original training recipes and fine-tune both models on benchmark-specific data. Specifically, we randomly sample additional 400 demonstrations from each benchmark, without overlap with the evaluation sets. In particular, Robometer primarily learns progress from expert demonstrations and additionally incorporates failed trajectories through an auxiliary trajectory-comparison objective. Thus, we follow the original paper
+4173: (
+4174: Liang et al., 2026
+4175: )
+4176: and generate failure data by injecting random perturbations into demonstration actions and executing the resulting perturbed trajectories in the environment. This procedure yields 452 additional failed trajectories for each benchmark. We fine-tune both models for 5 epochs using LoRA
+4177: (
+4178: Hu et al., 2021
+4179: )
+4180: with rank 32 and set the batch size and learning rate to
+4181: 32
+4182: 32
+4183: and
+4184: 2
+4185: ×
+4186: 10
+4187: −
+4188: 5
+4189: 2\times 10^{-5}
+4190: , respectively.
+4191: Table 3:
+4192: RL and
+4193: π
+4194: 0.5
+4195: \pi_{0.5}
+4196: training configurations for the policy learning experiments on LIBERO-Spatial / LIBERO-Object / LIBERO-Goal / LIBERO-Long.
+4197: Parameter
+4198: Configuration
+4199: RL configuration
+4200: RL algorithm
+4201: GRPO
+4202: Advantage estimator
+4203: Group-relative advantages
+4204: Training budget
+4205: 50 epochs with 6,400 interaction episodes
+4206: Parallel environments
+4207: 16
+4208: Rollouts per epoch
+4209: 8
+4210: Episodes per epoch
+4211: 128
+4212: GRPO group size
+4213: 8
+4214: Maximum episode length
+4215: 240 / 240 / 320 / 480 steps
+4216: Batch size
+4217: 4
+4218: Gradient accumulation steps
+4219: 16
+4220: Policy learning rate
+4221: ×
+4222: 10
+4223: −
+4224: 6
+4225: 2\!\times\!10^{-6}
+4226: Adam
+4227: (
+4228: β
+4229: 1
+4230: ,
+4231: β
+4232: 2
+4233: ,
+4234: ϵ
+4235: )
+4236: (\beta_{1},\beta_{2},\epsilon)
+4237: (
+4238: 0.9
+4239: ,
+4240: 0.95
+4241: ,
+4242: 10
+4243: −
+4244: 8
+4245: )
+4246: (0.9,\,0.95,\,10^{-8})
+4247: Weight decay
+4248: 0.01
+4249: Gradient clipping
+4250: 1.0
+4251: Discount factor
+4252: γ
+4253: \gamma
+4254: 0.99
+4255: Policy clipping (lower / upper)
+4256: 0.2 / 0.2
+4257: Update epochs
+4258: 2
+4259: Advantage normalization
+4260: Enabled
+4261: Train action expert only
+4262: Enabled
+4263: Random seed
+4264: 42
+4265: π
+4266: 0.5
+4267: \pi_{0.5}
+4268: configuration
+4269: Initial policy
+4270: RLinf-
+4271: π
+4272: 0.5
+4273: \pi_{0.5}
+4274: -LIBERO-SFT
+4275: Action chunk length
+4276: 10
+4277: Denoising steps
+4278: 5
+4279: Implementation of eVTA
+4280: 0
+4281: .
+4282: We use Qwen3-VL-4B-Instruct
+4283: (
+4284: Bai et al., 2025a
+4285: )
+4286: as the backbone of eVTA
+4287: 0
+4288: throughout all experiments.
+4289: We set the observation context window to 5 with a temporal stride of 2.
+4290: Notably, the visual observations consist of both a third-person camera image and a wrist-mounted camera image, providing complementary global and egocentric views of the manipulation process. For each benchmark, we use the SFT
+4291: π
+4292: 0
+4293: \pi_{0}
+4294: policy released by RLinf to collect 1,600 policy rollouts for training eVTA
+4295: 0
+4296: . The LIBERO dataset contains 890 successful and 710 failed trajectories, while the MetaWorld dataset follows the same composition. The rollouts cover all tasks in each benchmark and are collected independently from the evaluation sets, with no trajectory overlap. We fine-tune eVTA
+4297: 0
+4298: for 5 epochs using LoRA with rank 16 and configure the batch size and learning rate as
+4299: 32
+4300: 32
+4301: and
+4302: 1
+4303: ×
+4304: 10
+4305: −
+4306: 5
+4307: 1\times 10^{-5}
+4308: , respectively. The target network is updated every
+4309: K
+4310: =
+4311: 16
+4312: K=16
+4313: training steps with a soft-update rate of
+4314: α
+4315: =
+4316: 0.1
+4317: \alpha=0.1
+4318: . Note that unlike VLAC and Robometer, eVTA
+4319: 0
+4320: does not rely on pretraining over large-scale robotic demonstration datasets for reward modeling. Instead, it learns effective reward signals directly from mixed-quality policy rollouts.
+4321: C.2
+4322: Policy Learning Evaluation
+4323: Following previous work
+4324: (
+4325: Chen et al., 2025a
+4326: )
+4327: , we use
+4328: π
+4329: 0.5
+4330: \pi_{0.5}
+4331: as the base policy for experiments and initialize it from the few-shot SFT checkpoint released by RLinf. This checkpoint is obtained by fine-tuning
+4332: π
+4333: 0.5
+4334: \pi_{0.5}
+4335: with 40 LIBERO demonstrations, corresponding to one demonstration per task across the four task suites. Such a few-shot initialization ensures a positive success rate for each task while preserving substantial room for subsequent RL-based policy improvement. Since our goal is to evaluate how different rewards affect subsequent RL optimization, the few-shot checkpoint provides a more informative setting for distinguishing the effects of different reward signals. Therefore, all reward methods start from the same SFT checkpoint and are trained under the same RL configurations, ensuring that performance differences primarily reflect the effect of the reward signal. Unless otherwise specified, the four LIBERO suites use the same training and evaluation protocol. The detailed configurations are summarized in Tables
+4336: 3
+4337: and
+4338: 4
+4339: .
+4340: Table 4:
+4341: π
+4342: 0.5
+4343: \pi_{0.5}
+4344: evaluation configurations for the policy learning experiments on LIBERO-Spatial / LIBERO-Object / LIBERO-Goal / LIBERO-Long.
+4345: Parameter
+4346: Configuration
+4347: Number of tasks
+4348: 10 / 10 / 10 / 10
+4349: Evaluation rollouts per task
+4350: 50
+4351: Total rollouts
+4352: 500 / 500 / 500 / 500
+4353: Maximum episode length
+4354: 240 / 240 / 320 / 480 steps
+4355: Action chunk length
+4356: 10
+4357: Denoising steps
+4358: 5
+4359: Random seed
+4360: 42
+4361: Table 5:
+4362: Configurations of SFT policies in real-world experiments (
+4363: Pick Carrot
+4364: /
+4365: Put Shuttlecock
+4366: ).
+4367: Parameter
+4368: Configuration
+4369: Training epochs
+4370: 5
+4371: Expert demonstrations
+4372: 20 / 60
+4373: Batch size
+4374: 4
+4375: Gradient accumulation steps
+4376: 2
+4377: Learning rate
+4378: ×
+4379: 10
+4380: −
+4381: 5
+4382: 1\!\times\!10^{-5}
+4383: Gradient clipping
+4384: 1.0
+4385: Adam
+4386: (
+4387: β
+4388: 1
+4389: ,
+4390: β
+4391: 2
+4392: ,
+4393: ϵ
+4394: )
+4395: (\beta_{1},\beta_{2},\epsilon)
+4396: (
+4397: 0.9
+4398: ,
+4399: 0.95
+4400: ,
+4401: 10
+4402: −
+4403: 8
+4404: )
+4405: (0.9,\,0.95,\,10^{-8})
+4406: Fine-tuning strategy
+4407: Full-model fine-tuning
+4408: π
+4409: 0.5
+4410: \pi_{0.5}
+4411: training/evaluation configuration
+4412: Action chunk length
+4413: 32
+4414: Denoising steps
+4415: 5
+4416: C.3
+4417: Real-World Evaluation
+4418: Physical setup.
+4419: Figure
+4420: 6
+4421: shows the physical platform of our real-world experiments. The platform consists of a Franka Research 3 robotic arm equipped with a parallel gripper and two Intel RealSense D435i RGB-D cameras. One external camera provides a third-person view of the overall workspace, while the other wrist-mounted camera captures local information around the manipulation area.
+4422: Task design and configurations.
+4423: We design two representative manipulation tasks covering different scenarios.
+4424: The first task requires the robot to pick up a carrot from a moving conveyor and place it on the plate. By introducing continuously changing object positions, this task evaluates the policy’s adaptation ability in dynamic environments.
+4425: The second task requires the robot to put a shuttlecock from the table onto the one in the plate. Since the shuttlecock is lightweight and difficult to grasp stably, small grasping deviations can cause the object to slip or shift, making this task suitable for evaluating grasp stability and precise control.
+4426: As depicted in Figure
+4427: 7
+4428: , to further evaluate generalization, we construct several OOD settings by varying object positions, distances, rotations, and appearances.
+4429: Evaluation method.
+4430: In our real-world experiments, each task is evaluated with 50 trials covering both in-distribution (ID) and out-of-distribution (OOD) scenarios.
+4431: For the
+4432: Pick Carrot
+4433: task, the evaluation consists of 25 ID trials and 25 OOD trials. Specifically, we perform 5 trials under the OOD-Distance setting and 4 trials for each of the five OOD-Rotation settings. For the
+4434: Put Shuttlecock
+4435: task, we conduct 30 ID trials and 20 OOD trials, including 10 trials under OOD-Color and 10 trials under OOD-Position.
+4436: Figure 6:
+4437: The physical workspace used in our real-world experiments, which is equipped with a Franka Research 3 robot arm, two Intel RealSense D435i cameras and optionally a moving conveyor.
+4438: Figure 7:
+4439: The ID and OOD configurations for the real-world experiments.
+4440: Table 6:
+4441: Training configurations for IQL and eVTA
+4442: 0
+4443: in real-world experiments (
+4444: RLER Round 1
+4445: /
+4446: RLER Round 2
+4447: /
+4448: Fixed eVTA
+4449: 0
+4450: )
+4451: .
+4452: Parameter
+4453: Configuration
+4454: IQL configuration
+4455: Number of trajectories
+4456: 50 / 50 / 100
+4457: Training epochs
+4458: 30
+4459: Batch size
+4460: 4
+4461: Gradient accumulation steps
+4462: 4
+4463: Discount factor
+4464: γ
+4465: \gamma
+4466: 1.0
+4467: Expectile
+4468: τ
+4469: \tau
+4470: 0.7
+4471: Advantage temperature
+4472: β
+4473: \beta
+4474: 0.3
+4475: Maximum advantage weight
+4476: 20.0
+4477: Target soft-update rate
+4478: 0.005
+4479: Policy learning rate
+4480: ×
+4481: 10
+4482: −
+4483: 6
+4484: 1\!\times\!10^{-6}
+4485: Value learning rate
+4486: ×
+4487: 10
+4488: −
+4489: 4
+4490: 1\!\times\!10^{-4}
+4491: Critic learning rate
+4492: ×
+4493: 10
+4494: −
+4495: 4
+4496: 1\!\times\!10^{-4}
+4497: Adam
+4498: (
+4499: β
+4500: 1
+4501: ,
+4502: β
+4503: 2
+4504: ,
+4505: ϵ
+4506: )
+4507: (\beta_{1},\beta_{2},\epsilon)
+4508: (
+4509: 0.9
+4510: ,
+4511: 0.95
+4512: ,
+4513: 10
+4514: −
+4515: 8
+4516: )
+4517: (0.9,\,0.95,\,10^{-8})
+4518: Policy fine-tuning strategy
+4519: Full-model fine-tuning
+4520: eVTA
+4521: 0
+4522: configuration
+4523: Backbone
+4524: Qwen3-VL-4B-Instruct
+4525: Training epochs
+4526: 30
+4527: Context window
+4528: 5
+4529: Fine-tuning strategy
+4530: LoRA
+4531: LoRA rank
+4532: 16
+4533: Learning rate
+4534: ×
+4535: 10
+4536: −
+4537: 5
+4538: 1\!\times\!10^{-5}
+4539: Weight decay
+4540: 0.01
+4541: Gradient clipping
+4542: 0.5
+4543: Batch size
+4544: 32
+4545: Gradient accumulation steps
+4546: 2
+4547: Target-update interval
+4548: 16
+4549: Target soft-update rate
+4550: 0.1
+4551: Policy training.
+4552: We use
+4553: π
+4554: 0.5
+4555: \pi_{0.5}
+4556: as the base policy. For the
+4557: Pick Carrot
+4558: task, we collect 20 expert demonstrations for SFT, while for the
+4559: Put Shuttlecock
+4560: task, we collect 60 expert demonstrations. All RL experiments start from the corresponding SFT policy, ensuring that different reward learning methods share the same initial policy.
+4561: For eVTA
+4562: 0
+4563: -RLER, we adopt a closed-loop reward evolution procedure. In the first round, we train eVTA
+4564: 0
+4565: using 50 rollouts collected from the SFT policy, and then optimize the policy with IQL based on the trained eVTA
+4566: 0
+4567: . In the second round, we collect another 50 rollouts from the Round 1 policy, use them to further update eVTA
+4568: 0
+4569: , and perform another round of policy optimization.
+4570: For the fixed eVTA
+4571: 0
+4572: baseline, we aggregate the 100 rollouts collected from the SFT policy and the Round 1 policy, train eVTA
+4573: 0
+4574: once on this fixed dataset, and then optimize the policy with IQL.
+4575: Notably, the fixed eVTA
+4576: 0
+4577: baseline and eVTA
+4578: 0
+4579: -RLER use the same total amount of rollout data and matched optimization budgets for both reward model training and policy optimization.
+4580: Therefore, the key difference between the two settings lies in the training schedule: RLER periodically adapts eVTA
+4581: 0
+4582: with newly collected rollouts as the policy evolves, whereas the fixed baseline trains eVTA
+4583: 0
+4584: on the aggregated rollout dataset without intermediate reward model adaptation.
+4585: This comparison directly evaluates the effectiveness of closed-loop reward evolution in eVTA
+4586: 0
+4587: -RLER. The detailed configurations are summarized in Table
+4588: 6
+4589: .
+4590: Appendix D
+4591: Supplementary Results
+4592: D.1
+4593: Ablation Study of eVTA
+4594: 0
+4595: We further study two key hyperparameters of eVTA
+4596: 0
+4597: on LIBERO-Spatial: the context window size
+4598: w
+4599: w
+4600: and the target-network update interval
+4601: K
+4602: K
+4603: . Figure
+4604: 8
+4605: summarizes their effects on reward quality.
+4606: As shown in Figure
+4607: 8
+4608: (top), increasing
+4609: w
+4610: w
+4611: from 1 to 5 substantially improves VOC, VROC, and Kendall’s
+4612: τ
+4613: a
+4614: \tau_{a}
+4615: , with
+4616: w
+4617: =
+4618: 5
+4619: w=5
+4620: achieving the best overall trade-off across all metrics. However, further enlarging the context window leads to a clear degradation in VROC and Kendall’s
+4621: τ
+4622: a
+4623: \tau_{a}
+4624: , together with an overall increase in MSE, even though VOC generally continues to improve. This suggests that longer histories facilitate the recognition of overall task progression, but excessively long contexts may retain earlier positive progress even after the current behavior starts to deviate.
+4625: Figure
+4626: 8
+4627: (bottom) further reports the effect of the target-network update interval
+4628: K
+4629: K
+4630: . Reward quality shows an overall degradation as
+4631: K
+4632: K
+4633: increases. In particular,
+4634: K
+4635: =
+4636: 16
+4637: K=16
+4638: achieves the best overall performance, whereas larger update intervals generally lead to lower VOC and VROC and higher MSE. Since eVTA
+4639: 0
+4640: relies on bootstrapped targets, infrequent target-network updates can make the supervision increasingly stale and slow the propagation of updated success estimates.
+4641: Based on these results, we set
+4642: w
+4643: =
+4644: 5
+4645: w=5
+4646: and
+4647: K
+4648: =
+4649: 16
+4650: K=16
+4651: as the default configuration of eVTA
+4652: 0
+4653: and use them consistently throughout all experiments, as they provide the best overall reward quality.
+4654: Figure 8:
+4655: Ablation of hyperparameters in eVTA
+4656: 0
+4657: . The top panel reports the effect of the context window size
+4658: w
+4659: w
+4660: , while the bottom part shows the effect of the target-network update interval
+4661: K
+4662: K
+4663: .
+4664: D.2
+4665: Qualitative Analysis of Temporal Reward Dynamics
+4666: To better understand how eVTA
+4667: 0
+4668: provides reward feedback within a trajectory, we visualize its predictions on more successful and failed rollouts in Figures
+4669: 9
+4670: and
+4671: 10
+4672: . Across both successful and failed trajectories, eVTA
+4673: 0
+4674: exhibits non-uniform and behavior-responsive reward dynamics. Its prediction can remain relatively stable during phases with limited impact on task success, change sharply around transitions that substantially improve the likelihood of success, and decrease when the behavior deviates from successful completion.
+4675: A representative example is the third successful trajectory in Figure
+4676: 9
+4677: , where the robot grasps and lifts the black bowl by
+4678: t
+4679: 2
+4680: t_{2}
+4681: , transports it toward the plate from
+4682: t
+4683: 3
+4684: t_{3}
+4685: to
+4686: t
+4687: 4
+4688: t_{4}
+4689: , and completes the placement by
+4690: t
+4691: 5
+4692: t_{5}
+4693: . The prediction of eVTA
+4694: 0
+4695: remains relatively low after the grasp and rises sharply only when later states substantially increase the likelihood of successful completion. This is because a successful grasp alone does not guarantee eventual task success and failures may still occur during subsequent transport or placement (see Figure
+4696: 10
+4697: ). In contrast, Robometer’s predictions increase more steadily with task progress. This reflects a fundamental difference in what the two approaches model: progress-based reward models estimate how far the task has advanced, whereas eVTA
+4698: 0
+4699: estimates the likelihood of eventual success conditioned on the current history. Consequently, eVTA
+4700: 0
+4701: exhibits more non-uniform temporal reward dynamics, with larger changes concentrated around transitions that more strongly affect eventual success.
+4702: The third failed trajectory in Figure
+4703: 10
+4704: provides a complementary example. The robot brings the bowl close to successful placement at
+4705: t
+4706: 2
+4707: t_{2}
+4708: , subsequently moves away from the target region at
+4709: t
+4710: 3
+4711: t_{3}
+4712: , partially recovers at
+4713: t
+4714: 4
+4715: t_{4}
+4716: , and ultimately fails to place the bowl inside the drawer at
+4717: t
+4718: 5
+4719: t_{5}
+4720: . The prediction of eVTA
+4721: 0
+4722: closely reflects this non-monotonic evolution: it increases as the robot approaches success, decreases after the deviation, rises again during recovery, and finally drops as the likelihood of successful completion decreases. Such adaptive adjustment is particularly important for mixed-quality RL rollouts, where intermediate progress does not necessarily evolve monotonically toward success, as the policy may repeatedly approach and move away from successful states while attempting to complete the task. In contrast, Robometer maintains high predictions even after the trajectory deviates from successful completion, revealing a mismatch between its reward estimates and the actual evolution of the task.
+4723: Overall, these results show that eVTA
+4724: 0
+4725: produces non-uniform and behavior-responsive reward dynamics that reflect changes in the likelihood of task success rather than simply tracking task progress. This property is particularly useful for RL, where policy rollouts may repeatedly approach and move away from successful completion. By assigning larger reward changes to transitions that substantially affect eventual success, eVTA
+4726: 0
+4727: provides more informative temporal credit assignment for distinguishing beneficial behaviors, harmful deviations, and subsequent recoveries.
+4728: Interestingly, this behavior-responsive pattern also qualitatively resembles biological reward learning, where dopamine-related teaching signals can increase or decrease as new behaviors change the expected future outcomes
+4729: (
+4730: Kasdin et al., 2025
+4731: )
+4732: .
+4733: This provides an intuitive perspective on why non-uniform reward feedback can facilitate policy learning.
+4734: Figure 9:
+4735: Additional qualitative examples of reward predictions on successful trajectories.
+4736: Figure 10:
+4737: Additional qualitative examples of reward predictions on failed trajectories.
+4738: D.3
+4739: Detailed Real-World Experiment Results
+4740: Tables
+4741: 7
+4742: and
+4743: 8
+4744: report the detailed real-world evaluation results. Across both tasks, eVTA
+4745: 0
+4746: -RLER achieves the best overall performance after Round 2, with more pronounced improvements under OOD conditions. On
+4747: Pick Carrot
+4748: , the overall success rate increases from 32/50 with SFT to 42/50, while the OOD success rate improves from 8/25 to 17/25. On
+4749: Put Shuttlecock
+4750: , the corresponding results improve from 30/50 to 43/50 overall and from 9/20 to 16/20 under OOD conditions. eVTA
+4751: 0
+4752: -RLER Round 2 also consistently outperforms the fixed eVTA
+4753: 0
+4754: baseline on both tasks, further demonstrating the benefit of evolving reward feedback during policy optimization. Notably, eVTA
+4755: 0
+4756: -RLER enables successful task completion in OOD settings where the SFT policy fails across all evaluation trials, improving from 0/4 to 2/4 on OOD-Rotation 3 for
+4757: Pick Carrot
+4758: and from 0/10 to 7/10 on OOD-Position for
+4759: Put Shuttlecock
+4760: . These results show that eVTA
+4761: 0
+4762: -RLER not only improves overall policy performance, but also enables successful task execution under distribution shifts that the initial SFT policy may fail to handle.
+4763: Figures
+4764: 11
+4765: and
+4766: 12
+4767: provide the real-world rollouts illustrating the policy behaviors under OOD conditions. For
+4768: Pick Carrot
+4769: , the OOD-Distance setting places the carrot near the outer range of the robot’s workspace. The SFT policy fails to reach sufficiently far to make a stable grasp, whereas the eVTA
+4770: 0
+4771: -RLER policy reaches out for the target, grasps the carrot by its leaves, and subsequently completes the transfer and placement. For
+4772: Put Shuttlecock
+4773: , a similar pattern is observed under OOD-Position setting. When the shuttlecock is placed farther from its ID position, the SFT policy fails to reach and grasp the object, while the eVTA
+4774: 0
+4775: -RLER policy adjusts its reaching motion to the shifted target position, successfully grasps the shuttlecock, and completes the placement.
+4776: Table 7:
+4777: Detailed real-world results for
+4778: “pick up the carrot on the
+4779: moving conveyor and place it on the plate”
+4780: . Each entry reports the number
+4781: of successful trials over the total number of trials.
+4782: Policy
+4783: ID
+4784: OOD
+4785: Distance
+4786: OOD
+4787: Rotation 1
+4788: OOD
+4789: Rotation 2
+4790: OOD
+4791: Rotation 3
+4792: OOD
+4793: Rotation 4
+4794: OOD
+4795: Rotation 5
+4796: Average
+4797: SFT
+4798: 24/25
+4799: 1/5
+4800: 3/4
+4801: 1/4
+4802: 0/4
+4803: 2/4
+4804: 1/4
+4805: 32/50
+4806: eVTA
+4807: 0
+4808: -RLER (Round 1)
+4809: 25/25
+4810: 0/5
+4811: 4/4
+4812: 0/4
+4813: 3/4
+4814: 3/4
+4815: 0/4
+4816: 35/50
+4817: eVTA
+4818: 0
+4819: -RLER (Round 2)
+4820: 25/25
+4821: 5/5
+4822: 4/4
+4823: 2/4
+4824: 2/4
+4825: 3/4
+4826: 1/4
+4827: 42/50
+4828: Fixed eVTA
+4829: 0
+4830: 24/25
+4831: 1/5
+4832: 4/4
+4833: 1/4
+4834: 2/4
+4835: 2/4
+4836: 2/4
+4837: 36/50
+4838: Table 8:
+4839: Detailed real-world results for
+4840: “put the shuttlecock from the
+4841: table onto the shuttlecock in the plate”
+4842: . Each entry reports the number
+4843: of successful trials over the total number of trials.
+4844: Policy
+4845: ID
+4846: OOD-Color
+4847: OOD-Position
+4848: Average
+4849: SFT
+4850: 21/30
+4851: 9/10
+4852: 0/10
+4853: 30/50
+4854: eVTA
+4855: 0
+4856: -RLER (Round 1)
+4857: 26/30
+4858: 9/10
+4859: 3/10
+4860: 38/50
+4861: eVTA
+4862: 0
+4863: -RLER (Round 2)
+4864: 27/30
+4865: 9/10
+4866: 7/10
+4867: 43/50
+4868: Fixed eVTA
+4869: 0
+4870: 26/30
+4871: 9/10
+4872: 4/10
+4873: 39/50
+4874: Figure 11:
+4875: Real-world rollouts under OOD conditions for
+4876: “pick up the carrot on the
+4877: moving conveyor and place it on the plate”.
+4878: Figure 12:
+4879: Real-world rollouts under OOD conditions for
+4880: “put the shuttlecock from the
+4881: table onto the shuttlecock in the plate”
+4882: .
+4883: Appendix E
+4884: Discussion
+4885: E.1
+4886: Relationship between eVTA
+4887: 0
+4888: and Value Functions
+4889: eVTA
+4890: 0
+4891: is mathematically related to a value function under specific settings. Recall from Eq.
+4892: 1
+4893: that the success-probability reward is defined as
+4894: r
+4895: t
+4896: =
+4897: ℙ
+4898: π
+4899: ​
+4900: (
+4901: S
+4902: =
+4903: 1
+4904: ∣
+4905: ℱ
+4906: t
+4907: )
+4908: =
+4909: 𝔼
+4910: π
+4911: ​
+4912: [
+4913: S
+4914: ∣
+4915: ℱ
+4916: t
+4917: ]
+4918: .
+4919: r_{t}=\mathbb{P}_{\pi}(S=1\mid\mathcal{F}_{t})=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}].
+4920: When the task reward consists only of a terminal success signal and the discount factor is set to
+4921: γ
+4922: =
+4923: 1
+4924: \gamma=1
+4925: , the expected return conditioned on the trajectory history becomes
+4926: V
+4927: π
+4928: ​
+4929: (
+4930: ℱ
+4931: t
+4932: )
+4933: =
+4934: 𝔼
+4935: π
+4936: ​
+4937: [
+4938: S
+4939: ∣
+4940: ℱ
+4941: t
+4942: ]
+4943: =
+4944: ℙ
+4945: π
+4946: ​
+4947: (
+4948: S
+4949: =
+4950: 1
+4951: ∣
+4952: ℱ
+4953: t
+4954: )
+4955: ,
+4956: V^{\pi}(\mathcal{F}_{t})=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]=\mathbb{P}_{\pi}(S=1\mid\mathcal{F}_{t}),
+4957: which is equivalent to the success-probability reward approximated by eVTA
+4958: 0
+4959: .
+4960: Despite this connection, eVTA
+4961: 0
+4962: serves a different role from the critic used for value estimation in standard RL algorithms. The key distinction lies in what they provide to policy optimization. A critic estimates the return induced by a given reward function and is used internally for value or advantage estimation. In contrast, eVTA
+4963: 0
+4964: learns dense success-probability feedback from policy rollouts and task outcomes, which is transformed by Eq.
+4965: 11
+4966: into the reward signal used for RL. The RL algorithm may still maintain its own critic to estimate the return induced by this reward. Therefore, eVTA
+4967: 0
+4968: complements rather than replaces the critic. Furthermore, they differ in how they are coupled with policy optimization. A critic is typically updated as an internal component of the RL algorithm, whereas eVTA
+4969: 0
+4970: is maintained as a separate reward model. It can remain fixed throughout policy optimization or be periodically adapted with newly collected rollouts under RLER.
+4971: Figure 13:
+4972: Comparison of implicit value estimation and explicit success-probability reward learning.
+4973: The left panel illustrates policy learning curves of PPO with sparse binary rewards and eVTA
+4974: 0
+4975: rewards. The right panel depicts the estimation quality of the learned signals from the PPO critic and eVTA
+4976: 0
+4977: .
+4978: Empirical comparison with RL critics.
+4979: Given the theoretical connection above, we further compare eVTA
+4980: 0
+4981: with the value estimation performed by standard RL critics. We choose PPO with binary terminal rewards and
+4982: γ
+4983: =
+4984: 1
+4985: \gamma=1
+4986: as the baseline, since under this setting the learned value function has the same target quantity as the success-probability formulation of eVTA
+4987: 0
+4988: . Specifically, we conduct experiments on LIBERO-Spatial and train
+4989: π
+4990: 0.5
+4991: \pi_{0.5}
+4992: with PPO for 1,280 interaction episodes. Detailed training configurations are provided in Table
+4993: 9
+4994: .
+4995: Table 9:
+4996: PPO training configurations for the critic comparison experiment on LIBERO-Spatial in Appendix
+4997: E.1
+4998: . The binary reward and eVTA
+4999: 0
+5000: reward use the same settings.
+5001: Parameter
+5002: Configuration
+5003: Training budget
+5004: 10 epochs with 1,280 interaction episodes
+5005: Parallel environments
+5006: 16
+5007: Rollouts per epoch
+5008: 8
+5009: Episodes per epoch
+5010: 128
+5011: Maximum episode length
+5012: 240 steps
+5013: Batch size
+5014: 4
+5015: Gradient accumulation steps
+5016: 16
+5017: Policy learning rate
+5018: ×
+5019: 10
+5020: −
+5021: 6
+5022: 5\!\times\!10^{-6}
+5023: Value learning rate
+5024: ×
+5025: 10
+5026: −
+5027: 4
+5028: 1\!\times\!10^{-4}
+5029: Adam
+5030: (
+5031: β
+5032: 1
+5033: ,
+5034: β
+5035: 2
+5036: ,
+5037: ϵ
+5038: )
+5039: (\beta_{1},\beta_{2},\epsilon)
+5040: (
+5041: 0.9
+5042: ,
+5043: 0.95
+5044: ,
+5045: 10
+5046: −
+5047: 8
+5048: )
+5049: (0.9,\,0.95,\,10^{-8})
+5050: Weight decay
+5051: 0.01
+5052: Gradient clipping
+5053: 1.0
+5054: Discount factor
+5055: γ
+5056: \gamma
+5057: 1.0
+5058: GAE
+5059: λ
+5060: \lambda
+5061: 0.95
+5062: PPO policy clipping
+5063: 0.2
+5064: PPO value clipping
+5065: 0.2
+5066: Update epochs
+5067: 1
+5068: Train action expert only
+5069: Enabled
+5070: Random seed
+5071: 42
+5072: As shown in Figure
+5073: 13
+5074: (left), PPO with binary rewards struggles to improve and eventually degrades under sparse binary feedback, whereas replacing the sparse reward with eVTA
+5075: 0
+5076: enables stable and continuous policy improvement throughout training. This suggests that explicitly learning success-probability feedback provides more effective credit assignment than relying solely on the implicit value estimation of the PPO critic.
+5077: We further evaluate the estimation quality of the learned signals from the PPO critic and eVTA
+5078: 0
+5079: . As shown in Figure
+5080: 13
+5081: (right), eVTA
+5082: 0
+5083: consistently achieves better performance in VOC, VROC, MSE, and Kendall
+5084: τ
+5085: a
+5086: \tau_{a}
+5087: . These results demonstrate that although the PPO critic and eVTA
+5088: 0
+5089: are theoretically related under sparse terminal rewards, explicitly learning a standalone success-probability reward model provides a more accurate and reliable estimation of task success, thereby offering a stronger learning signal for downstream policy learning.
+5090: Table 10:
+5091: Reward-quality comparison on LIBERO between temporal-difference (TD) bootstrapping and Monte Carlo (MC) regression. The best result is shown in bold.
+5092: Task suite
+5093: Method
+5094: VOC
+5095: ↑
+5096: \uparrow
+5097: VROC
+5098: ↑
+5099: \uparrow
+5100: MSE
+5101: ↓
+5102: \downarrow
+5103: Kendall’s
+5104: τ
+5105: a
+5106: \tau_{a}
+5107: ↑
+5108: \uparrow
+5109: LIBERO-Spatial
+5110: TD
+5111: 0.87
+5112: 0.73
+5113: 0.06
+5114: 0.98
+5115: MC
+5116: 0.24
+5117: 0.17
+5118: 0.05
+5119: 0.96
+5120: LIBERO-Object
+5121: TD
+5122: 0.90
+5123: 0.88
+5124: 0.03
+5125: 1.00
+5126: MC
+5127: 0.35
+5128: 0.51
+5129: 0.03
+5130: 0.98
+5131: LIBERO-Goal
+5132: TD
+5133: 0.84
+5134: 0.74
+5135: 0.07
+5136: 1.00
+5137: MC
+5138: 0.35
+5139: 0.32
+5140: 0.04
+5141: 0.97
+5142: LIBERO-Long
+5143: TD
+5144: 0.77
+5145: 0.73
+5146: 0.08
+5147: 0.93
+5148: MC
+5149: 0.53
+5150: 0.48
+5151: 0.05
+5152: 0.80
+5153: Average
+5154: TD
+5155: 0.84
+5156: 0.77
+5157: 0.06
+5158: 0.98
+5159: MC
+5160: 0.37
+5161: 0.37
+5162: 0.04
+5163: 0.93
+5164: E.2
+5165: TD Bootstrapping versus Monte Carlo Regression
+5166: Theoretical analysis.
+5167: One natural alternative to the TD-style bootstrapping adopted in eVTA
+5168: 0
+5169: is Monte Carlo (MC) regression. For each intermediate timestep
+5170: t
+5171: <
+5172: T
+5173: t<T
+5174: , recall that the success-probability reward is defined as:
+5175: r
+5176: t
+5177: =
+5178: 𝔼
+5179: π
+5180: ​
+5181: [
+5182: S
+5183: ∣
+5184: ℱ
+5185: t
+5186: ]
+5187: =
+5188: ℙ
+5189: π
+5190: ​
+5191: (
+5192: S
+5193: =
+5194: 1
+5195: ∣
+5196: ℱ
+5197: t
+5198: )
+5199: ,
+5200: r_{t}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t}]=\mathbb{P}_{\pi}(S=1\mid\mathcal{F}_{t}),
+5201: where
+5202: S
+5203: ∈
+5204: {
+5205: 0
+5206: ,
+5207: 1
+5208: }
+5209: S\in\{0,1\}
+5210: denotes the terminal task outcome. Under MC regression, the same terminal outcome is directly used as the supervision target for every intermediate trajectory prefix:
+5211: y
+5212: t
+5213: MC
+5214: :=
+5215: S
+5216: .
+5217: y_{t}^{\mathrm{MC}}:=S.
+5218: This is a valid estimator of the success-probability target, since:
+5219: 𝔼
+5220: π
+5221: ​
+5222: [
+5223: y
+5224: t
+5225: MC
+5226: ∣
+5227: ℱ
+5228: t
+5229: ]
+5230: =
+5231: 𝔼
+5232: π
+5233: ​
+5234: [
+5235: S
+5236: ∣
+5237: ℱ
+5238: t
+5239: ]
+5240: =
+5241: r
+5242: t
+5243: .
+5244: \mathbb{E}_{\pi}\left[y_{t}^{\mathrm{MC}}\mid\mathcal{F}_{t}\right]=\mathbb{E}_{\pi}\left[S\mid\mathcal{F}_{t}\right]=r_{t}.
+5245: Recall the ideal one-step TD target:
+5246: y
+5247: t
+5248: TD
+5249: :=
+5250: r
+5251: t
+5252: +
+5253: 1
+5254: =
+5255: 𝔼
+5256: π
+5257: ​
+5258: [
+5259: S
+5260: ∣
+5261: ℱ
+5262: t
+5263: +
+5264: 1
+5265: ]
+5266: .
+5267: y_{t}^{\mathrm{TD}}:=r_{t+1}=\mathbb{E}_{\pi}\left[S\mid\mathcal{F}_{t+1}\right].
+5268: By the temporal consistency property in Theorem 1, the ideal TD target also has the same conditional expectation as the MC target:
+5269: 𝔼
+5270: π
+5271: ​
+5272: [
+5273: y
+5274: t
+5275: TD
+5276: ∣
+5277: ℱ
+5278: t
+5279: ]
+5280: =
+5281: 𝔼
+5282: π
+5283: ​
+5284: [
+5285: r
+5286: t
+5287: +
+5288: 1
+5289: ∣
+5290: ℱ
+5291: t
+5292: ]
+5293: =
+5294: r
+5295: t
+5296: .
+5297: \mathbb{E}_{\pi}\left[y_{t}^{\mathrm{TD}}\mid\mathcal{F}_{t}\right]=\mathbb{E}_{\pi}\left[r_{t+1}\mid\mathcal{F}_{t}\right]=r_{t}.
+5298: Therefore, MC regression and TD bootstrapping share the same population target. The main difference between the two approaches lies in the variance of the supervision signal.
+5299: Under MC regression, each trajectory prefix is supervised by a single binary realization of the underlying success probability. Specifically, all prefixes from a successful trajectory receive a target of one, whereas all prefixes from a failed trajectory receive a target of zero. Since
+5300: S
+5301: S
+5302: is binary, the conditional variance of the MC target is:
+5303: Var
+5304: π
+5305: ​
+5306: (
+5307: y
+5308: t
+5309: MC
+5310: ∣
+5311: ℱ
+5312: t
+5313: )
+5314: =
+5315: Var
+5316: π
+5317: ​
+5318: (
+5319: S
+5320: ∣
+5321: ℱ
+5322: t
+5323: )
+5324: =
+5325: r
+5326: t
+5327: ​
+5328: (
+5329: 1
+5330: −
+5331: r
+5332: t
+5333: )
+5334: .
+5335: \mathrm{Var}_{\pi}\left(y_{t}^{\mathrm{MC}}\mid\mathcal{F}_{t}\right)=\mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t}\right)=r_{t}(1-r_{t}).
+5336: Moreover, applying the conditional law of total variance to
+5337: S
+5338: S
+5339: gives:
+5340: Var
+5341: π
+5342: ​
+5343: (
+5344: S
+5345: ∣
+5346: ℱ
+5347: t
+5348: )
+5349: =
+5350: 𝔼
+5351: π
+5352: ​
+5353: [
+5354: Var
+5355: π
+5356: ​
+5357: (
+5358: S
+5359: ∣
+5360: ℱ
+5361: t
+5362: +
+5363: 1
+5364: )
+5365: ∣
+5366: ℱ
+5367: t
+5368: ]
+5369: +
+5370: Var
+5371: π
+5372: ​
+5373: (
+5374: 𝔼
+5375: π
+5376: ​
+5377: [
+5378: S
+5379: ∣
+5380: ℱ
+5381: t
+5382: +
+5383: 1
+5384: ]
+5385: ∣
+5386: ℱ
+5387: t
+5388: )
+5389: .
+5390: \mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t}\right)=\mathbb{E}_{\pi}\left[\mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t+1}\right)\mid\mathcal{F}_{t}\right]+\mathrm{Var}_{\pi}\left(\mathbb{E}_{\pi}\left[S\mid\mathcal{F}_{t+1}\right]\mid\mathcal{F}_{t}\right).
+5391: Using
+5392: r
+5393: t
+5394: +
+5395: 1
+5396: =
+5397: 𝔼
+5398: π
+5399: ​
+5400: [
+5401: S
+5402: ∣
+5403: ℱ
+5404: t
+5405: +
+5406: 1
+5407: ]
+5408: r_{t+1}=\mathbb{E}_{\pi}[S\mid\mathcal{F}_{t+1}]
+5409: , this becomes:
+5410: Var
+5411: π
+5412: ​
+5413: (
+5414: S
+5415: ∣
+5416: ℱ
+5417: t
+5418: )
+5419: =
+5420: 𝔼
+5421: π
+5422: ​
+5423: [
+5424: Var
+5425: π
+5426: ​
+5427: (
+5428: S
+5429: ∣
+5430: ℱ
+5431: t
+5432: +
+5433: 1
+5434: )
+5435: ∣
+5436: ℱ
+5437: t
+5438: ]
+5439: +
+5440: Var
+5441: π
+5442: ​
+5443: (
+5444: r
+5445: t
+5446: +
+5447: 1
+5448: ∣
+5449: ℱ
+5450: t
+5451: )
+5452: .
+5453: \mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t}\right)=\mathbb{E}_{\pi}\left[\mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t+1}\right)\mid\mathcal{F}_{t}\right]+\mathrm{Var}_{\pi}\left(r_{t+1}\mid\mathcal{F}_{t}\right).
+5454: Since
+5455: 𝔼
+5456: π
+5457: ​
+5458: [
+5459: Var
+5460: π
+5461: ​
+5462: (
+5463: S
+5464: ∣
+5465: ℱ
+5466: t
+5467: +
+5468: 1
+5469: )
+5470: ∣
+5471: ℱ
+5472: t
+5473: ]
+5474: \mathbb{E}_{\pi}\left[\mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t+1}\right)\mid\mathcal{F}_{t}\right]
+5475: is non-negative, we have:
+5476: Var
+5477: π
+5478: ​
+5479: (
+5480: y
+5481: t
+5482: TD
+5483: ∣
+5484: ℱ
+5485: t
+5486: )
+5487: =
+5488: Var
+5489: π
+5490: ​
+5491: (
+5492: r
+5493: t
+5494: +
+5495: 1
+5496: ∣
+5497: ℱ
+5498: t
+5499: )
+5500: ≤
+5501: Var
+5502: π
+5503: ​
+5504: (
+5505: S
+5506: ∣
+5507: ℱ
+5508: t
+5509: )
+5510: =
+5511: Var
+5512: π
+5513: ​
+5514: (
+5515: y
+5516: t
+5517: MC
+5518: ∣
+5519: ℱ
+5520: t
+5521: )
+5522: .
+5523: \mathrm{Var}_{\pi}\left(y_{t}^{\mathrm{TD}}\mid\mathcal{F}_{t}\right)=\mathrm{Var}_{\pi}\left(r_{t+1}\mid\mathcal{F}_{t}\right)\leq\mathrm{Var}_{\pi}\left(S\mid\mathcal{F}_{t}\right)=\mathrm{Var}_{\pi}\left(y_{t}^{\mathrm{MC}}\mid\mathcal{F}_{t}\right).
+5524: Thus, the TD target has lower conditional variance than the MC target. The reduction in conditional target variance is:
+5525: Var
+5526: π
+5527: ​
+5528: (
+5529: y
+5530: t
+5531: MC
+5532: ∣
+5533: ℱ
+5534: t
+5535: )
+5536: −
+5537: Var
+5538: π
+5539: ​
+5540: (
+5541: y
+5542: t
+5543: TD
+5544: ∣
+5545: ℱ
+5546: t
+5547: )
+5548: =
+5549: 𝔼
+5550: π
+5551: ​
+5552: [
+5553: Var
+5554: π
+5555: ​
+5556: (
+5557: S
+5558: ∣
+5559: ℱ
+5560: t
+5561: +
+5562: 1
+5563: )
+5564: ∣
+5565: ℱ
+5566: t
+5567: ]
+5568: ≥
+5569: 0
+5570: .
+5571: \mathrm{Var}_{\pi}(y_{t}^{\mathrm{MC}}\mid\mathcal{F}_{t})-\mathrm{Var}_{\pi}(y_{t}^{\mathrm{TD}}\mid\mathcal{F}_{t})=\mathbb{E}_{\pi}\left[\mathrm{Var}_{\pi}(S\mid\mathcal{F}_{t+1})\mid\mathcal{F}_{t}\right]\geq 0.
+5572: Takeaway.
+5573: The above analysis shows that MC regression and ideal TD bootstrapping share the same population success-probability target, while the latter provides lower-variance supervision at intermediate timesteps.
+5574: Intuitively, under MC regression, since each intermediate state directly inherits the final binary outcome, a state that is close to success can still receive a target of zero if the trajectory eventually fails, and vice versa. Hence, MC regression can be noisy for learning intermediate success probabilities from limited rollout data.
+5575: In contrast, TD bootstrapping uses the next-step success probability as a soft target for the current state, providing less noisy and more temporally informative supervision than directly assigning the final binary outcome to every intermediate state.
+5576: This motivates our use of TD-style bootstrapping for learning eVTA
+5577: 0
+5578: from policy rollouts.
+5579: Empirical comparison.
+5580: To empirically validate the advantage of TD bootstrapping, we further compare it with MC regression for training eVTA
+5581: 0
+5582: on LIBERO. As shown in Table
+5583: 10
+5584: , TD bootstrapping achieves substantially better temporal consistency, as reflected by higher VOC and VROC scores. Meanwhile, it achieves comparable outcome distinction performance with MC regression. These results indicate that using intermediate bootstrapped success probabilities provides more informative supervision than directly assigning terminal binary outcomes to intermediate steps.
+5585: Figure
+5586: 14
+5587: further visualizes reward predictions of the two variants. For the successful trajectory, MC regression assigns consistently high rewards throughout the trajectory, providing limited distinction between early uncertain states and states closer to task completion. In contrast, TD-eVTA
+5588: 0
+5589: maintains a lower reward during early stages and increases sharply when the robot successfully grasps and places the object. For the failed trajectory, MC-eVTA
+5590: 0
+5591: produces relatively high predictions despite the robot failing to make a successful grasp, whereas TD-eVTA
+5592: 0
+5593: maintains low predictions throughout the trajectory. These results demonstrate that TD bootstrapping provides more informative intermediate success-probability feedback and better tracks task evolution.
+5594: Figure 14:
+5595: Qualitative comparison of eVTA
+5596: 0
+5597: trained by TD bootstrapping and MC regression on a successful trajectory (top) and a failed trajectory (bottom).

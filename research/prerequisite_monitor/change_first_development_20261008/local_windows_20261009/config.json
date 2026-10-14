@@ -1,0 +1,681 @@
+{
+  "parent": {
+    "path": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_inventory_binding_20261009_v1/run/requests.jsonl",
+    "sha256": "7fabc072e0fa44809cc88bd9a233ddda7bc665b34e518d06dce6bb4a8f6b0590"
+  },
+  "requests": [
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "q07108c1875aa88b5",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "ae3f4473ad17fe1df5c37143b7388d36df739d1cc275334146cdc69d550d2e50",
+      "id": "q07108c1875aa88b5_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "8cbf7fc971f331b6297e18d83d3a397865f8dbfd6edb047ee1c59593d68e314b",
+      "id": "q07e7773ad34d85f6_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "d45475bfe412ed63e80f2f4f5baf0477448936e6c71fea5328ebc798db43acfa",
+      "id": "q0d6f6ef3062d4d34_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "05c1c657ad84dbea991274e710f8c90726813928edc8c46f9bddf1a31b7c0960",
+      "id": "q613a0d8ddf5acc68_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "15e092710065fa03446000f279f4aff9b862df867c735ab93d67471e611b0808",
+      "id": "q675f22bca6b91b54_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "b573cced573f2f1b050f6f487bb5f333ed04395cc33fa878345fec48cab204a3",
+      "id": "qbb0dbd57d63ce6a9_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "502222e8e6e264359a0c4352d0288d6576aaead8197002bd8ce9d5976003b14c",
+      "id": "qcde827bb66b99fd4_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_00_02",
+      "frame_ids": [
+        "f0000",
+        "f0001",
+        "f0002"
+      ],
+      "as_of_ms": 2000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_02_04",
+      "frame_ids": [
+        "f0002",
+        "f0003",
+        "f0004"
+      ],
+      "as_of_ms": 4000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_04_06",
+      "frame_ids": [
+        "f0004",
+        "f0005",
+        "f0006"
+      ],
+      "as_of_ms": 6000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_06_08",
+      "frame_ids": [
+        "f0006",
+        "f0007",
+        "f0008"
+      ],
+      "as_of_ms": 8000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_08_10",
+      "frame_ids": [
+        "f0008",
+        "f0009",
+        "f0010"
+      ],
+      "as_of_ms": 10000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_10_12",
+      "frame_ids": [
+        "f0010",
+        "f0011",
+        "f0012"
+      ],
+      "as_of_ms": 12000
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "prompt_base": "Describe actual visible changes in chronological RGB frames. Bind entities across time. Record at most three persistent changes or reversals and a neutral initial scene context. Robot-only motion, camera movement and occlusion are not automatically environment changes. Do not infer purpose, utility, completion or a task plan. Return only JSON. JSON layer check: coverage occurs exactly once at the top level, alongside context and changes. Never place coverage inside a changes item. Output shape (empty structure, not scene evidence): {\"context\":\"brief scene\",\"changes\":[{\"b\":\"earlier supplied ID\",\"a\":\"later supplied ID\",\"object\":\"brief object\",\"before\":\"brief state\",\"after\":\"brief state\"}],\"coverage\":\"complete\"}. Exact keys context, changes, coverage. context is one neutral first-scene sentence max 240 characters. changes at most 3 items; exact keys b, a, object, before, after. b and a are supplied evidence IDs, time(b)<time(a). object/before/after each max 160 characters; brief visible descriptions. coverage=complete|overflow|occluded|no_observable_change. Host assigns change numbers and looks up timestamps; do not generate entity IDs or timestamps.",
+      "baseline_sha256": "842f7b58524abe45a4aa4f15e92e36b03f60d47448b8c39519d160a62097c211",
+      "id": "qf2bed1caaecc37a0_12_14",
+      "frame_ids": [
+        "f0012",
+        "f0013",
+        "f0014"
+      ],
+      "as_of_ms": 14000
+    }
+  ],
+  "protocol": "Same goal-blind dense discovery prompt, deterministic seven overlapping 2-second windows per query; all 15 distinct fullframes, no hand-picked changes/objects/regions/labels. Independent run, 56 calls. Retrospective development package validation, not end-to-end online validation."
+}

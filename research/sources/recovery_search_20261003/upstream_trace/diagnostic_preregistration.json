@@ -1,0 +1,118 @@
+{
+  "id": "r1-upstream-diagnostic-v1",
+  "created_utc": "2026-10-03T07:18:55.807589+00:00",
+  "local_date": "2026-10-03",
+  "prompt_version": "r1-upstream-diagnostic-v1",
+  "protocol": "S6-draft-4",
+  "model_revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+  "dtype": "BF16",
+  "source_selection": "User-preselected ep618/621, independent of model outputs; direct ViFailback high-view media only",
+  "run_order": [
+    "ep618 S0",
+    "ep618 S1",
+    "ep621 S0",
+    "ep621 S1"
+  ],
+  "max_model_calls": 62,
+  "ticks": {
+    "618": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "621": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
+  },
+  "per_tick_limits": {
+    "calls": 1,
+    "frames": 4,
+    "input_tokens": 4096,
+    "output_tokens": 256,
+    "memory_tokens": 512
+  },
+  "max_total_input_tokens": 253952,
+  "max_total_output_tokens": 15872,
+  "prompt_iterations": 1,
+  "repeat_runs": 0,
+  "repair_policy": "No prompt retry or rerun; preserve invalid outputs. Stop subsequent runs on runtime or initialization failure.",
+  "R_C_gate": {
+    "legal_materials": "Direct original dataset MIT card and author-linked MIT conversion, not license inheritance from aggregation",
+    "task": "Exact original per-episode task with path binding; no added rules",
+    "time": "All published frames mapped to upstream indexed video; LeRobot indexes/time agree n/25. Use encoded time only; hardware clock unverified.",
+    "reference": "Single-reviewer H/C draft, explicit unknown intervals, P0 checked at actual 256x256. Not H1 truth."
+  },
+  "prohibited": [
+    "C1",
+    "H1 effect comparison",
+    "BCY effect/significance/sample size",
+    "stage8",
+    "hardware-time detection latency",
+    "closed-loop success claims"
+  ],
+  "frozen_files": [
+    {
+      "path": "experiments/trace_diagnostic_20261003.py",
+      "sha256": "fca2fbb60cf8dd6be514830daba133ef36c835231d95e7d16dcfbe12c7a9c21a"
+    },
+    {
+      "path": "experiments/monitor_eval.py",
+      "sha256": "a43370c42dd7ef34e87bc20bb9b39287fbbef7a2f2452e5bbe413a568da8651e"
+    },
+    {
+      "path": "experiments/qwen_backend.py",
+      "sha256": "a22b05cb60da132107a8e460422ae7e0d7f0aab99dc7d8179848380a6e12cb09"
+    },
+    {
+      "path": "experiments/config_stage7.json",
+      "sha256": "3508b9ba7e250a2d0a8e0895586ee1af5325021049074d987d7997c7d489efb7"
+    },
+    {
+      "path": "D:/monitor2/research/sources/recovery_search_20261003/upstream_trace/relation_labels_draft.json",
+      "sha256": "94ae92c5aabe9c6581d987b25b807782d471324747737ddea95ea20a0ea60358"
+    },
+    {
+      "path": "D:/monitor2/research/sources/recovery_search_20261003/upstream_trace/p0/ep618/online_track.json",
+      "sha256": "96e71e706e039812205abfcc53c66a993ce40c5db04cd84c379abb41e513de87"
+    },
+    {
+      "path": "D:/monitor2/research/sources/recovery_search_20261003/upstream_trace/p0/ep618/packet_manifest.json",
+      "sha256": "6c0676e175e6413e265de7d0d09a7083c25c35f30a6e1c5d1763ae7c8f08f5f9"
+    },
+    {
+      "path": "D:/monitor2/research/sources/recovery_search_20261003/upstream_trace/p0/ep621/online_track.json",
+      "sha256": "70150f2c7c7433dddd946b50f7c15d78cccf1d8af95a90912bea7c1189778bd9"
+    },
+    {
+      "path": "D:/monitor2/research/sources/recovery_search_20261003/upstream_trace/p0/ep621/packet_manifest.json",
+      "sha256": "cf218fd31f3f131211d44917d5b50faceb7bfc7495c17efb5b50ccb8a8b49151"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_precision_transfer_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_precision_transfer_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 15:36:09 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\":40,\"last\":\"plate_R_14_rgb_chat_opposed_fp32\",\"parent\":428,\"total\":468}{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"plate_R_0_rgb_chat_opposed_fp32\",\"issued\":36}\n{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"plate_R_7_rgb_chat_positive_fp32\",\"issued\":37}\n{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"plate_R_7_rgb_chat_opposed_fp32\",\"issued\":38}\n{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"plate_R_14_rgb_chat_positive_fp32\",\"issued\":39}\n{\"alias\":\"True\",\"bare\":\"True\",\"id\":\"plate_R_14_rgb_chat_opposed_fp32\",\"issued\":40}\n",
+  "stderr": "",
+  "exit_code": 0
+}

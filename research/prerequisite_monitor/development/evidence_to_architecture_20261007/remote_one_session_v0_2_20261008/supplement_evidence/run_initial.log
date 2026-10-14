@@ -1,0 +1,11 @@
+bundle_members_verified 10
+official_topreward_client_import_verified QwenClient
+{"output": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/evidence_to_architecture_v02_20261008/dry_run.jsonl", "jobs": 18, "expected_stage_rows": 162, "dry_run": true}
+qwen_pilot_and_full utc=2026-10-08T03:58:16Z remaining_s=3104 required_s=1800 seal_download_buffer_s=600
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 92.40it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+{"output": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/evidence_to_architecture_v02_20261008/pilot.jsonl", "jobs": 2, "expected_stage_rows": 18, "dry_run": false}
+pilot_status {'valid': 13, 'direction_conflict': 1, 'schema_or_evidence_failure': 4}
+qwen_full utc=2026-10-08T04:01:12Z remaining_s=2928 required_s=2568 seal_download_buffer_s=600
+Lease too short after pilot; pilot preserved
+evidence_sha256=b5e1b25054253851309b297f64ba4430187067f9d17149fe4301aed8d7408469

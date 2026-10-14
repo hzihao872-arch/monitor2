@@ -1,0 +1,68 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 96.49it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+0001.mp4 {
+  "goal_object": "blue cube",
+  "destination": "green tray",
+  "moved_object": "red cube",
+  "destination_non_goal_0": false,
+  "destination_non_goal_14": false,
+  "source_non_goal_0": false,
+  "source_non_goal_14": false,
+  "evidence_0": "Blue cube on wooden surface, red cube inside green tray.",
+  "evidence_14": "Red cube held by robot arm, green tray empty, blue cube on wooden surface."
+}
+0002.mp4 {
+  "goal_object": "blue cube",
+  "destination": "green tray",
+  "moved_object": "red cube",
+  "destination_non_goal_0": false,
+  "destination_non_goal_14": false,
+  "source_non_goal_0": false,
+  "source_non_goal_14": false,
+  "evidence_0": "Blue cube is on the wooden surface, green tray contains a red cube.",
+  "evidence_14": "Blue cube is on the wooden surface, green tray contains a red cube."
+}
+0003.mp4 {
+  "goal_object": "blue cube",
+  "destination": "green tray",
+  "moved_object": "red cube",
+  "destination_non_goal_0": false,
+  "destination_non_goal_14": false,
+  "source_non_goal_0": false,
+  "source_non_goal_14": false,
+  "evidence_0": "Blue cube is on the wooden surface, green tray is empty and nearby.",
+  "evidence_14": "Blue cube is on the wooden surface, green tray is empty and nearby."
+}
+0004.mp4 {
+  "goal_object": "blue cube",
+  "destination": "green tray",
+  "moved_object": "red cube",
+  "destination_non_goal_0": false,
+  "destination_non_goal_14": false,
+  "source_non_goal_0": false,
+  "source_non_goal_14": false,
+  "evidence_0": "Blue cube is on the wooden surface, green tray is empty.",
+  "evidence_14": "Red cube is inside the green tray, blue cube is on the wooden surface."
+}
+0005.mp4 {
+  "goal_object": "blue cube",
+  "destination": "green tray",
+  "moved_object": "blue cube",
+  "destination_non_goal_0": false,
+  "destination_non_goal_14": false,
+  "source_non_goal_0": false,
+  "source_non_goal_14": false,
+  "evidence_0": "Blue cube is on the wooden surface, green tray is empty and nearby.",
+  "evidence_14": "Blue cube is inside the green tray, red cube is on the wooden surface nearby."
+}
+0006.mp4 {
+  "goal_object": "blue cube",
+  "destination": "green tray",
+  "moved_object": "unknown",
+  "destination_non_goal_0": false,
+  "destination_non_goal_14": false,
+  "source_non_goal_0": false,
+  "source_non_goal_14": false,
+  "evidence_0": "Blue cube is on the wooden surface, green tray is empty and nearby.",
+  "evidence_14": "Blue cube is on the wooden surface, green tray is empty and nearby."
+}

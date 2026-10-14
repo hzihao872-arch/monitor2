@@ -1,0 +1,60 @@
+{
+  "version": "baseline-diagnostic-cases-1",
+  "frozen_before_candidate_outputs": true,
+  "model_runs_this_round": 0,
+  "unit": "physical/source episode; multiple frames in one episode are not independent cases",
+  "selection_rule": "Retain all three pre-output cases with a verified instruction-to-video mapping: one author-native task-required reversal, the two existing direct-upstream ViFailback loss/retention development cases. Do not select or remove by future model prediction.",
+  "cases": [
+    {
+      "case_id": "CP-RMBench-place_block_mat-episode1",
+      "role": "legal_reversal_native_progress_control",
+      "source": "Sterzhang/ContextProgress-Bench",
+      "revision": "0eb2e2e61f89c499de94a31264c704735b52900c",
+      "episode_id": "RMBench/place_block_mat/episode1",
+      "original_episode": "RMBench place_block_mat episode4",
+      "instruction_source": "contextprogress/RMBench/place_block_mat/demo_clean/episodes/episode1/manifest.json",
+      "video_source": "contextprogress/RMBench/place_block_mat/demo_clean/episodes/episode1/full_video.mp4",
+      "clock": "30 FPS encoded video, frame index / 30 seconds; no robot hardware clock claim",
+      "subtask_boundaries_half_open_frames": [[0,174],[174,349],[349,525],[525,701],[701,878],[878,1056]],
+      "inspection_anchors_frames": [160,180,330,360],
+      "native_label": "Six-subtask monotone progress p(f)=(k+(f-s_k)/(e_k-1-s_k))/6; not a current-validity label",
+      "semantic_observation": "At frame 160 the left red block is on the green mat; by frame 330 it has returned to its blue mat. The instruction explicitly requires this reversal, so leaving the green mat is not regression of the full task.",
+      "reference_status": "instruction and boundaries by authors; four frames inspected by one reviewer; no model prediction",
+      "native_test": "RoboMeter/ProgressCompass whole-task progress only, if exact original inference becomes available",
+      "added_capability_test": "Any current-condition question about red_on_green is a new output requirement, not native progress accuracy"
+    },
+    {
+      "case_id": "ViFailback-ep621",
+      "role": "prior_result_lost",
+      "source": "ViFailback-Dataset and RoboPulse++ published view1 mapping",
+      "source_episode": "stack_three_color_cubes_ep2/episode_36",
+      "lerobot_episode": 5197,
+      "robopulse_episode": 621,
+      "instruction_source": "research/sources/recovery_search_20261003/upstream_trace/ep621_source_annotation.json",
+      "video_source": "research/sources/recovery_search_20261003/upstream_trace/stack_three_color_cubes_ep2_36_cam_high.mp4",
+      "clock": "encoded video frame / 25 seconds; physical acquisition clock unverified",
+      "target_condition": "green cube released on and supported by blue cube, required for final three-layer stack",
+      "single_reviewer_anchors": {"established_source_frames": [200,225,250,275,290], "loss_bracket_source_frames": [290,310], "p0_uncertain_ticks": [12,13], "p0_first_negative_tick_draft": 14},
+      "native_label": "RoboPulse++ overall falling interval 22-28; ViFailback task-planning failure at subtask 5. Neither is a per-condition monitor-error label.",
+      "reference_status": "59-frame source mapping verified across ep621 and ep618; relation/loss/visibility are single-reviewer development judgments; no specialist output"
+    },
+    {
+      "case_id": "ViFailback-ep618",
+      "role": "later_failure_with_prior_result_retained",
+      "source": "ViFailback-Dataset and RoboPulse++ published view1 mapping",
+      "source_episode": "stack_three_color_cubes_ep1/episode_58",
+      "lerobot_episode": 5060,
+      "robopulse_episode": 618,
+      "instruction_source": "research/sources/recovery_search_20261003/upstream_trace/ep618_source_annotation.json",
+      "video_source": "research/sources/recovery_search_20261003/upstream_trace/stack_three_color_cubes_ep1_58_cam_high.mp4",
+      "clock": "encoded video frame / 25 seconds; physical acquisition clock unverified",
+      "target_condition": "green cube released on and supported by blue cube, required for final three-layer stack",
+      "single_reviewer_anchors": {"established_source_frames": [150,175,200], "retained_source_frames": [250,300,350,375], "p0_retention_tick": 14},
+      "native_label": "RoboPulse++ overall falling interval 18-29; ViFailback gripper-6d-pose failure at subtask 5. Neither implies old green-on-blue relation failed.",
+      "reference_status": "source mapping verified; retained relation is a single-reviewer development judgment; no specialist output"
+    }
+  ],
+  "missing_case_classes": ["independently verified occlusion-only case", "destruction followed by repair"],
+  "adjudication_gate": "No denominator-based condition-error rate or H1 comparison until independent reference and prefix-only visibility review. If the available single-view prefix is ambiguous, record unknown rather than infer from full video.",
+  "output_rule": "Save unmodified native curves, success values, reasoning text, timestamps, and failures. Do not threshold a task-level progress scalar into green_on_blue without a frozen, independently justified mapping. A method that does not output a per-condition judgment is unevaluable on that new output target, not an incorrect prediction."
+}

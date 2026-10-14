@@ -1,0 +1,1 @@
+先读 FINAL_REPORT_20261009_zh.md。window_v9/requests.jsonl 和 results 保存全部50次原答，provenance保存远端实际代码/日志/冻结身份。source_original/pilot_v8.zip 为原始合法输入和旧核心；old_results为四份旧最终结果。private_eval仅用于本地评估，不得送入模型。local_audit联系表与oracle为AI审读开发诊断，未经人工双标。local_audit中分析脚本依赖原项目目录布局；成本亦可直接从账本复算。未包含SSH凭据或连接桥。

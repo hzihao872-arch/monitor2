@@ -1,0 +1,71 @@
+Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.8.0+cu128).
+/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/unsloth/__init__.py:1531: UserWarning: WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from ._gpu_init import *
+[fla.utils._device|WARNING]Current Python version 3.10 is below the recommended 3.11 version. It is recommended to upgrade to Python 3.11 or higher for the best experience.
+[32m2026-10-05 23:27:17[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.evals.eval_server[0m:[36m<module>[0m:[36m62[0m | [1mrobometer.eval_server logger initialized at level DEBUG[0m
+[32m2026-10-05 23:27:18[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.utils.save[0m:[36mresolve_checkpoint_path[0m:[36m261[0m | [1mUsing local checkpoint: /root/autodl-tmp/hf/hub/models--robometer--Robometer-4B/snapshots/beef63bc914c5c189329d49c6d712d96d632aa34[0m
+[32m2026-10-05 23:27:18[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.utils.setup_utils[0m:[36msetup_model_and_processor[0m:[36m837[0m | [1mUsing torch dtype: torch.bfloat16[0m
+[32m2026-10-05 23:27:18[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.utils.setup_utils[0m:[36msetup_model_and_processor[0m:[36m843[0m | [1mUnsloth mode enabled for faster training[0m
+[32m2026-10-05 23:27:18[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.utils.setup_utils[0m:[36msetup_model_and_processor[0m:[36m860[0m | [1mFlash Attention 2 CUDA is not available[0m
+[32m2026-10-05 23:27:18[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.utils.save[0m:[36mresolve_checkpoint_path[0m:[36m261[0m | [1mUsing local checkpoint: /root/autodl-tmp/hf/hub/models--robometer--Robometer-4B/snapshots/beef63bc914c5c189329d49c6d712d96d632aa34[0m
+[32m2026-10-05 23:27:18[0m | [1mINFO    [0m | [Rank 0] [36mrobometer.utils.setup_utils[0m:[36m_load_base_model_with_unsloth[0m:[36m499[0m | [1mUsing Unsloth for faster training with Qwen model[0m
+Traceback (most recent call last):
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1014, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1121, in _hf_hub_download_to_cache_dir
+    _raise_on_head_call_error(head_call_error, force_download, local_files_only)
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1653, in _raise_on_head_call_error
+    raise LocalEntryNotFoundError(
+huggingface_hub.errors.LocalEntryNotFoundError: Cannot find the requested files in the disk cache and outgoing traffic has been disabled. To enable hf.co look-ups and downloads online, set 'local_files_only' to False.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/unsloth/models/loader.py", line 1470, in from_pretrained
+    model_config = AutoConfig.from_pretrained(
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1332, in from_pretrained
+    config_dict, unused_kwargs = PretrainedConfig.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/transformers/configuration_utils.py", line 662, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/transformers/configuration_utils.py", line 721, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/transformers/utils/hub.py", line 553, in cached_files
+    raise OSError(
+OSError: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/autodl-tmp/monitor2/research/sources/robometer_pr33_compat/scripts/example_inference_local.py", line 201, in <module>
+    main()
+  File "/root/autodl-tmp/monitor2/research/sources/robometer_pr33_compat/scripts/example_inference_local.py", line 161, in main
+    rewards, success_probs = compute_rewards_per_frame_local(
+  File "/root/autodl-tmp/monitor2/research/sources/robometer_pr33_compat/scripts/example_inference_local.py", line 71, in compute_rewards_per_frame_local
+    exp_config, tokenizer, processor, reward_model = load_model_from_hf(
+  File "/root/autodl-tmp/monitor2/research/sources/robometer_pr33_compat/robometer/utils/save.py", line 919, in load_model_from_hf
+    tokenizer, processor, reward_model = setup_model_and_processor(
+  File "/root/autodl-tmp/monitor2/research/sources/robometer_pr33_compat/robometer/utils/setup_utils.py", line 921, in setup_model_and_processor
+    base_model, tokenizer = _load_base_model_with_unsloth(
+  File "/root/autodl-tmp/monitor2/research/sources/robometer_pr33_compat/robometer/utils/setup_utils.py", line 502, in _load_base_model_with_unsloth
+    base_model, tokenizer = FastVisionModel.from_pretrained(
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/unsloth/models/loader_utils.py", line 1275, in _wrapper
+    return _mark_loaded_local_files_only(fn(*args, **kwargs), kwargs.get("cache_dir"))
+  File "/root/autodl-tmp/monitor2/.venv-robometer/lib/python3.10/site-packages/unsloth/models/loader.py", line 1558, in from_pretrained
+    raise RuntimeError(combined_error) from _cause
+RuntimeError: Unsloth: Failed to load model. Both AutoConfig and PeftConfig loading failed.
+
+AutoConfig error: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+PeftConfig error: Can't find 'adapter_config.json' at 'unsloth/Qwen3-VL-4B-Instruct'
+
+

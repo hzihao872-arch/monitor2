@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_inventory_binding_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_inventory_binding_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 15:46:29 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\": 15, \"last\": \"qbb0dbd57d63ce6a9_INVENTORY\", \"parent\": 468, \"total\": 483}{\"query\": \"q07e7773ad34d85f6\", \"stage\": \"INVENTORY\", \"valid\": true, \"issued\": 11}\n{\"query\": \"q07e7773ad34d85f6\", \"stage\": \"TRACK\", \"valid\": true, \"issued\": 12}\n{\"query\": \"qcde827bb66b99fd4\", \"stage\": \"INVENTORY\", \"valid\": true, \"issued\": 13}\n{\"query\": \"qcde827bb66b99fd4\", \"stage\": \"TRACK\", \"valid\": true, \"issued\": 14}\n{\"query\": \"qbb0dbd57d63ce6a9\", \"stage\": \"INVENTORY\", \"valid\": false, \"issued\": 15}\n",
+  "stderr": "",
+  "exit_code": 0
+}

@@ -1,0 +1,24 @@
+import hashlib,json,pathlib,zipfile
+H=pathlib.Path(__file__).resolve().parent;S=H.parent/'atomic_contrast_20261009'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+t=(S/'contrast_runner.py').read_text().replace('contrast_runner.py','precision_runner.py').replace("'atomic_contrast_v1'","'precision_transfer_v1'").replace('}),48)','}),40)').replace('>48','>40').replace('parent_count!=80','parent_count!=24')
+a=t.index('    local_parents=');b=t.index('\n    parent_paths=',a);t=t[:a]+"    local_parents=[H.parent/'author_chat_20261009/download/run/requests.jsonl']"+t[b:]
+t=t.replace("if parent_count!=24:raise RuntimeError('parent count changed')","if parent_count!=24:raise RuntimeError('parent count changed')\n    parent_count=428")
+t=t.replace("for n in ('precision_runner.py','config.json')","for n in ('precision_runner.py','config.json','head_precision.py')")
+t=t.replace("self._load();import torch\n                started=", "self._load();import torch\n                head_setup=0.\n                if req['head_precision']=='fp32' and getattr(self,'fp32_head_handle',None) is None:\n                    from head_precision import enable_fp32_head\n                    setup_t=time.perf_counter();self.fp32_head_handle=enable_fp32_head(self.model);head_setup=time.perf_counter()-setup_t\n                if req['head_precision']=='bf16' and self.model.lm_head.weight.dtype!=torch.bfloat16:raise RuntimeError('precision order')\n                started=")
+t=t.replace("'image_grid_thw':inputs.get('image_grid_thw')", "'head_dtype':str(self.model.lm_head.weight.dtype),'head_setup_seconds':head_setup,'image_grid_thw':inputs.get('image_grid_thw')")
+t=t.replace("'prompt':prompt,'template':item['template']", "'prompt':prompt,'head_precision':item['head_precision'],'template':item['template']").replace("'input_kind':item['input_kind'],'raw':raw", "'input_kind':item['input_kind'],'head_precision':item['head_precision'],'raw':raw")
+(H/'precision_runner.py').write_text(t,encoding='utf-8');orig=json.loads((S/'config.json').read_text())['requests'];seen=[r.copy() for r in orig if r['input_kind']=='rgb' and r['template']=='chat'];reversal=[];labels=json.loads((H.parent/'atomic_state_20261009/private_eval/labels.json').read_text());labels.update(json.loads((H.parent/'reversal_transfer_20261009/private_eval/labels.json').read_text()))
+for group,qid in [('opening','q07108c1875aa88b5'),('plate','qbb0dbd57d63ce6a9')]:
+ for sec in (0,7,14):
+  for polarity in ('positive','opposed'):
+   source=next(r for r in seen if r['probe_id']==group+'_00' and r['polarity']==polarity);pid=group+'_R_'+str(sec);reversal.append(source.copy()|{'probe_id':pid,'query_id':qid,'ref':f'f{sec:04d}','id':pid+'_rgb_chat_'+polarity})
+req=[]
+for rows,precision in [(reversal,'bf16'),(seen+reversal,'fp32')]:
+ for r in rows:req.append(r.copy()|{'head_precision':precision,'id':r['id']+'_'+precision})
+assert len(req)==40
+cfg={'parents':[{'path':'/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_author_chat_20261009_v1/run/requests.jsonl','sha256':sha(H.parent/'author_chat_20261009/download/run/requests.jsonl')}],'requests':req,'protocol':'BF16 body fixed, only lm_head matmul in FP32 using exact converted BF16 weights in RAM, no training, checkpoint untouched; 12 new reversal statement baselines then28 FP32 statements; original16 BF16 statements reused read-only; directed diagnostics only'}
+(H/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8');(H/'freeze.json').write_text(json.dumps({'files':{n:sha(H/n) for n in ('precision_runner.py','config.json','head_precision.py')},'derived_from_sha256':sha(S/'contrast_runner.py')},indent=2),encoding='utf-8');(H/'private_eval').mkdir(exist_ok=True);(H/'private_eval/labels.json').write_text(json.dumps(labels,indent=2),encoding='utf-8')
+with zipfile.ZipFile(H/'precision_v1.zip','w') as z:
+ for n in ('config.json','freeze.json','precision_runner.py','head_precision.py','test_precision.py'):z.write(H/n,n)
+t=(S/'remote_ops.py').read_text().replace('change_first_contrast_20261009_v1','change_first_precision_transfer_20261009_v1').replace('contrast_v1.zip','precision_v1.zip').replace('test_contrast.py','test_precision.py').replace('contrast_runner.py','precision_runner.py').replace('contrast_FINAL.tar.gz','precision_FINAL.tar.gz').replace("['deploy','rgb','oracle','status','collect','seal','get']","['deploy','run','status','collect','seal','get']").replace("elif a.op in ('rgb','oracle'):","elif a.op=='run':").replace(' --block {a.op}','').replace('{R}/rgb.log','{R}/run.log');(H/'remote_ops.py').write_text(t,encoding='utf-8');t=(S/'seal_remote.py').read_text().replace('contrast_runner.py','precision_runner.py').replace('contrast_FINAL.tar.gz','precision_FINAL.tar.gz');(H/'seal_remote.py').write_text(t,encoding='utf-8');print(json.dumps({'requests':len(req),'zip_sha256':sha(H/'precision_v1.zip')}))

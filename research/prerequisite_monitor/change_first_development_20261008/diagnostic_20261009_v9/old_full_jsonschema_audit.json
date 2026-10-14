@@ -1,0 +1,1327 @@
+[
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near blue cube', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "changes/0/observation",
+        "validator": "enum",
+        "message": "'robot arm moved to grasp blue cube' is not one of ['observed', 'uncertain']"
+      },
+      {
+        "path": "changes/1/observation",
+        "validator": "enum",
+        "message": "'robot placed blue cube into transparent box' is not one of ['observed', 'uncertain']"
+      },
+      {
+        "path": "changes/2/observation",
+        "validator": "enum",
+        "message": "'robot arm retracted after placing cube' is not one of ['observed', 'uncertain']"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "claims/0/falsifier",
+        "validator": "type",
+        "message": "[] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v1_results_20261009T121725Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near blue cube', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near blue cube'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "claims/0/falsifier",
+        "validator": "type",
+        "message": "[] is not of type 'string'"
+      },
+      {
+        "path": "claims/1/falsifier",
+        "validator": "type",
+        "message": "[] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "claims/0/falsifier",
+        "validator": "type",
+        "message": "[] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v2_results_20261009T122427Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near blue cube', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near blue cube'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near transparent box', 'near blue cube', 'near orange square', 'near gray base'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'left of transparent box', 'near robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'has orange square on top', 'has small gray cube on orange square', 'near robot', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on transparent box', 'has small gray cube on top', 'near robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on orange square', 'on transparent box', 'near robot'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "D4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "D4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "D4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "K4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "K4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "K4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "C4",
+    "stage": "L2",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "C4",
+    "stage": "V3",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "s1_v3_results_20261009T123229Z.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "C4",
+    "stage": "L4",
+    "exported_schema_valid": true,
+    "errors": []
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "access_gate",
+      "G"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near blue cube', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near transparent box'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near blue cube'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "access_gate",
+      "R"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden floor', 'near gray tiled floor', 'near orange square on box', 'near blue cube', 'near gray box', 'near another white robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden floor', 'left of robot', 'left of gray box', 'near gray box', 'near orange square', 'near another white robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden floor', 'right of robot', 'right of blue cube', 'near blue cube', 'near orange square', 'near another white robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on top of gray box', 'on gray box', 'near robot', 'near blue cube', 'near gray box', 'near another white robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on wooden floor', 'left of robot', 'left of gray box', 'near gray box', 'near orange square', 'near blue cube'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "access_gate",
+      "E"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden floor', 'near table', 'left of table', 'right of blue cube', 'above table', 'in front of gray base'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden floor', 'left of table', 'in front of robot', \"near robot's left foot\", \"under robot's right arm\", 'left of gray base'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden floor', 'right of robot', 'right of blue cube', 'in front of gray base', \"under robot's right arm\", \"under robot's left arm\"] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on wooden floor', 'under table', \"under robot's right arm\", \"under robot's left arm\", 'in front of robot', 'in front of blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on table', 'on gray base', 'in front of robot', 'in front of blue cube', \"under robot's right arm\", \"under robot's left arm\"] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/5/visible_relation",
+        "validator": "type",
+        "message": "['on orange top', 'on table', 'on gray base', 'in front of robot', 'in front of blue cube', \"under robot's right arm\"] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "access_gate",
+      "H"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near transparent box', 'near blue cube', 'near orange square', 'near gray base'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'left of transparent box', 'near robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'has orange square on top', 'has small gray cube on orange square', 'near robot', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on transparent box', 'has small gray cube on top', 'near robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on orange square', 'on transparent box', 'near robot'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "support_surface",
+      "G"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['standing on wooden surface', 'near blue cube', 'near pink cube', 'near yellow platform', 'near gray bars'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot', 'near pink cube', 'near yellow platform', 'near gray bars'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on yellow platform', 'on wooden surface', 'near gray bars', 'near robot', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'supported by gray bars', 'holding pink cube', 'holding gray cube', 'near robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on yellow platform', 'on wooden surface', 'near pink cube', 'near gray bars', 'near robot'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/5/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'supporting yellow platform', 'near pink cube', 'near gray cube', 'near robot'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "support_surface",
+      "H"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['above yellow platform', 'near pink cube', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot arm'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'has gray cube on top', 'between two gray bars'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on yellow platform', 'on wooden surface'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot arm'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/5/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'supporting yellow platform'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "support_surface",
+      "E"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['above yellow platform', 'near pink cube', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'between two gray bars', 'under robot arm'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot arm', 'near yellow platform'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot arm', 'near yellow platform'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on yellow platform', 'under robot arm'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/5/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'next to yellow platform', 'next to green bar'] is not of type 'string'"
+      }
+    ]
+  },
+  {
+    "archive": "v1_length_results_20261009_final.tar.gz",
+    "case": [
+      "support_surface",
+      "R"
+    ],
+    "arm": "shared",
+    "stage": "V1",
+    "exported_schema_valid": false,
+    "errors": [
+      {
+        "path": "initial_context/0/visible_relation",
+        "validator": "type",
+        "message": "['above yellow platform', 'near pink cube', 'near blue cube'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/1/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near robot arm'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/2/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'between gray bars'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/3/visible_relation",
+        "validator": "type",
+        "message": "['on yellow platform', 'between gray bars'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/4/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near green bar'] is not of type 'string'"
+      },
+      {
+        "path": "initial_context/5/visible_relation",
+        "validator": "type",
+        "message": "['on wooden surface', 'near pink cube'] is not of type 'string'"
+      }
+    ]
+  }
+]

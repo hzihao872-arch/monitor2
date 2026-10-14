@@ -1,0 +1,24 @@
+{
+  "status": "ready_for_single_scene_development_input",
+  "scene_protocol": "flat_square_dev_v2",
+  "video_protocol": "15s_1fps_640x480_15_decoded_frames",
+  "scope": "development_only",
+  "model_input": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/flat_only_six_candidate_v3/model_input",
+  "input_only_zip": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/flat_only_six_candidate_v3/flat_only_development_model_input.zip",
+  "input_only_zip_sha256": "f7e8f274ce231b9f02e094bb48795871985856f10a5193a25f1d870c27ae6481",
+  "model_input_file_count": 9,
+  "anonymous_video_count": 6,
+  "runner_manifest": "model_input/manifest.jsonl",
+  "media_manifest": "model_input/media_hashes.json",
+  "independent_stack_review": "D:/monitor2/research/prerequisite_monitor/development/scene_video_next/reviews/flat_stack_pilot_receipt_and_comparison.md",
+  "independent_stack_review_raw_sha256": "376584b41d0c93a1d41731d993c35f051bc4e00f146b300edfb5d602ae389b3a",
+  "input_audit_status": "pass",
+  "existing_runner_input_and_decode_status": "pass",
+  "existing_runner_dry_run_status": "pass_6_videos_no_model_loaded",
+  "known_limits": [
+    "The reviewer classified both stack counterexample clips correctly but gave no separate supporting reason for the positive clip.",
+    "This is one development mechanism; the original two-mechanism SCENE_READY.json gate is not met.",
+    "The method is not frozen and this package is not a fresh blind test.",
+    "Independent human discrimination does not guarantee Monitor model discrimination."
+  ]
+}

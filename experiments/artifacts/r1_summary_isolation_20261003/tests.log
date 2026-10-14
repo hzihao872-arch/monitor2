@@ -1,0 +1,27 @@
+test_gate_does_not_select_on_truth_labels (test_interface_repair.RepairGateTest.test_gate_does_not_select_on_truth_labels) ... ok
+test_rejects_actual_v1_parser_failures (test_interface_repair.RepairGateTest.test_rejects_actual_v1_parser_failures) ... ok
+test_rejects_truncation_and_partial_output (test_interface_repair.RepairGateTest.test_rejects_truncation_and_partial_output) ... ok
+test_rejects_valid_json_without_memory_handoff (test_interface_repair.RepairGateTest.test_rejects_valid_json_without_memory_handoff) ... ok
+test_bcy_denominators_do_not_reward_abstention (test_monitor_eval.ProtocolSemanticsTest.test_bcy_denominators_do_not_reward_abstention) ... ok
+test_budget_failure_is_invalid_and_keeps_raw_output (test_monitor_eval.ProtocolSemanticsTest.test_budget_failure_is_invalid_and_keeps_raw_output) ... ok
+test_budget_tracks_per_tick_and_whole_track (test_monitor_eval.ProtocolSemanticsTest.test_budget_tracks_per_tick_and_whole_track) ... ok
+test_delay_stops_at_occlusion_and_repair (test_monitor_eval.ProtocolSemanticsTest.test_delay_stops_at_occlusion_and_repair) ... ok
+test_fixed_packet_uses_only_past_frames_and_deduplicates (test_monitor_eval.ProtocolSemanticsTest.test_fixed_packet_uses_only_past_frames_and_deduplicates) ... ok
+test_method_prompts_have_same_source_and_distinct_update_rule (test_monitor_eval.ProtocolSemanticsTest.test_method_prompts_have_same_source_and_distinct_update_rule) ... ok
+test_online_loader_blocks_reference_and_future_instruction (test_monitor_eval.ProtocolSemanticsTest.test_online_loader_blocks_reference_and_future_instruction) ... ok
+test_parser_keeps_unknown_and_marks_invalid_object (test_monitor_eval.ProtocolSemanticsTest.test_parser_keeps_unknown_and_marks_invalid_object) ... ok
+test_repair_before_first_decidable_tick_excludes_event_from_primary_denominator (test_monitor_eval.ProtocolSemanticsTest.test_repair_before_first_decidable_tick_excludes_event_from_primary_denominator) ... ok
+test_resume_keeps_prior_output_and_cost (test_monitor_eval.ProtocolSemanticsTest.test_resume_keeps_prior_output_and_cost) ... ok
+test_tick_metrics_separate_online_unknown_reference_unknown_and_invalid (test_monitor_eval.ProtocolSemanticsTest.test_tick_metrics_separate_online_unknown_reference_unknown_and_invalid) ... ok
+test_interleaved_frames_keep_source_times (test_qwen_backend.QwenMessageTest.test_interleaved_frames_keep_source_times) ... ok
+test_media_hash_drift_blocks_model_run (test_qwen_backend.QwenMessageTest.test_media_hash_drift_blocks_model_run) ... ok
+test_cap_or_repeated_summary_is_not_usable (test_summary_isolation.IsolationTest.test_cap_or_repeated_summary_is_not_usable) ... ok
+test_joint_rejects_future_evidence (test_summary_isolation.IsolationTest.test_joint_rejects_future_evidence) ... ok
+test_short_plain_and_json_summary_are_usable (test_summary_isolation.IsolationTest.test_short_plain_and_json_summary_are_usable) ... ok
+test_summary_only_rejects_other_fields (test_summary_isolation.IsolationTest.test_summary_only_rejects_other_fields) ... ok
+test_truncated_and_extra_brace_are_not_salvaged (test_summary_isolation.IsolationTest.test_truncated_and_extra_brace_are_not_salvaged) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.016s
+
+OK

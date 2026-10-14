@@ -1,0 +1,3618 @@
+0001: ARS: Agentic Reward System for Robot Learning
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2609.34484v1 [cs.RO] 28 Sep 2026
+0010: ARS: Agentic Reward System for Robot Learning
+0011: Sheng Hu
+0012: Weiyi Lu
+0013: Lingbing Zeng
+0014: Gan Weng
+0015: Weiwei Zhang
+0016: Kai Xie
+0017: Xiaofeng Mou
+0018: Yi Xu
+0019: †
+0020: †
+0021: thanks:
+0022: Corresponding author.
+0023: Abstract
+0024: Progress reward modeling is the problem of estimating how a robot’s behavior changes task progress over time. Reliable estimation requires distinguishing meaningful state changes from failed attempts and task-irrelevant actions. We introduce the
+0025: Agentic Reward System (ARS)
+0026: , an inference framework for progress reward modeling with general-purpose vision-language models (VLMs), without additional reward-model training. Given an offline trajectory and a task instruction, ARS uses adaptive visual inspection for both event proposal and verification. A subagent proposes a task-relevant event timeline, which a primary agent verifies and revises before estimating per-frame progress. ARS can incorporate optional terminal outcome labels and visual references to inform its judgments. It can also audit progress estimates from external reward models. We evaluate ARS with a 27B VLM on a controlled semantic-mismatch benchmark and downstream policy learning in simulation and on a real robot. The benchmark reveals that several evaluated reward baselines assign spurious progress to wrong-object manipulation even in simple pick-and-place scenes. ARS better suppresses these errors and outperforms these baselines in simulation policy learning. We further demonstrate that ARS supports long-horizon policy learning from mixed-quality offline experience on real-robot multi-screw fastening in a full-scale laboratory replica of an industrial washing-machine assembly line. These results suggest that structured inference and verification can improve the usefulness of general-purpose VLMs for robot reward modeling. Code is at
+0027: https://github.com/midea-ai/ars
+0028: .
+0029: AIRC, Midea Group
+0030: {husheng24,luwy54,zenglb8,wenggan,zhangww44,xiekai17,mouxf,xuyi42}@midea.com
+0031: Figure 1:
+0032: Overview of ARS. ARS uses adaptive visual inspection for both event proposal and verification. A subagent proposes task-relevant events from an instruction and offline trajectory. The primary agent verifies and refines these proposals, then estimates per-frame task progress. ARS supports optional terminal outcomes and multimodal references, plus external reward auditing.
+0033: 1
+0034: Introduction
+0035: Reliable rewards are central to learning robot policies from experience. Sparse terminal feedback offers limited guidance about individual actions, while hand-designed dense rewards require task-specific engineering and often privileged simulator state. In long-horizon manipulation, successful trajectories can contain failed attempts, while failed trajectories can retain useful intermediate actions. Estimating task progress from visual observations can identify these local differences and turn mixed-quality experience into training supervision.
+0036: Vision-language models (VLMs) can interpret task instructions together with visual trajectories. Existing approaches elicit progress from pretrained models
+0037: (
+0038: Ma et al., 2025
+0039: ;
+0040: Chen et al., 2026b
+0041: )
+0042: or train dedicated reward models using trajectory supervision
+0043: (
+0044: Liang et al., 2026
+0045: ;
+0046: Wu et al., 2026
+0047: ;
+0048: Tan et al., 2026
+0049: )
+0050: . Prior studies show that specialized robotic reward models can outperform directly prompted frontier flagship VLMs of the time, including GPT and Gemini
+0051: (
+0052: Zhang et al., 2026d
+0053: ;
+0054: Schroeder et al., 2026
+0055: ;
+0056: Lee et al., 2026
+0057: )
+0058: . These findings raise the question of how much a general-purpose VLM’s reward capabilities depend on the inference procedure used to obtain its judgments.
+0059: Accurate estimation requires checking the evidence behind an interpretation: smooth manipulation of the wrong object does not advance the instructed task, and an apparent grasp may require later observations for confirmation. Relevant evidence varies in temporal extent and spatial location. Recent methods structure estimation through spatiotemporal, recursive, and recurrent reasoning
+0060: (
+0061: Schroeder et al., 2026
+0062: ;
+0063: Schroeder et al., 2025
+0064: ;
+0065: Zhang et al., 2026d
+0066: )
+0067: . We build on this direction by letting unresolved event claims guide additional visual inspection and revisions to an explicit event timeline.
+0068: We introduce the
+0069: Agentic Reward System (ARS)
+0070: (Figure
+0071: 1
+0072: ). A subagent proposes task-relevant events and their intervals; a primary agent verifies and revises them. Both agents adaptively select temporal windows, sampling densities, and spatial crops to inspect visual evidence. The primary agent then constructs per-frame progress from verified state changes, assigning no additional credit to failed attempts and allowing regressions after setbacks (Figure
+0073: 2
+0074: ). ARS requires no additional reward-model training and operates on offline trajectories, allowing later evidence to resolve earlier ambiguities. The workflow can optionally use terminal outcomes and visual references, or audit external reward predictions.
+0075: We evaluate ARS using a 27B general-purpose VLM. We construct a controlled semantic-mismatch benchmark in ManiSkill
+0076: (
+0077: Tao et al., 2025
+0078: )
+0079: , revealing that several evaluated reward systems assign spurious progress under wrong-object instructions even in simple pick-and-place scenes with only two candidate objects. ARS better suppresses these errors. On the long-horizon manipulation tasks of LIBERO-Long
+0080: (
+0081: Liu et al., 2023
+0082: )
+0083: , selecting action chunks by estimated progress improves policy success by 13.7 percentage points over unfiltered behavior cloning (BC) and 10.3 points over the strongest compared reward baseline. On real-robot multi-screw fastening in a full-scale laboratory replica of an industrial washing-machine assembly line, ARS selection with visual references raises success from 58.0% for demonstration-only behavior cloning to 81.5%. Together, these results highlight the importance of the inference workflow used to elicit and verify reward judgments.
+0084: Our contributions are:
+0085: •
+0086: We introduce ARS, combining adaptive visual inspection, an editable event timeline, and cross-agent verification for progress estimation without reward-model training.
+0087: •
+0088: We construct a controlled semantic-mismatch benchmark that exposes spurious credit for wrong-object manipulation in simple pick-and-place scenes.
+0089: •
+0090: We show that ARS with general-purpose VLMs outperforms the evaluated specialized reward models and supports long-horizon policy learning in simulation and on an industrially relevant real-robot task.
+0091: 2
+0092: Related Work
+0093: Robotic reward and progress estimation.
+0094: Robotic reward estimation draws on pretrained visual representations
+0095: (
+0096: Ma et al., 2023b
+0097: ;
+0098: Ma et al., 2023a
+0099: )
+0100: , video–language similarity
+0101: (
+0102: Sontakke et al., 2023
+0103: )
+0104: , temporal supervision
+0105: (
+0106: Yang et al., 2024
+0107: ;
+0108: Zhang et al., 2025
+0109: ;
+0110: Liu et al., 2026
+0111: )
+0112: , and VLM-generated preferences
+0113: (
+0114: Wang et al., 2024b
+0115: )
+0116: . Dedicated models learn task-conditioned progress and completion signals
+0117: (
+0118: Lee et al., 2026
+0119: ;
+0120: Tan et al., 2026
+0121: ;
+0122: Liang et al., 2026
+0123: ;
+0124: Wu et al., 2026
+0125: ;
+0126: Zhang et al., 2026c
+0127: ;
+0128: Fang et al., 2026
+0129: )
+0130: , while GVL and TOPReward elicit progress without reward-model training through shuffled-frame inference and token probabilities, respectively
+0131: (
+0132: Ma et al., 2025
+0133: ;
+0134: Chen et al., 2026b
+0135: )
+0136: . Other approaches exploit stage structure
+0137: (
+0138: Chen et al., 2026a
+0139: ;
+0140: Hung et al., 2025
+0141: ;
+0142: Yang et al., 2026b
+0143: )
+0144: and relative progress
+0145: (
+0146: Mao et al., 2026
+0147: ;
+0148: Yu et al., 2026
+0149: )
+0150: , or improve reliability through label correction, online refinement, confidence gating, and prompt optimization
+0151: (
+0152: Zhao et al., 2026a
+0153: ;
+0154: Ayalew et al., 2025
+0155: ;
+0156: Yang et al., 2026a
+0157: ;
+0158: Gumbsch et al., 2026
+0159: )
+0160: . Explicit reasoning further structures estimation. Schroeder et al. introduced ROVER
+0161: (
+0162: Schroeder et al., 2025
+0163: )
+0164: to structure training-free progress estimation through recursive subtask reasoning. They later proposed SOLE-R1
+0165: (
+0166: Schroeder et al., 2026
+0167: )
+0168: , a video-language reward model trained for spatiotemporal reasoning and dense progress prediction. ProcVLM uses procedural reasoning
+0169: (
+0170: Feng et al., 2026
+0171: )
+0172: , while ProgressLM combines demonstration-conditioned episodic retrieval with mental simulation
+0173: (
+0174: Zhang et al., 2026a
+0175: )
+0176: . R
+0177: 2
+0178: VLM recurrently updates task decomposition and completion status
+0179: (
+0180: Zhang et al., 2026d
+0181: )
+0182: . ARS builds on these directions by letting unresolved event claims guide additional visual inspection and revisions to an event timeline.
+0183: Agentic inference and reward verification.
+0184: Reward models support action selection, execution auditing, and world-model planning
+0185: (
+0186: Dai et al., 2025
+0187: ;
+0188: Zhao et al., 2026b
+0189: ;
+0190: Ji et al., 2026
+0191: ;
+0192: Wang et al., 2026
+0193: )
+0194: . Agentic inference provides mechanisms for acquiring and checking the evidence underlying such judgments. ReAct interleaves reasoning and tool use
+0195: (
+0196: Yao et al., 2023
+0197: )
+0198: , while VideoAgent adaptively retrieves visual information
+0199: (
+0200: Wang et al., 2024a
+0201: )
+0202: . Agentic reward methods apply related ideas to evaluation: ARM-Thinker invokes multimodal tools
+0203: (
+0204: Ding et al., 2026
+0205: )
+0206: ; ProRe coordinates a reasoner with evaluator agents
+0207: (
+0208: Dai et al., 2026
+0209: )
+0210: , while the Agentic Verifier framework introduced with AgentV-RL combines forward and backward verification agents
+0211: (
+0212: Zhang et al., 2026b
+0213: )
+0214: ; VAGEN inspects trajectories and probes GUI environments
+0215: (
+0216: Cui et al., 2026
+0217: )
+0218: . Reward as an Agent uses structured evaluation and reflection for generated embodied videos
+0219: (
+0220: Li et al., 2026
+0221: )
+0222: . ARS applies active verification to executed robot trajectories, coupling event proposals with verification in separate reasoning contexts. Its harness requires evidence coverage and renewed confirmation after event revisions before dense progress is constructed.
+0223: 3
+0224: Agentic Reward System
+0225: 3.1
+0226: Problem setup
+0227: Let
+0228: 𝒟
+0229: \mathcal{D}
+0230: be an offline dataset of robot trajectories. For a trajectory
+0231: τ
+0232: ∈
+0233: 𝒟
+0234: \tau\in\mathcal{D}
+0235: , we write
+0236: τ
+0237: =
+0238: (
+0239: 𝐨
+0240: 0
+0241: :
+0242: T
+0243: ,
+0244: 𝐚
+0245: 0
+0246: :
+0247: T
+0248: −
+0249: 1
+0250: ,
+0251: l
+0252: )
+0253: \tau=(\mathbf{o}_{0:T},\mathbf{a}_{0:T-1},l)
+0254: . Here,
+0255: 𝐨
+0256: t
+0257: \mathbf{o}_{t}
+0258: and
+0259: 𝐚
+0260: t
+0261: \mathbf{a}_{t}
+0262: denote the observation and action at time
+0263: t
+0264: t
+0265: , while
+0266: l
+0267: l
+0268: is the task instruction and
+0269: T
+0270: T
+0271: is the terminal index.
+0272: A reward system
+0273: f
+0274: f
+0275: typically takes an observation sequence and a task instruction as input and predicts per-frame task progress:
+0276: p
+0277: 0
+0278: :
+0279: T
+0280: =
+0281: f
+0282: (
+0283: 𝐨
+0284: 0
+0285: :
+0286: T
+0287: ,
+0288: l
+0289: )
+0290: ∈
+0291: [
+0292: 0
+0293: ,
+0294: 1
+0295: ]
+0296: T
+0297: +
+0298: 1
+0299: .
+0300: p_{0:T}=f\!\left(\mathbf{o}_{0:T},l\right)\in[0,1]^{T+1}.
+0301: (1)
+0302: Estimating progress at time
+0303: t
+0304: t
+0305: may require observations beyond
+0306: 𝐨
+0307: 0
+0308: :
+0309: t
+0310: \mathbf{o}_{0:t}
+0311: to resolve ambiguity about the task state. For example, whether an apparent grasp has secured an object may only become clear when the object is subsequently lifted or transported. The temporal location and extent of the evidence needed for verification vary across events, motivating adaptive visual inspection guided by unresolved questions about the trajectory.
+0312: Figure 2:
+0313: Progress estimates for a partially successful LIBERO trajectory under the instruction “turn on the stove and put the moka pot on it.” Insets show selected frames and
+0314: ARS
+0315: progress values. ARS captures the regression when the stove is unintentionally switched off and credits subsequent progress toward pot placement. Baseline curves appear below (Appendix
+0316: C
+0317: ), with ARS repeated as a light gray dashed line for reference. The event proposal and primary-agent verification for this trajectory are detailed in Appendix
+0318: B
+0319: .
+0320: 3.2
+0321: Adaptive visual inspection
+0322: We observe that agents given a complete trajectory video often produce coarse or incorrect interpretations, particularly for long-horizon tasks. Brief state transitions can be overlooked, and unsuccessful attempts can be conflated with later successful interactions. Access to all frames therefore does not ensure close examination of the evidence relevant to task progress.
+0323: ARS supports adaptive visual inspection through tool calls. An agent selects a temporal window, adjusts its sampling density, and optionally requests a spatial crop. The request is guided by the current question and can extend to later observations when an earlier event requires retrospective verification. The returned visual evidence informs subsequent reasoning and inspection requests. Our workflow ablations show that targeted inspection provides limited additional gains on the short semantic-mismatch benchmark, while improving downstream policy performance on long-horizon tasks even when the complete video is provided initially (Section
+0324: 4.3
+0325: ).
+0326: 3.3
+0327: Event-grounded reasoning
+0328: ARS represents the trajectory as a timeline of task-relevant events. Each event associates a temporal interval with a description grounded in cited visual evidence. The harness maintains the event timeline and its supporting evidence across reasoning contexts. Agent-authored state updates are executed through tool calls. When an event is created or revised, its cited evidence must cover the full event interval. Before proposal generation can finish, the event collection must cover the complete trajectory. Failed checks return the missing intervals for correction, making incomplete coverage an actionable part of inference.
+0329: 3.4
+0330: Cross-agent verification
+0331: A single agent can complete the workflow by inspecting and revising events before estimating progress. However, ARS delegates event proposal to a subagent, which constructs a task-relevant event timeline through adaptive visual inspection. In a separate reasoning context, the primary agent gathers additional visual evidence to verify and revise these proposals.
+0332: Event confirmation requires evidence acquired during primary-agent verification. The harness checks that sampled frames include the event interior and the preceding and following context available within the trajectory. Revising an event invalidates its confirmation, requiring the updated claim to be checked again. These checks enforce evidence requirements; the primary agent judges whether the visual content supports the event description and its timing.
+0333: The primary agent then estimates per-frame progress from the verified events and their supporting evidence. The two agents may share the same underlying VLM.
+0334: This organization gives the primary agent explicit claims to challenge. For long-horizon tasks, this separation also reduces the primary agent’s context usage by retaining event proposals without carrying over the subagent’s full interaction history, leaving more capacity for targeted verification and progress estimation. See Section
+0335: 4.3
+0336: for further analysis.
+0337: 3.5
+0338: Progress estimation
+0339: A central goal of progress-based reward modeling is to translate task understanding into useful numerical estimates of progress. Training-free methods approach this through numerical prediction over shuffled frames (GVL), completion-token probabilities (TOPReward), or recursive subtask reasoning (ROVER)
+0340: (
+0341: Ma et al., 2025
+0342: ;
+0343: Chen et al., 2026b
+0344: ;
+0345: Schroeder et al., 2025
+0346: )
+0347: . ARS grounds progress estimation in an explicit timeline of task events whose descriptions and timing undergo targeted visual inspection and independent verification. The primary agent constructs and revises the progress curve using these verified events and their supporting evidence. Figure
+0348: 2
+0349: illustrates how the resulting estimates capture local regression while preserving partial task achievement.
+0350: Through tool calls, the agent chooses between interpolated segments and local pointwise edits. Progress readback and summary tools expose the resulting curve’s shape and explicitly flag jump locations and magnitudes, allowing the agent to check its estimates against visual evidence and revise them. Appendix
+0351: A
+0352: summarizes the agent prompts and available tools.
+0353: 3.6
+0354: Flexible Integration of Auxiliary Information
+0355: As an agentic system, ARS can incorporate auxiliary context and audit external reward proposals within the same reasoning and verification workflow. Terminal outcomes and references help clarify task criteria that may be ambiguous from visual observations and brief instructions.
+0356: •
+0357: Terminal outcomes.
+0358: Trajectory-level success/failure labels provide low-cost supervision that may already be available from data collection. ARS uses them to anchor terminal completion while estimating intermediate progress from verified events, preserving local regressions in successful trajectories and partial progress in failed ones. We evaluate outcome conditioning in downstream policy learning (Section
+0359: 4.2
+0360: , Table
+0361: 2
+0362: ).
+0363: •
+0364: In-context references.
+0365: Building on in-context progress estimation
+0366: (
+0367: Ma et al., 2025
+0368: ;
+0369: Zhang et al., 2026c
+0370: )
+0371: , ARS accepts images, video clips, textual descriptions, and positive or negative examples. Progress annotations are optional, allowing references to clarify task criteria without numerical labels. Section
+0372: 4.4
+0373: examines their use in real-world policy learning.
+0374: •
+0375: External reward auditing.
+0376: ARS audits progress curves from external reward models, using questionable predictions to guide visual inspection and revising the curves according to verified task events. Section
+0377: 4.1
+0378: evaluates this capability. The corrected curves and accompanying audit traces could also be explored as potential supervision for reward-model training.
+0379: 3.7
+0380: Progress-guided policy learning
+0381: ARS is compatible with value learning from progress-derived rewards
+0382: (
+0383: Liang et al., 2026
+0384: ;
+0385: Tan et al., 2026
+0386: )
+0387: . However, to evaluate the contribution of its progress estimates more directly, we adopt progress-guided policy learning following prior work on weighted behavior cloning
+0388: (
+0389: Ma et al., 2023b
+0390: ;
+0391: Ma et al., 2025
+0392: ;
+0393: Chen et al., 2026a
+0394: ;
+0395: Yu et al., 2026
+0396: ;
+0397: Mao et al., 2026
+0398: )
+0399: . We use local progress changes to determine whether an action chunk contributes to policy training. This makes the mapping from progress estimates to training supervision explicit and avoids introducing an additional critic’s estimation errors and optimization choices into the comparison.
+0400: We measure progress over chunks of
+0401: H
+0402: H
+0403: consecutive actions. For a chunk starting at
+0404: t
+0405: t
+0406: , we consider the trajectory segment
+0407: (
+0408: 𝐨
+0409: t
+0410: :
+0411: t
+0412: +
+0413: H
+0414: ,
+0415: 𝐚
+0416: t
+0417: :
+0418: t
+0419: +
+0420: H
+0421: −
+0422: 1
+0423: ,
+0424: l
+0425: )
+0426: (\mathbf{o}_{t:t+H},\mathbf{a}_{t:t+H-1},l)
+0427: and define its progress-derived score as
+0428: Δ
+0429: t
+0430: =
+0431: p
+0432: t
+0433: +
+0434: H
+0435: −
+0436: p
+0437: t
+0438: .
+0439: \Delta_{t}=p_{t+H}-p_{t}.
+0440: (2)
+0441: We introduce an indicator function
+0442: I
+0443: t
+0444: I_{t}
+0445: for chunk selection, defined as
+0446: I
+0447: t
+0448: =
+0449: [
+0450: Δ
+0451: t
+0452: >
+0453: ϵ
+0454: (
+0455: p
+0456: t
+0457: )
+0458: ]
+0459: ∈
+0460: {
+0461: 0
+0462: ,
+0463: 1
+0464: }
+0465: ,
+0466: I_{t}=\mathbbm{1}\!\left[\Delta_{t}>\epsilon(p_{t})\right]\in\{0,1\},
+0467: (3)
+0468: where
+0469: ϵ
+0470: ⁡
+0471: (
+0472: p
+0473: t
+0474: )
+0475: \epsilon(p_{t})
+0476: is a threshold that depends on the current progress value
+0477: p
+0478: t
+0479: p_{t}
+0480: .
+0481: Over the dataset
+0482: 𝒟
+0483: \mathcal{D}
+0484: , we minimize the following binary-weighted behavior-cloning objective:
+0485: ℒ
+0486: BC
+0487: (
+0488: θ
+0489: )
+0490: =
+0491: 1
+0492: ∑
+0493: τ
+0494: ∈
+0495: 𝒟
+0496: ∑
+0497: t
+0498: I
+0499: t
+0500: ∑
+0501: τ
+0502: ∈
+0503: 𝒟
+0504: ∑
+0505: t
+0506: I
+0507: t
+0508: ℓ
+0509: BC
+0510: (
+0511: θ
+0512: ;
+0513: 𝐨
+0514: t
+0515: ,
+0516: l
+0517: ,
+0518: 𝐚
+0519: t
+0520: :
+0521: t
+0522: +
+0523: H
+0524: −
+0525: 1
+0526: )
+0527: .
+0528: \mathcal{L}_{\mathrm{BC}}(\theta)=\frac{1}{\sum_{\tau\in\mathcal{D}}\sum_{t}I_{t}}\sum_{\tau\in\mathcal{D}}\sum_{t}I_{t}\,\ell_{\mathrm{BC}}\!\left(\theta;\mathbf{o}_{t},l,\mathbf{a}_{t:t+H-1}\right).
+0529: (4)
+0530: Here,
+0531: θ
+0532: \theta
+0533: denotes the policy parameters, and
+0534: 𝐚
+0535: t
+0536: :
+0537: t
+0538: +
+0539: H
+0540: −
+0541: 1
+0542: \mathbf{a}_{t:t+H-1}
+0543: is the recorded action sequence. The function
+0544: ℓ
+0545: BC
+0546: \ell_{\mathrm{BC}}
+0547: denotes the policy’s per-chunk behavior-cloning loss, conditioned on the current observation
+0548: 𝐨
+0549: t
+0550: \mathbf{o}_{t}
+0551: and instruction
+0552: l
+0553: l
+0554: . The sums range over trajectories
+0555: τ
+0556: ∈
+0557: 𝒟
+0558: \tau\in\mathcal{D}
+0559: and their candidate chunk starting positions
+0560: t
+0561: t
+0562: , with the weights and action sequences defined for the corresponding trajectory.
+0563: We choose one of two alternative rules for the threshold function
+0564: ϵ
+0565: ⁡
+0566: (
+0567: p
+0568: t
+0569: )
+0570: \epsilon(p_{t})
+0571: :
+0572: •
+0573: Zero threshold.
+0574: In the simplest setting, we set
+0575: ϵ
+0576: ⁡
+0577: (
+0578: p
+0579: t
+0580: )
+0581: =
+0582: 0
+0583: \epsilon(p_{t})=0
+0584: for all chunks, so that only chunks with positive estimated progress contribute to policy training.
+0585: •
+0586: Stage-dependent threshold.
+0587: Inspired by the advantage thresholding in
+0588: π
+0589: 0.6
+0590: ∗
+0591: \pi_{0.6}^{*}
+0592: (
+0593: Physical Intelligence et al., 2025
+0594: )
+0595: , we choose thresholds to retain the top fraction
+0596: α
+0597: \alpha
+0598: of chunks ranked by
+0599: Δ
+0600: t
+0601: \Delta_{t}
+0602: . Global ranking can favor early stages or stages with larger progress changes. We divide the progress range
+0603: [
+0604: 0
+0605: ,
+0606: 1
+0607: ]
+0608: [0,1]
+0609: into
+0610: B
+0611: B
+0612: equal-width bins and assign each chunk to a bin according to its current progress value
+0613: p
+0614: t
+0615: p_{t}
+0616: . Within each bin, we rank chunks by their progress changes
+0617: Δ
+0618: t
+0619: \Delta_{t}
+0620: and set
+0621: ϵ
+0622: ⁡
+0623: (
+0624: p
+0625: t
+0626: )
+0627: \epsilon(p_{t})
+0628: to a shared threshold that retains the top fraction
+0629: α
+0630: \alpha
+0631: .
+0632: 4
+0633: Experiments
+0634: We evaluate task alignment through controlled semantic mismatches and progress-guided policy learning on long-horizon simulation and real-robot tasks. Ablations examine base-model choice and inference components.
+0635: Compared methods and experimental settings.
+0636: We compare
+0637: ARS
+0638: against
+0639: LRM
+0640: (
+0641: Wu et al., 2026
+0642: )
+0643: ,
+0644: R
+0645: 2
+0646: VLM
+0647: (
+0648: Zhang et al., 2026d
+0649: )
+0650: ,
+0651: SOLE-R1
+0652: (
+0653: Schroeder et al., 2026
+0654: )
+0655: ,
+0656: Robometer
+0657: (
+0658: Liang et al., 2026
+0659: )
+0660: , and
+0661: TOPReward
+0662: (
+0663: Chen et al., 2026b
+0664: )
+0665: . Implementation details of these methods are provided in Appendix
+0666: C
+0667: .
+0668: Although ARS can run with proprietary models, we use open-weight Qwen3.6-27B
+0669: (
+0670: Qwen Team, 2026b
+0671: )
+0672: in our main experiments for reproducibility.
+0673: The main reward-system comparisons use only the trajectory and instruction as inputs. Configurations using auxiliary information or privileged simulator state are identified separately.
+0674: 4.1
+0675: Semantic-mismatch benchmark
+0676: Related task-alignment evaluations use cross-task video–instruction pairing
+0677: (
+0678: Sontakke et al., 2023
+0679: ;
+0680: Zhang et al., 2025
+0681: ;
+0682: Liang et al., 2026
+0683: ;
+0684: Chen et al., 2026b
+0685: )
+0686: , counterfactual relabeling
+0687: (
+0688: Lee et al., 2026
+0689: )
+0690: , and distractor instructions
+0691: (
+0692: Zhang et al., 2026d
+0693: )
+0694: . We isolate wrong-object credit assignment in simple pick-and-place tasks, measuring the temporal extent of spurious progress increases and peak false progress.
+0695: Task and data.
+0696: Inspired by prior work
+0697: (
+0698: Liu et al., 2025
+0699: )
+0700: , we generate motion-planner expert trajectories in ManiSkill
+0701: (
+0702: Tao et al., 2025
+0703: )
+0704: , with two candidate objects per tabletop scene and randomized backgrounds. Each video is paired with the correct pick-and-place instruction and a mismatch referring to the other visible object. Across 25 object types, the benchmark contains 500 pairs (1,000 samples), averaging 31.7 frames per trajectory. Expert trajectories advance the correct task at every recorded step; privileged simulator states verify that the gripper never approaches the mismatch object, even when camera projection suggests proximity. Training-data exposure is summarized in Appendix
+0705: D.1
+0706: .
+0707: Metrics.
+0708: We evaluate using three complementary metrics:
+0709: •
+0710: Value-Order Correlation (VOC)
+0711: (
+0712: Ma et al., 2025
+0713: )
+0714: reports the mean per-trajectory Spearman rank correlation between predicted progress and timestep under correct instructions.
+0715: •
+0716: False Progress Suppression Ratio (FPSR)
+0717: measures the fraction of mismatch-trajectory duration not covered by strictly positive progress-increase intervals. See Appendix
+0718: D.2
+0719: for details.
+0720: •
+0721: Correct–Mismatch Progress Gap (CMPG)
+0722: is the difference between the mean terminal progress under correct instructions and the mean per-trajectory maximum progress under mismatch instructions. See Appendix
+0723: D.3
+0724: for details.
+0725: Table 1:
+0726: Results on the semantic-mismatch benchmark. The Audit configuration uses Robometer predictions as an external proposal, audited and revised by ARS with Qwen3.6-27B.
+0727: Group
+0728: Method
+0729: VOC
+0730: ↑
+0731: \uparrow
+0732: FPSR
+0733: ↑
+0734: \uparrow
+0735: CMPG
+0736: ↑
+0737: \uparrow
+0738: Reward-trained
+0739: LRM
+0740: 0.828
+0741: 0.893
+0742: 0.373
+0743: R
+0744: 2
+0745: VLM
+0746: 0.916
+0747: 0.184
+0748: -0.050
+0749: SOLE-R1
+0750: 0.902
+0751: 0.361
+0752: 0.266
+0753: Robometer
+0754: 0.983
+0755: 0.240
+0756: 0.366
+0757: Audit
+0758: ARS
+0759: w/
+0760: Robometer
+0761: proposal
+0762: 0.988
+0763: 0.915
+0764: 0.891
+0765: Reward-training-free
+0766: TOPReward
+0767: + Qwen3-VL-8B
+0768: 0.930
+0769: 0.368
+0770: 0.685
+0771: TOPReward
+0772: + Qwen3-VL-32B
+0773: 0.945
+0774: 0.383
+0775: 0.756
+0776: ARS
+0777: + Qwen3.6-27B
+0778: 0.995
+0779: 0.918
+0780: 0.904
+0781: Table
+0782: 1
+0783: shows that temporal consistency does not ensure instruction alignment: Robometer achieves 0.983 VOC but only 0.240 FPSR, while R
+0784: 2
+0785: VLM assigns higher mean peak progress to mismatched instructions than mean terminal progress to correct ones (negative CMPG). ARS leads all three metrics without reward-model training, combining accurate ordering with suppression of spurious progress. Additional TOPReward base-model results appear in Appendix
+0786: F.1.1
+0787: .
+0788: Auditing Robometer predictions with ARS raises FPSR from 0.240 to 0.915 and CMPG from 0.366 to 0.891 while maintaining high VOC (0.988). These results approach ARS without proposals, supporting its use to correct external reward predictions.
+0789: 4.2
+0790: Policy learning in simulation
+0791: Offline rollout dataset.
+0792: A fixed behavior policy collects 4,096 trajectories across the complete LIBERO-Long suite
+0793: (
+0794: Liu et al., 2023
+0795: )
+0796: : 2,204 successful and 1,892 failed trajectories, averaging 390.3 frames. All reward systems score this shared dataset, whose successive object interactions provide mixed-quality chunks within both successful and failed trajectories. Training-data exposure and task instruction clarifications are detailed in Appendices
+0797: E.1
+0798: and
+0799: E.2
+0800: .
+0801: Training protocol.
+0802: All downstream policies start from the same pretrained
+0803: π
+0804: 0.5
+0805: \pi_{0.5}
+0806: checkpoint
+0807: (
+0808: Black et al., 2025
+0809: )
+0810: , with chunk horizon
+0811: H
+0812: =
+0813: 10
+0814: H=10
+0815: and a shared training and evaluation schedule. The behavior policy serves only data collection. We apply the zero-threshold rule (Section
+0816: 3.7
+0817: ) to each reward system’s estimates, retaining chunks with positive progress differences at unit weight; Vanilla BC retains all chunks. The retained ratio is the percentage of candidate chunks kept. Appendix
+0818: E.4
+0819: details the protocol and selection rationale.
+0820: Table 2:
+0821: Policy-learning results on LIBERO-Long. Retained is the micro-averaged percentage of action chunks kept from the original dataset; gains are in percentage points.
+0822: Group
+0823: Method
+0824: Success (%)
+0825: ↑
+0826: \uparrow
+0827: vs. Vanilla
+0828: ↑
+0829: \uparrow
+0830: Retained (%)
+0831: Baseline
+0832: Vanilla BC
+0833: 44.2
+0834: ±
+0835: \pm
+0836: 0.3
+0837: —
+0838: 100.0
+0839: Reward-trained
+0840: LRM
+0841: 38.6
+0842: ±
+0843: \pm
+0844: 0.5
+0845: -5.6
+0846: 13.7
+0847: R
+0848: 2
+0849: VLM
+0850: 41.5
+0851: ±
+0852: \pm
+0853: 0.4
+0854: -2.7
+0855: 13.6
+0856: SOLE-R1
+0857: 44.8
+0858: ±
+0859: \pm
+0860: 0.4
+0861: +0.6
+0862: 52.6
+0863: Robometer
+0864: 46.8
+0865: ±
+0866: \pm
+0867: 0.9
+0868: +2.6
+0869: 89.5
+0870: Reward-training-free
+0871: TOPReward
+0872: + Qwen3-VL-8B
+0873: 43.1
+0874: ±
+0875: \pm
+0876: 0.5
+0877: -1.1
+0878: 77.0
+0879: TOPReward
+0880: + Qwen3-VL-32B
+0881: 47.6
+0882: ±
+0883: \pm
+0884: 0.7
+0885: +3.4
+0886: 67.9
+0887: ARS
+0888: + Qwen3.6-27B
+0889: 57.9
+0890: ±
+0891: \pm
+0892: 0.4
+0893: +13.7
+0894: 66.9
+0895: Outcome labels
+0896: Success-only BC
+0897: 52.6
+0898: ±
+0899: \pm
+0900: 0.7
+0901: +8.4
+0902: 38.5
+0903: ARS
+0904: + outcome
+0905: 62.2
+0906: ±
+0907: \pm
+0908: 0.6
+0909: +18.0
+0910: 60.3
+0911: Privileged state
+0912: Privileged progress
+0913: 66.5
+0914: ±
+0915: \pm
+0916: 0.8
+0917: +22.3
+0918: 57.2
+0919: ARS reaches 57.9% success, the highest among systems using only trajectories and instructions, exceeding Vanilla BC by 13.7 points (Table
+0920: 2
+0921: ). Without reward-model training, it also surpasses LRM, SOLE-R1, and Robometer, which have documented LIBERO training exposure. ARS and TOPReward-32B retain similar proportions of chunks (66.9% and 67.9%), yet differ by 10.3 points in success, supporting the importance of selection quality.
+0922: LRM and R
+0923: 2
+0924: VLM retain fewer than 14% of chunks and underperform Vanilla BC. Their quantized or repeated progress predictions yield many zero increments, limiting temporal information for selection (Appendix
+0925: E.5
+0926: ).
+0927: Outcome conditioning.
+0928: ARS + outcome additionally receives a terminal success/failure label for each trajectory during progress inference. It reaches 62.2% success, 9.6 points above success-only BC (which retains all chunks from trajectories labeled successful) and 4.3 points below the privileged-state reference (66.5%), capturing 80.7% of the reference’s success-rate gain over Vanilla BC (44.2%). Appendix
+0929: E.3
+0930: describes how we construct the privileged progress signal from simulator state. Even with outcome conditioning, trajectories judged successful can retain flat or decreasing progress segments, while those judged unsuccessful can retain increasing segments (Appendix
+0931: E.5
+0932: ).
+0933: 4.3
+0934: Ablation study
+0935: Base model and inference procedure.
+0936: Under the same ARS workflow, Qwen3.6-27B substantially improves FPSR and CMPG over Qwen3.5-4B
+0937: (
+0938: Qwen Team, 2026a
+0939: )
+0940: , showing that progress estimation benefits from the capabilities of the base model (Table
+0941: 3
+0942: ). Nevertheless, ARS with Qwen3.5-4B already exceeds Robometer-4B on all three metrics without additional reward-model training, despite using a different base model at the same nominal parameter scale. With Qwen3.6-27B held fixed, GVL-style single-prompt inference achieves substantially lower VOC and CMPG than ARS (Appendix
+0943: F.2.2
+0944: ). Thus, the gains depend on how the model is used, beyond the choice of base model alone. Additional base-model execution details are provided in Appendices
+0945: F.1.2
+0946: –
+0947: F.1.3
+0948: .
+0949: Table 3:
+0950: Base-model and inference-procedure comparisons on the semantic-mismatch benchmark.
+0951: Configuration
+0952: VOC
+0953: ↑
+0954: \uparrow
+0955: FPSR
+0956: ↑
+0957: \uparrow
+0958: CMPG
+0959: ↑
+0960: \uparrow
+0961: Robometer
+0962: -4B
+0963: 0.983
+0964: 0.240
+0965: 0.366
+0966: ARS
+0967: + Qwen3.5-4B
+0968: 0.986
+0969: 0.625
+0970: 0.633
+0971: GVL-style + Qwen3.6-27B
+0972: 0.637
+0973: 0.900
+0974: 0.354
+0975: ARS
+0976: + Qwen3.6-27B
+0977: 0.995
+0978: 0.918
+0979: 0.904
+0980: Inference usage and workflow ablations.
+0981: ARS achieves higher downstream success than frame-wise TOPReward with substantially fewer model queries and cumulative input tokens, while introducing generative reasoning overhead (Table
+0982: 4
+0983: ). Compared with TOPReward using Qwen3-VL-32B, full ARS improves success from 47.6% to 57.9%, with 93.6% fewer model queries and 65.8% fewer cumulative input tokens.
+0984: With Qwen3.6-27B fixed, visual inspection improves success from 45.4% to 52.3%. Adding same-context self-verification yields a slightly lower mean success rate of 51.8%, despite substantially higher inference usage. Full ARS verifies proposals in a separate reasoning context and reaches 57.9%, outperforming the same-context control by 6.1 percentage points. These results support the benefit of separating proposal generation from verification in this setting. Appendix
+0985: F.2
+0986: details the workflow variants, inference usage, and additional semantic-mismatch results.
+0987: We further examine the role of explicit language chain-of-thought (CoT) in intermediate reasoning by disabling the base model’s thinking mode; the results and analysis are provided in Appendix
+0988: F.3
+0989: .
+0990: Table 4:
+0991: Workflow ablations on LIBERO-Long. Input/output token counts are in thousands (K).
+0992: Configuration
+0993: Success (%)
+0994: ↑
+0995: \uparrow
+0996: Retained (%)
+0997: Queries
+0998: Input (K)
+0999: Output (K)
+1000: TOPReward
+1001: + Qwen3-VL-32B
+1002: 47.6
+1003: ±
+1004: \pm
+1005: 0.7
+1006: 67.9
+1007: 390.3
+1008: 2,866.3
+1009: 0.0
+1010: ARS
+1011: w/o verification & inspection
+1012: 45.4
+1013: ±
+1014: \pm
+1015: 0.3
+1016: 78.1
+1017: 7.3
+1018: 242.7
+1019: 10.1
+1020: ARS
+1021: w/o verification
+1022: 52.3
+1023: ±
+1024: \pm
+1025: 0.8
+1026: 70.3
+1027: 10.2
+1028: 413.2
+1029: 9.9
+1030: ARS
+1031: w/o context separation
+1032: 51.8
+1033: ±
+1034: \pm
+1035: 0.5
+1036: 68.7
+1037: 19.0
+1038: 1,097.2
+1039: 15.2
+1040: Full
+1041: ARS
+1042: 57.9
+1043: ±
+1044: \pm
+1045: 0.4
+1046: 66.9
+1047: 24.9
+1048: 980.6
+1049: 21.1
+1050: 4.4
+1051: Real-world policy learning
+1052: We evaluate sequential fastening of three screws on a washing machine’s rear panel in a full-scale laboratory replica of an industrial assembly line (Figure
+1053: 5
+1054: ; Appendix
+1055: G
+1056: ).
+1057: Experimental setup.
+1058: We use 2,574 demonstration trajectories and a shared pool of 3,092 offline rollout trajectories to train
+1059: π
+1060: 0.5
+1061: \pi_{0.5}
+1062: policies
+1063: (
+1064: Black et al., 2025
+1065: )
+1066: . Table
+1067: 5
+1068: compares demonstration-only BC, BC with all rollouts, and ARS-based rollout selection with or without visual references. All demonstration chunks are retained. For ARS-based selection, we use the stage-dependent threshold rule in Section
+1069: 3.7
+1070: , with
+1071: B
+1072: =
+1073: 8
+1074: B=8
+1075: bins and
+1076: α
+1077: =
+1078: 30
+1079: %
+1080: \alpha=30\%
+1081: . Configurations incorporating rollout data use stratified sampling with a fixed 1:1 ratio between demonstration and eligible rollout chunks. Each configuration uses one training seed and is evaluated over 200 complete-task trials.
+1082: The visual-reference condition provides three image–text examples of task-relevant states during ARS progress inference, without numerical progress annotations. Additional training, reference, and evaluation details are provided in Appendix
+1083: G
+1084: .
+1085: Figure 3:
+1086: Screw-fastening setup.
+1087: Table 5:
+1088: Real-world policy learning.
+1089: Configuration
+1090: Success (%)
+1091: ↑
+1092: \uparrow
+1093: Demo + all rollouts BC
+1094: 50.5
+1095: Demo-only BC
+1096: 58.0
+1097: ARS
+1098: 72.0
+1099: ARS
+1100: + visual reference
+1101: 81.5
+1102: Adding all rollouts reduces success from 58.0% to 50.5%, whereas ARS-selected rollouts raise it to 72.0% (Table
+1103: 5
+1104: ), demonstrating the value of selective data incorporation. Visual references further raise observed success to 81.5%, a total gain of 23.5 points over demonstration-only BC. Appendix
+1105: G.3
+1106: reports additional outcome conditioning.
+1107: 5
+1108: Discussion
+1109: ARS improves downstream policy performance while using fewer model queries and cumulative input tokens than frame-wise TOPReward. However, its iterative visual inspection and generative verification introduce additional inference overhead compared with single-forward-pass reward models such as Robometer. This tradeoff makes the current workflow particularly suited to offline data curation. Our progress estimates can also use later observations to resolve earlier ambiguities, and extending the workflow to causal online reward estimation remains an open direction. A promising direction is to distill ARS-generated supervision into lightweight reward models, combining the benefits of explicit verification with efficient deployment.
+1110: AI use statement
+1111: We used generative AI tools to assist with research ideation and execution, including code development, literature retrieval and discovery, and drafting and polishing portions of the manuscript. We reviewed and approved all code, compiled and verified all experimental results, and revised and finalized the manuscript. We take full responsibility for the entire work, including all AI-assisted content and artifacts.
+1112: Reproducibility statement
+1113: The main text describes the ARS inference workflow and experimental protocols. Additional details on agent prompts and tools, baseline implementations, policy training and evaluation, and ablation configurations are provided in the appendices. Code for ARS and semantic-mismatch benchmark generation is available at
+1114: https://github.com/midea-ai/ars
+1115: .
+1116: References
+1117: Ayalew
+1118: et al.
+1119: (2025)
+1120: T. W. Ayalew, X. Zhang, K. Y. Wu, T. Jiang, M. Maire, and M. R. Walter
+1121: PROGRESSOR: a perceptually guided reward estimator with self-supervised online refinement
+1122: .
+1123: In
+1124: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)
+1125: ,
+1126: Cited by:
+1127: §2
+1128: .
+1129: Bai
+1130: et al.
+1131: (2025)
+1132: S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge, W. Ge, Z. Guo, Q. Huang, J. Huang, F. Huang, B. Hui, S. Jiang, Z. Li, M. Li, M. Li, K. Li, Z. Lin, J. Lin, X. Liu, J. Liu, C. Liu, Y. Liu, D. Liu, S. Liu, D. Lu, R. Luo, C. Lv, R. Men, L. Meng, X. Ren, X. Ren, S. Song, Y. Sun, J. Tang, J. Tu, J. Wan, P. Wang, P. Wang, Q. Wang, Y. Wang, T. Xie, Y. Xu, H. Xu, J. Xu, Z. Yang, M. Yang, J. Yang, A. Yang, B. Yu, F. Zhang, H. Zhang, X. Zhang, B. Zheng, H. Zhong, J. Zhou, F. Zhou, J. Zhou, Y. Zhu, and K. Zhu
+1133: Qwen3-VL technical report
+1134: .
+1135: arXiv preprint arXiv:2511.21631
+1136: .
+1137: Cited by:
+1138: 5th item
+1139: ,
+1140: §F.1.1
+1141: .
+1142: Black
+1143: et al.
+1144: (2025)
+1145: K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. R. Equi, C. Finn, N. Fusai, M. Y. Galliker, D. Ghosh, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, D. LeBlanc, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, J. Tanner, Q. Vuong, H. Walke, A. Walling, H. Wang, L. Yu, and U. Zhilinsky
+1146: π
+1147: 0.5
+1148: \pi_{0.5}
+1149: : A vision-language-action model with open-world generalization
+1150: .
+1151: In
+1152: Proceedings of the 9th Conference on Robot Learning
+1153: ,
+1154: Proceedings of Machine Learning Research
+1155: , Vol.
+1156: 305
+1157: ,
+1158: pp. 17–40
+1159: .
+1160: Cited by:
+1161: §G.2
+1162: ,
+1163: §4.2
+1164: ,
+1165: §4.4
+1166: .
+1167: Chen
+1168: et al.
+1169: (2026a)
+1170: Q. Chen, J. Yu, M. Schwager, P. Abbeel, Y. Shentu, and P. Wu
+1171: SARM: stage-aware reward modeling for long horizon robot manipulation
+1172: .
+1173: In
+1174: International Conference on Learning Representations (ICLR)
+1175: ,
+1176: Cited by:
+1177: §E.4
+1178: ,
+1179: §2
+1180: ,
+1181: §3.7
+1182: .
+1183: Chen
+1184: et al.
+1185: (2026b)
+1186: S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna
+1187: TOPReward: token probabilities as hidden zero-shot rewards for robotics
+1188: .
+1189: In
+1190: Conference on Robot Learning (CoRL)
+1191: ,
+1192: Note:
+1193: Accepted for publication
+1194: Cited by:
+1195: 5th item
+1196: ,
+1197: Appendix C
+1198: ,
+1199: §D.3
+1200: ,
+1201: Table 9
+1202: ,
+1203: Table 11
+1204: ,
+1205: §F.1.1
+1206: ,
+1207: §F.1.1
+1208: ,
+1209: §1
+1210: ,
+1211: §2
+1212: ,
+1213: §3.5
+1214: ,
+1215: §4
+1216: ,
+1217: §4.1
+1218: .
+1219: Cui
+1220: et al.
+1221: (2026)
+1222: C. Cui, J. Huang, S. Wang, L. Zheng, Q. Kong, and Z. Zeng
+1223: Agentic reward modeling: verifying GUI agent via progressive trajectory-grounded interaction
+1224: .
+1225: arXiv preprint arXiv:2602.00575
+1226: .
+1227: Cited by:
+1228: §2
+1229: .
+1230: Dai
+1231: et al.
+1232: (2026)
+1233: G. Dai, S. Jiang, T. Cao, Y. Yang, Y. Li, R. Tan, M. Li, and L. Qiu
+1234: ProRe: a proactive reward system for GUI agents via reasoner-actor collaboration
+1235: .
+1236: In
+1237: International Conference on Learning Representations (ICLR)
+1238: ,
+1239: Cited by:
+1240: §2
+1241: .
+1242: Dai
+1243: et al.
+1244: (2025)
+1245: M. Dai, L. Liu, Y. Bai, Y. Liu, Z. Wang, R. Su, C. Chen, L. Lin, and X. Wu
+1246: RoVer: robot reward model as test-time verifier for vision-language-action model
+1247: .
+1248: arXiv preprint arXiv:2510.10975
+1249: .
+1250: Cited by:
+1251: §2
+1252: .
+1253: Ding
+1254: et al.
+1255: (2026)
+1256: S. Ding, X. Fang, Z. Liu, Y. Zang, Y. Cao, X. Zhao, H. Duan, X. Dong, J. Liang, B. Wang, C. He, D. Lin, and J. Wang
+1257: ARM-Thinker: reinforcing multimodal generative reward models with agentic tool use and visual reasoning
+1258: .
+1259: In
+1260: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1261: ,
+1262: pp. 22195–22205
+1263: .
+1264: Cited by:
+1265: §2
+1266: .
+1267: Fang
+1268: et al.
+1269: (2026)
+1270: Y. Fang, W. Dong, J. Liu, Y. Yang, M. Huo, Y. Mu, H. Yao, L. E. Li, D. Szafir, and M. Ding
+1271: DenseReward: dense reward learning via failure synthesis for robotic manipulation
+1272: .
+1273: arXiv preprint arXiv:2607.13033
+1274: .
+1275: Cited by:
+1276: §2
+1277: .
+1278: Feng
+1279: et al.
+1280: (2026)
+1281: Y. Feng, H. Shi, H. Li, X. Guo, Y. Wang, C. Zhang, J. Zhang, X. Zhang, J. Tang, and J. Zhang
+1282: ProcVLM: learning procedure-grounded progress rewards for robotic manipulation
+1283: .
+1284: arXiv preprint arXiv:2605.08774
+1285: .
+1286: Cited by:
+1287: §2
+1288: .
+1289: Gumbsch
+1290: et al.
+1291: (2026)
+1292: C. Gumbsch, L. Barcellona, L. Schuenemann, P. Karageorgis, A. Zadaianchuk, Z. Wang, S. Zakharov, F. Despinoy, R. Aljundi, and S. Gavves
+1293: From demonstrations to rewards: test-time prompt optimization for VLM reward models
+1294: .
+1295: Reinforcement Learning Journal
+1296: 7
+1297: .
+1298: Note:
+1299: RLC 2026 pre-proceedings
+1300: Cited by:
+1301: §2
+1302: .
+1303: Hung
+1304: et al.
+1305: (2025)
+1306: K. Hung, P. Lo, J. Yeh, H. Hsu, Y. Chen, and W. H. Hsu
+1307: VICtoR: learning hierarchical vision-instruction correlation rewards for long-horizon manipulation
+1308: .
+1309: In
+1310: International Conference on Learning Representations (ICLR)
+1311: ,
+1312: Cited by:
+1313: §2
+1314: .
+1315: Ji
+1316: et al.
+1317: (2026)
+1318: Y. Ji, Y. Liu, H. Tan, X. Huang, F. Huang, Y. Xu, C. Chi, Y. Zhao, H. Lyu, P. Co, M. Cao, Q. Zhang, Z. Li, E. Zhou, P. Wang, Z. Wang, S. Zhang, and X. Zheng
+1319: PRM-as-a-Judge: a dense evaluation paradigm for fine-grained robotic auditing
+1320: .
+1321: arXiv preprint arXiv:2603.21669
+1322: .
+1323: Cited by:
+1324: §2
+1325: .
+1326: Kim
+1327: et al.
+1328: (2025)
+1329: M. J. Kim, C. Finn, and P. Liang
+1330: Fine-tuning vision-language-action models: optimizing speed and success
+1331: .
+1332: In
+1333: Proceedings of Robotics: Science and Systems
+1334: ,
+1335: External Links:
+1336: Document
+1337: Cited by:
+1338: §E.4
+1339: .
+1340: Lee
+1341: et al.
+1342: (2026)
+1343: T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+1344: RoboReward: general-purpose vision-language reward models for robotics
+1345: .
+1346: arXiv preprint arXiv:2601.00675
+1347: .
+1348: Cited by:
+1349: §1
+1350: ,
+1351: §2
+1352: ,
+1353: §4.1
+1354: .
+1355: Li
+1356: et al.
+1357: (2026)
+1358: P. Li, Z. Lin, Q. Wu, Y. Lv, F. Wang, and S. You
+1359: Reward as an agent for embodied world models
+1360: .
+1361: arXiv preprint arXiv:2606.19990
+1362: .
+1363: Cited by:
+1364: §2
+1365: .
+1366: Liang
+1367: et al.
+1368: (2026)
+1369: A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox, Y. Xiang, A. Li, A. Bobu, A. Gupta, S. Tu, E. Biyik, and J. Zhang
+1370: Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+1371: .
+1372: In
+1373: Proceedings of Robotics: Science and Systems
+1374: ,
+1375: External Links:
+1376: Document
+1377: Cited by:
+1378: 4th item
+1379: ,
+1380: §D.3
+1381: ,
+1382: Table 9
+1383: ,
+1384: Table 11
+1385: ,
+1386: §F.1.2
+1387: ,
+1388: §1
+1389: ,
+1390: §2
+1391: ,
+1392: §3.7
+1393: ,
+1394: §4
+1395: ,
+1396: §4.1
+1397: .
+1398: Liu
+1399: et al.
+1400: (2023)
+1401: B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+1402: LIBERO: benchmarking knowledge transfer for lifelong robot learning
+1403: .
+1404: In
+1405: Advances in Neural Information Processing Systems
+1406: ,
+1407: Vol.
+1408: 36
+1409: .
+1410: Cited by:
+1411: §E.4
+1412: ,
+1413: §1
+1414: ,
+1415: §4.2
+1416: .
+1417: Liu
+1418: et al.
+1419: (2025)
+1420: J. Liu, F. Gao, B. Wei, X. Chen, Q. Liao, Y. Wu, C. Yu, and Y. Wang
+1421: What can RL bring to VLA generalization? an empirical study
+1422: .
+1423: In
+1424: Advances in Neural Information Processing Systems
+1425: ,
+1426: Vol.
+1427: 38
+1428: .
+1429: Cited by:
+1430: §4.1
+1431: .
+1432: Liu
+1433: et al.
+1434: (2026)
+1435: Y. Liu, C. Wen, Y. Hu, D. Jayaraman, and Y. Gao
+1436: TimeRewarder: learning dense reward from passive videos via frame-wise temporal distance
+1437: .
+1438: In
+1439: Proceedings of the 43rd International Conference on Machine Learning
+1440: ,
+1441: Cited by:
+1442: §2
+1443: .
+1444: Ma
+1445: et al.
+1446: (2025)
+1447: Y. J. Ma, J. Hejna, A. Wahid, C. Fu, D. Shah, J. Liang, Z. Xu, S. Kirmani, P. Xu, D. Driess, T. Xiao, J. Tompson, O. Bastani, D. Jayaraman, W. Yu, T. Zhang, D. Sadigh, and F. Xia
+1448: Vision language models are in-context value learners
+1449: .
+1450: In
+1451: International Conference on Learning Representations (ICLR)
+1452: ,
+1453: Cited by:
+1454: §E.4
+1455: ,
+1456: §F.2.2
+1457: ,
+1458: §1
+1459: ,
+1460: §2
+1461: ,
+1462: 2nd item
+1463: ,
+1464: §3.5
+1465: ,
+1466: §3.7
+1467: ,
+1468: 1st item
+1469: .
+1470: Ma
+1471: et al.
+1472: (2023a)
+1473: Y. J. Ma, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+1474: LIV: language-image representations and rewards for robotic control
+1475: .
+1476: In
+1477: Proceedings of the 40th International Conference on Machine Learning
+1478: ,
+1479: Proceedings of Machine Learning Research
+1480: , Vol.
+1481: 202
+1482: ,
+1483: pp. 23301–23320
+1484: .
+1485: Cited by:
+1486: §2
+1487: .
+1488: Ma
+1489: et al.
+1490: (2023b)
+1491: Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+1492: VIP: towards universal visual reward and representation via value-implicit pre-training
+1493: .
+1494: In
+1495: International Conference on Learning Representations (ICLR)
+1496: ,
+1497: Cited by:
+1498: §E.4
+1499: ,
+1500: §2
+1501: ,
+1502: §3.7
+1503: .
+1504: Mandlekar
+1505: et al.
+1506: (2022)
+1507: A. Mandlekar, D. Xu, J. Wong, S. Nasiriany, C. Wang, R. Kulkarni, L. Fei-Fei, S. Savarese, Y. Zhu, and R. Martín-Martín
+1508: What matters in learning from offline human demonstrations for robot manipulation
+1509: .
+1510: In
+1511: Proceedings of the 5th Conference on Robot Learning
+1512: ,
+1513: Proceedings of Machine Learning Research
+1514: , Vol.
+1515: 164
+1516: ,
+1517: pp. 1678–1690
+1518: .
+1519: Cited by:
+1520: §E.4
+1521: .
+1522: Mao
+1523: et al.
+1524: (2026)
+1525: Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+1526: ARM: advantage reward modeling for long-horizon manipulation
+1527: .
+1528: In
+1529: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops
+1530: ,
+1531: pp. 4468–4477
+1532: .
+1533: Cited by:
+1534: §E.4
+1535: ,
+1536: §2
+1537: ,
+1538: §3.7
+1539: .
+1540: Physical Intelligence
+1541: et al.
+1542: (2025)
+1543: Physical Intelligence, A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo, D. Driess, M. Equi, A. Esmail, Y. Fang, C. Finn, C. Glossop, T. Godden, I. Goryachev, L. Groom, H. Hancock, K. Hausman, G. Hussein, B. Ichter, S. Jakubczak, R. Jen, T. Jones, B. Katz, L. Ke, C. Kuchi, M. Lamb, D. LeBlanc, S. Levine, A. Li-Bell, Y. Lu, V. Mano, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, C. Sharma, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, W. Stoeckle, A. Swerdlow, J. Tanner, M. Torne, Q. Vuong, A. Walling, H. Wang, B. Williams, S. Yoo, L. Yu, U. Zhilinsky, and Z. Zhou
+1544: π
+1545: 0.6
+1546: ∗
+1547: \pi_{0.6}^{*}
+1548: : A VLA that learns from experience
+1549: .
+1550: arXiv preprint arXiv:2511.14759
+1551: .
+1552: Cited by:
+1553: 2nd item
+1554: .
+1555: Qwen Team (2026a)
+1556: Qwen Team
+1557: Qwen3.5: towards native multimodal agents
+1558: .
+1559: Note:
+1560: Qwen blog
+1561: Cited by:
+1562: §4.3
+1563: .
+1564: Qwen Team (2026b)
+1565: Qwen Team
+1566: Qwen3.6-27B: flagship-level coding in a 27B dense model
+1567: .
+1568: Note:
+1569: Qwen blog
+1570: Cited by:
+1571: §F.1.1
+1572: ,
+1573: §4
+1574: .
+1575: Schroeder
+1576: et al.
+1577: (2025)
+1578: P. Schroeder, O. Biza, T. Weng, H. Luo, and J. Glass
+1579: ROVER: recursive reasoning over videos with vision-language models for embodied tasks
+1580: .
+1581: In
+1582: Advances in Neural Information Processing Systems
+1583: ,
+1584: Vol.
+1585: 38
+1586: .
+1587: Cited by:
+1588: §1
+1589: ,
+1590: §2
+1591: ,
+1592: §3.5
+1593: .
+1594: Schroeder
+1595: et al.
+1596: (2026)
+1597: P. Schroeder, T. Weng, K. Schmeckpeper, E. Rosen, S. Hart, and O. Biza
+1598: SOLE-R1: video-language reasoning as the sole reward for on-robot reinforcement learning
+1599: .
+1600: arXiv preprint arXiv:2603.28730
+1601: .
+1602: Cited by:
+1603: 3rd item
+1604: ,
+1605: Table 9
+1606: ,
+1607: Table 11
+1608: ,
+1609: §F.3
+1610: ,
+1611: §1
+1612: ,
+1613: §1
+1614: ,
+1615: §2
+1616: ,
+1617: §4
+1618: .
+1619: Sontakke
+1620: et al.
+1621: (2023)
+1622: S. Sontakke, J. Zhang, S. Arnold, K. Pertsch, E. Bıyık, D. Sadigh, C. Finn, and L. Itti
+1623: RoboCLIP: one demonstration is enough to learn robot policies
+1624: .
+1625: In
+1626: Advances in Neural Information Processing Systems
+1627: ,
+1628: Vol.
+1629: 36
+1630: .
+1631: Cited by:
+1632: §2
+1633: ,
+1634: §4.1
+1635: .
+1636: Tan
+1637: et al.
+1638: (2026)
+1639: H. Tan, S. Chen, Y. Xu, Z. Wang, C. Chi, Y. Ji, Y. Lyu, Z. Zhao, X. Chen, P. Co, S. Xie, G. Yao, P. Wang, Z. Wang, and S. Zhang
+1640: General process reward modeling for robotic reinforcement learning
+1641: .
+1642: In
+1643: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1644: ,
+1645: Cited by:
+1646: §1
+1647: ,
+1648: §2
+1649: ,
+1650: §3.7
+1651: .
+1652: Tao
+1653: et al.
+1654: (2025)
+1655: S. Tao, F. Xiang, A. Shukla, Y. Qin, X. Hinrichsen, X. Yuan, C. Bao, X. Lin, Y. Liu, T. Chan, Y. Gao, X. Li, T. Mu, N. Xiao, A. Gurha, V. N. Rajesh, Y. W. Choi, Y. Chen, Z. Huang, R. Calandra, R. Chen, S. Luo, and H. Su
+1656: Demonstrating GPU parallelized robot simulation and rendering for generalizable embodied AI with ManiSkill3
+1657: .
+1658: In
+1659: Proceedings of Robotics: Science and Systems
+1660: ,
+1661: External Links:
+1662: Document
+1663: Cited by:
+1664: §1
+1665: ,
+1666: §4.1
+1667: .
+1668: Wang
+1669: et al.
+1670: (2026)
+1671: K. Wang, H. Jie, Y. Yan, J. Zhou, and Z. Heng
+1672: EV-WM: event-verified world models for long-horizon robotic manipulation
+1673: .
+1674: arXiv preprint arXiv:2606.13053
+1675: .
+1676: Cited by:
+1677: §2
+1678: .
+1679: Wang
+1680: et al.
+1681: (2024a)
+1682: X. Wang, Y. Zhang, O. Zohar, and S. Yeung-Levy
+1683: VideoAgent: long-form video understanding with large language model as agent
+1684: .
+1685: In
+1686: Computer Vision – ECCV 2024
+1687: ,
+1688: Lecture Notes in Computer Science
+1689: , Vol.
+1690: 15138
+1691: ,
+1692: pp. 58–76
+1693: .
+1694: External Links:
+1695: Document
+1696: Cited by:
+1697: §2
+1698: .
+1699: Wang
+1700: et al.
+1701: (2024b)
+1702: Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson
+1703: RL-VLM-F: reinforcement learning from vision language foundation model feedback
+1704: .
+1705: In
+1706: Proceedings of the 41st International Conference on Machine Learning
+1707: ,
+1708: Proceedings of Machine Learning Research
+1709: , Vol.
+1710: 235
+1711: ,
+1712: pp. 51484–51501
+1713: .
+1714: Cited by:
+1715: §2
+1716: .
+1717: Wu
+1718: et al.
+1719: (2026)
+1720: Y. Wu, W. Yuan, A. Qi, V. Guizilini, J. Mao, and Y. Wang
+1721: Large reward models: generalizable online robot reward generation with vision-language models
+1722: .
+1723: arXiv preprint arXiv:2603.16065
+1724: .
+1725: Cited by:
+1726: 1st item
+1727: ,
+1728: Table 9
+1729: ,
+1730: Table 11
+1731: ,
+1732: §1
+1733: ,
+1734: §2
+1735: ,
+1736: §4
+1737: .
+1738: Yang
+1739: et al.
+1740: (2024)
+1741: D. Yang, D. Tjia, J. Berg, D. Damen, P. Agrawal, and A. Gupta
+1742: Rank2Reward: learning shaped reward functions from passive video
+1743: .
+1744: In
+1745: IEEE International Conference on Robotics and Automation (ICRA)
+1746: ,
+1747: Cited by:
+1748: §2
+1749: .
+1750: Yang
+1751: et al.
+1752: (2026a)
+1753: P. Yang, X. Wang, P. Jing, K. Wen, Y. Qu, Z. Huang, M. Fu, X. Liu, Y. Shen, and F. Shi
+1754: RARM: confidence-gated progress reward modeling for RL in manipulation
+1755: .
+1756: In
+1757: Conference on Robot Learning (CoRL)
+1758: ,
+1759: Note:
+1760: Accepted for publication
+1761: Cited by:
+1762: §2
+1763: .
+1764: Yang
+1765: et al.
+1766: (2026b)
+1767: Y. Yang, B. Chen, Z. Wang, Y. Li, G. Pan, Y. Cheng, and H. Liu
+1768: Stage-transition dense reward modeling for reinforcement learning
+1769: .
+1770: arXiv preprint arXiv:2606.31377
+1771: .
+1772: Cited by:
+1773: §2
+1774: .
+1775: Yao
+1776: et al.
+1777: (2023)
+1778: S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao
+1779: ReAct: synergizing reasoning and acting in language models
+1780: .
+1781: In
+1782: International Conference on Learning Representations (ICLR)
+1783: ,
+1784: Cited by:
+1785: §2
+1786: .
+1787: Yu
+1788: et al.
+1789: (2026)
+1790: J. Yu, A. Goldberg, K. Kondap, K. El-Refai, E. Ransing, Q. Chen, M. Schwager, F. Shentu, P. Wu, and K. Goldberg
+1791: WARP-RM: a warp-augmented relative progress reward model for data curation
+1792: .
+1793: arXiv preprint arXiv:2606.28320
+1794: .
+1795: Cited by:
+1796: §E.4
+1797: ,
+1798: §2
+1799: ,
+1800: §3.7
+1801: .
+1802: Zhang
+1803: et al.
+1804: (2025)
+1805: J. Zhang, Y. Luo, A. Anwar, S. A. Sontakke, J. J. Lim, J. Thomason, E. Biyik, and J. Zhang
+1806: ReWiND: language-guided rewards teach robot policies without new demonstrations
+1807: .
+1808: In
+1809: Proceedings of the 9th Conference on Robot Learning
+1810: ,
+1811: Proceedings of Machine Learning Research
+1812: , Vol.
+1813: 305
+1814: ,
+1815: pp. 460–488
+1816: .
+1817: Cited by:
+1818: §2
+1819: ,
+1820: §4.1
+1821: .
+1822: Zhang
+1823: et al.
+1824: (2026a)
+1825: J. Zhang, C. Qian, H. Sun, H. Lu, D. Wang, L. Xue, and H. Liu
+1826: ProgressLM: towards progress reasoning in vision-language models
+1827: .
+1828: In
+1829: Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)
+1830: ,
+1831: pp. 11243–11271
+1832: .
+1833: External Links:
+1834: Document
+1835: Cited by:
+1836: §2
+1837: .
+1838: Zhang
+1839: et al.
+1840: (2026b)
+1841: J. Zhang, Z. Fu, Z. Xi, W. Jing, M. Chai, W. He, G. Zhang, C. Fan, C. An, W. Chen, Z. Liu, H. Pan, D. Zhu, T. Gui, Q. Zhang, and X. Huang
+1842: AgentV-RL: scaling reward modeling with agentic verifier
+1843: .
+1844: In
+1845: Findings of the Association for Computational Linguistics: ACL 2026
+1846: ,
+1847: pp. 23078–23100
+1848: .
+1849: External Links:
+1850: Document
+1851: Cited by:
+1852: §2
+1853: .
+1854: Zhang
+1855: et al.
+1856: (2026c)
+1857: Q. Zhang, S. Zhai, S. Zhang, L. Liu, T. Zhang, F. Huang, and M. Zhou
+1858: A generalist pair-wise progress critic model for vision-language-action robots
+1859: .
+1860: In
+1861: Proceedings of the 43rd International Conference on Machine Learning
+1862: ,
+1863: Cited by:
+1864: §2
+1865: ,
+1866: 2nd item
+1867: .
+1868: Zhang
+1869: et al.
+1870: (2026d)
+1871: Y. Zhang, S. Cheng, C. Li, Z. Li, Y. Huang, Y. Liu, and W. Huang
+1872: Recurrent reasoning with vision-language models for estimating long-horizon embodied task progress
+1873: .
+1874: In
+1875: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1876: ,
+1877: pp. 41150–41159
+1878: .
+1879: Cited by:
+1880: 2nd item
+1881: ,
+1882: Table 9
+1883: ,
+1884: Table 11
+1885: ,
+1886: §F.3
+1887: ,
+1888: §1
+1889: ,
+1890: §1
+1891: ,
+1892: §2
+1893: ,
+1894: §4
+1895: ,
+1896: §4.1
+1897: .
+1898: Zhao
+1899: et al.
+1900: (2026a)
+1901: L. Zhao, M. Shi, L. Chen, Q. Liu, P. Luo, and H. Li
+1902: UR-VC: unsupervised robotic value correction for time-derived progress proxies
+1903: .
+1904: arXiv preprint arXiv:2607.12892
+1905: .
+1906: Cited by:
+1907: §2
+1908: .
+1909: Zhao
+1910: et al.
+1911: (2026b)
+1912: S. Zhao, S. Zhang, S. Yang, W. Zhao, S. Wang, and X. Ji
+1913: TapSampling: inference-time sampling with a task-progress-understanding verifier for robotic manipulation
+1914: .
+1915: In
+1916: Proceedings of the 43rd International Conference on Machine Learning
+1917: ,
+1918: Cited by:
+1919: §2
+1920: .
+1921: Appendix A
+1922: Agent Prompts and Tool Set
+1923: We summarize the main instructions and tools used by ARS. The prompt summaries retain the core reasoning and evidence requirements while omitting repetitive instructions and interface examples. The default workflow consists of event proposal, independent verification, and progress estimation. A subagent performs proposal generation; the primary agent performs verification and progress estimation in a separate reasoning context.
+1924: The proposal stage receives the full trajectory video when it fits within the configured input limit; otherwise, the agent inspects the trajectory in segments.
+1925: A.1
+1926: Prompt summaries
+1927: Table
+1928: 6
+1929: summarizes the shared instructions, stage-specific instructions, and optional auxiliary context.
+1930: Table 6:
+1931: Main instructions used by ARS, summarized by component.
+1932: Component
+1933: Main instructions
+1934: Shared instructions
+1935: Ground visual claims in inspected trajectory media. Use the task instruction to identify relevant entities and goal relations. Describe visible state changes and localize events using original frame indices. Request focused temporal windows and spatial crops when additional evidence could change the judgment. Express uncertainty through confidence scores and concise explanations.
+1936: Event proposal
+1937: Construct an event timeline covering the entire trajectory. Organize intervals around meaningful changes in task state, including preparation, control acquisition, sustained manipulation, completion, recovery, and periods without progress. Associate each event with its frame interval, supporting visual evidence, and confidence.
+1938: Independent verification
+1939: Treat proposed events as provisional claims. Acquire visual evidence during verification to examine each event’s description, temporal boundaries, and confidence. Inspect neighboring frames to assess boundary placement. Revise, split, or merge events when necessary, and confirm each resulting event before proceeding.
+1940: Progress estimation
+1941: For sequential tasks, infer subgoals and estimate total progress from their currently achieved contributions, including partial completion. Assign limited credit to useful preparation, localized increases to verified achievements, and gradual increases to continued advancement. Use plateaus for preserved states and decreases for deterioration. Later observations may verify an earlier event; assign credit to the supported event boundary. Preserve meaningful partial achievement in incomplete trajectories.
+1942: Candidate-curve auditing
+1943: When an external progress curve is supplied, inspect its increases, decreases, and terminal values against the visual evidence. Retain supported estimates and revise unsupported intervals. Without a candidate curve, generate progress values for the complete trajectory.
+1944: Optional auxiliary context
+1945: Use terminal outcome labels to constrain completion judgments while determining event timing from visual evidence. Use reference examples to interpret task states and goal relations. Apply reference progress values only when the corresponding state is visibly supported in the evaluated trajectory.
+1946: A.2
+1947: Tool set
+1948: The harness exposes tools according to the current stage. In Table
+1949: 7
+1950: , E denotes event proposal, V denotes verification, and P denotes progress estimation. Tools use the term
+1951: observation
+1952: for an event record in the timeline.
+1953: Table 7:
+1954: Tools available in the default ARS workflow.
+1955: Tool
+1956: Stage
+1957: Function
+1958: read_robot_instruction
+1959: E, V, P
+1960: Retrieve the task instruction and any explicitly supplied task clarification.
+1961: read_metadata
+1962: E, V, P
+1963: Retrieve technical video metadata, including frame count, frame dimensions, presentation frame rate, and frame-indexing conventions. This tool provides no additional task annotations or simulator state.
+1964: inspect_visual
+1965: E, V, P
+1966: Retrieve a selected frame interval as a video clip or image tile, with configurable temporal sampling and an optional spatial crop. Return the media with its evidence identifier and frame indices.
+1967: read_observations
+1968: E, V, P
+1969: Retrieve the current event timeline and coverage diagnostics.
+1970: add_observations
+1971: revise_observations
+1972: E, V
+1973: Create or revise event intervals, descriptions, evidence links, and confidence scores.
+1974: merge_observations
+1975: V
+1976: Combine events that describe one continuous phase.
+1977: confirm_observations
+1978: V
+1979: Confirm an event using evidence acquired during verification.
+1980: read_progress
+1981: summarize_progress
+1982: P
+1983: Inspect candidate and current progress values, curve statistics, and jump locations and magnitudes.
+1984: edit_progress_segments
+1985: P
+1986: Generate or revise local intervals by interpolating between specified endpoint values, supporting increases, plateaus, and decreases.
+1987: calibrate_progress_curve
+1988: P
+1989: Apply a global affine calibration using two frame–value anchors when the curve’s relative trend is supported by the evidence.
+1990: validate_progress
+1991: P
+1992: Check frame assignments, numerical bounds, and configured curve constraints.
+1993: write_summary
+1994: P
+1995: Record the final judgment, supporting evidence, progress edits, and need for external review.
+1996: complete_stage
+1997: E, V, P
+1998: Check stage requirements and advance the workflow; completion of the final stage exports the results.
+1999: The agent represents progress using integer points in
+2000: [
+2001: 0
+2002: ,
+2003: 1000
+2004: ]
+2005: [0,1000]
+2006: , corresponding to a normalized progress scale of
+2007: [
+2008: 0
+2009: ,
+2010: 1
+2011: ]
+2012: [0,1]
+2013: .
+2014: Observation creation, revision, and merging, as well as progress editing and calibration, use a shared confidence scale from 1 (very uncertain) to 5 (very high confidence). Scores reflect the clarity of the supporting evidence. Progress edits and calibration also include an evidence-grounded explanation.
+2015: Cited evidence must cover each event’s recorded interval, and the event collection must cover the entire trajectory. Verification considers context before and after each interval when available. Revisions reset confirmation status.
+2016: To finalize progress estimates, the agent validates the curve, writes the summary, and completes the stage, in that order. Blocked tool calls report unmet requirements and corrective actions.
+2017: Appendix B
+2018: ARS Reasoning Trace on a LIBERO Trajectory
+2019: We examine the ARS reasoning trace for the partially successful LIBERO trajectory in Figure
+2020: 2
+2021: . The trajectory contains 520 frames, indexed from 0 to 519, under the instruction “turn on the stove and put the moka pot on it.” This case illustrates how verification changes event boundaries, how tool feedback guides retries, and where errors remain after verification.
+2022: Subagent inspection and event proposal.
+2023: The subagent receives the complete trajectory video and makes nine additional
+2024: inspect_visual
+2025: calls to examine knob manipulation, moka pot grasping and placement, the final state, and transitions between these phases. It then proposes the eight events listed in Table
+2026: 8
+2027: .
+2028: Table 8:
+2029: Subagent-proposed event timeline for the LIBERO trajectory in Figure
+2030: 2
+2031: , before primary-agent verification.
+2032: Proposed event
+2033: Frame interval
+2034: Initial state and approach to the stove knob
+2035: [
+2036: 0
+2037: ,
+2038: 94
+2039: ]
+2040: [0,94]
+2041: Knob grasping and turning
+2042: [
+2043: 95,127
+2044: ]
+2045: [95,127]
+2046: Burner switching off and withdrawal
+2047: [
+2048: 128,180
+2049: ]
+2050: [128,180]
+2051: Repositioning and approach to the moka pot
+2052: [
+2053: 181,269
+2054: ]
+2055: [181,269]
+2056: Moka pot grasp acquisition
+2057: [
+2058: 270,295
+2059: ]
+2060: [270,295]
+2061: Lifting and transporting the moka pot
+2062: [
+2063: 296,339
+2064: ]
+2065: [296,339]
+2066: Placement on the stove burner
+2067: [
+2068: 340,370
+2069: ]
+2070: [340,370]
+2071: Final state: pot on the burner, burner off
+2072: [
+2073: 371,519
+2074: ]
+2075: [371,519]
+2076: Primary-agent verification and boundary refinement.
+2077: The primary agent receives this timeline in a separate reasoning context and makes eight additional
+2078: inspect_visual
+2079: calls. The main revision concerns the boundary between
+2080: Initial state and approach
+2081: and
+2082: Knob grasping and turning
+2083: . After inspecting frames
+2084: [
+2085: 0,100
+2086: ]
+2087: [0,100]
+2088: , the primary agent judges that knob grasping begins substantially earlier than the proposed frame 95. It shortens the approach event to
+2089: [
+2090: 0
+2091: ,
+2092: 45
+2093: ]
+2094: [0,45]
+2095: and moves the start of knob manipulation to frame 46.
+2096: Manual inspection identifies frame 56 as the onset of actual control over the knob. Relative to this annotation, verification reduces the boundary error from 39 frames late to 10 frames early. The revised boundary is therefore substantially closer to the annotated transition, although it still assigns control acquisition prematurely. This case illustrates both the benefit of independent verification and the underlying VLM’s remaining difficulty in precisely localizing subtle manipulation events.
+2097: Blocked calls and corrective retries.
+2098: The initial boundary-revision call is blocked because the cited clip
+2099: [
+2100: 90,140
+2101: ]
+2102: [90,140]
+2103: does not cover the expanded event interval
+2104: [
+2105: 46,126
+2106: ]
+2107: [46,126]
+2108: . The agent adds an already inspected clip covering
+2109: [
+2110: 0,100
+2111: ]
+2112: [0,100]
+2113: and retries successfully. This illustrates how evidence-coverage feedback guides correction of tool calls.
+2114: The primary agent subsequently uses the verified timeline to assign progress, capturing the regression when the stove is unintentionally switched off and crediting the later manipulation and placement of the moka pot.
+2115: Appendix C
+2116: Implementation Details of Compared Methods
+2117: We evaluate the compared methods using the implementations and input protocols described below:
+2118: •
+2119: LRM
+2120: (
+2121: Wu et al., 2026
+2122: )
+2123: : we use its Absolute Progress model, which estimates absolute task progress for each frame and outputs one of 11 discrete values,
+2124: {
+2125: 0.0
+2126: ,
+2127: 0.1
+2128: ,
+2129: …
+2130: ,
+2131: 1.0
+2132: }
+2133: \{0.0,0.1,\ldots,1.0\}
+2134: .
+2135: •
+2136: R
+2137: 2
+2138: VLM
+2139: (
+2140: Zhang et al., 2026d
+2141: )
+2142: recurrently processes video snippets, carrying forward a CoT that tracks subtask completion to estimate current task progress. We use its best available checkpoint.
+2143: •
+2144: SOLE-R1
+2145: (
+2146: Schroeder et al., 2026
+2147: )
+2148: performs per-timestep spatiotemporal CoT reasoning to estimate dense task progress.
+2149: •
+2150: Robometer
+2151: (
+2152: Liang et al., 2026
+2153: )
+2154: was trained on sequences of 8 sampled video frames to predict per-frame task progress. We also tested sliding-window inference and larger input frame counts on long-horizon tasks, but observed no improvement over the original 8-frame setting. We therefore retain 8 sampled frames per trajectory.
+2155: •
+2156: TOPReward
+2157: (
+2158: Chen et al., 2026b
+2159: )
+2160: is a reward-training-free method that scores video prefixes conditioned on the task instruction using the log-probability of the
+2161: True
+2162: token in a task-completion query. Following the model choices in the original work, we evaluate TOPReward with Qwen3-VL-8B-Instruct and Qwen3-VL-32B-Instruct
+2163: (
+2164: Bai et al., 2025
+2165: )
+2166: . At each timestep, we run inference using the task instruction and all video frames up to and including the current frame.
+2167: SOLE-R1 uses both the main and wrist cameras as inputs, while all other methods, including ARS, use only the main camera. We provide all trajectory frames as input to LRM, R
+2168: 2
+2169: VLM, SOLE-R1, and TOPReward. For Robometer, we follow the frame-sampling protocol specified in its paper, including both the first and last frames. We linearly interpolate between adjacent predictions to construct dense progress curves. Metrics in Table
+2170: 1
+2171: are computed using each method’s native model outputs, excluding interpolated values.
+2172: Output normalization.
+2173: Let
+2174: p
+2175: t
+2176: raw
+2177: p_{t}^{\mathrm{raw}}
+2178: denote a method’s raw output and
+2179: p
+2180: t
+2181: p_{t}
+2182: its evaluated progress. We use the following fixed output conventions; they specify numerical scales without assuming a common calibration across methods.
+2183: •
+2184: LRM
+2185: and
+2186: Robometer
+2187: output progress in
+2188: [
+2189: 0
+2190: ,
+2191: 1
+2192: ]
+2193: [0,1]
+2194: and require no rescaling.
+2195: •
+2196: R
+2197: 2
+2198: VLM
+2199: outputs values in
+2200: [
+2201: 0,100
+2202: ]
+2203: [0,100]
+2204: ; we use
+2205: p
+2206: t
+2207: =
+2208: p
+2209: t
+2210: raw
+2211: /
+2212: 100
+2213: p_{t}=p_{t}^{\mathrm{raw}}/100
+2214: .
+2215: •
+2216: SOLE-R1
+2217: outputs signed values in
+2218: [
+2219: −
+2220: 100,100
+2221: ]
+2222: [-100,100]
+2223: . The main results use
+2224: p
+2225: t
+2226: =
+2227: p
+2228: t
+2229: raw
+2230: /
+2231: 100
+2232: ∈
+2233: [
+2234: −
+2235: 1
+2236: ,
+2237: 1
+2238: ]
+2239: p_{t}=p_{t}^{\mathrm{raw}}/100\in[-1,1]
+2240: , preserving its protocol-defined initial zero. We additionally report the affine mapping
+2241: p
+2242: t
+2243: aff
+2244: =
+2245: (
+2246: p
+2247: t
+2248: raw
+2249: +
+2250: 100
+2251: )
+2252: /
+2253: 200
+2254: =
+2255: (
+2256: p
+2257: t
+2258: +
+2259: 1
+2260: )
+2261: /
+2262: 2
+2263: ∈
+2264: [
+2265: 0
+2266: ,
+2267: 1
+2268: ]
+2269: p_{t}^{\mathrm{aff}}=(p_{t}^{\mathrm{raw}}+100)/200=(p_{t}+1)/2\in[0,1]
+2270: as a diagnostic.
+2271: •
+2272: TOPReward
+2273: outputs the log-probability of the
+2274: True
+2275: token,
+2276: p
+2277: t
+2278: raw
+2279: ∈
+2280: (
+2281: −
+2282: ∞
+2283: ,
+2284: 0
+2285: ]
+2286: p_{t}^{\mathrm{raw}}\in(-\infty,0]
+2287: . Following its original reward definition, our primary output convention uses the fixed linear normalization
+2288: p
+2289: t
+2290: lin
+2291: =
+2292: (
+2293: max
+2294: ⁡
+2295: (
+2296: p
+2297: t
+2298: raw
+2299: ,
+2300: −
+2301: 30
+2302: )
+2303: +
+2304: 30
+2305: )
+2306: /
+2307: 30
+2308: p_{t}^{\mathrm{lin}}=(\max(p_{t}^{\mathrm{raw}},-30)+30)/30
+2309: . The minimum raw output observed across all our experiments was
+2310: −
+2311: 28.5
+2312: -28.5
+2313: , so no output was clipped by the
+2314: −
+2315: 30
+2316: -30
+2317: lower bound. We additionally evaluate the corresponding token probability,
+2318: p
+2319: t
+2320: prob
+2321: =
+2322: exp
+2323: ⁡
+2324: (
+2325: p
+2326: t
+2327: raw
+2328: )
+2329: p_{t}^{\mathrm{prob}}=\exp(p_{t}^{\mathrm{raw}})
+2330: ; Appendix
+2331: D
+2332: compares the two conventions. Exponentiation compresses absolute increments in low-probability regions, making them more susceptible to filtering by an absolute tolerance.
+2333: •
+2334: ARS
+2335: outputs integer progress points in
+2336: [
+2337: 0
+2338: ,
+2339: 1000
+2340: ]
+2341: [0,1000]
+2342: ; dividing by 1000 gives progress in
+2343: [
+2344: 0
+2345: ,
+2346: 1
+2347: ]
+2348: [0,1]
+2349: .
+2350: For the TOPReward curve in Figure
+2351: 2
+2352: ,
+2353: we use Qwen3-VL-32B-Instruct and follow the original paper’s
+2354: within-trajectory min–max
+2355: normalization
+2356: (
+2357: Chen et al., 2026b
+2358: )
+2359: , using
+2360: p
+2361: t
+2362: vis
+2363: =
+2364: (
+2365: p
+2366: t
+2367: raw
+2368: −
+2369: p
+2370: min
+2371: raw
+2372: )
+2373: /
+2374: (
+2375: p
+2376: max
+2377: raw
+2378: −
+2379: p
+2380: min
+2381: raw
+2382: )
+2383: p_{t}^{\mathrm{vis}}=(p_{t}^{\mathrm{raw}}-p_{\min}^{\mathrm{raw}})/(p_{\max}^{\mathrm{raw}}-p_{\min}^{\mathrm{raw}})
+2384: .
+2385: The raw log-probabilities over this trajectory have a minimum
+2386: of
+2387: −
+2388: 12.9
+2389: -12.9
+2390: and a maximum of
+2391: −
+2392: 0.0014
+2393: -0.0014
+2394: . This normalization applies only to this visualization.
+2395: Appendix D
+2396: Additional Details on the Semantic-Mismatch Benchmark
+2397: D.1
+2398: Training-data exposure to ManiSkill
+2399: We summarize the training-data exposure of the evaluated reward models to ManiSkill based on the original papers and model documentation.
+2400: 𝔼
+2401: \mathbb{E}
+2402: indicates documented use of ManiSkill data during training, including reward learning and other supervised fine-tuning. N indicates that no evidence of such use was found. These labels describe benchmark-family exposure and do not establish overlap with our specific evaluation trajectories. N does not rule out exposure during training of the underlying VLM.
+2403: Table 9:
+2404: Training-data exposure of reward models to ManiSkill.
+2405: Method
+2406: Exposure
+2407: Evidence
+2408: LRM
+2409: N
+2410: ManiSkill is described as zero-shot to the reward models
+2411: (
+2412: Wu et al., 2026
+2413: )
+2414: .
+2415: R
+2416: 2
+2417: VLM
+2418: N
+2419: No ManiSkill training is reported for the evaluated checkpoint
+2420: (
+2421: Zhang et al., 2026d
+2422: )
+2423: .
+2424: SOLE-R1
+2425: N
+2426: No ManiSkill training source is identified in the published training mixture
+2427: (
+2428: Schroeder et al., 2026
+2429: )
+2430: .
+2431: Robometer
+2432: 𝔼
+2433: \mathbb{E}
+2434: RBM-1M includes FAILSafe trajectories collected in ManiSkill
+2435: (
+2436: Liang et al., 2026
+2437: )
+2438: .
+2439: TOPReward
+2440: N
+2441: No ManiSkill training is reported in the Qwen model cards; no additional reward-model training is performed
+2442: (
+2443: Chen et al., 2026b
+2444: )
+2445: .
+2446: ARS
+2447: N
+2448: No ManiSkill training is reported in the Qwen model cards; no additional reward-model training is performed.
+2449: Qwen model cards:
+2450: Qwen3-VL-8B-Instruct
+2451: ,
+2452: Qwen3-VL-32B-Instruct
+2453: ,
+2454: Qwen3.6-27B
+2455: , and
+2456: Qwen3.5-4B
+2457: .
+2458: D.2
+2459: False Progress Suppression Ratio (FPSR)
+2460: Definition.
+2461: For mismatch trajectory
+2462: i
+2463: i
+2464: , let
+2465: 0
+2466: =
+2467: t
+2468: 0
+2469: <
+2470: ⋯
+2471: <
+2472: t
+2473: K
+2474: =
+2475: T
+2476: i
+2477: 0=t_{0}<\cdots<t_{K}=T_{i}
+2478: be the frame indices of its native predictions
+2479: p
+2480: t
+2481: 0
+2482: ,
+2483: …
+2484: ,
+2485: p
+2486: t
+2487: K
+2488: p_{t_{0}},\ldots,p_{t_{K}}
+2489: , where
+2490: T
+2491: i
+2492: T_{i}
+2493: is the terminal frame index. Omitting the trajectory index on the prediction times and values for readability, we define, for a tolerance
+2494: η
+2495: ≥
+2496: 0
+2497: \eta\geq 0
+2498: ,
+2499: FPSR
+2500: i
+2501: ​
+2502: (
+2503: η
+2504: )
+2505: =
+2506: 1
+2507: −
+2508: ∑
+2509: k
+2510: =
+2511: 0
+2512: K
+2513: −
+2514: 1
+2515: (
+2516: t
+2517: k
+2518: +
+2519: 1
+2520: −
+2521: t
+2522: k
+2523: )
+2524: 1
+2525: [
+2526: p
+2527: t
+2528: k
+2529: +
+2530: 1
+2531: −
+2532: p
+2533: t
+2534: k
+2535: >
+2536: η
+2537: ]
+2538: T
+2539: i
+2540: .
+2541: \mathrm{FPSR}_{i}(\eta)=1-\frac{\sum_{k=0}^{K-1}(t_{k+1}-t_{k})\,\mathbbm{1}[p_{t_{k+1}}-p_{t_{k}}>\eta]}{T_{i}}.
+2542: (5)
+2543: The dataset score is the unweighted mean over mismatch trajectories. We compute the metric from adjacent native predictions without interpolation. Its value remains sensitive to the temporal spacing of these predictions.
+2544: Expert progress coverage ratio (EPCR).
+2545: Increasing
+2546: η
+2547: \eta
+2548: can suppress useful progress estimates as well as spurious increases. We measure the fraction of each correctly instructed expert trajectory’s duration covered by intervals whose predicted progress increase exceeds
+2549: η
+2550: \eta
+2551: , and report its unweighted mean across trajectories as
+2552: EPCR
+2553: ⁡
+2554: (
+2555: η
+2556: )
+2557: \mathrm{EPCR}(\eta)
+2558: . This uses the fraction in Equation
+2559: 5
+2560: , without the leading
+2561: 1
+2562: −
+2563: 1-
+2564: , evaluated under correct instructions. The expert trajectories in this benchmark advance the correctly instructed task at every recorded step, making EPCR informative about the availability of the intended dense signal. A predictor that is flat on both instruction groups has FPSR equal to one but EPCR equal to zero.
+2565: Tolerance sensitivity.
+2566: Table
+2567: 10
+2568: reports FPSR together with
+2569: EPCR
+2570: \mathrm{EPCR}
+2571: for
+2572: η
+2573: ∈
+2574: {
+2575: 0
+2576: ,
+2577: 10
+2578: −
+2579: 4
+2580: ,
+2581: 10
+2582: −
+2583: 3
+2584: ,
+2585: 0.005
+2586: ,
+2587: 0.01
+2588: }
+2589: \eta\in\{0,10^{-4},10^{-3},0.005,0.01\}
+2590: . The main metric uses
+2591: η
+2592: =
+2593: 0
+2594: \eta=0
+2595: . Only increments exceeding
+2596: η
+2597: \eta
+2598: are counted as progress increases. For integer-valued outputs, we compare raw integer differences against the appropriately scaled threshold to avoid floating-point subtraction errors at the boundary. The output conventions are specified in Appendix
+2599: C
+2600: .
+2601: Table 10:
+2602: Tolerance sensitivity on the semantic-mismatch benchmark. Each entry is FPSR / EPCR, both on a
+2603: [
+2604: 0
+2605: ,
+2606: 1
+2607: ]
+2608: [0,1]
+2609: scale, using native predictions. TOPReward-8B and -32B use Qwen3-VL. ARS and Audit use Qwen3.6-27B. TOPReward probability outputs are reported in the diagnostics section.
+2610: Method
+2611: 0
+2612: 0
+2613: 10
+2614: −
+2615: 4
+2616: 10^{-4}
+2617: 10
+2618: −
+2619: 3
+2620: 10^{-3}
+2621: 0.005
+2622: 0.005
+2623: 0.01
+2624: 0.01
+2625: LRM
+2626: 0.893
+2627: /
+2628: 0.159
+2629: 0.893\,/\,0.159
+2630: 0.893
+2631: /
+2632: 0.159
+2633: 0.893\,/\,0.159
+2634: 0.893
+2635: /
+2636: 0.159
+2637: 0.893\,/\,0.159
+2638: 0.893
+2639: /
+2640: 0.159
+2641: 0.893\,/\,0.159
+2642: 0.893
+2643: /
+2644: 0.159
+2645: 0.893\,/\,0.159
+2646: R
+2647: 2
+2648: VLM
+2649: 0.184
+2650: /
+2651: 0.791
+2652: 0.184\,/\,0.791
+2653: 0.184
+2654: /
+2655: 0.791
+2656: 0.184\,/\,0.791
+2657: 0.184
+2658: /
+2659: 0.791
+2660: 0.184\,/\,0.791
+2661: 0.184
+2662: /
+2663: 0.791
+2664: 0.184\,/\,0.791
+2665: 0.190
+2666: /
+2667: 0.786
+2668: 0.190\,/\,0.786
+2669: SOLE-R1
+2670: ,
+2671: [
+2672: −
+2673: 1
+2674: ,
+2675: 1
+2676: ]
+2677: [-1,1]
+2678: 0.361
+2679: /
+2680: 0.731
+2681: 0.361\,/\,0.731
+2682: 0.361
+2683: /
+2684: 0.731
+2685: 0.361\,/\,0.731
+2686: 0.361
+2687: /
+2688: 0.731
+2689: 0.361\,/\,0.731
+2690: 0.361
+2691: /
+2692: 0.731
+2693: 0.361\,/\,0.731
+2694: 0.371
+2695: /
+2696: 0.729
+2697: 0.371\,/\,0.729
+2698: Robometer
+2699: 0.240
+2700: /
+2701: 0.978
+2702: 0.240\,/\,0.978
+2703: 0.242
+2704: /
+2705: 0.977
+2706: 0.242\,/\,0.977
+2707: 0.246
+2708: /
+2709: 0.976
+2710: 0.246\,/\,0.976
+2711: 0.273
+2712: /
+2713: 0.971
+2714: 0.273\,/\,0.971
+2715: 0.306
+2716: /
+2717: 0.965
+2718: 0.306\,/\,0.965
+2719: TOPReward
+2720: -8B, linear
+2721: 0.368
+2722: /
+2723: 0.656
+2724: 0.368\,/\,0.656
+2725: 0.383
+2726: /
+2727: 0.642
+2728: 0.383\,/\,0.642
+2729: 0.390
+2730: /
+2731: 0.622
+2732: 0.390\,/\,0.622
+2733: 0.452
+2734: /
+2735: 0.560
+2736: 0.452\,/\,0.560
+2737: 0.508
+2738: /
+2739: 0.509
+2740: 0.508\,/\,0.509
+2741: TOPReward
+2742: -32B, linear
+2743: 0.383
+2744: /
+2745: 0.723
+2746: 0.383\,/\,0.723
+2747: 0.412
+2748: /
+2749: 0.698
+2750: 0.412\,/\,0.698
+2751: 0.447
+2752: /
+2753: 0.660
+2754: 0.447\,/\,0.660
+2755: 0.585
+2756: /
+2757: 0.526
+2758: 0.585\,/\,0.526
+2759: 0.693
+2760: /
+2761: 0.406
+2762: 0.693\,/\,0.406
+2763: ARS
+2764: Audit
+2765: 0.915
+2766: /
+2767: 0.899
+2768: 0.915\,/\,0.899
+2769: 0.915
+2770: /
+2771: 0.899
+2772: 0.915\,/\,0.899
+2773: 0.919
+2774: /
+2775: 0.885
+2776: 0.919\,/\,0.885
+2777: 0.942
+2778: /
+2779: 0.691
+2780: 0.942\,/\,0.691
+2781: 0.960
+2782: /
+2783: 0.578
+2784: 0.960\,/\,0.578
+2785: ARS
+2786: -27B
+2787: 0.918
+2788: /
+2789: 0.908
+2790: 0.918\,/\,0.908
+2791: 0.918
+2792: /
+2793: 0.908
+2794: 0.918\,/\,0.908
+2795: 0.921
+2796: /
+2797: 0.902
+2798: 0.921\,/\,0.902
+2799: 0.940
+2800: /
+2801: 0.717
+2802: 0.940\,/\,0.717
+2803: 0.960
+2804: /
+2805: 0.588
+2806: 0.960\,/\,0.588
+2807: Additional output-scale diagnostics
+2808: SOLE-R1
+2809: ,
+2810: [
+2811: 0
+2812: ,
+2813: 1
+2814: ]
+2815: [0,1]
+2816: 0.361
+2817: /
+2818: 0.731
+2819: 0.361\,/\,0.731
+2820: 0.361
+2821: /
+2822: 0.731
+2823: 0.361\,/\,0.731
+2824: 0.361
+2825: /
+2826: 0.731
+2827: 0.361\,/\,0.731
+2828: 0.371
+2829: /
+2830: 0.729
+2831: 0.371\,/\,0.729
+2832: 0.500
+2833: /
+2834: 0.641
+2835: 0.500\,/\,0.641
+2836: TOPReward
+2837: -8B, prob.
+2838: 0.368
+2839: /
+2840: 0.656
+2841: 0.368\,/\,0.656
+2842: 0.853
+2843: /
+2844: 0.354
+2845: 0.853\,/\,0.354
+2846: 0.947
+2847: /
+2848: 0.277
+2849: 0.947\,/\,0.277
+2850: 0.976
+2851: /
+2852: 0.213
+2853: 0.976\,/\,0.213
+2854: 0.982
+2855: /
+2856: 0.183
+2857: 0.982\,/\,0.183
+2858: TOPReward
+2859: -32B, prob.
+2860: 0.383
+2861: /
+2862: 0.723
+2863: 0.383\,/\,0.723
+2864: 0.583
+2865: /
+2866: 0.583
+2867: 0.583\,/\,0.583
+2868: 0.792
+2869: /
+2870: 0.490
+2871: 0.792\,/\,0.490
+2872: 0.927
+2873: /
+2874: 0.371
+2875: 0.927\,/\,0.371
+2876: 0.955
+2877: /
+2878: 0.296
+2879: 0.955\,/\,0.296
+2880: Table
+2881: 10
+2882: shows that ARS combines high false-progress suppression with high expert progress coverage. For
+2883: 0
+2884: ≤
+2885: η
+2886: ≤
+2887: 10
+2888: −
+2889: 3
+2890: 0\leq\eta\leq 10^{-3}
+2891: , its FPSR remains 0.918–0.921 and
+2892: EPCR
+2893: \mathrm{EPCR}
+2894: remains 0.902–0.908. By comparison, LRM achieves FPSR of 0.893 but covers only 0.159 of expert-trajectory duration.
+2895: Increasing the tolerance can raise FPSR while removing useful progress signals. For TOPReward-8B probability outputs, increasing
+2896: η
+2897: \eta
+2898: from zero to
+2899: 10
+2900: −
+2901: 4
+2902: 10^{-4}
+2903: raises FPSR from 0.368 to 0.853 while reducing
+2904: EPCR
+2905: \mathrm{EPCR}
+2906: from 0.656 to 0.354. Even ARS loses substantial coverage at larger tolerances, with
+2907: EPCR
+2908: \mathrm{EPCR}
+2909: falling to 0.588 at
+2910: η
+2911: =
+2912: 0.01
+2913: \eta=0.01
+2914: . These gains in FPSR therefore require joint interpretation with the remaining expert progress coverage.
+2915: D.3
+2916: Correct–Mismatch Progress Gap (CMPG)
+2917: Definition and motivation.
+2918: Robometer
+2919: (
+2920: Liang et al., 2026
+2921: )
+2922: evaluates the difference in terminal rewards between successful and failed trajectories of the same task. Our semantic-mismatch benchmark imposes a stronger condition on the failure cases: the robot never approaches the object specified by the mismatch instruction or advances the corresponding task. Progress should therefore remain low throughout each mismatch trajectory. We accordingly replace terminal mismatch progress with the maximum predicted progress over the trajectory, so that transient false progress is penalized even if the prediction later decreases.
+2923: For each of the
+2924: N
+2925: =
+2926: 500
+2927: N=500
+2928: trajectory pairs, let
+2929: p
+2930: i
+2931: ,
+2932: t
+2933: +
+2934: p_{i,t}^{+}
+2935: and
+2936: p
+2937: i
+2938: ,
+2939: t
+2940: −
+2941: p_{i,t}^{-}
+2942: denote progress under the correct and mismatch instructions, respectively. Let
+2943: T
+2944: i
+2945: T_{i}
+2946: denote the terminal timestep and
+2947: 𝒯
+2948: i
+2949: −
+2950: \mathcal{T}_{i}^{-}
+2951: the timesteps with native model predictions under the mismatch instruction. We define
+2952: CMPG
+2953: =
+2954: 1
+2955: N
+2956: ​
+2957: ∑
+2958: i
+2959: =
+2960: 1
+2961: N
+2962: p
+2963: i
+2964: ,
+2965: T
+2966: i
+2967: +
+2968: −
+2969: 1
+2970: N
+2971: ​
+2972: ∑
+2973: i
+2974: =
+2975: 1
+2976: N
+2977: max
+2978: t
+2979: ∈
+2980: 𝒯
+2981: i
+2982: −
+2983: ⁡
+2984: p
+2985: i
+2986: ,
+2987: t
+2988: −
+2989: .
+2990: \mathrm{CMPG}=\frac{1}{N}\sum_{i=1}^{N}p_{i,T_{i}}^{+}-\frac{1}{N}\sum_{i=1}^{N}\max_{t\in\mathcal{T}_{i}^{-}}p_{i,t}^{-}.
+2991: (6)
+2992: Each trajectory contributes equally, irrespective of its length or number of predictions. Higher CMPG indicates greater separation between correct terminal progress and peak false progress.
+2993: CMPG complements VOC and FPSR by measuring numerical separation between correct terminal progress and peak mismatch progress. For example, a model that predicts a perfectly increasing progress curve from 0 to 1 under the correct instruction, but a constant progress of 0.99 under the mismatch instruction, achieves perfect VOC and FPSR. Nevertheless, it assigns nearly complete progress to an unrelated task, which is reflected in its low CMPG of 0.01. Although CMPG is sensitive to the output scale, we retain it to capture this complementary aspect of task alignment and interpret it jointly with VOC and FPSR under the normalization conventions in Appendix
+2994: C
+2995: .
+2996: Analysis under different output conventions.
+2997: For SOLE-R1, the main
+2998: [
+2999: −
+3000: 1
+3001: ,
+3002: 1
+3003: ]
+3004: [-1,1]
+3005: convention preserves its protocol-defined initial zero. Mapping the same predictions to
+3006: [
+3007: 0
+3008: ,
+3009: 1
+3010: ]
+3011: [0,1]
+3012: via
+3013: p
+3014: t
+3015: aff
+3016: =
+3017: (
+3018: p
+3019: t
+3020: +
+3021: 1
+3022: )
+3023: /
+3024: 2
+3025: p_{t}^{\mathrm{aff}}=(p_{t}+1)/2
+3026: halves CMPG from 0.266 to 0.133: the common offset cancels, while the gap scales by one half. VOC and zero-threshold FPSR and EPCR remain unchanged.
+3027: For TOPReward, replacing linearly normalized log-probabilities with token probabilities increases CMPG from 0.190 to 0.685 with Qwen3-VL-8B and from 0.129 to 0.756 with Qwen3-VL-32B. This transformation preserves VOC and zero-threshold FPSR and EPCR; the larger CMPG values reflect the nonlinear change in output scale. We retain linearly normalized log-probabilities as our primary output convention, following TOPReward’s original reward definition
+3028: (
+3029: Chen et al., 2026b
+3030: )
+3031: . In Table
+3032: 1
+3033: , we report the probability-based CMPG values to present the more favorable results for TOPReward among the two evaluated conventions. Both values remain below ARS’s CMPG of 0.904. Table
+3034: 10
+3035: further shows that, across the tested positive tolerances, probability outputs exhibit larger FPSR increases and EPCR reductions than the linear convention.
+3036: Appendix E
+3037: Additional Details on LIBERO-Long
+3038: E.1
+3039: Training-data exposure to LIBERO
+3040: Table
+3041: 11
+3042: summarizes training-data exposure to LIBERO based on the original papers and model documentation.
+3043: 𝔼
+3044: \mathbb{E}
+3045: indicates documented use of LIBERO data during training, and N indicates that no evidence of such use was found. The labels describe benchmark-family exposure without establishing overlap with our specific policy-training trajectories. N does not rule out exposure during training of the underlying VLM.
+3046: Table 11:
+3047: Training-data exposure of reward models to LIBERO.
+3048: Method
+3049: Exposure
+3050: Evidence
+3051: LRM
+3052: 𝔼
+3053: \mathbb{E}
+3054: LIBERO is an explicit source in the training mixture
+3055: (
+3056: Wu et al., 2026
+3057: )
+3058: .
+3059: R
+3060: 2
+3061: VLM
+3062: N
+3063: No LIBERO training is reported for the evaluated checkpoint
+3064: (
+3065: Zhang et al., 2026d
+3066: )
+3067: .
+3068: SOLE-R1
+3069: 𝔼
+3070: \mathbb{E}
+3071: Supervised fine-tuning includes 504,544
+3072: ecot_libero_all
+3073: examples
+3074: (
+3075: Schroeder et al., 2026
+3076: )
+3077: .
+3078: Robometer
+3079: 𝔼
+3080: \mathbb{E}
+3081: RBM-1M includes LIBERO-{Long, Object, Spatial, Goal} and generated failures
+3082: (
+3083: Liang et al., 2026
+3084: )
+3085: .
+3086: TOPReward
+3087: N
+3088: No LIBERO training is reported in the Qwen model cards; no additional reward-model training is performed
+3089: (
+3090: Chen et al., 2026b
+3091: )
+3092: .
+3093: ARS
+3094: N
+3095: No LIBERO training is reported in the Qwen model cards; no additional reward-model training is performed.
+3096: E.2
+3097: Task instruction clarifications
+3098: For four of the LIBERO-Long tasks, we append brief clarifications to the original task instructions to clarify object identities and disambiguate spatial references. We provide identical clarifications to all reward systems, including ARS and every compared baseline, ensuring that all VLM-based methods receive the same additional semantic information.
+3099: For the three basket-placement tasks, the object names in the original instructions can be difficult to match to the visible entities. At the relatively low default resolution of
+3100: 256
+3101: ×
+3102: 256
+3103: 256\times 256
+3104: pixels, packaging text and graphics can be difficult to discern. Without background information about the objects, even human viewers can struggle to establish this correspondence. We therefore append short descriptions of object color, shape, and packaging.
+3105: For the mug-placement task, the original instruction specifies “left” and “right” without identifying the reference frame. We clarify that these directions are robot-relative and provide the corresponding image directions. Table
+3106: 12
+3107: lists the original instructions and the appended clarifications.
+3108: Table 12:
+3109: Task instruction clarifications used on LIBERO-Long. The same additions are provided to ARS and every compared baseline. Each addition is appended to the original instruction under the heading “Task-specific hints:”.
+3110: Original instruction
+3111: Appended clarification
+3112: put both the alphabet soup and the tomato sauce in the basket
+3113: alphabet soup: blue-and-orange can with alphabet-letter soup graphics.
+3114: tomato sauce: red/green/white can with tomato pictures.
+3115: put both the alphabet soup and the cream cheese box in the basket
+3116: alphabet soup: blue-and-orange can with alphabet-letter soup graphics.
+3117: cream cheese: white rectangular box with a large purple-and-blue label.
+3118: put both the cream cheese box and the butter in the basket
+3119: cream cheese: white rectangular box with a large purple-and-blue label.
+3120: butter: red-orange rectangular box with a blue-and-white panel.
+3121: put the white mug on the left plate and put the yellow and white mug on the right plate
+3122: Plate sides are robot-relative: white mug goes to robot-left (image right); yellow-and-white mug goes to robot-right (image left).
+3123: E.3
+3124: Hand-designed privileged progress
+3125: We construct a progress signal from simulator-provided goal predicates and manually specified scoring rules. All scoring parameters were fixed before downstream policy training. For placement goals, the signal combines reaching the designated object, lifting it, and reducing its distance to the target. For articulated goals, such as opening or closing an object, progress is based on changes in joint distance to the target range. This configuration uses privileged task information and simulator state during offline data selection and follows the same chunk-selection, policy-training, and evaluation protocol as the other progress-based configurations.
+3126: For example, the task “put both the alphabet soup and the tomato sauce in the basket” contains two object-placement goals. For each object
+3127: i
+3128: i
+3129: , we compute normalized reaching, lifting, and placement scores
+3130: R
+3131: i
+3132: ,
+3133: L
+3134: i
+3135: ,
+3136: D
+3137: i
+3138: ∈
+3139: [
+3140: 0
+3141: ,
+3142: 1
+3143: ]
+3144: R_{i},L_{i},D_{i}\in[0,1]
+3145: . Reaching depends on the gripper–object distance, while lifting measures the object’s height increase relative to reset, modulated by gripper proximity. Placement measures the reduction in distance to the basket’s containment region relative to reset. This distance is computed in three dimensions, with a 1 cm downward tolerance at the region’s lower boundary. Before the corresponding containment predicate is satisfied, its score is
+3146: u
+3147: i
+3148: =
+3149: min
+3150: ⁡
+3151: (
+3152: 0.98
+3153: ,
+3154: max
+3155: ⁡
+3156: {
+3157: 0.15
+3158: ​
+3159: R
+3160: i
+3161: +
+3162: 0.35
+3163: ​
+3164: L
+3165: i
+3166: +
+3167: 0.50
+3168: ​
+3169: D
+3170: i
+3171: ,
+3172: 0.35
+3173: ​
+3174: L
+3175: i
+3176: +
+3177: 0.65
+3178: ​
+3179: D
+3180: i
+3181: }
+3182: )
+3183: .
+3184: u_{i}=\min\!\left(0.98,\,\max\!\left\{0.15R_{i}+0.35L_{i}+0.50D_{i},\;0.35L_{i}+0.65D_{i}\right\}\right).
+3185: (7)
+3186: For these initially unsatisfied goals, we set
+3187: q
+3188: i
+3189: =
+3190: 1
+3191: q_{i}=1
+3192: when the environment’s corresponding containment predicate is satisfied and
+3193: q
+3194: i
+3195: =
+3196: u
+3197: i
+3198: q_{i}=u_{i}
+3199: otherwise. Overall progress is
+3200: p
+3201: t
+3202: =
+3203: (
+3204: q
+3205: 1
+3206: +
+3207: q
+3208: 2
+3209: )
+3210: /
+3211: 2
+3212: p_{t}=(q_{1}+q_{2})/2
+3213: , with the environment’s task-success check explicitly setting
+3214: p
+3215: t
+3216: =
+3217: 1
+3218: p_{t}=1
+3219: . We apply the same selection rule as in the other progress-based configurations, retaining chunks with
+3220: p
+3221: t
+3222: +
+3223: H
+3224: −
+3225: p
+3226: t
+3227: >
+3228: 0
+3229: p_{t+H}-p_{t}>0
+3230: , where
+3231: H
+3232: =
+3233: 10
+3234: H=10
+3235: for LIBERO-Long.
+3236: E.4
+3237: Policy training and evaluation
+3238: Protocol for comparing reward systems.
+3239: Our simulation experiments evaluate the utility of different reward systems for downstream policy learning under a shared protocol. Following prior work on weighted behavior cloning
+3240: (
+3241: Ma et al., 2023b
+3242: ;
+3243: Ma et al., 2025
+3244: ;
+3245: Chen et al., 2026a
+3246: ;
+3247: Yu et al., 2026
+3248: ;
+3249: Mao et al., 2026
+3250: )
+3251: , we use predicted progress changes to determine the contribution of each action chunk to policy training. All reward systems operate on the same fixed rollout dataset and share the policy initialization, training budget, and evaluation procedure. This setup provides a direct connection between progress estimates and policy supervision without introducing an additional learned critic.
+3252: We also considered continuous weighting based on progress increments. However, different reward systems produce progress curves with different temporal profiles and distributions of increment magnitudes, making it difficult to choose shared weighting hyperparameters that yield comparable weighting behavior across methods. Tuning these hyperparameters separately would introduce additional optimization choices into the comparison. We therefore retain chunks with
+3253: Δ
+3254: t
+3255: >
+3256: 0
+3257: \Delta_{t}>0
+3258: and assign them equal weight. Although this is a coarse criterion that discards progress magnitude, it provides a common comparison protocol with no additional selection hyperparameters and reduces dependence on the numerical calibration of progress estimates.
+3259: The zero-threshold rule also retains slow but potentially necessary transitions whenever their predicted progress change is positive. Selecting only high-gain chunks within each progress stage may reduce coverage of these actions. Adding unfiltered demonstrations can mitigate this issue but introduces another source of supervision, making downstream performance a less direct measure of rollout selection quality. We therefore use a zero threshold for the simulation comparison and stage-dependent thresholds for the real-robot experiments, where all demonstration chunks are retained for training.
+3260: Training and evaluation schedule.
+3261: We train all policies for 30k gradient steps with three independent training seeds, using the same global batch size and optimization schedule. Following the LIBERO evaluation setup of OpenVLA-OFT
+3262: (
+3263: Kim et al., 2025
+3264: )
+3265: , we evaluate all methods every 2k steps on all ten LIBERO-Long tasks, increasing the budget to 100 rollouts per task (1,000 per checkpoint). Each rollout allows up to 520 control steps, with the same benchmark-provided initial states and evaluation seed across methods. Following the best-checkpoint reporting convention in LIBERO and robomimic
+3266: (
+3267: Liu et al., 2023
+3268: ;
+3269: Mandlekar et al., 2022
+3270: )
+3271: , we select the checkpoint with the highest mean success rate across the ten tasks for each training seed and report the mean and sample standard deviation of these peak rates across the three seeds. Checkpoint selection and reporting use the same benchmark evaluation set.
+3272: Different reward systems retain different subsets of the shared rollout dataset, producing policy-training datasets that vary in both size and composition. We therefore fix the number of gradient updates rather than the number of epochs to maintain a matched optimization budget across methods; methods retaining fewer chunks revisit their training samples more frequently. Under this training configuration, we observe that evaluation success rates plateau for all methods, with no sustained improvement toward the end of the 30k-step training budget. As a diagnostic of performance at a fixed training step, we additionally report results at the final 30k-step checkpoint for the main method comparison (Table
+3273: 13
+3274: ).
+3275: Results at the final checkpoint.
+3276: ARS achieves 51.6% success at the final checkpoint, exceeding Vanilla BC by 11.5 percentage points and the strongest baseline, Robometer, by 9.5 points.
+3277: Table 13:
+3278: Policy-learning results on LIBERO-Long at the final 30k-step checkpoint. Entries report mean success rate
+3279: ±
+3280: \pm
+3281: standard deviation over the same three training runs per method as in Table
+3282: 2
+3283: .
+3284: Method
+3285: Success (%)
+3286: ↑
+3287: \uparrow
+3288: Vanilla BC
+3289: 40.1
+3290: ±
+3291: \pm
+3292: 1.8
+3293: LRM
+3294: 36.8
+3295: ±
+3296: \pm
+3297: 1.5
+3298: R
+3299: 2
+3300: VLM
+3301: 34.1
+3302: ±
+3303: \pm
+3304: 1.1
+3305: SOLE-R1
+3306: 40.4
+3307: ±
+3308: \pm
+3309: 2.8
+3310: Robometer
+3311: 42.1
+3312: ±
+3313: \pm
+3314: 2.3
+3315: TOPReward
+3316: + Qwen3-VL-8B
+3317: 37.9
+3318: ±
+3319: \pm
+3320: 2.5
+3321: TOPReward
+3322: + Qwen3-VL-32B
+3323: 40.5
+3324: ±
+3325: \pm
+3326: 2.9
+3327: ARS
+3328: + Qwen3.6-27B
+3329: 51.6
+3330: ±
+3331: \pm
+3332: 1.4
+3333: E.5
+3334: Progress-curve diagnostics
+3335: Zero progress increments.
+3336: In Table
+3337: 2
+3338: , LRM and R
+3339: 2
+3340: VLM retain only 13.7% and 13.6% of the chunks, respectively, and yield the two lowest downstream success rates, 38.6% and 41.5%. For LRM, the 11-level absolute-progress output produces zero progress differences for 76.7% of candidate chunks. R
+3341: 2
+3342: VLM assigns
+3343: Δ
+3344: t
+3345: =
+3346: 0
+3347: \Delta_{t}=0
+3348: to 79.5% of chunks because it often repeats an early progress estimate across subsequent frames, leaving little temporal information for chunk selection.
+3349: Local progress under outcome conditioning.
+3350: We examine adjacent-frame progress changes on the 3,098 trajectories where the conditioned and unconditioned runs agree on terminal outcome. With outcome conditioning, non-increasing intervals on success-predicted trajectories remain at 21.45% (21.70% without conditioning), while failure-predicted trajectories retain 23.38% increasing intervals (27.03% without conditioning), micro-averaged within each group. These patterns are consistent with the terminal label serving as an endpoint anchor while intermediate progress remains guided by visual evidence, rather than collapsing into a uniformly increasing ramp for success or a flat zero curve for failure.
+3351: Appendix F
+3352: Additional Ablation Details
+3353: F.1
+3354: Base-model evaluation and compatibility
+3355: F.1.1
+3356: Additional base-model evaluation for TOPReward
+3357: Following the authors’ public inference implementation
+3358: (
+3359: Chen et al., 2026b
+3360: )
+3361: , we evaluate TOPReward with Qwen3-VL-8B-Instruct and Qwen3-VL-32B-Instruct and obtain reasonable results on both evaluations reported in Tables
+3362: 1
+3363: and
+3364: 2
+3365: . To match ARS’s default base model, we additionally evaluate TOPReward with Qwen3.6-27B. Starting from the reference settings, we test alternative prompt and chat-template formats, as well as enabling and disabling thinking mode. These attempts do not yield competitive results in our setup. The reported Qwen3.6-27B configuration achieves 0.452 VOC, 0.471 FPSR, and
+3366: −
+3367: 0.049
+3368: -0.049
+3369: CMPG under the linear log-probability convention described in Appendix
+3370: C
+3371: .
+3372: We hypothesize that this difficulty may partly reflect TOPReward’s sensitivity to prompt formatting, as documented by the original authors
+3373: (
+3374: Chen et al., 2026b
+3375: )
+3376: . Qwen3.6-27B uses a different chat template from Qwen3-VL-Instruct, including different handling of thinking prefixes
+3377: (
+3378: Bai et al., 2025
+3379: ;
+3380: Qwen Team, 2026b
+3381: )
+3382: , which may affect completion-token probabilities. However, our experiments do not isolate these differences as the cause of the performance degradation. We retain the original Qwen3-VL model family in the main comparisons and report the Qwen3.6-27B adaptation here.
+3383: F.1.2
+3384: Base-model execution requirements
+3385: To compare ARS with Robometer using the same base model, we attempted to run ARS with Qwen3-VL-4B-Instruct, the base model from which Robometer was trained
+3386: (
+3387: Liang et al., 2026
+3388: )
+3389: . Despite its visual understanding capabilities, the model failed to complete the ARS workflow in any of our runs. Failures involved tool use and compliance with harness constraints. We then evaluated Qwen3.5-4B, a model of the same nominal parameter size from the Qwen family, which completed all 1,000 semantic-mismatch evaluations. We therefore use Qwen3.5-4B for the comparison with Robometer, matching the parameter scale while using a different base model.
+3390: F.1.3
+3391: Small-model execution on long-horizon trajectories
+3392: On LIBERO-Long, Qwen3.5-4B produced valid ARS outputs for 4,063 of 4,096 trajectories, an inference completion rate of 99.19%. The remaining 33 runs were marked as failures after extended attempts, including cases of repeated violations of harness constraints. These observations indicate greater difficulty sustaining reliable agent execution on long-horizon trajectories, even when the same model completes the simpler semantic-mismatch benchmark.
+3393: F.2
+3394: Workflow ablations: implementation details and additional experiments
+3395: F.2.1
+3396: ARS workflow variants
+3397: We compare full ARS with three ablated workflows. The first omits both visual inspection and explicit event verification, relying on the full video supplied initially. The second retains visual inspection but omits explicit event verification. The third retains the backbone, tools, and verification procedure of full ARS but performs proposal generation and verification within a single reasoning context. Progress estimation continues in that same context. Full ARS instead generates proposals in one context and performs verification and progress estimation in a separate context. Across variants, we use Qwen3.6-27B with the same inference settings and progress-scoring criteria, and provide all video frames at their original resolution. A workflow completes when the agent requests completion and passes the applicable harness checks.
+3398: Actual query and token counts vary with workflow execution and the agents’ stopping decisions. A query is one model scoring or generation request. We sum usage across all agents and report the mean per trajectory over all 4,096 trajectories. Input and output tokens are taken from the reported prompt and completion usage, respectively. Input counts include repeated context and visual tokens; completion counts already include reasoning tokens.
+3399: During verification and progress estimation, the primary agent averages 41.4K input tokens per query, 28.1% below the single-context control’s average of 57.6K across the complete workflow (Table
+3400: 14
+3401: ). This is consistent with the benefit of context separation described in Section
+3402: 3.4
+3403: : retaining event proposals without carrying over the subagent’s full interaction history.
+3404: Table 14:
+3405: Per-agent inference usage of full ARS on LIBERO-Long, with the single-context control for comparison. Queries and token counts are means per trajectory. Input per query is aggregate input tokens divided by model queries.
+3406: Configuration
+3407: Queries
+3408: Input (K)
+3409: Output (K)
+3410: Input / query (K)
+3411: Full
+3412: ARS
+3413: : subagent
+3414: 5.8
+3415: 187.0
+3416: 3.9
+3417: 32.5
+3418: Full
+3419: ARS
+3420: : primary agent
+3421: 19.2
+3422: 793.6
+3423: 17.1
+3424: 41.4
+3425: Full
+3426: ARS
+3427: : total
+3428: 24.9
+3429: 980.6
+3430: 21.1
+3431: 39.3
+3432: ARS
+3433: w/o context separation
+3434: 19.0
+3435: 1,097.2
+3436: 15.2
+3437: 57.6
+3438: We also evaluate all three ablated workflows on the semantic-mismatch benchmark. On these short trajectories (31.7 frames on average), all three variants achieve scores close to those of full ARS across all three metrics (Table
+3439: 15
+3440: ). This simple benchmark therefore provides limited separation among the evaluated workflows. On LIBERO-Long, all three ablations yield lower downstream policy success than full ARS, supporting the utility of the complete workflow in this setting.
+3441: Table 15:
+3442: Additional workflow ablations on the semantic-mismatch benchmark using Qwen3.6-27B.
+3443: Configuration
+3444: VOC
+3445: ↑
+3446: \uparrow
+3447: FPSR
+3448: ↑
+3449: \uparrow
+3450: CMPG
+3451: ↑
+3452: \uparrow
+3453: ARS
+3454: w/o verification & inspection
+3455: 0.991
+3456: 0.915
+3457: 0.895
+3458: ARS
+3459: w/o verification
+3460: 0.995
+3461: 0.916
+3462: 0.910
+3463: ARS
+3464: w/o context separation
+3465: 0.993
+3466: 0.913
+3467: 0.910
+3468: Full
+3469: ARS
+3470: 0.995
+3471: 0.918
+3472: 0.904
+3473: F.2.2
+3474: GVL-style single-prompt evaluation
+3475: Purpose and protocol.
+3476: We evaluate Qwen3.6-27B with a GVL-style single prompt
+3477: (
+3478: Ma et al., 2025
+3479: )
+3480: to assess the progress-estimation capabilities of the base model under direct prompting. The no-inspection ARS variant still permits multi-turn reasoning and harness checks, whereas GVL-style inference produces its progress estimates in a single model response. We provide the task instruction and all recorded trajectory frames, without temporal subsampling. The initial frame serves as the reference scene, and the model predicts task-completion percentages for the remaining frames. We evaluate both chronological presentation and the shuffled presentation used by GVL. In the shuffled variant, the initial reference frame remains fixed and the remaining frames are randomly permuted. Predictions are mapped back to their original temporal order before evaluation and action-chunk selection.
+3481: Semantic-mismatch benchmark.
+3482: Chronological presentation performs better than shuffled presentation in our experiments. We therefore report the chronological variant in Table
+3483: 3
+3484: , which achieves 0.637 VOC, 0.900 FPSR, and 0.354 CMPG. Although its FPSR approaches that of ARS (0.918), its lower VOC and CMPG indicate weaker progress ordering and separation between correct and mismatched instructions. Thus, suppressing progress increases under mismatched instructions alone does not establish the overall quality of the estimated progress signal.
+3485: LIBERO-Long.
+3486: We apply the same action-chunk selection rule as in the main simulation experiments, retaining chunks with
+3487: Δ
+3488: t
+3489: =
+3490: p
+3491: t
+3492: +
+3493: H
+3494: −
+3495: p
+3496: t
+3497: >
+3498: 0
+3499: \Delta_{t}=p_{t+H}-p_{t}>0
+3500: , where
+3501: H
+3502: =
+3503: 10
+3504: H=10
+3505: . Table
+3506: 16
+3507: reports policy success and the percentage of action chunks retained for training. With chronological presentation, 95.20% of chunks have zero progress change and only 3.58% are retained. Policy training completes, but the resulting policy achieves 0.0% success.
+3508: Shuffling reduces the zero-change fraction to 70.50% and increases the retained fraction to 14.80%. The resulting policy achieves 34.1% success, 10.1 percentage points below Vanilla BC and 23.8 points below ARS with the same Qwen3.6-27B base model. These results show that frame ordering substantially affects the progress signal produced by single-prompt inference. However, the additional variation induced by shuffling does not translate into effective data selection relative to unfiltered behavior cloning in this setting.
+3509: Table 16:
+3510: GVL-style single-prompt inference with Qwen3.6-27B on LIBERO-Long, using all trajectory frames. Retained is the percentage of action chunks kept for policy training.
+3511: Frame order
+3512: Success (%)
+3513: ↑
+3514: \uparrow
+3515: Retained (%)
+3516: Chronological
+3517: 0.0
+3518: 3.58
+3519: Shuffled
+3520: 34.1
+3521: ±
+3522: 1.1
+3523: 34.1\pm 1.1
+3524: 14.80
+3525: F.3
+3526: The form of intermediate reasoning
+3527: R
+3528: 2
+3529: VLM and SOLE-R1 organize intermediate reasoning primarily through explicit language CoT. R
+3530: 2
+3531: VLM recurrently maintains task decomposition, key steps, and their completion status through CoT over ordered video snippets
+3532: (
+3533: Zhang et al., 2026d
+3534: )
+3535: . SOLE-R1 generates spatiotemporal CoT before each progress prediction; removing CoT from its progress training produces flatter, noisier rewards and weakens downstream learning
+3536: (
+3537: Schroeder et al., 2026
+3538: )
+3539: .
+3540: Table 17:
+3541: Effect of the base model’s thinking mode under the same ARS workflow with Qwen3.6-27B. LIBERO-Long uses no outcome conditioning; Retained is the percentage of chunks kept from the original dataset.
+3542: Thinking mode
+3543: Semantic-mismatch
+3544: LIBERO-Long
+3545: VOC
+3546: ↑
+3547: \uparrow
+3548: FPSR
+3549: ↑
+3550: \uparrow
+3551: CMPG
+3552: ↑
+3553: \uparrow
+3554: Success (%)
+3555: ↑
+3556: \uparrow
+3557: Retained (%)
+3558: Disabled
+3559: 0.990
+3560: 0.915
+3561: 0.877
+3562: 55.4
+3563: ±
+3564: \pm
+3565: 0.7
+3566: 62.0
+3567: Enabled
+3568: 0.995
+3569: 0.918
+3570: 0.904
+3571: 57.9
+3572: ±
+3573: \pm
+3574: 0.4
+3575: 66.9
+3576: We share their emphasis on intermediate reasoning, but examine whether it must take this form. Disabling the base model’s thinking mode largely preserves ARS’s semantic-mismatch performance and yields 55.4% downstream success, 11.2 points above Vanilla BC (44.2%). Enabling thinking further improves success by 2.5 points to 57.9% (Table
+3577: 17
+3578: ). The harness still maintains and revises reasoning state through its event timeline, evidence links, and progress curve. These results suggest that a standalone language CoT trace is not the only effective way to organize intermediate reasoning for reward estimation.
+3579: Appendix G
+3580: Additional Details on Real-World Policy Learning
+3581: G.1
+3582: Task and evaluation protocol
+3583: The robot must complete three screw-fastening operations on the washing machine’s rear panel. Success is evaluated at the complete-task level: all three screws must be successfully fastened, as confirmed by a human evaluator. The system monitors end-effector rotation time and torque, and automatically marks timed-out trials as failures. Avoiding a timeout does not by itself establish success; final completion is determined by human assessment.
+3584: Real-robot evaluation is substantially more time-consuming than simulation. We therefore use one training seed per configuration and evaluate each policy over 200 complete-task trials. These results do not quantify variability across training seeds.
+3585: G.2
+3586: Policy training and data sampling
+3587: We initialize all policies in Table
+3588: 5
+3589: from the same pretrained
+3590: π
+3591: 0.5
+3592: \pi_{0.5}
+3593: checkpoint
+3594: (
+3595: Black et al., 2025
+3596: )
+3597: . We use an action-chunk horizon of
+3598: H
+3599: =
+3600: 50
+3601: H=50
+3602: and evaluate the checkpoint saved at 200,000 gradient steps for all configurations.
+3603: The dataset contains 2,574 demonstration trajectories and 3,092 offline rollout trajectories. Demonstration-only BC uses all demonstration chunks. The remaining configurations combine the demonstrations with either all rollout chunks or the subset selected using ARS progress estimates. ARS-based configurations use the stage-dependent selection rule specified in Section
+3604: 3.7
+3605: .
+3606: For every configuration that incorporates rollout data, we use stratified sampling with a fixed 1:1 ratio between demonstration and rollout chunks. Within each source, eligible chunks are sampled uniformly. For ARS-based configurations, the rollout pool consists of the retained chunks. Thus, filtering changes the size and composition of the rollout pool while preserving the relative sampling weights of demonstrations and rollouts. We apply the BC loss in Equation
+3607: 4
+3608: separately to each source, with equal expected weights under this sampling scheme.
+3609: Visual references.
+3610: We provide two positive examples showing initial end-effector engagement with the screw head and full tightening with end-effector withdrawal, and one negative example showing stalled fastening. Each reference consists of a single image and a brief description, without numerical progress annotations. The references are supplied during ARS progress inference.
+3611: G.3
+3612: Outcome conditioning on the real robot
+3613: Adding terminal outcome labels to ARS with visual references increases observed success from 81.5% to 84.0%, but the incremental gain is not statistically significant (two-sided Fisher’s exact test,
+3614: p
+3615: =
+3616: 0.597
+3617: p=0.597
+3618: ).

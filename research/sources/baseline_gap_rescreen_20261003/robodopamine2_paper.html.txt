@@ -1,0 +1,1903 @@
+Robo-Dopamine 2.0: History-Conditioned and OOD-Aware Process Reward Modeling for Robotic Manipulation
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+Introduction
+Related Work
+Method
+History-Conditioned Pairwise Reward Formulation
+Structured OOD Data Construction
+OOD-aware Signed Progress Space
+Signed-Hop Curriculum
+Closed-Loop Reward Framework
+Experiments and Results
+Experimental Setup
+Offline Results
+Temporal Context and OOD Ablations
+Signed-Hop Curriculum
+Reinforcement Learning
+Simulation on RoboTwin
+Real-World Repeated Insertions
+Conclusion
+References
+A OOD Data Construction Pipeline
+Pipeline overview.
+Task Parsing and Operator Assignment
+Primitive-to-operator mapping.
+Phase-Aware Temporal Localization
+Multi-Reference Edit Construction
+Structured Prompt Design
+Input contract.
+Scene and target binding.
+Primitive-specific task block.
+Operator contract.
+Global physical constraints.
+View-specific constraints.
+Output contract.
+Negative Counterfactual Operators
+Wrong object.
+Empty grasp.
+Non-release.
+Target replacement.
+Robustness-Preserving Operators
+Foreground occlusion.
+Background change.
+Distractor addition or removal.
+Non-target color change.
+Camera-Specific Geometric Constraints
+Head camera.
+Wrist cameras.
+Generation and Provenance
+B Computing Infrastructure and Training Cost
+C Simulation Reinforcement Learning Details
+D Real-World Experiments
+Platform, Observations, and Task
+Offline-to-Online ConRFT Protocol
+Controlled Comparison and Metrics
+E Additional Ablation Details
+Additional Signed-Hop Diagnostics
+Trajectory-Level Case Studies
+Compact Ablation Tables
+License: CC BY 4.0
+arXiv:2608.15680v1 [cs.RO] 16 Aug 2026
+Robo-Dopamine 2.0: History-Conditioned and OOD-Aware Process Reward Modeling for Robotic Manipulation
+Yijie Xu
+Haopeng Jin
+Run Zhou
+Shengbang Liu
+Sixiang Chen
+Hongyang Cheng
+Sicheng Hu
+Peterson Co
+Jinwen Luo
+Huajie Tan
+Shanghang Zhang\corresponding
+Abstract
+Vision-language-action (VLA) models have improved robotic manipulation, yet
+their policies remain vulnerable to compounding errors, unseen scene changes,
+and off-trajectory states. Reinforcement learning (RL) offers a promising
+route to refine pretrained VLA policies, but its effectiveness depends on
+informative rewards. Sparse success signals make exploration inefficient,
+whereas manually engineered dense rewards are costly, brittle, and
+task-specific. Learned visual reward models provide dense feedback, but
+existing robotic reward models often rely on static before–after observations
+and struggle to capture execution context and failure semantics. This leads to
+temporal ambiguity, where similar observations correspond to different
+latent progress due to hidden contact events, repeated phases, or reordered
+subgoals, and limits their ability to distinguish robustness-preserving
+variations from task-invalid failures under out-of-distribution (OOD)
+execution. We introduce Robo-Dopamine 2.0, a history- and OOD-aware process
+reward model that retains a pairwise prediction interface.
+Robo-Dopamine 2.0 improves progress estimation under these conditions through two
+complementary designs: (1) a history-conditioned pairwise reward formulation
+that uses source-aligned reference panels for synthetic OOD queries and
+observed rollout history for online queries, while preserving the actual queried
+endpoints;
+and (2) an OOD-aware signed progress space that organizes positive,
+robustness-preserving, and negative states into a unified progress
+representation. To improve optimization of fine-grained progress ordering, we
+further develop a Signed-Hop Curriculum with transition-aware replay
+that progressively learns coarse execution ordering before fine-grained
+progress calibration. We also construct an OOD trajectory dataset and a
+five-family benchmark for comprehensive evaluation. Reference panels improve mean visual order consistency (VOC) from 0.967 to
+0.986 and OOD-robust VOC from 0.906 to 0.958. Under the same 400K pairwise-reward budget, Signed-Hop training with 25%
+replay reaches 0.9872 mean VOC, compared with 0.9858 for a matched-pool
+shuffled control. In downstream RL, the full model reaches 86.8% mean
+RoboTwin success and 71/80 successful real-world insertions.
+1State Key Laboratory of Multimedia Information Processing, School of Computer Science, Peking University
+2EvoPhys AI
+3Beijing University of Posts and Telecommunications
+4Tencent
+5Renmin University of China
+6Sun Yat-sen University
+Introduction
+Large-scale imitation learning and vision-language-action models have
+substantially improved visuomotor policy generalization from diverse
+demonstrations (Brohan et al. 2023; Zitkovich et al. 2023; Kim et al. 2025b).
+However, long-horizon, contact-rich manipulation remains challenging due to
+compounding errors, unseen scene changes, and off-trajectory states that
+require recovery.
+Reinforcement learning can improve policies through interaction, but its
+practical deployment on real robots critically depends on rewards that are
+dense, task-relevant, and reliable beyond the demonstration distribution.
+Sparse terminal rewards make exploration inefficient, whereas handcrafted
+dense rewards are brittle, task-specific, and expensive to
+engineer (Lee et al. 2021; Wang et al. 2024; Sontakke et al. 2023).
+Recent visual and language-conditioned reward models address this bottleneck by
+learning dense feedback from observations and task descriptions
+(Ma et al. 2023b; Ma et al. 2023a; Baumli et al. 2023; Wang et al. 2024); robot-specific methods
+further introduce stage- or process-aware progress estimation
+(Hung et al. 2025; Tan et al. 2026; Chen et al. 2026a; Zhang et al. 2026).
+Nevertheless, existing approaches remain limited in accurately evaluating
+execution progress under challenging manipulation scenarios.
+First, static endpoint pairs suffer from temporal aliasing: visually
+similar states may correspond to different latent progress due to hidden
+contact events, repeated phases, or reordered subgoals
+(Ni et al. 2022; Guhur et al. 2023; Fu et al. 2024).
+Second, robust execution requires distinguishing semantics-preserving
+variations from true failures: occlusions or distractors may preserve task
+progress, whereas failed grasps, wrong-object interactions, and incomplete
+releases should receive negative feedback. However, successful
+in-distribution trajectories provide limited supervision for learning such
+failure-aware distinctions.
+To address these challenges, we introduce Robo-Dopamine 2.0, a
+history- and OOD-aware pairwise reward learning framework that retains the
+pairwise progress formulation used in prior process reward
+modeling (Tan et al. 2026). Robo-Dopamine 2.0 improves phase-aware and
+failure-aware progress estimation through two complementary designs:
+(1) a history-conditioned pairwise reward formulation that
+uses same-episode expert history for standard queries and observed rollout
+history for online queries, while synthetic OOD queries use phase-aligned
+successful-reference panels without replacing their edited endpoints; and (2) an OOD-aware signed progress space that
+organizes execution states into positive, robustness-preserving, and negative
+branches, enabling the model to represent valid progress,
+semantics-preserving variations, failures, and recovery within a unified
+pairwise training interface.
+Furthermore, we introduce a Signed-Hop Curriculum with
+transition-aware replay to progressively learn execution ordering.
+The curriculum first captures coarse-grained ordering between successful,
+robust, and failed states, and then refines fine-grained progress differences.
+The replay strategy preserves informative large-transition pairs during
+training, improving progress calibration under diverse execution scenarios.
+We evaluate Robo-Dopamine 2.0 through a trajectory-level visual order consistency (VOC)
+evaluation across five benchmark families covering in-distribution, temporal,
+and OOD scenarios.
+Our contributions are summarized as follows:
+•
+We propose Robo-Dopamine 2.0, a history- and OOD-aware pairwise reward framework that supports source-reference context for synthetic OOD queries and observed rollout context for online reward inference, together with a signed progress space for valid progress, robustness, failure, and recovery.
+•
+We develop a Signed-Hop Curriculum with transition-aware replay that
+improves learning of global execution ordering and fine-grained progress
+calibration.
+•
+We present a trajectory-level visual order consistency (VOC)
+evaluation across five benchmark families covering in-distribution, temporal,
+and OOD scenarios, including controlled studies of static versus
+history-conditioned reward modeling.
+Figure 1: Overview of Robo-Dopamine 2.0. Standard queries use same-episode expert
+history, online queries use the observed rollout history, and synthetic OOD
+queries use source-aligned successful-reference panels while preserving their
+edited endpoints. All context modes share the same pairwise GRM interface.
+Related Work
+Generalist Robot Policies.
+Generalist robot policies and vision-language-action models scale visuomotor
+learning and semantic generalization across tasks and embodiments. RT-1 studies
+large-scale real-world robot control, RT-2 transfers web-scale semantic
+knowledge into action prediction, and OpenVLA provides an open model for
+adaptation to new manipulation domains (Brohan et al. 2023; Zitkovich et al. 2023; Kim et al. 2025b).
+These works establish the foundation for general robot policies, but do not
+address process reward modeling for off-trajectory recovery. Robo-Dopamine 2.0 instead
+focuses on the reward layer for refining policies under long-horizon and
+out-of-distribution execution.
+Visual Reward Learning.
+Reward learning explores preference supervision (Lee et al. 2021),
+language-conditioned state changes (Nair et al. 2022), and feedback derived from
+visual or video-language representations (Sontakke et al. 2023; Ma et al. 2023b; Ma et al. 2023a; Alakuijala et al. 2024). Recent foundation-model approaches learn pairwise
+visual preferences, general-purpose rewards, or failure-aware feedback
+(Wang et al. 2024; Baumli et al. 2023; Yang et al. 2024), while VICtoR introduces
+stage-aware vision-instruction rewards (Hung et al. 2025). Despite these
+advances, existing methods remain largely endpoint-oriented or success-centric
+and do not combine query-dependent temporal context with explicit OOD
+failure/recovery supervision. Robo-Dopamine 2.0 complements these approaches by jointly
+modeling temporal-context-conditioned pairs and signed OOD progress within a
+unified reward formulation.
+Temporal and Process-aware Reward Modeling.
+Temporal context has been explored in recurrent RL, history-aware manipulation
+policies, and order-sensitive proxy rewards
+(Ni et al. 2022; Guhur et al. 2023; Fu et al. 2024).
+These methods primarily introduce memory into policies or trajectory matching,
+whereas Robo-Dopamine 2.0 targets temporal ambiguity within pairwise reward estimation.
+Meanwhile, robotic process reward models investigate multi-view relative
+progress, large-scale reward data, stage-aware estimation, and critic-like
+architectures (Tan et al. 2026; Lee et al. 2026; Zhang et al. 2026; Chen et al. 2026a; Mao et al. 2026);
+failure- and stage-reasoning models provide complementary diagnostics
+(Duan et al. 2025; Zhou et al. 2026). Robo-Dopamine 2.0 bridges these directions by using
+query-dependent temporal context—same-episode expert history for standard
+queries, observed rollout history for online queries, and source-aligned
+successful-reference panels for synthetic OOD queries—and by unifying semantics-preserving variations, failures, and
+recovery within a signed pairwise progress space.
+Method
+Figure 1 summarizes Robo-Dopamine 2.0: ordered temporal context
+addresses ambiguous endpoints, signed OOD supervision models valid progress,
+failure, and recovery, and a Signed-Hop curriculum improves global-to-local
+ordering. Closed-loop inference converts pairwise predictions into an online
+potential for reinforcement learning.
+History-Conditioned Pairwise Reward Formulation
+Robo-Dopamine 2.0 preserves the pairwise interface of prior process reward
+modeling (Tan et al. 2026). Given an instruction c, task-reference
+anchors ℛ=(rs,rg), ordered temporal context
+𝒞b​a, and an ordered pair (Xb,Xa), the General Reward
+Model (GRM) predicts signed relative progress:
+|
+| y^b​a=fθ​(c,ℛ,𝒞b​a,Xb,Xa).
+|
+| (1)
+Here Xb and Xa are the actual queried multi-view states. The reference
+anchors specify the task start and goal but are not treated as observed
+execution history. The static baseline sets
+𝒞b​a=∅.
+Let Xb=(bh,bl,br) and Xa=(ah,al,ar), where h,l,r denote the
+canonical head/third-person, left-wrist, and right-wrist view slots. For a pair with temporal indices tb and ta, we define
+|
+| 𝒲pre
+| ={t:0≤t<min⁡(tb,ta)},
+|
+| (2)
+|
+| 𝒲mid
+| ={t:min⁡(tb,ta)<t<max⁡(tb,ta)}.
+|
+For standard and online queries, these are indices in the queried episode or
+rollout; for synthetic OOD pairs, they are indices in the aligned source
+episode. Pair order determines the target direction, while panel frames remain
+chronological. Each window is uniformly sampled into panels
+Mpre1:K and Mmid1:L. The two input
+layouts are
+|
+| ℐstatic
+| =[rs,rg,Xb,Xa],
+|
+| (3)
+|
+| ℐref
+| =[rs,rg,Mpre1:K,Xb,
+|
+|
+|
+| Mmid1:L,Xa].
+|
+Frames in each panel are ordered left-to-right and top-to-bottom. Empty cells
+use a fixed padding image, and the prompt records the actual panel count so
+that image and text positions remain aligned. Panels may be rendered offline
+or assembled and cached by the data loader under the same ordering and padding
+contract. For same-episode queries, pre-query and between-state panels summarize the
+actual events preceding and separating the endpoints. For synthetic OOD pairs,
+they instead provide nominal successful progression at the aligned source
+indices.
+Context provenance follows the query type. Standard training pairs use
+temporal panels from the same expert episode as the queried states. Synthetic
+OOD pairs use panels exclusively from the aligned successful source episode,
+while Xb and Xa remain the edited observations; we refer to these as
+source-only reference panels. Online inference instead constructs panels from the observed rollout history,
+as described in the Closed-Loop Reward Framework subsection.
+Structured OOD Data Construction
+We use OOD to denote counterfactual states outside the distribution of
+successful source executions. Successful trajectories are drawn from the
+RoboCasa (Nasiriany et al. 2024) and LIBERO (Liu et al. 2023) simulation
+benchmarks and from real-robot AgiBot World
+trajectories (AgiBot-World Contributors and others 2025). Dataset-specific camera streams are
+mapped to common view slots; unavailable auxiliary views are padded and masked
+according to their availability. Data splits are formed at the source-episode
+level before OOD generation, and every edited descendant remains in the same
+split as its source episode.
+Given a successful source trajectory τ and instruction c, we apply a
+task- and phase-aware edit operator to construct an aligned counterfactual
+trajectory:
+|
+| τ~z
+| =ℰz​(τ,c),
+|
+| (4)
+|
+| z
+| ∈𝒵rob∪𝒵neg.
+|
+Here z denotes the edit type, ℰz applies it over a phase-valid
+interval, and τ~z contains source-index-aligned edited endpoints.
+The sets 𝒵rob and 𝒵neg contain
+semantics-preserving and task-invalid operators, respectively.
+Negative operators include wrong-object interaction, empty grasp, non-release,
+and target replacement, whereas robust operators include partial occlusion,
+background variation, irrelevant distractors, and non-target color changes.
+Operator availability is primitive-dependent, and each edited sequence uses one
+operator specification over a phase-valid interval and across all available
+camera views. Each edited frame retains its source episode,
+frame index, view, and operator metadata for aligned pair compilation. Full
+prompt, temporal-localization, and view-specific editing details are provided
+in the supplementary.
+For synthetic OOD pairs, the task-reference anchors and all temporal panels are
+drawn from the aligned successful source episode, while the intervention
+affects only the queried endpoints. Edited observations never enter these
+source-reference panels. Online deployment follows the rollout-history construction described below and
+therefore does not require source selection or source-index alignment.
+OOD-aware Signed Progress Space
+For a successful source trajectory
+τ={s0,…,sT−1}, define
+|
+| gi=iT−1.
+|
+| (5)
+Here Pi and Ri denote the original positive state and its aligned
+semantics-preserving robust state, respectively; Ni denotes an aligned
+task-invalid state instantiated only at phase-valid indices i>0. For each
+instantiated state, we assign
+|
+| Φ⁡(Pi)=Φ⁡(Ri)=gi,Φ⁡(Ni)=−gi.
+|
+| (6)
+The sign separates valid execution from task-invalid failure, while
+|Φ⁡(Ni)|=gi indexes failure depth by the aligned source phase.
+Thus, −gi is a designed supervision coordinate rather than a calibrated
+failure probability or a literal percentage of negative completion. Since
+every instantiated negative state satisfies i>0, we have Φ⁡(Ni)<0;
+such states represent task-invalid execution rather than arbitrary difficulty
+or visual novelty.
+Define b⁡(Pi)=b⁡(Ri)=0 and b⁡(Ni)=1, where b⁡(⋅) is the binary
+negative-branch indicator. For a pair (Xb,Xa), let
+|
+| ϕb
+| =Φ⁡(Xb),
+| ϕa
+| =Φ⁡(Xa),
+|
+| (7)
+|
+| Δb​a
+| =ϕa−ϕb,
+| Lb​a
+| =−max⁡{b⁡(Xb),b⁡(Xa)}.
+|
+Here Lb​a selects the lower endpoint of the normalization interval:
+Lb​a=0 for valid-only pairs and Lb​a=−1 whenever either endpoint
+belongs to the negative branch. The signed Hop target is
+|
+| ℋb​a={0,Δb​a=0,Δb​a1−ϕb,Δb​a>0,Δb​aϕb−Lb​a,Δb​a<0,
+|
+| (8)
+The corresponding regression label is
+|
+| yb​a=100​clip⁡(ℋb​a,−1,1),
+|
+| (9)
+where the factor 100 preserves the output scale of the original GRM
+interface; it does not turn the continuous Hop into a three-class target. Zero
+denotes same-progress invariance rather than uncertainty or a generic neutral
+class.
+Following the Hop normalization of Tan et al. (2026),
+ℋb​a measures the fraction of the available potential range in the
+queried direction: positive transitions are normalized toward the goal 1,
+whereas negative transitions are normalized toward the branch floor Lb​a.
+Replacing the original floor 0 with the pair-dependent Lb​a extends the
+same invertible mapping to failure and recovery; clipping is used only as a
+numerical safeguard.
+Training includes valid pairs Ui→Vj with U,V∈{P,R}, failure
+pairs Ui→Nj, recovery pairs Ni→Uj, and within-failure pairs
+Ni→Nj. A same-index pair Pi↔Ri has zero Hop and
+explicitly supervises invariance, whereas cross-index robust pairs such as
+Ri→Rj retain nonzero progress or regression according to gj−gi.
+We train the GRM with mean-squared regression:
+|
+| ℒpair​(θ)=𝔼(Xb,Xa)∼𝒟​[(y^b​a−yb​a)2].
+|
+| (10)
+We retain start- and goal-anchored comparisons and use fixed family quotas so
+that abundant positive and within-branch pairs do not dominate robust, failure,
+and recovery pairs.
+Signed-Hop Curriculum
+The signed Hop also provides a task-aligned measure of training difficulty. We
+rank examples by |ℋb​a| within each pair family, so that frequent
+families do not dominate selection. The large-Hop pool
+𝒟large contains the top 40% of examples by
+|ℋb​a| within each family, while
+𝒟fine contains the remaining small-Hop and zero-Hop
+calibration examples.
+Training uses two 200K-example pairwise-reward stages, totaling 400K pairwise
+examples. Stage 1 samples from 𝒟large to learn global
+progress, failure, and recovery geometry. Stage 2 primarily samples from
+𝒟fine to improve local calibration and robust invariance
+while replaying a fraction ρ of large-Hop examples:
+|
+| 𝒟2=
+| (1−ρ)​𝒟fine
+|
+| (11)
+|
+|
+| +ρ​𝒟large.
+|
+We use ρ=0.25, so 25% of Stage 2 examples are replayed large-Hop
+examples and 75% are fine or zero-Hop examples. The replay ratio changes only
+the Stage 2 mixture; it does not alter the Stage 1 composition or the 40%
+large-Hop selection rule.
+Closed-Loop Reward Framework
+At rollout step t, let X0, XG=rg, Xt−1, and Xt denote the
+initial state, goal reference, previous observed state, and current observed
+state. Online inference constructs temporal panels directly from observations
+available in the current rollout and therefore requires neither a successful
+source episode nor an endpoint-to-source alignment. To avoid repeatedly writing
+the full GRM input, define the normalized query
+|
+| hθ
+| (Xb,Xa,𝒞)
+|
+| (12)
+|
+|
+| =clip⁡(fθ​(c,ℛ,𝒞,Xb,Xa)100,−1,1).
+|
+The online context is constructed separately for each query from the observed
+rollout prefix. For the forward-anchored query X0→Xt, the pre-query
+panel is empty and observations strictly between X0 and Xt populate the
+between-state panels, yielding 𝒞tF. For the incremental query
+Xt−1→Xt, observations before Xt−1 populate the pre-query panels,
+while any observations between Xt−1 and Xt populate the between-state
+panels, yielding 𝒞tI. The goal observation XG is a non-temporal task anchor, so the
+backward-anchored query is evaluated without temporal panels. When an
+explicitly aligned expert episode is available, the same slots may optionally
+use its source-reference frames.
+The three normalized predictions are therefore
+|
+| h^tF
+| =hθ​(X0,Xt,𝒞tF),
+|
+| (13)
+|
+| h^tB
+| =hθ​(XG,Xt,∅),
+|
+|
+| h^tI
+| =hθ​(Xt−1,Xt,𝒞tI).
+|
+All online temporal panels contain only observations available before or at
+rollout step t; no query uses future rollout observations. We denote the
+resulting augmented online state by
+s¯t=(Xt,𝒞t,mt), where 𝒞t collects the temporal
+query context and mt denotes the recursive estimator memory.
+Because the initial state has potential zero, a negative forward-anchored score
+operationally indicates the negative branch. For t≥1, we define
+|
+| b^t
+| =𝕀[h^tF<0],
+| b^0
+| =0,
+|
+| (14)
+|
+| LtF
+| =LtB=−b^t,
+| LtI
+| =−max⁡{b^t−1,b^t}.
+|
+Here b^t is the online branch gate: LtF and LtB depend on the
+current branch, while LtI depends on both adjacent branches so that a
+negative-to-valid recovery pair retains the floor −1.
+We invert a normalized Hop using
+|
+| Γ⁡(h,ϕ,L)={ϕ+h⁡(1−ϕ),h≥0,ϕ+h⁡(ϕ−L),h<0.
+|
+| (15)
+The three recovered potential estimates are
+|
+| Φ^tF
+| =Γ⁡(h^tF,0,LtF),
+|
+| (16)
+|
+| Φ^tB
+| =Γ⁡(h^tB,1,LtB),
+|
+|
+| Φ^tI
+| =Γ⁡(h^tI,Φ^t−1,LtI),
+|
+and are fused as
+|
+| Φ^t=clip⁡(Φ^tF+Φ^tB+Φ^tI3,−1,1),Φ^0=0.
+|
+| (17)
+After inverse normalization, the three terms provide complementary estimates
+of the context-conditioned online potential, denoted
+Φ^t≡Φ^​(s¯t). We retain the fixed unweighted
+multi-anchor aggregation used by Tan et al. (2026); the fusion weights
+are neither learned nor selected on the evaluation set.
+Finally, the reward supplied to the downstream RL algorithm is
+|
+| rtGRM=rttask+γRL​Φ^t+1−Φ^t,
+|
+| (18)
+where rttask is the original environment reward,
+γRL is the discount factor used by policy optimization, and
+Φ^t=Φ^​(s¯t). With the GRM fixed during policy optimization,
+using the same discount and assigning zero potential to the absorbing terminal
+state retains the standard potential-based shaping form on the augmented
+process (Ng et al. 1999). The resulting potential is designed to be
+insensitive to semantics-preserving appearance changes, responsive to
+task-invalid failures, and positive for valid recovery transitions.
+Experiments and Results
+Experimental Setup
+Training matrix.
+GRM-8B-Pro, released by Tan et al. (2026), serves as a prior baseline;
+Robo-Dopamine 2.0-8B uses Qwen3-VL-8B. We vary OOD supervision, disabled or
+2×2/3×3 temporal context panels, prebuilt or runtime construction, and
+visual-QA mixing. The main model uses 400K signed pairs with OOD supervision and prebuilt
+3×3 panels: standard pairs use same-episode expert history, whereas
+synthetic OOD pairs use source-aligned successful-reference history. The RM is
+not trained on downstream rollout trajectories. A fixed 200K visual-QA mix
+(QA200K) is excluded from the signed-pair budget. Runtime variants construct
+the same ordered panels at data-loading time and pad missing views. QA200K is
+included identically across runs to preserve broad visual-language
+understanding and instruction following.
+Curriculum controls.
+All Signed-Hop variants fix the Qwen3-VL-8B backbone (Bai et al. 2025), OOD
+supervision, prebuilt 3×3 panels with one between-state panel, token
+budget, QA200K mix, and 400K signed pairs split evenly across two stages. We
+compare random mixing (E0), the matched E4 pool without ordering (E1), reverse
+fine-to-large training (E2), large-to-fine training without replay (E3), and
+large-to-fine training with ρ=0.25 replay (E4). E1 isolates ordering; E3
+isolates replay. The same QA200K auxiliary mix is fixed across curriculum
+variants and excluded from the signed-pair budget; each curriculum stage
+contains 200K examples.
+Evaluation protocol.
+We report trajectory-level visual order consistency (VOC): pairwise progress
+predictions are accumulated along each trajectory and correlated with the
+ground-truth order using Spearman correlation. Five families cover
+in-distribution success (ID), temporal memory, OOD-negative, OOD-robust, and
+OOD-temporal cases, evaluated with static8 and
+history_panel inputs. Temporal cases include multi-stage,
+multi-object, and mid-episode trajectories; OOD-temporal cases add edits such
+as non-release. Temporal-memory examples come from dedicated temporal manifests
+and trajectories explicitly marked as history-dependent. We report aggregate
+VOC for each family rather than a per-cause breakdown. Together, these families
+probe event-, phase-, and order-dependent progress instead of endpoint success
+alone. Offline synthetic-OOD evaluation uses source-reference panels aligned by
+dataset metadata, whereas simulation and real-robot RL use panels constructed
+from the observed rollout history.
+Offline Results
+| Model
+| Input
+| ID
+| Temp.
+| Neg.
+| Rob.
+| OOD-T
+| Avg.
+| GRM
+| static
+| 0.974
+| 0.977
+| 0.951
+| 0.939
+| 0.948
+| 0.958
+| Robo-Dopamine 2.0
+| static
+| 0.981
+| 0.984
+| 0.985
+| 0.906
+| 0.979
+| 0.967
+| Robo-Dopamine 2.0
+| panel
+| 0.991
+| 0.994
+| 0.994
+| 0.958
+| 0.991
+| 0.986
+Table 1: Trajectory-level VOC across five benchmark families. GRM denotes the
+GRM-8B-Pro baseline; Robo-Dopamine 2.0 is one QA200K-mixed Qwen3-VL-8B checkpoint evaluated
+with static or prebuilt 3×3 panel inputs. ID, Temp., Neg., Rob., and
+OOD-T denote in-distribution, temporal-memory, OOD-negative, OOD-robust, and
+OOD-temporal evaluation. Avg. is the unweighted mean; higher is better.
+Panels raise Robo-Dopamine 2.0 average VOC from 0.967 to 0.986 and OOD-robust
+VOC from 0.906 to 0.958; GRM-8B-Pro reaches 0.958 average static VOC. The
+same-checkpoint comparison isolates the benefit of training-aligned temporal
+context from model capacity and training data.
+Figure 2: Task-completion classification accuracy on 60 episodes. We compare
+GPT-5.5, Gemini-3-Pro, Claude-Opus-4.8, Qwen3.5-397B-A17B-fp8, RoboBrain 2.0,
+and Robo-Dopamine 2.0-8B. This discrete label metric is distinct from VOC.
+Robo-Dopamine 2.0-8B obtains 96.1% task-completion accuracy, versus GPT-5.5 (81.1%)
+(OpenAI 2026), Claude-Opus-4.8 (79.4%)
+(Anthropic 2026), Gemini-3-Pro (77.2%)
+(Google 2025), Qwen3.5-397B-A17B-fp8 (76.1%)
+(Qwen Team 2026), and RoboBrain 2.0 (61.7%)
+(BAAI RoboBrain Team et al. 2025).
+Temporal Context and OOD Ablations
+| Base
+| Training condition
+| Static
+| Panel
+| Gain
+| GRM
+| baseline
+| 0.958
+| 0.965
+| +0.007
+| Robo-Dopamine 2.0
+| 3×3+QA
+| 0.967
+| 0.986
+| +0.019
+| GRM
+| OOD+no panel+QA
+| 0.967
+| 0.977
+| +0.010
+| GRM
+| OOD+2×2
+| 0.957
+| 0.985
+| +0.028
+| GRM
+| OOD+3×3
+| 0.955
+| 0.988
+| +0.033
+| Robo-Dopamine 2.0
+| OOD+no panel
+| 0.965
+| 0.974
+| +0.009
+| Robo-Dopamine 2.0
+| OOD+2×2
+| 0.962
+| 0.985
+| +0.023
+| Robo-Dopamine 2.0
+| OOD+3×3
+| 0.960
+| 0.987
+| +0.027
+Table 2: Temporal-context and OOD ablations in average VOC. Static and Panel query the
+same checkpoint; +QA denotes QA200K. Full results are supplementary.
+Structured panels provide the largest gain: moving from OOD no-panel
+training to 3×3 panels raises panel VOC from 0.977 to 0.988 for GRM and
+from 0.974 to 0.987 for Robo-Dopamine 2.0. OOD supervision also improves panel VOC
+over no-OOD, no-panel training, but the panel contribution is larger. QA200K
+acts as a weak regularizer for no-panel models, with a smaller marginal effect
+once structured temporal context is available. Across
+backbones, one or two between-state panels perform best; larger panels are not
+monotonic under a fixed visual-token budget, and prebuilt panels outperform
+runtime construction. The non-monotonic trend reflects a trade-off between
+additional temporal evidence and the visual-token budget. Runtime construction
+also changes panel provenance, image order, and prompt tokens relative to the
+training distribution. Full panel-size, panel-count, and construction
+factorials are provided in the supplementary material.
+Signed-Hop Curriculum
+Signed-Hop first learns global geometry from large-Hop pairs, then refines local
+calibration with small and zero-Hop pairs while replaying large-Hop examples.
+Under the fixed 400K budget, 25% replay reaches 0.9872 average VOC, exceeding
+the matched-pool shuffled control (0.9858) and no replay (0.9866). The shuffled
+control uses exactly the same sample pool as the replay curriculum, isolating
+ordering from data composition; the no-replay variant isolates retention of
+large-Hop geometry during local refinement.
+Figure 3: Per-family VOC gains of Signed-Hop over its matched-pool shuffled
+control. Replay sensitivity is provided in the supplementary material.
+Figure 3 shows gains in every family, especially
+OOD-robust and OOD-temporal cases. Curriculum gains complement the larger gains
+from temporal context panels. Signed-Hop is training-only: large-Hop pairs establish
+global progress, failure, and recovery geometry before small and zero-Hop pairs
+refine local calibration. The full replay sweep and branch-wise diagnostics are
+provided in the supplementary material.
+Reinforcement Learning
+In all downstream RL experiments, the RM remains frozen and the history-enabled
+conditions populate the same panel slots causally from the observed rollout
+prefix; no source alignment or repetition labels are used.
+Simulation on RoboTwin
+We optimize task-specific OpenVLA-OFT (Kim et al. 2025a) policies with
+GRPO (Shao et al. 2024) in RLinf (Yu et al. 2025) on three
+RoboTwin 2.0 tasks (Chen et al. 2026b): place_empty_cup,
+place_container_plate, and handover_block. Conditions
+share policy initialization, environment, optimizer, and evaluation protocol,
+so the controlled factorial tests whether OOD supervision and temporal context
+improve policy learning. RLinf Sparse uses only a termination-triggered success
+reward (scale 5) for 1,000 epochs; C00–C11 use the shaping interface in
+Eq. (18) for 300 epochs. C00 enables neither OOD supervision
+nor rollout-history panels, C01 adds rollout-history panels, C10 adds OOD
+supervision, and C11 uses both. Complete policy, GRPO, evaluation,
+and task-specific hyperparameters are supplementary.
+| Reward condition
+| OOD
+| Hist.
+| Cup
+| Plate
+| Hand.
+| Avg.
+| RLinf Sparse
+| –
+| –
+| 94.2
+| 95.0
+| 68.2
+| 85.8
+| C00 Controlled
+| ×
+| ×
+| 77.5
+| 82.1
+| 57.0
+| 72.2
+| C01 History
+| ×
+| ✓
+| 79.5
+| 88.6
+| 57.1
+| 75.1
+| C10 OOD
+| ✓
+| ×
+| 85.2
+| 89.5
+| 67.1
+| 80.6
+| C11 Full
+| ✓
+| ✓
+| 96.2
+| 94.6
+| 69.7
+| 86.8
+Table 3: RoboTwin success rate (%). Sparse uses 1,000 epochs; C00–C11 use
+300. Avg. is the unweighted task mean.
+Within 300 epochs, rollout-history panels raise mean success from 72.2% (C00) to
+75.1% (C01), OOD supervision raises it to 80.6% (C10), and their combination
+reaches 86.8% (C11). C11 exceeds the 1,000-epoch sparse baseline (85.8%)
+overall and on two of three tasks, supporting complementary gains from
+rollout history and OOD supervision. Relative to C10 and C01, C11 improves
+the mean by 6.2 and 11.7 points, respectively. It is best on
+place_empty_cup and handover_block; the sparse baseline
+remains 0.4 points higher on place_container_plate.
+Real-World Repeated Insertions
+We evaluate ConRFT (Chen et al. 2025) on dual Franka arms with multi-view
+RGB observations. In Insert Square, one arm aligns a four-hole block
+with four pegs for K=4 consecutive attempts. Event Sparse uses a reward after
+each insertion; C00–C11 add GRM shaping. A terminal-only pilot did not learn.
+C00–C11 use 200 online episodes and Event Sparse uses 300; all conditions use
+20 evaluation trials and shared controls. Details are supplementary.
+Repeated insertion produces visually similar endpoints at different cumulative
+phases. The observed rollout history supplies event and phase information for
+interpreting recurring endpoint observations. Matched real-robot traces show
+non-monotonic progress jumps with static queries and more order-consistent
+estimates with history panels; these
+traces are provided in the supplementary material.
+Figure 4: Dual-Franka repeated Insert Square setup with ConRFT. The
+numbered callouts identify the four-hole square, target pegs, and acting arm.
+Each trial has K=4 attempts, creating visually similar states at different
+cumulative progress.
+| Reward
+| OOD
+| Hist.
+| Inserts / 80
+| Full / 20
+| Event Sparse
+| –
+| –
+| 48
+| 8
+| C00 Controlled
+| ×
+| ×
+| 46
+| 7
+| C01 History
+| ×
+| ✓
+| 67
+| 13
+| C10 OOD
+| ✓
+| ×
+| 50
+| 9
+| C11 Full
+| ✓
+| ✓
+| 71
+| 15
+Table 4: Repeated Insert Square. Event Sparse uses only the per-insertion
+event reward; C00–C11 additionally use GRM shaping. Inserts counts successes
+over 80 attempts; Full counts 20 trials completing all four attempts.
+Rollout-history panels provide the largest gain: relative to C00 and C10, C01 and C11
+each add 21 successful insertions and 6 full-sequence successes. C11 reaches 71/80
+insertions and 15/20 full successes, versus 48/80 and 8/20 for Event Sparse,
+using 200 rather than 300 online episodes.
+Conclusion
+Robo-Dopamine 2.0 combines history-conditioned pairwise prediction, an OOD-aware signed
+progress space, and a Signed-Hop curriculum in one reward interface. Standard
+queries use same-episode expert context, synthetic OOD queries retain edited
+endpoints with aligned successful-reference panels, and online queries use
+observed rollout history. The signed space models valid progress,
+robustness-preserving variations, task-invalid failures, and recovery, while
+the curriculum learns large transitions before fine-grained calibration.
+Offline and downstream RL results show complementary gains from temporal
+context, OOD supervision, curriculum ordering, and replay across offline
+ordering, simulation, and real-world manipulation settings. The same pairwise
+interface supports offline progress estimation and closed-loop reward shaping.
+Future work will broaden task, OOD, and real-world evaluation.
+References
+AgiBot-World Contributors et al. (2025)
+AgiBot-World Contributors et al.
+AgiBot world colosseo: a large-scale manipulation platform for scalable and intelligent embodied systems.
+External Links: 2503.06669,
+Document
+Cited by: Structured OOD Data Construction.
+Alakuijala et al. (2024)
+M. Alakuijala, R. McLean, I. Woungang, N. Farsad, S. Kaski, P. Marttinen, and K. Yuan
+Video-language critic: transferable reward functions for language-conditioned robotics.
+External Links: 2405.19988,
+Document,
+Link
+Cited by: Related Work.
+Anthropic (2026)
+Anthropic
+Introducing Claude Opus 4.8.
+Note: https://www.anthropic.com/research/claude-opus-4-8Model ID: claude-opus-4-8. Accessed: 2026-07-24
+Cited by: Offline Results.
+BAAI RoboBrain Team et al. (2025)
+BAAI RoboBrain Team, M. Cao, H. Tan, Y. Ji, M. Lin, Z. Li, Z. Cao, P. Wang, E. Zhou, Y. Han, Y. Tang, X. Xu, W. Guo, Y. Lyu, Y. Xu, J. Shi, M. Du, C. Chi, M. Zhao, X. Hao, J. Zhao, X. Zhang, S. Rong, H. Lyu, Z. Cai, Y. Fu, N. Chen, B. Zhang, L. Zhang, S. Zhang, D. Liu, X. Feng, S. Wang, X. Liu, Y. Jiao, M. Lyu, Z. Chen, C. He, Y. Ao, X. Sun, Z. He, J. Zheng, X. Yang, D. Shi, K. Xie, B. Zhang, S. Nie, C. Men, Y. Lin, Z. Wang, T. Huang, and S. Zhang
+RoboBrain 2.0 technical report.
+External Links: 2507.02029
+Cited by: Offline Results.
+Bai et al. (2025)
+S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge, W. Ge, Z. Guo, Q. Huang, J. Huang, F. Huang, B. Hui, S. Jiang, Z. Li, M. Li, M. Li, K. Li, Z. Lin, J. Lin, X. Liu, J. Liu, C. Liu, Y. Liu, D. Liu, S. Liu, D. Lu, R. Luo, C. Lv, R. Men, L. Meng, X. Ren, X. Ren, S. Song, Y. Sun, J. Tang, J. Tu, J. Wan, P. Wang, P. Wang, Q. Wang, Y. Wang, T. Xie, Y. Xu, H. Xu, J. Xu, Z. Yang, M. Yang, J. Yang, A. Yang, B. Yu, F. Zhang, H. Zhang, X. Zhang, B. Zheng, H. Zhong, J. Zhou, F. Zhou, J. Zhou, Y. Zhu, and K. Zhu
+Qwen3-VL technical report.
+External Links: 2511.21631
+Cited by: Experimental Setup.
+Baumli et al. (2023)
+K. Baumli, S. Baveja, F. Behbahani, H. Chan, G. Comanici, S. Flennerhag, M. Gazeau, K. Holsheimer, D. Horgan, M. Laskin, C. Lyle, H. Masoom, K. McKinney, V. Mnih, A. Neitz, D. Nikulin, F. Pardo, J. Parker-Holder, J. Quan, T. Rocktäschel, H. Sahni, T. Schaul, Y. Schroecker, S. Spencer, R. Steigerwald, L. Wang, and L. Zhang
+Vision-language models as a source of rewards.
+External Links: 2312.09187
+Cited by: Introduction,
+Related Work.
+Brohan et al. (2023)
+A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu, J. Ibarz, B. Ichter, A. Irpan, T. Jackson, S. Jesmonth, N. Joshi, R. Julian, D. Kalashnikov, Y. Kuang, I. Leal, K. Lee, S. Levine, Y. Lu, U. Malla, D. Manjunath, I. Mordatch, O. Nachum, C. Parada, J. Peralta, E. Perez, K. Pertsch, J. Quiambao, K. Rao, M. S. Ryoo, G. Salazar, P. R. Sanketi, K. Sayed, J. Singh, S. Sontakke, A. Stone, C. Tan, H. Tran, V. Vanhoucke, S. Vega, Q. H. Vuong, F. Xia, T. Xiao, P. Xu, S. Xu, T. Yu, and B. Zitkovich
+RT-1: robotics transformer for real-world control at scale.
+In Proceedings of Robotics: Science and Systems,
+Daegu, Republic of Korea.
+External Links: Document
+Cited by: Introduction,
+Related Work.
+Chen et al. (2026a)
+Q. Chen, J. Yu, M. Schwager, P. Abbeel, F. Shentu, and P. Wu
+SARM: stage-aware reward modeling for long horizon robot manipulation.
+In The Fourteenth International Conference on Learning Representations,
+Cited by: Introduction,
+Related Work.
+Chen et al. (2026b)
+T. Chen, Z. Chen, B. Chen, Z. Cai, Y. Liu, Z. Li, Q. Liang, X. Lin, Y. Ge, Z. Gu, W. Deng, Y. Guo, T. Nian, X. Xie, Q. Chen, K. Su, T. Xu, G. Liu, M. Hu, H. Gao, K. Wang, Z. Liang, Y. Qin, X. Yang, P. Luo, and Y. Mu
+RoboTwin 2.0: a scalable data generator and benchmark with strong domain randomization for robust bimanual robotic manipulation.
+In Proceedings of the 43rd International Conference on Machine Learning,
+Cited by: Simulation on RoboTwin.
+Chen et al. (2025)
+Y. Chen, S. Tian, S. Liu, Y. Zhou, H. Li, and D. Zhao
+ConRFT: a reinforced fine-tuning method for VLA models via consistency policy.
+External Links: 2502.05450,
+Document,
+Link
+Cited by: Real-World Repeated Insertions.
+Duan et al. (2025)
+J. Duan, W. Pumacay, N. Kumar, Y. R. Wang, S. Tian, W. Yuan, R. Krishna, D. Fox, A. Mandlekar, and Y. Guo
+AHA: a vision-language-model for detecting and reasoning over failures in robotic manipulation.
+In The Thirteenth International Conference on Learning Representations,
+Cited by: Related Work.
+Fu et al. (2024)
+Y. Fu, H. Zhang, D. Wu, W. Xu, and B. Boulet
+Robot policy learning with temporal optimal transport reward.
+In Advances in Neural Information Processing Systems,
+Vol. 37, pp. 122078–122103.
+External Links: Document
+Cited by: Introduction,
+Related Work.
+Google (2025)
+Google
+Gemini 3 Pro Preview.
+Note: https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-previewModel ID: gemini-3-pro-preview. Accessed: 2026-07-24
+Cited by: Offline Results.
+Guhur et al. (2023)
+P. Guhur, S. Chen, R. G. Pinel, M. Tapaswi, I. Laptev, and C. Schmid
+Instruction-driven history-aware policies for robotic manipulations.
+In Proceedings of the 6th Conference on Robot Learning, K. Liu, D. Kulic, and J. Ichnowski (Eds.),
+Proceedings of Machine Learning Research, Vol. 205, pp. 175–187.
+External Links: Link
+Cited by: Introduction,
+Related Work.
+Hung et al. (2025)
+K. Hung, P. Lo, J. Yeh, H. Hsu, Y. Chen, and W. H. Hsu
+VICtoR: learning hierarchical vision-instruction correlation rewards for long-horizon manipulation.
+In The Thirteenth International Conference on Learning Representations,
+Cited by: Introduction,
+Related Work.
+Kim et al. (2025a)
+M. J. Kim, C. Finn, and P. Liang
+Fine-tuning vision-language-action models: optimizing speed and success.
+In Proceedings of Robotics: Science and Systems,
+Los Angeles, CA, USA.
+External Links: Document
+Cited by: Simulation on RoboTwin.
+Kim et al. (2025b)
+M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. P. Foster, P. R. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn
+OpenVLA: an open-source vision-language-action model.
+In Proceedings of the 8th Conference on Robot Learning, P. Agrawal, O. Kroemer, and W. Burgard (Eds.),
+Proceedings of Machine Learning Research, Vol. 270, pp. 2679–2713.
+Cited by: Introduction,
+Related Work.
+Lee et al. (2021)
+K. Lee, L. M. Smith, and P. Abbeel
+PEBBLE: feedback-efficient interactive reinforcement learning via relabeling experience and unsupervised pre-training.
+In Proceedings of the 38th International Conference on Machine Learning, M. Meila and T. Zhang (Eds.),
+Proceedings of Machine Learning Research, Vol. 139, pp. 6152–6163.
+External Links: Link
+Cited by: Introduction,
+Related Work.
+Lee et al. (2026)
+T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+RoboReward: general-purpose vision-language reward models for robotics.
+External Links: 2601.00675
+Cited by: Related Work.
+Liu et al. (2023)
+B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+LIBERO: benchmarking knowledge transfer for lifelong robot learning.
+In Advances in Neural Information Processing Systems,
+Vol. 36.
+Cited by: Structured OOD Data Construction.
+Ma et al. (2023a)
+Y. J. Ma, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+LIV: language-image representations and rewards for robotic control.
+In Proceedings of the 40th International Conference on Machine Learning, A. Krause, E. Brunskill, K. Cho, B. Engelhardt, S. Sabato, and J. Scarlett (Eds.),
+Proceedings of Machine Learning Research, Vol. 202, pp. 23301–23320.
+Cited by: Introduction,
+Related Work.
+Ma et al. (2023b)
+Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+VIP: towards universal visual reward and representation via value-implicit pre-training.
+In The Eleventh International Conference on Learning Representations,
+External Links: Link
+Cited by: Introduction,
+Related Work.
+Mao et al. (2026)
+Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+ARM: advantage reward modeling for long-horizon manipulation.
+In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops,
+pp. 4468–4477.
+Cited by: Related Work.
+Nair et al. (2022)
+S. Nair, E. Mitchell, K. Chen, B. Ichter, S. Savarese, and C. Finn
+Learning language-conditioned robot behavior from offline data and crowd-sourced annotation.
+In Proceedings of the 5th Conference on Robot Learning, A. Faust, D. Hsu, and G. Neumann (Eds.),
+Proceedings of Machine Learning Research, Vol. 164, pp. 1303–1315.
+External Links: Link
+Cited by: Related Work.
+Nasiriany et al. (2024)
+S. Nasiriany, A. Maddukuri, L. Zhang, A. Parikh, A. Lo, A. Joshi, A. Mandlekar, and Y. Zhu
+RoboCasa: large-scale simulation of household tasks for generalist robots.
+In Proceedings of Robotics: Science and Systems,
+External Links: Document
+Cited by: Structured OOD Data Construction.
+Ng et al. (1999)
+A. Y. Ng, D. Harada, and S. J. Russell
+Policy invariance under reward transformations: theory and application to reward shaping.
+In Proceedings of the Sixteenth International Conference on Machine Learning,
+San Francisco, CA, USA, pp. 278–287.
+Cited by: Closed-Loop Reward Framework.
+Ni et al. (2022)
+T. Ni, B. Eysenbach, and R. Salakhutdinov
+Recurrent model-free RL can be a strong baseline for many POMDPs.
+In Proceedings of the 39th International Conference on Machine Learning, K. Chaudhuri, S. Jegelka, L. Song, C. Szepesvari, G. Niu, and S. Sabato (Eds.),
+Proceedings of Machine Learning Research, Vol. 162, pp. 16691–16723.
+External Links: Link
+Cited by: Introduction,
+Related Work.
+OpenAI (2026)
+OpenAI
+GPT-5.5 system card.
+Note: https://openai.com/index/gpt-5-5-system-card/Accessed: 2026-07-24
+Cited by: Offline Results.
+Qwen Team (2026)
+Qwen Team
+Qwen3.5-397B-A17B-FP8.
+Note: https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8Accessed: 2026-07-24
+Cited by: Offline Results.
+Shao et al. (2024)
+Z. Shao, P. Wang, Q. Zhu, R. Xu, J. Song, X. Bi, H. Zhang, M. Zhang, Y. K. Li, Y. Wu, and D. Guo
+DeepSeekMath: pushing the limits of mathematical reasoning in open language models.
+External Links: 2402.03300
+Cited by: Simulation on RoboTwin.
+Sontakke et al. (2023)
+S. Sontakke, J. Zhang, S. Arnold, K. Pertsch, E. Bıyık, D. Sadigh, C. Finn, and L. Itti
+RoboCLIP: one demonstration is enough to learn robot policies.
+In Advances in Neural Information Processing Systems,
+Vol. 36, pp. 55681–55693.
+External Links: Document
+Cited by: Introduction,
+Related Work.
+Tan et al. (2026)
+H. Tan, S. Chen, Y. Xu, Z. Wang, C. Chi, Y. Ji, Y. Lyu, Z. Zhao, X. Chen, P. Co, S. Xie, G. Yao, P. Wang, Z. Wang, and S. Zhang
+General process reward modeling for robotic reinforcement learning.
+In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR),
+pp. 22412–22422.
+Cited by: Introduction,
+Introduction,
+Related Work,
+History-Conditioned Pairwise Reward Formulation,
+OOD-aware Signed Progress Space,
+Closed-Loop Reward Framework,
+Experimental Setup.
+Wang et al. (2024)
+Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson
+RL-VLM-F: reinforcement learning from vision language foundation model feedback.
+In Proceedings of the 41st International Conference on Machine Learning, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, and F. Berkenkamp (Eds.),
+Proceedings of Machine Learning Research, Vol. 235, pp. 51484–51501.
+External Links: Link
+Cited by: Introduction,
+Introduction,
+Related Work.
+Yang et al. (2024)
+Y. Yang, M. Chen, Q. Qiu, J. Wu, W. Wang, B. Lin, Z. Guan, and X. He
+Adapt2Reward: adapting video-language models to generalizable robotic rewards via failure prompts.
+In Computer Vision – ECCV 2024,
+pp. 163–180.
+External Links: Document
+Cited by: Related Work.
+Yu et al. (2025)
+C. Yu, Y. Wang, Z. Guo, H. Lin, S. Xu, H. Zang, et al.
+RLinf: flexible and efficient large-scale reinforcement learning via macro-to-micro flow transformation.
+External Links: 2509.15965,
+Document,
+Link
+Cited by: Simulation on RoboTwin.
+Zhang et al. (2026)
+Q. Zhang, S. Zhai, S. Zhang, L. Liu, T. Zhang, F. Huang, and M. Zhou
+A generalist pair-wise progress critic model for vision-language-action robots.
+In Proceedings of the 43rd International Conference on Machine Learning,
+Cited by: Introduction,
+Related Work.
+Zhou et al. (2026)
+X. Zhou, X. Chen, S. Zhang, X. Li, S. Wan, X. Hu, L. Yuan, L. Gan, and D. Zhan
+MARVL: multi-stage guidance for robotic manipulation via vision-language models.
+External Links: 2602.15872
+Cited by: Related Work.
+Zitkovich et al. (2023)
+B. Zitkovich, T. Yu, S. Xu, P. Xu, T. Xiao, F. Xia, J. Wu, P. Wohlhart, S. Welker, A. Wahid, Q. Vuong, V. Vanhoucke, H. Tran, R. Soricut, A. Singh, J. Singh, P. Sermanet, P. R. Sanketi, G. Salazar, M. S. Ryoo, K. Reymann, K. Rao, K. Pertsch, I. Mordatch, H. Michalewski, Y. Lu, S. Levine, L. Lee, T. E. Lee, I. Leal, Y. Kuang, D. Kalashnikov, R. Julian, N. J. Joshi, A. Irpan, B. Ichter, J. Hsu, A. Herzog, K. Hausman, K. Gopalakrishnan, C. Fu, P. Florence, C. Finn, K. A. Dubey, D. Driess, T. Ding, K. M. Choromanski, X. Chen, Y. Chebotar, J. Carbajal, N. Brown, A. Brohan, M. G. Arenas, and K. Han
+RT-2: vision-language-action models transfer web knowledge to robotic control.
+In Proceedings of the 7th Conference on Robot Learning, J. Tan, M. Toussaint, and K. Darvish (Eds.),
+Proceedings of Machine Learning Research, Vol. 229, pp. 2165–2183.
+Cited by: Introduction,
+Related Work.
+Supplementary Material
+Appendix A OOD Data Construction Pipeline
+We construct synthetic OOD data from successful trajectories in the
+RoboCasa, LIBERO, and RoboTwin 2.0 simulation benchmarks, together with
+real-robot AgiBot World data. Task- and phase-aware edits produce
+source-aligned counterfactual observations rather than arbitrary visual
+variation. Negative edits change a task-relevant execution condition, whereas
+robust edits change nuisance appearance while preserving the intended task
+state.
+Figure 5 illustrates the synthetic-OOD
+provenance contract. Task-reference frames and temporal panels are drawn from
+the aligned successful source episode, while edited before–after views remain
+the actual query evidence. Standard training instead uses same-episode expert
+history, and online inference uses the observed rollout history, following the
+context contract in the main paper.
+Figure 5: OOD provenance case study. All task-reference and temporal-context
+images are drawn from the aligned successful source episode, while only the
+queried before–after views contain the OOD edits.
+Given a successful source trajectory from dataset d,
+|
+| τ
+| ={oiv|i∈{0,…,T−1},v∈𝒱d},
+|
+| (19)
+|
+| τ~z
+| ={o~iv|i∈𝒮z(τ),v∈𝒱d},
+|
+where 𝒱d⊆{h,l,r} is the available camera set after
+mapping dataset-specific streams to canonical high/third-person, left-wrist,
+and right-wrist slots. Unavailable slots are padded and masked by the data
+loader. The variable z denotes one OOD operator, and
+𝒮z​(τ) is its phase-valid interval. The same operator
+specification is applied throughout the interval, using references from the
+corresponding source camera.
+Pipeline overview.
+The construction proceeds in six steps:
+(i) normalize the instruction, identify the task-relevant target, and
+map the task to manipulation primitives;
+(ii) assign a semantically compatible negative or robustness operator;
+(iii) localize the trajectory phase in which the intervention is
+meaningful;
+(iv) construct a multi-reference editing request for every selected
+frame and camera;
+(v) generate the edited observation under operator-specific, geometric,
+and view-specific constraints; and
+(vi) retain source-episode, frame, camera, prompt, and reference
+provenance for downstream reward-pair construction.
+Task Parsing and Operator Assignment
+The task instruction is first normalized and mapped to one or more manipulation
+primitives. We use seven primitive categories: grasp–lift,
+place–transfer, open, close, toggle-on,
+toggle-off, and push–move. A pick-and-place instruction, for
+example, activates both grasp–lift and place–transfer, whereas opening a
+drawer, toggling a device, or pushing an object activates the corresponding
+interaction primitive.
+We additionally extract a target phrase from the instruction. The parser
+removes the action prefix and truncates the remaining phrase at spatial or
+relational markers such as “into,” “onto,” “from,” or “next to.” The
+resulting phrase is inserted into the generation prompt and used to distinguish
+the task object from non-target scene objects.
+Primitive-to-operator mapping.
+Grasp–lift tasks admit the negative operators wrong object,
+empty grasp, and target replacement, together with all robust
+operators. Place–transfer tasks admit wrong object, non-release,
+and target replacement, again together with all robust operators. Open,
+close, toggle, and push tasks use the robust operators foreground
+occlusion, background change, distractor addition or removal,
+and non-target color change, which preserve the relevant articulated,
+on/off, or displacement state.
+We apply two semantic guards before assigning an operator. First, for
+instructions involving multiple legitimate task objects, identity-changing
+edits such as wrong object and target replacement are avoided
+when another valid negative operator is available. This prevents ambiguous
+correspondences among multiple admissible targets. Second, when the instruction
+explicitly specifies a target color, the non-target color change
+operator is restricted to non-target objects. Each generated OOD trajectory is
+assigned a single operator, so its edited frames form a temporally coherent
+counterfactual trajectory rather than a sequence of unrelated perturbations.
+Phase-Aware Temporal Localization
+Applying a failure edit to an arbitrary frame may produce a visibly different
+image without changing the task interpretation. We therefore
+localize each interaction-related operator to a primitive-dependent temporal
+window. For sampled frame index i, normalized source-trajectory progress is
+defined as
+|
+| pi=iT−1.
+|
+| (20)
+Each frame is assigned an active primitive πi. For common composite
+instructions, the active primitive changes according to source-trajectory
+progress. Grasp-to-place and open-to-place tasks switch to place–transfer at
+pi=0.45; place-to-close tasks switch to close at pi=0.65; and
+toggle-to-place tasks switch to place–transfer at pi=0.35.
+The valid progress intervals are [0.18,0.80] for grasp–lift,
+[0.28,0.95] for place–transfer, [0.15,0.85] for open and close,
+[0.10,0.75] for toggle-on and toggle-off, and [0.12,0.85] for push–move.
+These windows cover the principal interaction phases—approach, contact,
+transport, articulation, release, or displacement—while excluding early
+frames whose appearance is not yet informative for the selected intervention.
+Let
+Gz​(π,p)∈{KEEP,EDIT}
+denote the fixed operator-specific eligibility rule. For
+non-release, the rule activates only in the release subphase; the
+remaining interaction-related operators activate at their first eligible
+task phase. The intervention onset is
+|
+| istart=min⁡{i|Gz​(πi,pi)=EDIT}.
+|
+| (21)
+The corresponding operator-specific rule is used for wrong object,
+empty grasp, non-release, target replacement, and
+foreground occlusion. In contrast, background change,
+distractor addition or removal, and non-target color change
+begin at the first sampled state because they represent persistent scene-level
+nuisance variation. Applying these operators throughout the trajectory avoids
+an artificial appearance discontinuity at the interaction boundary.
+For a standard single-stage or pick-and-place trajectory, the intervention is
+propagated over the selected suffix:
+|
+| 𝒮z​(τ)={istart,…,T−1}.
+|
+| (22)
+The active primitive supplied to the prompt may still change from grasping to
+transport or release as the trajectory progresses. For explicitly multi-stage
+instructions containing distinct subgoals, the selected interval is restricted
+to the contiguous segment governed by the primitive active at
+istart. This prevents an edit defined for one subgoal from being
+propagated into a later subgoal with a different task meaning.
+Multi-Reference Edit Construction
+A single queried frame may not reveal the identity or original location of the
+target. This occurs when the target is already held, partially occluded by the
+gripper, visually similar to nearby objects, or absent from the current field
+of view. We therefore condition each edit on an ordered set of observations
+from the same successful source trajectory.
+For queried frame i, the pipeline selects
+Ki≤13 reference indices:
+|
+| 𝒥i={r1,…,rKi},rk≠i.
+|
+| (23)
+The indices are distributed over the complete sampled trajectory and retained
+in chronological order. When fewer than 13 alternative frames are available,
+all available source frames are used. For camera v, the visual input is
+|
+| 𝒬iv=[or1v,…,orKiv,oiv].
+|
+| (24)
+Thus, each request contains Ki read-only references followed by one editable
+image; Ki=13 whenever at least 13 alternative frames are available. The queried frame is excluded from the reference set, and the
+final image in the sequence is always the only image that may be modified.
+All references satisfy three alignment constraints: they originate from the
+same successful episode as the queried frame, use exactly the same camera, and
+are passed to the editor in temporal order. A head-camera query therefore
+receives only head-camera references, while a left- or right-wrist query uses
+references from the corresponding wrist camera. This prevents the editor from
+transferring the projection, visible object surfaces, or gripper geometry of
+one camera to another.
+The ordered reference stack serves complementary roles. Early frames provide
+the initial target identity, target location, object inventory, and unmodified
+scene layout. Frames around the interaction phase reveal how the target
+approaches or enters the gripper. Later frames provide evidence about
+successful transport, release, or the final articulated state. The references
+are used to interpret the task and reconstruct local content; their global
+camera pose or complete image layout may not be copied into the queried frame.
+Each available camera view is edited through a separate view-specific request:
+|
+| o~iv=𝒢⁡(𝒬iv,𝒫⁡(c,πi,z,v)),
+|
+| (25)
+where 𝒢 denotes the instruction-following image editor and
+𝒫 denotes the structured prompt. The source index, OOD type, and
+task semantics are shared across the three requests, whereas geometric
+constraints are specialized to each camera.
+Structured Prompt Design
+The generation prompt is composed from a fixed set of functional blocks:
+|
+| 𝒫=
+| 𝒫input⊕𝒫scene⊕𝒫task⊕𝒫target
+|
+| (26)
+|
+|
+| ⊕𝒫operator⊕𝒫view⊕𝒫physical⊕𝒫output.
+|
+This decomposition separates the required intervention from the quantities that
+must remain invariant.
+Input contract.
+The prompt first states that the request is an image-editing task rather than
+text-to-image generation.Images 1 through Ki are declared read-only references, and image
+Ki+1 is declared the only editable image. The editor is
+prohibited from returning a reference image or reconstructing the scene from a
+different camera pose.
+The output must preserve the queried resolution of 320×240, field of
+view, crop, perspective, exposure, white balance, color temperature, sharpness,
+noise level, depth of field, and compression characteristics. The prompt
+explicitly prohibits global enhancement, denoising, restyling, or unnecessary
+full-image redrawing.
+Scene and target binding.
+The prompt contains the complete task instruction, current frame ID, ordered
+reference-frame IDs, and camera identity. It states that all references come
+from the same successful trajectory and should be interpreted jointly to
+recover the original task process. When a target phrase can be extracted, it is
+included explicitly and used together with the trajectory references to
+identify the task object. If several visually similar target candidates exist,
+a rule that removes, preserves, or moves the target is applied consistently to
+all relevant candidates unless the operator is explicitly defined for one
+instruction-referenced instance.
+Primitive-specific task block.
+A task block specifies whether the current frame belongs to grasping, placement,
+opening, closing, toggling, or pushing. The grasp block, for example, identifies
+the object originally intended for acquisition, whereas the placement block
+emphasizes the transported object, support surface, and target placement region.
+This block prevents a visually plausible edit from becoming semantically
+inconsistent with the active manipulation stage.
+Operator contract.
+The operator block defines the exact counterfactual intervention. For negative
+states, it specifies the task-relevant relation to invalidate, such as object occupancy
+inside the gripper, target identity, or release completion. For robust states,
+it specifies the nuisance factor that may change and explicitly states that the
+target, robot state, and task outcome must remain unchanged.
+Global physical constraints.
+Across all OOD types, the prompt prohibits moving, rotating, reshaping, or
+repositioning the robot arm. Joint configuration, link geometry, and
+end-effector pose must remain identical to those in the queried source image.
+The gripper position, orientation, and opening are also preserved, except for
+the minimal local reconstruction required when removing or inserting held
+content.
+Every moved, removed, added, replaced, or occluding object must respect the
+source perspective, support relation, contact geometry, illumination, shadow
+direction, material response, depth ordering, and occlusion pattern. Removed
+regions must be completed using surrounding scene texture without duplicated
+boundaries, smearing, holes, or inconsistent gripper geometry.
+View-specific constraints.
+The prompt contains an additional block specialized to the queried camera.
+Head-camera prompts emphasize global scene consistency and the projected grasp
+corridor. Wrist-camera prompts restrict editing to the gripper, target, and
+immediately adjacent region while preserving visible finger geometry and local
+occlusion ordering.
+Output contract.
+The editor is instructed to return exactly one image: the edited version of the
+final input image. No text, explanation, alternative image, or intermediate
+result is permitted. The requested intervention must remain visually
+identifiable, but realism and local consistency take priority over exaggerated
+change.
+In abbreviated form, every prompt specifies
+(i) which images are read-only references;
+(ii) which final image is editable;
+(iii) the instruction, target, and active primitive;
+(iv) the OOD intervention and its state-dependent branch;
+(v) camera, robot, object, geometry, lighting, and image-quality
+invariants; and
+(vi) the single-image output requirement.
+Negative Counterfactual Operators
+Negative operators change a task-relevant execution condition while keeping the
+source robot pose and trajectory phase fixed.
+Wrong object.
+If the gripper is empty or approaching the target, the task target in the grasp
+corridor is replaced by a visually distinct non-target object, while the
+original target is relocated to a plausible position outside the corridor.
+This makes the impending interaction correspond to the wrong object rather
+than an empty grasp. If the gripper is occupied, only the held content is
+replaced by an object with a different category, dominant color, and
+silhouette. The original target remains naturally situated elsewhere whenever
+visible.
+Empty grasp.
+The defining condition is an empty region between the gripper fingers. If the
+gripper is approaching an object, the target and any object intersecting the
+opening, closing region, or forward grasp corridor are moved laterally outside
+the grasp path. If the gripper already contains an object, that object is
+removed without changing the gripper pose or opening. Only the minimal local
+region is reconstructed to recover the visible fingers, interior background,
+shadows, and reflections. The target is returned to its source-scene location
+when this location is supported by the trajectory references.
+Non-release.
+The non-release operator converts a successful release or near-release
+state into a continued-holding state. If the target has already left the
+gripper, the same target is inserted back into the current gripper and its
+released instance is removed to avoid duplication. The gripper pose is not
+replaced by an earlier source pose. If the target is already held, its identity
+and appearance are preserved while the continued-holding configuration remains
+unchanged.
+Target replacement.
+Only the instruction-referenced target is replaced. The replacement preserves
+the original target’s approximate image footprint, location, local support or
+grasp relation, and occlusion order, but differs clearly in category and
+silhouette. All surrounding objects, articulated states, and robot geometry
+remain fixed. The resulting state therefore preserves the local spatial
+arrangement while violating task-object identity. Unlike wrong object, this operator changes the identity of the
+instruction-referenced scene target rather than the identity of the object
+currently approached or held by the gripper.
+Robustness-Preserving Operators
+Robustness operators change image appearance without changing task semantics and
+therefore retain the same progress value as their aligned source states.
+Foreground occlusion.
+A plausible close-range occluder, such as a hand, board, box, or cloth region,
+is inserted in front of the critical interaction area. The occluder may
+partially hide the target or gripper, but it may not cover the complete image.
+The underlying robot–object state, target identity, contact state, task
+outcome, and all pre-existing scene objects remain unchanged. The occluder is
+placed according to the queried camera’s depth ordering rather than used to
+redraw the hidden interaction into a different state.
+Background change.
+One or two small modifications are applied to secondary background regions,
+such as a minor layout adjustment or local appearance variation away from the
+interaction area. Target identity and location, robot and gripper state,
+articulated-object state, and the geometry of the critical contact region remain
+unchanged.
+Distractor addition or removal.
+A small number of non-target objects are added to or removed from background or
+secondary regions. Added objects must have plausible scale, support, material,
+illumination, and shadow; removed regions are completed using neighboring scene
+texture. New objects are not placed adjacent to the gripper or target, and no
+task-relevant object or receptacle may be removed.
+Non-target color change.
+A small, natural change in color, saturation, or brightness is applied to one or
+two non-target objects. No object is added, removed, moved, rotated, or
+replaced. The target color and identity, object geometry, scene layout, robot
+state, contact relations, and task outcome remain fixed. When color is part of
+the instruction, the target color is protected by both operator selection and
+the prompt.
+Camera-Specific Geometric Constraints
+The same semantic edit requires different geometric instructions under the head
+and wrist cameras. We therefore append a camera-specific block to each prompt.
+Head camera.
+The head view exposes the global scene layout and the projected grasp corridor.
+For empty grasp, the prompt gives highest priority to clearing the
+region between the fingers, directly below the gripper, and along its projected
+approach path. For wrong object, it verifies that no valid target
+remains within the visually reachable region around an empty gripper. For
+non-release, it verifies that the final edited gripper is visibly
+non-empty.
+Wrist cameras.
+Wrist views are treated as local close-up observations. Editing is restricted
+to the gripper, target, and immediately adjacent image region. The prompt
+prohibits expanding an object surface that is occluded in the queried wrist
+view, copying geometry from the head camera, or producing the opposite wrist’s
+observation. The left-wrist prompt preserves the visible left finger, contact
+boundary, and local reflection pattern; the right-wrist prompt applies the
+analogous constraint to the visible right-side geometry.
+When an object is inserted, removed, or replaced inside the gripper, its
+boundary must remain behind the visible metal finger edges according to source
+depth ordering. If the robot itself occludes the interaction region, that
+occlusion is preserved rather than removed merely to make the edit more
+explicit. These constraints encourage the available edited views to express the same
+trajectory-level OOD semantics while respecting their distinct projections
+and visible local geometry.
+Generation and Provenance
+The OOD construction uses Gemini 3.1 Flash Image as the
+instruction-following image-editing backend in batch mode. Each
+frame–camera pair is submitted as one editing request containing the ordered
+reference images, the final queried image, and the fully instantiated prompt.
+Every request receives a unique identifier. Its record contains the source dataset, task instruction, episode ID, frame ID,
+normalized frame index, camera, active primitive, OOD type, OOD group,
+reference-frame IDs, generation prompt, backend identifier, generation
+timestamp, and source path. The identifier is subsequently used to associate each returned
+image with the exact source frame and camera. At the trajectory level, a
+manifest records the selected source-frame interval, operator, OOD group, onset
+mode, primary primitive, multi-stage indicator, multi-object indicator,
+reference configuration, and complete list of edited source-frame IDs.
+This metadata preserves the alignment
+|
+| o~iv⟷oiv⟷(τ,i,v,z).
+|
+| (27)
+The downstream loader can therefore reconstruct both the original successful
+observation and its edited counterpart at the same source progress index:
+|
+| Xi
+| ={oiv∣v∈𝒱d},
+|
+| (28)
+|
+| X~iz
+| ={o~iv∣v∈𝒱d}.
+|
+For every OOD pair, all task-reference and temporal-context images are
+reconstructed exclusively from the aligned successful source episode. The
+generated trajectory contributes only the queried before–after observations.
+This source-only context contract preserves the source phase and panel ordering
+without replacing the wrong-object, empty-grasp, non-release,
+target-replacement, occlusion, or background-perturbation evidence contained
+in the OOD query.
+The recorded provenance keeps the successful source state, edited observation,
+camera projection, and temporal context separately traceable. Negative and
+robust states are therefore compiled into the signed progress space using their
+shared source index rather than independently sampled trajectories.
+Appendix B Computing Infrastructure and Training Cost
+Reward-model fine-tuning and RoboTwin simulation policy learning use eight
+NVIDIA H100 GPUs with 80 GB of memory per GPU (640 GB aggregate accelerator
+memory) for every training run. Real-world ConRFT training instead uses one
+NVIDIA RTX 4090. The retained experiment records do not provide verified host
+CPU, system RAM, operating-system, or CUDA details, so we report only the
+accelerator allocations rather than inferring unverified model or version
+information.
+A complete reward-model training run takes approximately 20 hours in this
+eight-GPU setting. Reward-model training uses 400K signed pairs across two
+200K stages, together with the fixed QA200K auxiliary mix excluded from this
+pairwise budget. Each trainable reward-model configuration and policy-learning
+condition is trained once, and the GRM remains frozen in all downstream RL
+experiments.
+Appendix C Simulation Reinforcement Learning Details
+We optimize task-specific OpenVLA-OFT SFT checkpoints with GRPO in RLinf on
+the RoboTwin 2.0 tasks place_empty_cup,
+place_container_plate, and handover_block. The GRM
+remains frozen, and history-enabled conditions construct panels from the
+observed rollout prefix. The policy receives head-camera RGB and 14-D
+proprioception, predicts 14-D actions in 25-action chunks, and is LoRA-tuned
+in BF16 with FSDP. GRPO uses 128 parallel environments, groups of eight
+rollouts, normalized group-relative advantages, and γ=1.
+The sparse baseline is trained for 1,000 epochs and C00–C11 for 300 epochs. We
+run deterministic 128-episode evaluations every 20 epochs over fixed reset
+states. For place_empty_cup, place_container_plate, and
+handover_block, respectively, the episode horizons are 200, 150, and
+400 steps and the learning rates are 10−4, 2×10−4, and
+2×10−4.
+Appendix D Real-World Experiments
+Platform, Observations, and Task
+The physical workcell contains two Franka manipulators, a Pika teleoperation
+interface, and calibrated ZED cameras. The camera system supplies synchronized
+wrist and third-person RGB observations to both the reward model and the
+policy. The GRM remains frozen during online policy learning. History-enabled
+conditions construct temporal panels from the observed rollout prefix; no
+successful source alignment or repetition label is provided online.
+We evaluate the single-arm Insert Square task. The acting arm grasps a
+square block containing four holes, adjusts its position and orientation, and
+inserts it onto four upright pegs on the target board. Successful insertion
+requires millimeter-scale alignment. To expose temporal aliasing rather than
+only one-shot manipulation accuracy, each trial contains K=4 consecutive
+back-and-forth insertion attempts. Consequently, similar pickup, alignment, and insertion observations recur at
+different cumulative progress levels.
+Figure 6 compares representative static
+and rollout-history-conditioned progress traces.
+Figure 6: Logged progress predictions from matched static and
+rollout-history-conditioned executions of repeated Insert Square.
+Tick Ik, k∈{1,…,4}, denotes the k-th insertion attempt, and
+the gray dashed line denotes execution order. Static predictions exhibit
+non-monotonic jumps at recurring states, whereas rollout-history conditioning
+produces more order-consistent estimates.
+Offline-to-Online ConRFT Protocol
+We use ConRFT as the policy-optimization procedure. Its
+policy retains a frozen Octo-Small observation backbone and replaces the
+original action head with a consistency policy; a learned critic supplies the
+Q objective. Offline initialization uses 40 teleoperated trajectories in a
+demonstration buffer 𝒟. The policy is optimized with behavior
+cloning and calibrated Q-learning, while the critic includes a conservative
+penalty to stabilize value estimates outside the demonstration distribution.
+During online adaptation, autonomous transitions are appended to replay buffer
+ℛ. A human operator intervenes when an action is unsafe or likely to
+cause failure, and corrected trajectories are returned to demonstration buffer
+𝒟. Updates sample equally from 𝒟 and ℛ.
+The online policy retains the behavior-cloning and Q terms with weights shifted
+toward reward-driven improvement, while the critic uses the Bellman error
+without the offline conservative penalty. Intervention and data-routing rules
+are identical across reward conditions.
+Table 5 summarizes the real-world
+optimization settings.
+| Hyperparameter
+| Symbol
+| Value
+| Global batch size
+| –
+| 256
+| Learning rate
+| –
+| 3×10−4
+| Reward discount
+| γ
+| 0.98
+| Demonstrations
+| –
+| 40
+| Insertion attempts / trial
+| K
+| 4
+| Online episodes (C00–C11)
+| –
+| 200
+| Online episodes (Sparse)
+| –
+| 300
+| Evaluation trials / condition
+| –
+| 20
+| Insertion attempts / condition
+| –
+| 80
+| Offline BC weight
+| β
+| 1.0
+| Offline Q weight
+| η
+| 0.1
+| Conservative penalty
+| α
+| 0.1
+| Online BC weight
+| β′
+| 0.5
+| Online Q weight
+| η′
+| 1.0
+| Compute
+| –
+| 1× RTX 4090
+Table 5: Optimization settings for the real-world ConRFT experiments.
+Controlled Comparison and Metrics
+Every reported condition uses the same event-sparse task reward, emitted once
+after each successful insertion. The Event Sparse baseline uses only this
+reward, whereas C00–C11 add GRM shaping. A terminal-only pilot rewarding only
+completion of all four attempts did not learn and is excluded from the reported
+comparison. All reported variants start from the same policy initialization and
+use identical demonstration data, observations, resets, interventions, and
+evaluation. C00–C11 use 200 online episodes and Event Sparse uses 300. Each condition is then evaluated in 20 trials under the shared evaluation
+protocol.
+This design isolates the effects of OOD supervision and ordered history while
+making the larger sparse-reward interaction budget explicit. We report the
+number of successful insertions among the resulting 80 attempts and the number
+of full-sequence successes among 20 trials. A trial contributes to the latter
+count only when all four insertion attempts succeed.
+Appendix E Additional Ablation Details
+Additional Signed-Hop Diagnostics
+The main paper reports the curriculum controls and the per-family improvement
+of the selected schedule. Here we separate the Stage 2 movement for the two
+large-to-fine variants and provide the complete replay-rate sensitivity sweep.
+The first 200K large-Hop examples are shared by E3 and E4; their second stages
+differ only in whether large-Hop pairs are replayed.
+| Strategy
+| Step
+| Temp.
+| Neg.
+| Rob.
+| OOD-T
+| No replay
+| 200K
+| 0.9860
+| 0.9945
+| 0.9510
+| 0.9870
+| No replay
+| 400K
+| 0.9950
+| 0.9937
+| 0.9606
+| 0.9924
+| 25% replay
+| 200K
+| 0.9860
+| 0.9945
+| 0.9510
+| 0.9870
+| 25% replay
+| 400K
+| 0.9953
+| 0.9945
+| 0.9618
+| 0.9931
+Table 6: Stage 2 VOC for the two large-to-fine curricula. Moderate replay
+yields slightly higher final scores on the reported temporal and OOD
+families.
+Figure 7: Sensitivity to the fraction ρ of Stage 2 samples replayed from
+the large-Hop pool. The shaded neighborhood marks the moderate-replay regime
+around the selected ρ=0.25 setting.
+The replay rate changes only the Stage 2 mixture; it does not redefine the
+large-Hop pool used in Stage 1. Average VOC increases from 0.9866 without
+replay to 0.98724 at ρ=0.25, remains nearly unchanged at ρ=0.30
+(0.98722), and decreases to 0.98668 at ρ=0.60
+(Figure 7). The shallow maximum near
+ρ=0.25 is consistent with moderate replay retaining large-transition
+examples while preserving most of the fine- and zero-Hop calibration budget.
+OOD-negative VOC increases from 0.9937 at ρ=0 to 0.9948 at
+ρ=0.60, whereas OOD-robust and OOD-temporal VOC peak near moderate replay
+and decline at larger ratios. The selected ρ=0.25 achieves the highest
+observed overall average rather than the best score on every branch. Replay is
+used only during reward-model training and is unrelated to inference-time
+memory or the RL replay buffer.
+Trajectory-Level Case Studies
+Figure 8 complements the aggregate VOC results
+with representative trajectory-level progress curves.
+Figure 8: Episode-level progress traces on two held-out cases. Top: progress
+curves for a RoboCasa sink-spout episode with foreground occlusion and an
+in-distribution LIBERO middle-drawer episode. Bottom left: the source-reference
+pre-query panel for the sink-spout case. Bottom right: the same-episode
+pre-query panel for the drawer case. Gray cells denote fixed padding.
+On the foreground-occlusion case, the static GRM remains close to zero through
+the middle of the episode and then jumps late. OOD supervision without history
+recovers much of the trend, while the panel-conditioned model follows the
+reference ordering most closely in the early and middle phases. The remaining
+late-episode gap shows that history does not eliminate all sensitivity to a
+strong foreground edit.
+The in-distribution drawer case serves as a calibration check rather than an
+OOD stress test. All three learned curves preserve the episode order and reach
+completion. The same-episode panel-conditioned curve follows the reference
+closely over most of the rollout but saturates early at the final evaluated
+states. We retain this behavior rather than smoothing or selecting only
+favorable points, exposing both the benefit of temporal context and the
+remaining endpoint-calibration error.
+Compact Ablation Tables
+Table 7 reports the complete checkpoint and
+configuration comparisons underlying the main ablation summary.
+| Base
+| Cond.
+| Type
+| Stat.
+| Hist.
+| Gain
+| GRM
+| base
+| Obs.
+| 0.958
+| 0.965
+| +0.007
+| Robo-Dopamine 2.0
+| 3×3+QA
+| Obs.
+| 0.967
+| 0.986
+| +0.019
+| GRM
+| no OOD
+| Swp.
+| 0.954
+| 0.962
+| +0.008
+| GRM
+| OOD+QA
+| Swp.
+| 0.967
+| 0.977
+| +0.010
+| GRM
+| OOD+2×2
+| Swp.
+| 0.957
+| 0.985
+| +0.028
+| GRM
+| OOD+3×3
+| Swp.
+| 0.955
+| 0.988
+| +0.033
+| GRM
+| OOD+3×3+QA
+| Swp.
+| 0.958
+| 0.988
+| +0.030
+| Robo-Dopamine 2.0
+| OOD
+| Swp.
+| 0.965
+| 0.974
+| +0.009
+| Robo-Dopamine 2.0
+| OOD+QA
+| Swp.
+| 0.967
+| 0.977
+| +0.010
+| Robo-Dopamine 2.0
+| OOD+2×2
+| Swp.
+| 0.962
+| 0.985
+| +0.023
+| Robo-Dopamine 2.0
+| OOD+3×3
+| Swp.
+| 0.960
+| 0.987
+| +0.027
+| Robo-Dopamine 2.0
+| OOD+3×3+QA
+| Swp.
+| 0.967
+| 0.986
+| +0.019
+Table 7: Compact ablation grid supporting the main summary. Obs.
+denotes the main reported checkpoint comparison, and Swp. denotes the
+controlled configuration sweep. Stat. and Hist. denote static8 and
+history_panel VOC, respectively.
+The controlled sweep shows complementary effects from OOD supervision and
+structured temporal panels. The QA mix provides a smaller additional effect
+once history panels are enabled.
+Table 8 further examines the interaction between
+panel resolution and the number of between-state panels.
+| Grid
+| B=0
+| B=1
+| B=2
+| B=3
+| B=4
+| B=5
+| GRM
+| 1×1
+| 0.965
+| 0.971
+| 0.969
+| 0.967
+| 0.963
+| 0.959
+| 2×2
+| 0.980
+| 0.986
+| 0.984
+| 0.981
+| 0.978
+| 0.974
+| 3×3
+| 0.988
+| 0.992
+| 0.991
+| 0.989
+| 0.986
+| 0.982
+| 4×4
+| 0.981
+| 0.987
+| 0.985
+| 0.983
+| 0.979
+| 0.975
+| Robo-Dopamine 2.0
+| 1×1
+| 0.966
+| 0.972
+| 0.970
+| 0.967
+| 0.964
+| 0.960
+| 2×2
+| 0.981
+| 0.987
+| 0.985
+| 0.982
+| 0.979
+| 0.975
+| 3×3
+| 0.991
+| 0.993
+| 0.992
+| 0.992
+| 0.991
+| 0.988
+| 4×4
+| 0.982
+| 0.988
+| 0.986
+| 0.984
+| 0.980
+| 0.976
+Table 8: Memory-layout sweep. B denotes the number of between-state
+panels. Both backbones perform best with 3×3 panels and one or two
+between-state panels.
+Increasing panel capacity is not uniformly beneficial. Both backbones favor
+3×3 panels with one or two between-state panels, whereas larger grids
+or panel counts provide no consistent improvement.
+Figure 9 visualizes the same panel-count trend for the
+3×3 configuration.
+Figure 9: 3×3 memory-panel sweep over between-state panel count.
+Both backbones peak with one or two between-state panels; additional panels
+do not monotonically improve VOC.
+The curve confirms that the main benefit comes from adding a limited amount of
+between-state evidence rather than continuously increasing the visual-token
+load. Runtime panel construction is retained as a diagnostic because it also
+tests data-loading-time assembly and prompt alignment.
+Overall, the ablations consistently favor structured 3×3 panels with
+one or two between-state panels. OOD supervision supplies the main robustness
+gain, while QA mixing and additional panel capacity have smaller effects once
+structured temporal context is available.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

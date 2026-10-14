@@ -1,0 +1,24 @@
+{
+  "run_id": "e7b6ec38-f4bb-4f6a-8e75-519cbd255ee6",
+  "status": "completed",
+  "error": "",
+  "image_count": 1,
+  "model_dir": "D:\\monitor2\\.models\\qwen3-vl-2b-instruct",
+  "weight_dtype": "bfloat16",
+  "frames": [
+    {
+      "time": 0.0,
+      "path": "experiments\\artifacts\\model_smoke\\synthetic_0.png",
+      "sha256": "0396c130e21925dc946a9e093da7b6136ad3e40d55f6ab1493611e37379247cd"
+    }
+  ],
+  "result": {
+    "raw": "```json\n{\n  \"judgments\": [\n    {\n      \"object_id\": \"fixture-object\",\n      \"H\": \"?\",\n      \"C\": \"C\",\n      \"P\": \"P\",\n      \"G\": \"G\",\n      \"evidence_time\": 0\n    }\n  ],\n  \"memory",
+    "input_tokens": 256,
+    "output_tokens": 64,
+    "memory_tokens": 0,
+    "elapsed_ms": 3398.9168000407517,
+    "peak_vram_bytes": 4322736128
+  },
+  "wall_elapsed_ms": 12855.688099982217
+}

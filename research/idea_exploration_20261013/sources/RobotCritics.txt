@@ -1,0 +1,2695 @@
+0001: Robot Critics that Sweat the Small Stuff
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2606.21572v1 [cs.RO] 19 Jun 2026
+0010: Robot Critics that Sweat the Small Stuff
+0011: Sruthi Sudhakar
+0012: Affiliation:
+0013: Columbia University
+0014: Junbang Liang
+0015: Affiliation:
+0016: Columbia University
+0017: Sreehari Rammohan
+0018: Affiliation:
+0019: Columbia University
+0020: Pavel Tokmakov
+0021: Affiliation:
+0022: Toyota Research Institute
+0023: robocritic.cs.columbia.edu
+0024: Richard Zemel
+0025: Affiliation:
+0026: Columbia University
+0027: Carl Vondrick
+0028: Affiliation:
+0029: Columbia University
+0030: Abstract
+0031: Large vision-language models contain several priors about the world and object interactions, making them useful critics during inference to steer robot policies towards success. However, closed-loop robot manipulation requires judging small visual differences between success and failure, which remains a challenge for current VLMs. We introduce a method to fine-tune critics by constructing pairwise progress supervision using success and failure rollouts obtained from a policy. Our fine-tuned critic excels at fine-grained progress reasoning and subtle failure detection, outperforming prior progress reasoning baselines. Additionally, we use an action-conditioned video model to predict the visual effect of several candidate actions sampled from a policy, and show that our critic can correctly identify successful candidates to execute, improving the average policy success rate by 11% across real-world tasks and 5.9% across simulation tasks.
+0032: Keywords:
+0033: Vision Language Models, Imitation Learning, Video Generation
+0034: 1
+0035: Introduction
+0036: Humans rely on strong visual reasoning to decide which actions will complete a task and which will lead to failure. Recent advances in vision-language foundation models (VLMs)
+0037: [
+0038: 3
+0039: ,
+0040: 35
+0041: ,
+0042: 12
+0043: ]
+0044: show that these models encode extensive knowledge about the physical world, providing hope of using them for robot policies. One promising approach is to use VLMs as critics in the policy execution loop to reason over multiple candidate actions sampled from a policy
+0045: [
+0046: 53
+0047: ,
+0048: 61
+0049: ]
+0050: . The critic can compare the candidate trajectories and select the action that makes the greatest progress towards success, thereby steering away from failures. Such progress/failure-aware critics aid standard behavior cloning policies which cannot reason about failures because they have only been trained on successful demonstrations.
+0051: We find that, while off-the-shelf VLMs
+0052: [
+0053: 4
+0054: ,
+0055: 16
+0056: ]
+0057: and progress detection methods
+0058: [
+0059: 47
+0060: ,
+0061: 36
+0062: ]
+0063: can distinguish initial from final task states and identify high-level subtasks, they fail to discriminate between fine-grained progress and failures. A subtle 1mm gripper misalignment is close, but still insufficient, causing the overall policy to fail. On eight robot tasks, Gemini 3 discriminates success versus failure with only 54.7% accuracy, and the progress detection methods ROVER and ProgressLM
+0064: [
+0065: 47
+0066: ,
+0067: 60
+0068: ]
+0069: achieve only 72.1% and 61.0% accuracy respectively – where chance is 50%. ROVER achieves much higher accuracy on coarse progress detection, highlighting that these methods struggle in the fine-grained regime where the time interval gap narrows.
+0070: We introduce a framework to fine-tune VLMs for fine-grained progress/failure discrimination, and use them as critics to improve robot policy performance in-the-loop. To fine-tune VLMs, we generate paired success and failure rollouts from matched initial conditions, enabling construction of a fine-grained progress comparison dataset. We emphasize the need to incorporate policy specific failures to train the critic. This procedure only requires binary success/failure labels at the end of the trajectory, and naturally captures the failure modes of the deployed policy. We then integrate the critic into a robot policy for test-time performance improvement via policy steering. We sample multiple candidate action sequences from the policy, use a generative video model to synthesize future visual states, and select which one to execute using the critic (Fig.
+0071: 1
+0072: ).
+0073: Critics fine-tuned with this framework achieve over 90% accuracy and substantially outperform baselines in both simulation and real world experiments, and generalize to tasks unseen during training. We systematically evaluate the critic in-the-loop across real world tasks and simulation tasks. We see an average +11% improvement in success rate and 2.3x improvement in mean intersection over union (mIoU) over the base policy on real world tasks, and +5.9% improvement in success rate across all simulation tasks.
+0074: Figure 1:
+0075: Critic in-the-loop.
+0076: Given an observation, a learned stochastic policy samples
+0077: K
+0078: K
+0079: unique candidate action sequences. An action-conditioned generative video model synthesizes visual observations to produce a terminal state per candidate action. The critic performs pairwise progress comparisons to select the best candidate, which is then executed and the re-planning continues.
+0080: 2
+0081: Related Work
+0082: Robot policies and test-time policy steering.
+0083: Modern robot manipulation policies include both task-specific visuomotor policies and large vision-language-action (VLA) models that can model multimodal action distributions
+0084: [
+0085: 10
+0086: ,
+0087: 26
+0088: ,
+0089: 43
+0090: ,
+0091: 45
+0092: ,
+0093: 27
+0094: ]
+0095: . Recent VLA and generalist robot policies further scale this paradigm with larger backbones and action chunking
+0096: [
+0097: 24
+0098: ,
+0099: 6
+0100: ,
+0101: 52
+0102: ,
+0103: 54
+0104: ,
+0105: 5
+0106: ,
+0107: 32
+0108: ,
+0109: 33
+0110: ]
+0111: . Many of these policies share an important test-time property: stochastic policies can produce multiple plausible action candidates from the same observation. This creates an opportunity for policy improvement without retraining. Several methods improve policies at test time by steering
+0112: [
+0113: 49
+0114: ,
+0115: 13
+0116: ,
+0117: 38
+0118: ]
+0119: , reranking or sampling candidate actions
+0120: [
+0121: 25
+0122: ,
+0123: 21
+0124: ]
+0125: , or composing policies
+0126: [
+0127: 8
+0128: ]
+0129: . Related work also uses predictive world models to strengthen or guide robot policies
+0130: [
+0131: 46
+0132: ,
+0133: 20
+0134: ]
+0135: . These approaches show that predicting future visual states is effective in robot learning.
+0136: Vision-language models as critics.
+0137: Large vision-language models have increasingly been used in robotics as planners, reward functions, value estimators, and critics
+0138: [
+0139: 12
+0140: ,
+0141: 31
+0142: ,
+0143: 19
+0144: ,
+0145: 37
+0146: ,
+0147: 14
+0148: ,
+0149: 62
+0150: ,
+0151: 59
+0152: ]
+0153: . For example, SayCan grounds language-model plans in robotic affordances to select feasible skills
+0154: [
+0155: 2
+0156: ]
+0157: . VLMs are also used as feedback or scoring functions for either training policies with RL
+0158: [
+0159: 50
+0160: ]
+0161: or optimizing actions in a model predictive control loop
+0162: [
+0163: 18
+0164: ]
+0165: . In VLMPC, a VLM-derived hierarchical cost function is used within model-predictive control to evaluate candidate action sequences
+0166: [
+0167: 61
+0168: ]
+0169: . Recent VLM-in-the-loop steering methods use pretrained VLM representations or latent alignment objectives to guide action selection
+0170: [
+0171: 53
+0172: ]
+0173: . These methods show that VLMs can provide useful semantic priors for robot decision-making. While these works rely on relatively coarse judgments, closed-loop policy steering towards success requires differentiating between small changes in gripper pose, object contact, alignment, or early signs of failure. Our work therefore studies VLMs in a fine-grained pairwise comparison between policy-action candidates, rather than as generic semantic goal verifiers/reward functions.
+0174: Progress reasoning and failure detection.
+0175: Several methods aim to estimate task progress from visual observations
+0176: [
+0177: 56
+0178: ,
+0179: 23
+0180: ,
+0181: 42
+0182: ,
+0183: 1
+0184: ,
+0185: 22
+0186: ,
+0187: 58
+0188: ]
+0189: . Generative Value Learning (GVL) treats VLMs as in-context value learners to obtain the progress value of a new observation
+0190: [
+0191: 36
+0192: ]
+0193: . ROVER decomposes embodied videos into subtasks and uses recursive VLM reasoning to estimate task progress
+0194: [
+0195: 47
+0196: ]
+0197: . ProgressLM fine-tunes a VLM to predict absolute progress scores for frames given task demonstrations or key frames
+0198: [
+0199: 60
+0200: ]
+0201: . RoboMeter
+0202: [
+0203: 30
+0204: ]
+0205: is a reward model to learn general failure cases using failed/suboptimal trajectories, whereas we focus on policy-specific failures and fine-grained differences. Recent work has studied how to classify and use failures at inference time for recovery
+0206: [
+0207: 55
+0208: ,
+0209: 15
+0210: ,
+0211: 34
+0212: ,
+0213: 44
+0214: ,
+0215: 28
+0216: ]
+0217: . These methods are closely related because they also ask whether VLMs can reason about temporal progress in embodied tasks, but they typically estimate more coarse progress on individual frames or videos. Our critic is related to preference-learning and reward-modeling approaches, where a model is trained from comparisons rather than absolute labels
+0218: [
+0219: 11
+0220: ,
+0221: 7
+0222: ]
+0223: .
+0224: We focus on learning fine-grained pairwise progress critics from successful and failure policy rollouts. This lets the critic recognize both task progress and policy-specific failure modes, which can then be avoided during test-time selection.
+0225: 3
+0226: Method
+0227: We use VLMs as critics to guide stochastic robot policies towards success at test-time. Given an image
+0228: x
+0229: x
+0230: , the policy predicts absolute joint-angle actions
+0231: a
+0232: ∗
+0233: ∈
+0234: ℝ
+0235: D
+0236: ×
+0237: H
+0238: a^{*}\in\mathbb{R}^{D\times H}
+0239: to complete the task, where
+0240: D
+0241: D
+0242: is the number of degrees of freedom and
+0243: H
+0244: H
+0245: is the policy horizon. Our approach will sample multiple action trajectories from a base policy
+0246: π
+0247: ⁡
+0248: (
+0249: x
+0250: )
+0251: \pi(x)
+0252: and use a critic to select the final action trajectory:
+0253: a
+0254: ∗
+0255: =
+0256: arg
+0257: ⁡
+0258: min
+0259: ⁡
+0260: ∑
+0261: j
+0262: ≠
+0263: i
+0264: a
+0265: i
+0266: ∼
+0267: π
+0268: ⁡
+0269: (
+0270: x
+0271: )
+0272: ⁡
+0273: c
+0274: ⁡
+0275: (
+0276: v
+0277: i
+0278: ,
+0279: v
+0280: j
+0281: )
+0282: where
+0283: v
+0284: i
+0285: =
+0286: f
+0287: ⁡
+0288: (
+0289: a
+0290: i
+0291: ,
+0292: x
+0293: )
+0294: .
+0295: \displaystyle a^{*}=\arg\min_{a_{i}\sim\pi(x)}\sum_{j\neq i}c(v_{i},v_{j})\quad\textrm{where}\quad v_{i}=f(a_{i},x).
+0296: (1)
+0297: f
+0298: f
+0299: is a generative video model producing the final frame
+0300: v
+0301: v
+0302: which acts as a forward dynamics model, and
+0303: c
+0304: c
+0305: is a critic that scores the utility of a rollout (Fig
+0306: 1
+0307: ). We instantiate base policy
+0308: π
+0309: \pi
+0310: as any stochastic robot policy (diffusion policy or GR00T N1.5 in our experiments),
+0311: f
+0312: f
+0313: as a video diffusion model,
+0314: c
+0315: c
+0316: as a large vision-language model.
+0317: We start with our behavior cloned base policy that is already trained on expert demonstrations, and attach a critic to it. We show that we can design this critic to steer the base policy towards successful outcomes, allowing us to integrate the knowledge from VLMs into policies.
+0318: 3.1
+0319: Training VLMs as Critics
+0320: We train a VLM to predict which frame reflects greater progress toward the task goal. Note that lack of progress can also mean failure has occurred. Given two frames
+0321: (
+0322: v
+0323: i
+0324: ,
+0325: v
+0326: j
+0327: )
+0328: (v_{i},v_{j})
+0329: from a robot manipulation trajectory and a natural language description of the task
+0330: 𝒯
+0331: \mathcal{T}
+0332: , the VLM makes a discrete decision
+0333: c
+0334: ⁡
+0335: (
+0336: v
+0337: i
+0338: ,
+0339: v
+0340: j
+0341: )
+0342: ∈
+0343: {
+0344: +
+0345: 1
+0346: ,
+0347: −
+0348: 1
+0349: }
+0350: c(v_{i},v_{j})\in\{+1,-1\}
+0351: by outputting a text token (preserving the VLM’s natural output space).
+0352: A
+0353: +
+0354: 1
+0355: +1
+0356: indicates
+0357: v
+0358: j
+0359: v_{j}
+0360: shows more progress than
+0361: v
+0362: i
+0363: v_{i}
+0364: , and
+0365: −
+0366: 1
+0367: -1
+0368: indicates the opposite. We provide
+0369: v
+0370: i
+0371: v_{i}
+0372: and
+0373: v
+0374: j
+0375: v_{j}
+0376: to the VLM as two separate images alongside the task description in context. We do supervised finetuning on our dataset
+0377: D
+0378: D
+0379: to minimize the cross entropy loss:
+0380: ℒ
+0381: critic
+0382: (
+0383: θ
+0384: )
+0385: =
+0386: −
+0387: 1
+0388: |
+0389: D
+0390: |
+0391: ∑
+0392: (
+0393: v
+0394: i
+0395: ,
+0396: v
+0397: j
+0398: ,
+0399: y
+0400: )
+0401: ∈
+0402: D
+0403: log
+0404: c
+0405: θ
+0406: (
+0407: y
+0408: ∣
+0409: v
+0410: i
+0411: ,
+0412: v
+0413: j
+0414: )
+0415: for
+0416: y
+0417: ∈
+0418: {
+0419: +
+0420: 1
+0421: ,
+0422: −
+0423: 1
+0424: }
+0425: .
+0426: \mathcal{L}_{\text{critic}}(\theta)=-\frac{1}{|D|}\sum_{(v_{i},v_{j},y)\in D}\log c_{\theta}\!\left(y\mid v_{i},v_{j}\right)\quad\textrm{for}\quad y\in\{+1,-1\}.
+0427: (2)
+0428: Figure 2:
+0429: Training Robot Critics.
+0430: VLMs are finetuned with successful and failed rollouts to enable fine-grained task progress/failure detection. To construct the training dataset, consecutive frames are used from successful trajectories to obtain task progress data. Additionally, success and failure frame pairs from the same initial condition are used to obtain policy- and task-specific failure data.
+0431: To construct a supervised fine-tuning dataset
+0432: D
+0433: D
+0434: tailored to learning fine-grained visual task progress/failure, we roll out the policy on the same set of initial conditions multiple times
+0435: to obtain paired success
+0436: S
+0437: s
+0438: S^{s}
+0439: and failure trajectories
+0440: S
+0441: f
+0442: S^{f}
+0443: (top half of Fig
+0444: 2
+0445: ). In cases where recording paired failures from the policy is infeasible, we note that human demonstrations of failure trajectories can be quickly and easily collected.
+0446: We construct pairs of frames from
+0447: S
+0448: s
+0449: S^{s}
+0450: and
+0451: S
+0452: f
+0453: S^{f}
+0454: :
+0455: Success-Success Progress Pairs.
+0456: For each successful trajectory
+0457: S
+0458: s
+0459: S^{s}
+0460: of length
+0461: L
+0462: s
+0463: L^{s}
+0464: , and for each temporal interval
+0465: l
+0466: ∈
+0467: {
+0468: 4
+0469: ,
+0470: 8
+0471: ,
+0472: 12
+0473: ,
+0474: 16
+0475: }
+0476: l\in\{4,8,12,16\}
+0477: , a pair is defined as consecutive observations from an earlier and later timestep in the trajectory,
+0478: (
+0479: S
+0480: t
+0481: s
+0482: ,
+0483: S
+0484: (
+0485: t
+0486: +
+0487: l
+0488: )
+0489: s
+0490: )
+0491: (S^{s}_{t},S^{s}_{(t+l)})
+0492: for
+0493: t
+0494: ∈
+0495: {
+0496: 0
+0497: ,
+0498: …
+0499: ,
+0500: L
+0501: s
+0502: −
+0503: l
+0504: }
+0505: t\in\{0,\ldots,L^{s}-l\}
+0506: . Under successful executions, later timesteps typically reflect greater completion toward the goal; therefore,
+0507: S
+0508: (
+0509: t
+0510: +
+0511: l
+0512: )
+0513: s
+0514: S^{s}_{(t+l)}
+0515: reflects greater completion than
+0516: S
+0517: t
+0518: s
+0519: S^{s}_{t}
+0520: and the pair is assigned label
+0521: +
+0522: 1
+0523: +1
+0524: (as visualized in Figure
+0525: 2
+0526: , bottom left).
+0527: These success-success pairs teach the model to recognize gradual forward progress.
+0528: Success–Failure Comparison Pairs.
+0529: We observe that fine-tuning the VLMs on the successful demonstrations is insufficient as they cannot identify failures without ever having seen failure data.
+0530: To address this limitation, we include failure trajectory rollouts,
+0531: S
+0532: f
+0533: S^{f}
+0534: , that originate from the same initial conditions as a successful rollout,
+0535: S
+0536: s
+0537: S^{s}
+0538: . We construct pairs
+0539: (
+0540: S
+0541: t
+0542: f
+0543: ,
+0544: S
+0545: t
+0546: s
+0547: )
+0548: (S^{f}_{t},S^{s}_{t})
+0549: for
+0550: t
+0551: ∈
+0552: {
+0553: 0
+0554: ,
+0555: …
+0556: ,
+0557: L
+0558: f
+0559: }
+0560: t\in\{0,\ldots,L^{f}\}
+0561: , and label them
+0562: +
+0563: 1
+0564: +1
+0565: as visualized in bottom right box in Fig
+0566: 2
+0567: (i.e., the success frame shows more task progress than the failure frame at the same point in time). This teaches the critic what “bad actions” look like, tailored to this specific policy, task, and environment combination. Creating success-failure pairs with the same initial conditions is important as it helps the VLM learn what kinds of actions cause subtle failures versus what are simply variances in object/robot pose.
+0568: 3.2
+0569: Integrating Critics into the Policy
+0570: We use the fine-tuned critic in the loop for test-time policy improvements. At each re-planning step, given the observation
+0571: x
+0572: t
+0573: x_{t}
+0574: , we draw
+0575: N
+0576: N
+0577: i.i.d. candidate action chunks from the base policy:
+0578: a
+0579: (
+0580: i
+0581: )
+0582: ∼
+0583: π
+0584: ⁡
+0585: (
+0586: x
+0587: t
+0588: )
+0589: a^{(i)}\sim\pi(x_{t})
+0590: for
+0591: i
+0592: ∈
+0593: {
+0594: 1
+0595: ,
+0596: …
+0597: ,
+0598: N
+0599: }
+0600: i\in\{1,\dots,N\}
+0601: . We do greedy farthest-point sampling (FPS) over a weighted joint-space L2 distance to prune to a diverse subset of
+0602: K
+0603: K
+0604: actions. Each candidate
+0605: a
+0606: (
+0607: i
+0608: )
+0609: a^{(i)}
+0610: specifies a sequence of low-level actions; to derive images that the critic can compare between, we execute all
+0611: K
+0612: K
+0613: action chunks with an action-conditioned video model to obtain the terminal states
+0614: x
+0615: t
+0616: +
+0617: H
+0618: (
+0619: i
+0620: )
+0621: =
+0622: f
+0623: ⁡
+0624: (
+0625: a
+0626: i
+0627: ,
+0628: x
+0629: t
+0630: )
+0631: x_{t+H}^{(i)}=f(a_{i},x_{t})
+0632: .
+0633: Action-conditioned video prediction models allow a robot to learn how its actions affect objects in its environment
+0634: [
+0635: 17
+0636: ,
+0637: 57
+0638: ]
+0639: . We use the HunyuanVideo 1.5 pretrained image-to-video Diffusion Transformer
+0640: [
+0641: 51
+0642: ]
+0643: , a state-of-the-art video generative model. To condition on a sequence of actions, we insert cross-attention blocks that attend to the input action sequence
+0644: a
+0645: a
+0646: [
+0647: 29
+0648: ]
+0649: . We encode the sequence using a transformer encoder to produce a single token per frame, and fine-tune the model using a flow-matching objective to generate videos conditioned on the encoded action tokens. Each action input corresponds to one frame of the predicted video. More details provided in Section
+0650: C.3
+0651: .
+0652: We then form all
+0653: (
+0654: K
+0655: 2
+0656: )
+0657: \binom{K}{2}
+0658: pairwise comparisons of these terminal states and query our learned critic to determine which state reflects greater task progress. Each comparison awards a vote to the preferred candidate. We select the candidate whose terminal state accumulates the most votes. The winning action
+0659: a
+0660: ∗
+0661: a^{*}
+0662: is then executed in the real environment and this sample-and-select procedure is applied at every re-planning step until task completion or failure.
+0663: 4
+0664: Critic Experiments
+0665: We aim to understand the performance of policy critics by answering the following key questions:
+0666: Q1.
+0667: Does our finetuning approach enable stronger critics in different tasks and environments?
+0668: Q2.
+0669: Is failure data important?
+0670: Q3.
+0671: How does our method compare on increasingly fine-grained detection?
+0672: 4.1
+0673: Robot Dataset Setup
+0674: RoboCasa.
+0675: We use RoboCasa
+0676: [
+0677: 39
+0678: ]
+0679: to evaluate task-progress assessment. To generate both success and failure data, we train a policy
+0680: π
+0681: \pi
+0682: on each task using the provided 50 human demonstrations. We then roll out the policy
+0683: π
+0684: \pi
+0685: multiple times and collect successful and failure trajectories per initial condition for each task. Across 30 initial conditions, we collect paired success and failure trajectories, and we construct the training dataset as described in Section
+0686: 3.1
+0687: which generates approximately 21k pairs per task. We hold out 7 success and 7 failure trajectories for evaluation (about 5k pairs). We report accuracy on
+0688: ID
+0689: (in-distribution objects) and
+0690: OOD
+0691: (out-of-distribution objects).
+0692: LBM.
+0693: We also evaluate our critic finetuning method on the LBM dataset
+0694: [
+0695: 48
+0696: ]
+0697: . We use a publicly released portion of the
+0698: [
+0699: 48
+0700: ]
+0701: dataset which has 8 tasks including: BimanualBikeRotorInstall, BimanualClearKitchenCounter, BimanualSetUpBreakfastTable, CleanLitterBox, CutAppleIntoSlices, PushCoasterToMug, PutKiwiInCenterOfTable, and TurnMugRightsideUp. For each dataset, there are 50 initial conditions that 2 or 3 policies are rolled out on and videos are generated from: either a Single Task policy, the Finetuned LBM policy, and for some tasks there additionally a rollout from the pre-trained LBM policy (policy trainings are described in
+0702: [
+0703: 48
+0704: ]
+0705: ). These rollouts lead to either successes or failures which are labeled by human annotators. We create two splits: 40 initial conditions per task for fine-tuning and 10 held-out initial conditions for testing.
+0706: 4.2
+0707: Baselines
+0708: We compare against 3 types of baselines: out-of-the-box foundation models, prompted progress detection methods, and fine-tuned progress detection methods. See Section
+0709: C.4
+0710: for prompts.
+0711: Out-of-the-box foundation models.
+0712: We evaluate pretrained foundation models including
+0713: Qwen2.5-VL
+0714: [
+0715: 4
+0716: ]
+0717: and
+0718: Gemini 3
+0719: [
+0720: 16
+0721: ]
+0722: without finetuning. Similar to our method, we prompt these VLMs with the image pair along with the robot task/environment descriptions and the discrimination task description. These methods output a binary label
+0723: y
+0724: ∈
+0725: {
+0726: +
+0727: 1
+0728: ,
+0729: −
+0730: 1
+0731: }
+0732: y\in\{+1,-1\}
+0733: .
+0734: Prompted progress detection.
+0735: We evaluate two prompted progress-reasoning methods.
+0736: GVL
+0737: [
+0738: 36
+0739: ]
+0740: predicts per-frame progress given in-context progress annotations along a demonstration trajectory.
+0741: ROVER
+0742: [
+0743: 47
+0744: ]
+0745: decomposes videos into subtasks using recursive prompting, predicting subtask id and progress scores. For both methods, we compute the signed difference between each frame’s progress scores to obtain binary labels
+0746: y
+0747: ∈
+0748: {
+0749: +
+0750: 1
+0751: ,
+0752: −
+0753: 1
+0754: }
+0755: y\in\{+1,-1\}
+0756: .
+0757: Fine-tuned progress detection.
+0758: We also compare to
+0759: ProgressLM
+0760: [
+0761: 60
+0762: ]
+0763: , which fine-tunes Qwen2.5-VL to predict an absolute progress score from demonstration key frames with known progress percentages. We compute the signed difference between the absolute score of the two images in the pair to obtain binary labels
+0764: y
+0765: ∈
+0766: {
+0767: +
+0768: 1
+0769: ,
+0770: −
+0771: 1
+0772: }
+0773: y\in\{+1,-1\}
+0774: . We fine-tune ProgressLM-7B on the same RoboCasa dataset, using 10 demonstration key frames per trajectory.
+0775: Ours.
+0776: We fine-tune Qwen2.5-VL-7B with Eq. (
+0777: 2
+0778: ) on successful and failure rollouts. We also run an ablation where we fine-tune only on successful rollouts.
+0779: Method
+0780: Countr
+0781: Cab
+0782: Cab
+0783: Countr
+0784: Cab
+0785: Micro
+0786: Micro
+0787: Cab
+0788: Countr
+0789: Sink
+0790: Sink
+0791: Countr
+0792: Countr
+0793: Stove
+0794: Stove
+0795: Countr
+0796: Avg.
+0797: Overall Accuracy
+0798: Qwen2.5-32B
+0799: 0.495
+0800: 0.508
+0801: 0.502
+0802: 0.489
+0803: 0.502
+0804: 0.491
+0805: 0.512
+0806: 0.490
+0807: 0.499
+0808: Gemini 3
+0809: 0.706
+0810: 0.578
+0811: 0.428
+0812: 0.498
+0813: 0.659
+0814: 0.681
+0815: 0.398
+0816: 0.424
+0817: 0.547
+0818: GVL
+0819: 0.528
+0820: 0.462
+0821: 0.584
+0822: 0.527
+0823: 0.576
+0824: 0.543
+0825: 0.538
+0826: 0.486
+0827: 0.531
+0828: ROVER
+0829: 0.707
+0830: 0.677
+0831: 0.798
+0832: 0.758
+0833: 0.727
+0834: 0.657
+0835: 0.710
+0836: 0.737
+0837: 0.721
+0838: ProgressLM
+0839: 0.206
+0840: 0.498
+0841: 0.709
+0842: 0.533
+0843: 0.850
+0844: 0.597
+0845: 0.774
+0846: 0.715
+0847: 0.610
+0848: Ours (Success-Only)
+0849: 0.927
+0850: 0.876
+0851: 0.874
+0852: 0.892
+0853: 0.892
+0854: 0.858
+0855: 0.886
+0856: 0.885
+0857: 0.886
+0858: Ours (Full Method)
+0859: 0.966
+0860: 0.931
+0861: 0.908
+0862: 0.942
+0863: 0.965
+0864: 0.918
+0865: 0.916
+0866: 0.943
+0867: 0.936
+0868: OOD Only Accuracy
+0869: ProgressLM
+0870: 0.200
+0871: 0.495
+0872: 0.704
+0873: 0.598
+0874: 0.843
+0875: 0.502
+0876: 0.770
+0877: 0.680
+0878: 0.599
+0879: Ours (Success-Only)
+0880: 0.940
+0881: 0.851
+0882: 0.829
+0883: 0.872
+0884: 0.894
+0885: 0.792
+0886: 0.897
+0887: 0.896
+0888: 0.871
+0889: Ours (Full Method)
+0890: 0.970
+0891: 0.909
+0892: 0.863
+0893: 0.916
+0894: 0.958
+0895: 0.870
+0896: 0.903
+0897: 0.924
+0898: 0.914
+0899: Table 1:
+0900: Critic accuracy
+0901: on various tasks from the RoboCasa dataset
+0902: [
+0903: 39
+0904: ]
+0905: . In-distribution (ID) refers to objects
+0906: the VLM has seen during training. Out-of-distribution (OOD) are unseen objects on the same tasks. We report average in-distribution and out-of-distribution accuracy. For fine-tuned methods, we also report OOD accuracy separately. Furthermore, we show that finetuning with success and failure data (Ours) leads to stronger fine-grained progress/failure understanding than just success (Ours Success-only).
+0907: 4.3
+0908: Results
+0909: Q1. Observing subtle failures creates a strong critic.
+0910: Out-of-the-box models have never seen the nuances of how a specific policy can fail, something that is typically only understood after observing several rollouts of success and failures. Consistent with this observation, Tables
+0911: 1
+0912: and
+0913: 2
+0914: show that prompted, off-the-shelf VLMs are unreliable for fine-grained task progress. Our method shows strong ID and OOD accuracy on real and simulation datasets. Furthermore, our method generalizes to new tasks that it was never fine-tuned on, suggesting a promising pretraining strategy for future task learning (full results in Section
+0915: A.2
+0916: ).
+0917: Our fine-tuned critic learns to both de-prioritize actions that move away from the goal (or failures) and prefer states that are closer to task completion. This fine-grained capability is crucial for using critics as practical guidance signals in closed-loop policy selection as we investigate in Section
+0918: 5
+0919: .
+0920: Task
+0921: Gem.
+0922: ROVER
+0923: ProgLM
+0924: Ours
+0925: BimanBike
+0926: .473
+0927: .717
+0928: .443
+0929: .980
+0930: BimanClear
+0931: .492
+0932: .545
+0933: .709
+0934: .988
+0935: BimanSetUp
+0936: .545
+0937: .758
+0938: .613
+0939: .889
+0940: CleanBox
+0941: .510
+0942: .615
+0943: .615
+0944: 1.00
+0945: CutApple
+0946: .697
+0947: .646
+0948: .661
+0949: .919
+0950: PushCoaster
+0951: .608
+0952: .712
+0953: .667
+0954: .885
+0955: PutOnTable
+0956: .510
+0957: .490
+0958: .615
+0959: .778
+0960: TurnUpright
+0961: .596
+0962: .547
+0963: .600
+0964: .763
+0965: Avg.
+0966: .554
+0967: .629
+0968: .615
+0969: .900
+0970: Table 2:
+0971: Critic accuracy
+0972: on the real world LBM dataset.
+0973: Q2. Failure data is necessary for useful critics.
+0974: Our results show that finetuning on only successful rollouts does not teach the critic to recognize failure modes. Critics finetuned only on success leads to a 26% drop in accuracy on success-failure pairs, whereas a critic fine-tuned on both success and failure rollouts yields strong performance on both success-success and success-failure pairs. One explanation for this might be that despite foundation VLMs’ internet knowledge, many robot datasets that exist on the internet are often released for fine-tuning purposes. Therefore, these models may have a strong bias towards videos of robots succeeding at a task. This means common failure modes are under-represented in large pretrained foundation models. Furthermore, generic failure modes are hard to quantify, and policy-specific failures can look very different.
+0975: Q3. Fine-grained Capabilities Comparison.
+0976: To isolate the effect of visual difference magnitude, we evaluate ROVER, ProgressLM, and our method under two sampling regimes. In the
+0977: fine-grained
+0978: regime, we sample query frames with small temporal intervals (
+0979: l
+0980: =
+0981: 16
+0982: ,
+0983: 32
+0984: ,
+0985: 48
+0986: l=16,32,48
+0987: steps
+0988: ≈
+0989: 1
+0990: −
+0991: 5
+0992: ​
+0993: s
+0994: \approx 1-5s
+0995: apart), where differences are subtle. In the
+0996: coarse
+0997: regime, we sample frames at larger intervals at more than seven seconds apart, where visual differences are more pronounced. As the frame interval length decreases, performance for prior methods drops from an average of 73% to 56% across the eight RoboCasa tasks, indicating that these models are more reliable when differences are large (see plot in
+0998: A.1
+0999: ). Practical policy guidance, however, requires performance in the fine-grained regime as well, a regime where our critic excels with only a 2% drop.
+1000: 5
+1001: Critic In-The-Loop Experiments
+1002: Here we test whether these critics translate into closed-loop robot policy improvements in both real-world (Sec
+1003: 5.1
+1004: ) and simulation (Sec
+1005: 5.2
+1006: ) settings.
+1007: To understand the upper bound on our approach, we consider an idealized case, where we had an oracle critic that always picked the best rollout sampled. This improved the policy performance from 31% to 48% (see Section
+1008: B
+1009: for acc-vs-K plot), showing that the base policy does assign significant probability density to successful rollouts, but does not always sample them. This result suggests that, if we can learn a strong critic, we can potentially improve the policy performance substantially.
+1010: 5.1
+1011: Real World Experiments
+1012: Setup.
+1013: We experiment on tabletop manipulation tasks using 7-DoF YAM Pro Arms from I2RT. The workspace is observed by two Intel RealSense D435i cameras placed approximately
+1014: 660
+1015: 660
+1016: mm apart and angled toward the table at roughly
+1017: 45
+1018: ∘
+1019: 45^{\circ}
+1020: . We use the Yam Pro Leader arm to teleoperate the robot to collect data for all real world tasks (Appendix Table
+1021: 5
+1022: details the number of multi modal expert demonstrations we collect per
+1023: task). Random demonstrations show the expert randomly moving in the environment and interacting
+1024: with objects. Only successful demos are used for training the policy, successful and failure demos
+1025: are used for finetuning the VLM critic, and finally successful, failure, and random demos are used
+1026: for finetuning the world model. The breakdown of the finetuning dataset for the VLM critic is shown
+1027: in Appendix Table
+1028: 6
+1029: .
+1030: We evaluate on multiple tasks:
+1031: (i) Stacking a cup onto a block, (ii) Pushing a bowl onto a white place mat, (iii) Pick and Place a Lego block into a brown bowl in the presence of eight distractor objects, and (iv) Pickup Lego. For each task, we collect expert teleoperated demonstrations at
+1032: 30
+1033: 30
+1034: Hz. Details on number of demonstrations per task and model included in Table
+1035: 5
+1036: . All real-world results are evaluated over
+1037: 50
+1038: 50
+1039: trials per task with varying unseen initial conditions as seen in Fig
+1040: 3
+1041: a.
+1042: Figure 3:
+1043: Real-world Evaluation Results
+1044: . (a) Initial states for all eval episodes overlaid - all methods start with the same set of initial states, matched manually with reference images. (b) Critical decision points where the VLM chooses the correct action candidate to lead to success (c) Our method succeeds at the task at the end of the rollout (d) The baseline policy fails at those critical points and therefore fails to complete the task.
+1045: Our base policy
+1046: π
+1047: \pi
+1048: is a CNN-based Diffusion Policy
+1049: [
+1050: 9
+1051: ]
+1052: . We subsample expert trajectories at 10 Hz for training. The policy receives the current robot pose
+1053: and two RealSense camera images at
+1054: 640
+1055: ×
+1056: 360
+1057: 640{\times}360
+1058: , and encodes them using two pretrained ResNet-18 image encoders. It predicts a horizon of
+1059: 32
+1060: 32
+1061: absolute joint-angle actions into the future. During execution, we only execute the first
+1062: 16
+1063: 16
+1064: actions before re-planning. This follows the standard closed-loop policy execution setup, where executing a shorter prefix helps reduce compounding errors from stale predictions.
+1065: The video generation model (Hunyuan1.5)
+1066: [
+1067: 51
+1068: ]
+1069: is finetuned on the successful and failure demonstrations used to train the critic/policy, along with random trajectories. We finetune the model per-task across 8 A100 GPUs.
+1070: At each re-planning step, we sample 100 actions from the base policy. We perform greedy farthest point sampling in weighted joint space where we down weight the gripper contribution by 0.5 (as this often dominates the variance). Each of the
+1071: K
+1072: =
+1073: 5
+1074: K=5
+1075: remaining candidates is rolled forward with the action-conditioned video model, and we use the final frames of the generated videos as the input to the critic. The robot observes the new state and repeats the sample, generate, compare, and execute loop until task completion or a fixed max number of steps.
+1076: Results.
+1077: Table
+1078: 3
+1079: reports real-world policy performance. On all evaluated tasks, our critic improves success rate over the base diffusion policy. We improve Stacking by +18%, and Push Bowl experiments show a 2.3x improvement in mIoU. In the cluttered and difficult settings of Pickup Lego and Pick and Place Lego to bowl, our method improves success rate by +10%/+4%. These results suggest that strong critics can find the needle in the action haystack to improve performance of stochastic policies. For example, in the Lego task, different diffusion samples can lead to visibly different gripper-object alignments as seen in Figure
+1080: 3
+1081: row 3, column b. The critic is able to select the image that shows a stable grasp between the robot gripper and the Lego.
+1082: We also compare our critic against a critic trained without failure rollouts (Success-only), and find that similar to the baseline, the success-only critic achieves 12/50 on the Pickup Lego task and 6/50 on PickPlace Lego to Bowl. This supports our central hypothesis: for critic-in-the-loop policy improvement, it is not sufficient to recognize progress along successful demonstrations. The critic must also learn what failures look like to allow the policy to improve upon its mistakes.
+1083: Finally, we compare the average mean squared error (MSE) between the video generated by the candidate action that the critic chooses to execute and the ground truth observation video that actually rolls out in the real world upon executing
+1084: a
+1085: ∗
+1086: a*
+1087: . On cases where the policy successfully completes the task, the video model scores an average MSE of
+1088: 0.00467
+1089: 0.00467
+1090: across all generated videos along the execution. When the policy fails to complete the task, the video model has a higher MSE of
+1091: 0.00523
+1092: 0.00523
+1093: .
+1094: Diffusion Policy
+1095: Task
+1096: Base
+1097: Ours
+1098: Stacking
+1099: 23 / 50
+1100: 32 / 50
+1101: Push-Bowl
+1102: 0.140 mIoU
+1103: 0.321 mIoU
+1104: Pickup Lego
+1105: 11 / 50
+1106: 16 / 50
+1107: PickPlace Lego To Bowl
+1108: 6 / 50
+1109: 8 / 50
+1110: (a) Real World
+1111: GR00T N1.5
+1112: GR00T N1.5
+1113: Task
+1114: Base
+1115: Ours
+1116: Task
+1117: Base
+1118: Ours
+1119: NavigateKitchen
+1120: 0.040
+1121: ±
+1122: 0.009
+1123: 0.040\pm 0.009
+1124: 0.040
+1125: ±
+1126: 0.009
+1127: 0.040\pm 0.009
+1128: PickPlaceCounterToStove
+1129: 0.696
+1130: ±
+1131: 0.015
+1132: \mathbf{0.696\pm 0.015}
+1133: 0.568
+1134: ±
+1135: 0.020
+1136: 0.568\pm 0.020
+1137: CloseBlenderLid
+1138: 0.072
+1139: ±
+1140: 0.016
+1141: \mathbf{0.072\pm 0.016}
+1142: 0.013
+1143: ±
+1144: 0.007
+1145: 0.013\pm 0.007
+1146: PickPlaceDrawerToCounter
+1147: 0.116
+1148: ±
+1149: 0.021
+1150: 0.116\pm 0.021
+1151: 0.180
+1152: ±
+1153: 0.021
+1154: \mathbf{0.180\pm 0.021}
+1155: CloseFridge
+1156: 0.772
+1157: ±
+1158: 0.031
+1159: 0.772\pm 0.031
+1160: 0.863
+1161: ±
+1162: 0.014
+1163: \mathbf{0.863\pm 0.014}
+1164: PickPlaceSinkToCounter
+1165: 0.888
+1166: ±
+1167: 0.022
+1168: \mathbf{0.888\pm 0.022}
+1169: 0.757
+1170: ±
+1171: 0.022
+1172: 0.757\pm 0.022
+1173: CloseToasterOvenDoor
+1174: 0.356
+1175: ±
+1176: 0.017
+1177: 0.356\pm 0.017
+1178: 0.623
+1179: ±
+1180: 0.032
+1181: \mathbf{0.623\pm 0.032}
+1182: PickPlaceToasterToCounter
+1183: 0.780
+1184: ±
+1185: 0.019
+1186: \mathbf{0.780\pm 0.019}
+1187: 0.729
+1188: ±
+1189: 0.022
+1190: 0.729\pm 0.022
+1191: CoffeeSetupMug
+1192: 0.160
+1193: ±
+1194: 0.028
+1195: 0.160\pm 0.028
+1196: 0.184
+1197: ±
+1198: 0.031
+1199: 0.184\pm 0.031
+1200: SlideDishwasherRack
+1201: 0.300
+1202: ±
+1203: 0.021
+1204: 0.300\pm 0.021
+1205: 0.530
+1206: ±
+1207: 0.018
+1208: \mathbf{0.530\pm 0.018}
+1209: OpenCabinet
+1210: 0.500
+1211: ±
+1212: 0.025
+1213: 0.500\pm 0.025
+1214: 0.552
+1215: ±
+1216: 0.019
+1217: \mathbf{0.552\pm 0.019}
+1218: TurnOffStove
+1219: 0.104
+1220: ±
+1221: 0.021
+1222: 0.104\pm 0.021
+1223: 0.203
+1224: ±
+1225: 0.017
+1226: \mathbf{0.203\pm 0.017}
+1227: OpenDrawer
+1228: 0.544
+1229: ±
+1230: 0.010
+1231: 0.544\pm 0.010
+1232: 0.648
+1233: ±
+1234: 0.019
+1235: \mathbf{0.648\pm 0.019}
+1236: TurnOnElectricKettle
+1237: 0.348
+1238: ±
+1239: 0.016
+1240: 0.348\pm 0.016
+1241: 0.620
+1242: ±
+1243: 0.032
+1244: \mathbf{0.620\pm 0.032}
+1245: OpenStandMixerHead
+1246: 0.588
+1247: ±
+1248: 0.023
+1249: 0.588\pm 0.023
+1250: 0.713
+1251: ±
+1252: 0.015
+1253: \mathbf{0.713\pm 0.015}
+1254: TurnOnMicrowave
+1255: 0.384
+1256: ±
+1257: 0.025
+1258: 0.384\pm 0.025
+1259: 0.427
+1260: ±
+1261: 0.029
+1262: \mathbf{0.427\pm 0.029}
+1263: PickPlaceCounterToCabinet
+1264: 0.760
+1265: ±
+1266: 0.017
+1267: 0.760\pm 0.017
+1268: 0.752
+1269: ±
+1270: 0.030
+1271: 0.752\pm 0.030
+1272: TurnOnSinkFaucet
+1273: 0.440
+1274: ±
+1275: 0.017
+1276: 0.440\pm 0.017
+1277: 0.500
+1278: ±
+1279: 0.013
+1280: \mathbf{0.500\pm 0.013}
+1281: Average
+1282: Base:
+1283: 0.436
+1284: ±
+1285: 0.020
+1286: 0.436\pm 0.020
+1287: Ours:
+1288: 0.495
+1289: ±
+1290: 0.021
+1291: \mathbf{0.495\pm 0.021}
+1292: (b) RoboCasa365
+1293: Table 3:
+1294: Policy results.
+1295: We compare baseline Diffusion Policy and GR00T N1.5 against our critic-guided policies on four real-world and eighteen RoboCasa365 simulation atomic tasks. For RoboCasa365, we report mean success rate
+1296: ±
+1297: \pm
+1298: standard error across 5 runs. The critic selects candidate action proposals from the base policy that help the policy avoid failures, leading to overall improvement in task success rate.
+1299: 5.2
+1300: Simulation Experimental Setup and Results
+1301: Setup.
+1302: Alongside real world experiments, we conduct experiments on the 18 atomic tasks from the official RoboCasa365 simulation framework
+1303: [
+1304: 40
+1305: ]
+1306: . Our base policy
+1307: π
+1308: \pi
+1309: is a multi-task language-conditioned policy. We use the publicly released Robocasa365 checkpoint which starts from pretrained checkpoints released by NVIDIA Isaac GR00T N1.5
+1310: [
+1311: 41
+1312: ]
+1313: . This multi-task policy is trained on data across 300 tasks, comprising 65 atomic tasks and 235 composite tasks. For each task, 100 task demonstrations per task are used, resulting in 482 hours of total data.
+1314: We follow the Robocasa365 setup by evaluating on the pretrain scenes. To gather failure demonstrations,
+1315: we rollout GR00T N1.5 on 50 different initial conditions across 5 different seeds from the pretraining set, following the protocol in Robocasa365 benchmarking. Of these 250 rollouts, the policy exhibits variance, creating a dataset of failures to train the VLM critic. The breakdown of total (train and validation) number of demonstrations and number
+1316: of success/failure pairs before balancing are provided in Appendix Table
+1317: 6
+1318: . We follow the same evaluation parameters with an action horizon of 16 and standard closed-loop policy execution setup. We train a multi-task critic with the same procedure as in real. Candidate videos are rendered by the simulator for these tasks. We use the same hyperparameters as real for critic-in-the-loop with N=100, K=5, and greedy farthest point sampling.
+1319: Results.
+1320: As seen in Table
+1321: 3
+1322: , across all tasks, our critic in-the-loop achieves 49.5% success rate compared to baseline GR00T N1.5 of 43.6%, an average gain of +5.9%. Our method shows significant improvements in tasks that require pushing/pulling buttons, doors, and levers.
+1323: 5.3
+1324: Limitations
+1325: Weak action-conditioned video model predictions can cause failures. For example, we sometimes see the model hallucinate grasping the Lego in the predicted video when the real-world rollout fails to grasp, or the bowl pushed to a slightly different end location than the ground truth. We expect these errors to reduce as video models improve. The video model takes
+1326: ∼
+1327: \sim
+1328: 25 seconds to synthesize five videos in parallel (across 8 A100 GPUs and 10 inference steps), and the critic takes
+1329: ∼
+1330: \sim
+1331: 1 second to generate all pair-wise rankings in parallel (across 8 A100 GPUs). We expect the video model’s latency to reduce as faster implementations are developed.
+1332: 6
+1333: Conclusion
+1334: We studied a method to finetune VLM critics for pairwise progress/failure detection by using success and failure rollouts. The resulting critic substantially improves offline accuracy in simulation and on a real-world rollout dataset, particularly on success–failure discrimination. We put these critics into closed-loop policies to select between several candidate future states generated from an action-conditioned video model, improving average policy success rate by 11% across real-world tasks and 5.9% across simulation tasks.
+1335: Acknowledgments
+1336: We thank Matei Ciocarlie and Huy Ha for key discussions. This research is based on work partially supported by the Toyota Research Institute and NSF awards #2046910 and #2132519. This work is also partially supported by the funds provided by the National Science Foundation and by DoD OUSD (R&E) under Cooperative Agreement PHY-2229929 (The NSF AI Institute for Artificial and Natural Intelligence).
+1337: References
+1338: [1]
+1339: A. Agrawal, J. Lu, S. Antol, M. Mitchell, C. L. Zitnick, D. Parikh, and D. Batra
+1340: (2015)
+1341: VQA: visual question answering
+1342: .
+1343: International Journal of Computer Vision
+1344: 123
+1345: ,
+1346: pp. 4 – 31
+1347: .
+1348: External Links:
+1349: Link
+1350: Cited by:
+1351: §2
+1352: .
+1353: [2]
+1354: M. Ahn, A. Brohan, N. Brown, Y. Chebotar, O. Cortes, B. David, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, D. Ho, J. Hsu, J. Ibarz, B. Ichter, A. Irpan, E. Jang, R. M. J. Ruano, K. Jeffrey, S. Jesmonth, N. J. Joshi, R. C. Julian, D. Kalashnikov, Y. Kuang, K. Lee, S. Levine, Y. Lu, L. Luu, C. Parada, P. Pastor, J. Quiambao, K. Rao, J. Rettinghouse, D. M. Reyes, P. Sermanet, N. Sievers, C. Tan, A. Toshev, V. Vanhoucke, F. Xia, T. Xiao, P. Xu, S. Xu, and M. Yan
+1355: (2022)
+1356: Do as i can, not as i say: grounding language in robotic affordances
+1357: .
+1358: In
+1359: Conference on Robot Learning
+1360: ,
+1361: External Links:
+1362: Link
+1363: Cited by:
+1364: §2
+1365: .
+1366: [3]
+1367: J. Alayrac, J. Donahue, P. Luc, A. Miech, I. Barr, Y. Hasson, K. Lenc, A. Mensch, K. Millican, M. Reynolds,
+1368: et al.
+1369: (2022)
+1370: Flamingo: a visual language model for few-shot learning
+1371: .
+1372: Advances in neural information processing systems
+1373: 35
+1374: ,
+1375: pp. 23716–23736
+1376: .
+1377: Cited by:
+1378: §1
+1379: .
+1380: [4]
+1381: S. Bai, K. Chen, X. Liu, J. Wang, W. Ge, S. Song, K. Dang, P. Wang, S. Wang, J. Tang, H. Zhong, Y. Zhu, M. Yang, Z. Li, J. Wan, P. Wang, W. Ding, Z. Fu, Y. Xu, J. Ye, X. Zhang, T. Xie, Z. Cheng, H. Zhang, Z. Yang, H. Xu, and J. Lin
+1382: (2025)
+1383: Qwen2.5-vl technical report
+1384: .
+1385: ArXiv
+1386: abs/2502.13923
+1387: .
+1388: External Links:
+1389: Link
+1390: Cited by:
+1391: §1
+1392: ,
+1393: §4.2
+1394: .
+1395: [5]
+1396: L. Beyer, A. Steiner, A. S. Pinto, A. Kolesnikov, X. Wang, D. Salz, M. Neumann, I. Alabdulmohsin, M. Tschannen, E. Bugliarello,
+1397: et al.
+1398: (2024)
+1399: Paligemma: a versatile 3b vlm for transfer
+1400: .
+1401: arXiv preprint arXiv:2407.07726
+1402: .
+1403: Cited by:
+1404: §2
+1405: .
+1406: [6]
+1407: K. Black, M. Y. Galliker, and S. Levine
+1408: (2025)
+1409: Real-time execution of action chunking flow policies
+1410: .
+1411: arXiv preprint arXiv:2506.07339
+1412: .
+1413: Cited by:
+1414: §2
+1415: .
+1416: [7]
+1417: R. A. Bradley and M. E. Terry
+1418: (1952)
+1419: Rank analysis of incomplete block designs: i. the method of paired comparisons
+1420: .
+1421: Biometrika
+1422: 39
+1423: (
+1424: 3/4
+1425: ),
+1426: pp. 324–345
+1427: .
+1428: Cited by:
+1429: §2
+1430: .
+1431: [8]
+1432: J. Cao, Y. Huang, H. Guo, R. Zhang, M. Nan, W. Mai, J. Wang, H. Cheng, J. Sun, G. Han,
+1433: et al.
+1434: (2025)
+1435: Compose your policies! improving diffusion-based or flow-based robot policies via test-time distribution-level composition
+1436: .
+1437: arXiv preprint arXiv:2510.01068
+1438: .
+1439: Cited by:
+1440: §2
+1441: .
+1442: [9]
+1443: C. Chi, S. Feng, Y. Du, Z. Xu, E. Cousineau, B. Burchfiel, and S. Song
+1444: (2023)
+1445: Diffusion policy: visuomotor policy learning via action diffusion
+1446: .
+1447: The International Journal of Robotics Research
+1448: 44
+1449: ,
+1450: pp. 1684 – 1704
+1451: .
+1452: External Links:
+1453: Link
+1454: Cited by:
+1455: §C.2
+1456: ,
+1457: §5.1
+1458: .
+1459: [10]
+1460: C. Chi, Z. Xu, C. Pan, E. Cousineau, B. Burchfiel, S. Feng, R. Tedrake, and S. Song
+1461: (2024)
+1462: Universal manipulation interface: in-the-wild robot teaching without in-the-wild robots
+1463: .
+1464: ArXiv
+1465: abs/2402.10329
+1466: .
+1467: External Links:
+1468: Link
+1469: Cited by:
+1470: §2
+1471: .
+1472: [11]
+1473: P. Christiano, J. Leike, T. B. Brown, M. Martic, S. Legg, and D. Amodei
+1474: (2023)
+1475: Deep reinforcement learning from human preferences
+1476: .
+1477: External Links:
+1478: 1706.03741
+1479: ,
+1480: Link
+1481: Cited by:
+1482: §2
+1483: .
+1484: [12]
+1485: D. Driess, F. Xia, M. S. Sajjadi, C. Lynch, A. Chowdhery, B. Ichter, A. Wahid, J. Tompson, Q. Vuong, T. Yu,
+1486: et al.
+1487: (2023)
+1488: Palm-e: an embodied multimodal language model
+1489: .
+1490: arXiv preprint arXiv:2303.03378
+1491: .
+1492: Cited by:
+1493: §1
+1494: ,
+1495: §2
+1496: .
+1497: [13]
+1498: M. Du and S. Song
+1499: (2025)
+1500: DynaGuide: steering diffusion polices with active dynamic guidance
+1501: .
+1502: ArXiv
+1503: abs/2506.13922
+1504: .
+1505: External Links:
+1506: Link
+1507: Cited by:
+1508: §2
+1509: .
+1510: [14]
+1511: Y. Du, K. Konyushkova, M. Denil, A. Raju, J. Landon, F. Hill, N. de Freitas, and S. Cabi
+1512: (2023)
+1513: Vision-language models as success detectors
+1514: .
+1515: ArXiv
+1516: abs/2303.07280
+1517: .
+1518: External Links:
+1519: Link
+1520: Cited by:
+1521: §2
+1522: .
+1523: [15]
+1524: J. Duan, W. Pumacay, N. Kumar, Y. R. Wang, S. Tian, W. Yuan, R. Krishna, D. Fox, A. Mandlekar, and Y. Guo
+1525: (2024)
+1526: AHA: a vision-language-model for detecting and reasoning over failures in robotic manipulation
+1527: .
+1528: ArXiv
+1529: abs/2410.00371
+1530: .
+1531: External Links:
+1532: Link
+1533: Cited by:
+1534: §2
+1535: .
+1536: [16]
+1537: G. C. et al.
+1538: (2025)
+1539: Gemini 2.5: pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities
+1540: .
+1541: ArXiv
+1542: abs/2507.06261
+1543: .
+1544: External Links:
+1545: Link
+1546: Cited by:
+1547: §1
+1548: ,
+1549: §4.2
+1550: .
+1551: [17]
+1552: C. Finn, I. J. Goodfellow, and S. Levine
+1553: (2016)
+1554: Unsupervised learning for physical interaction through video prediction
+1555: .
+1556: ArXiv
+1557: abs/1605.07157
+1558: .
+1559: External Links:
+1560: Link
+1561: Cited by:
+1562: §3.2
+1563: .
+1564: [18]
+1565: C. Finn and S. Levine
+1566: (2017)
+1567: Deep visual foresight for planning robot motion
+1568: .
+1569: In
+1570: 2017 IEEE international conference on robotics and automation (ICRA)
+1571: ,
+1572: pp. 2786–2793
+1573: .
+1574: Cited by:
+1575: §2
+1576: .
+1577: [19]
+1578: J. Gao, B. Sarkar, F. Xia, T. Xiao, J. Wu, B. Ichter, A. Majumdar, and D. Sadigh
+1579: (2023)
+1580: Physically grounded vision-language models for robotic manipulation
+1581: .
+1582: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+1583: ,
+1584: pp. 12462–12469
+1585: .
+1586: External Links:
+1587: Link
+1588: Cited by:
+1589: §2
+1590: .
+1591: [20]
+1592: S. Gao, W. Liang, K. Zheng, A. Malik, S. Ye, S. Yu, W. Tseng, Y. Dong, K. Mo, C. Lin,
+1593: et al.
+1594: (2026)
+1595: DreamDojo: a generalist robot world model from large-scale human videos
+1596: .
+1597: arXiv preprint arXiv:2602.06949
+1598: .
+1599: Cited by:
+1600: §2
+1601: .
+1602: [21]
+1603: W. Guo, G. Lu, H. Deng, Z. Wu, Y. Tang, and Z. Wang
+1604: (2025)
+1605: Vla-reasoner: empowering vision-language-action models with reasoning via online monte carlo tree search
+1606: .
+1607: arXiv preprint arXiv:2509.22643
+1608: .
+1609: Cited by:
+1610: §2
+1611: .
+1612: [22]
+1613: D. A. Hudson and C. D. Manning
+1614: (2019)
+1615: GQA: a new dataset for real-world visual reasoning and compositional question answering
+1616: .
+1617: 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+1618: ,
+1619: pp. 6693–6702
+1620: .
+1621: External Links:
+1622: Link
+1623: Cited by:
+1624: §2
+1625: .
+1626: [23]
+1627: K. Hung, P. Lo, J. Yeh, H. Hsu, Y. Chen, and W. H. Hsu
+1628: (2024)
+1629: VICtoR: learning hierarchical vision-instruction correlation rewards for long-horizon manipulation
+1630: .
+1631: ArXiv
+1632: abs/2405.16545
+1633: .
+1634: External Links:
+1635: Link
+1636: Cited by:
+1637: §2
+1638: .
+1639: [24]
+1640: P. Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, M. Y. Galliker, D. Ghosh, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, D. LeBlanc, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, J. Tanner, Q. Vuong, H. R. Walke, A. Walling, H. Wang, L. Yu, and U. Zhilinsky
+1641: (2025)
+1642: π
+1643: \pi
+1644: 0.5: a vision-language-action model with open-world generalization
+1645: .
+1646: ArXiv
+1647: abs/2504.16054
+1648: .
+1649: External Links:
+1650: Link
+1651: Cited by:
+1652: §2
+1653: .
+1654: [25]
+1655: S. Jang, D. Kim, C. Kim, Y. Kim, and J. Shin
+1656: (2025)
+1657: Verifier-free test-time sampling for vision language action models
+1658: .
+1659: arXiv preprint arXiv:2510.05681
+1660: .
+1661: Cited by:
+1662: §2
+1663: .
+1664: [26]
+1665: A. Khazatsky, K. Pertsch, S. Nair, A. Balakrishna, S. Dasari, S. Karamcheti, S. Nasiriany, M. K. Srirama, L. Y. Chen, K. Ellis, P. Fagan, J. Hejna, M. Itkina, M. Lepert, Y. Ma, P. T. Miller, J. Wu, S. Belkhale, S. Dass, H. Ha, A. Jain, A. Lee, Y. Lee, M. Memmel, S. Y. Park, I. Radosavovic, K. Wang, A. Zhan, K. Black, C. Chi, K. B. Hatch, S. Lin, J. Lu, J. Mercat, A. Rehman, P. R. Sanketi, A. Sharma, C. B. Simpson, Q. U. Vương, H. R. Walke, B. Wulfe, T. Xiao, J. H. Yang, A. Yavary, T. Zhao, C. Agia, R. Baijal, M. G. Castro, D. L. Chen, Q. Chen, T. Chung, J. Drake, E. P. Foster, J. Gao, D. A. Herrera, M. Heo, K. Hsu, J. Hu, M. Z. Irshad, D. Jackson, C. Le, Y. Li, K. Lin, R. Lin, Z. Ma, A. Maddukuri, S. Mirchandani, D. Morton, T. Nguyen, A. O’Neill, R. M. Scalise, D. Seale, V. Son, S. Tian, E. Tran, A. Wang, Y. Wu, A. Xie, J. Yang, P. Yin, Y. Zhang, O. Bastani, G. Berseth, J. Bohg, K. Goldberg, A. Gupta, A. Gupta, D. Jayaraman, J. J. Lim, J. Malik, R. Mart’in-Mart’in, S. Ramamoorthy, D. Sadigh, S. Song, J. Wu, M. C. Yip, Y. Zhu, T. Kollar, S. Levine, and C. Finn
+1666: (2024)
+1667: DROID: a large-scale in-the-wild robot manipulation dataset
+1668: .
+1669: ArXiv
+1670: abs/2403.12945
+1671: .
+1672: External Links:
+1673: Link
+1674: Cited by:
+1675: §2
+1676: .
+1677: [27]
+1678: H. Kress-Gazit, K. Hashimoto, N. Kuppuswamy, P. Shah, P. Horgan, G. Richardson, S. Feng, and B. Burchfiel
+1679: (2024)
+1680: Robot learning as an empirical science: best practices for policy evaluation
+1681: .
+1682: ArXiv
+1683: abs/2409.09491
+1684: .
+1685: External Links:
+1686: Link
+1687: Cited by:
+1688: §2
+1689: .
+1690: [28]
+1691: H. Li, K. Lei, S. Zang, K. Hu, Y. Liang, B. An, X. Li, and H. Xu
+1692: (2026)
+1693: Failure-aware rl: reliable offline-to-online reinforcement learning with self-recovery for real-world manipulation
+1694: .
+1695: External Links:
+1696: 2601.07821
+1697: ,
+1698: Link
+1699: Cited by:
+1700: §2
+1701: .
+1702: [29]
+1703: Y. Li and A. Torralba
+1704: (2025)
+1705: MultiModal action conditioned video generation
+1706: .
+1707: External Links:
+1708: 2510.02287
+1709: ,
+1710: Link
+1711: Cited by:
+1712: §3.2
+1713: .
+1714: [30]
+1715: A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. Huang, L. S. Zettlemoyer, D. Fox, Y. Xiang, A. Li, A. Bobu, A. Gupta, S. Tu, E. Biyik, and J. Zhang
+1716: (2026)
+1717: Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+1718: .
+1719: External Links:
+1720: Link
+1721: Cited by:
+1722: §2
+1723: .
+1724: [31]
+1725: J. Liang, W. Huang, F. Xia, P. Xu, K. Hausman, B. Ichter, P. R. Florence, and A. Zeng
+1726: (2022)
+1727: Code as policies: language model programs for embodied control
+1728: .
+1729: 2023 IEEE International Conference on Robotics and Automation (ICRA)
+1730: ,
+1731: pp. 9493–9500
+1732: .
+1733: External Links:
+1734: Link
+1735: Cited by:
+1736: §2
+1737: .
+1738: [32]
+1739: J. Liang, R. Liu, E. Ozguroglu, S. Sudhakar, A. Dave, P. Tokmakov, S. Song, and C. Vondrick
+1740: (2024)
+1741: Dreamitate: real-world visuomotor policy learning via video generation
+1742: .
+1743: External Links:
+1744: 2406.16862
+1745: Cited by:
+1746: §2
+1747: .
+1748: [33]
+1749: J. Liang, P. Tokmakov, R. Liu, S. Sudhakar, P. Shah, R. Ambrus, and C. Vondrick
+1750: (2025)
+1751: Video generators are robot policies
+1752: .
+1753: External Links:
+1754: 2508.00795
+1755: ,
+1756: Link
+1757: Cited by:
+1758: §2
+1759: .
+1760: [34]
+1761: Z. Lin, J. Duan, H. Fang, D. Fox, R. Krishna, C. Tan, and B. Wen
+1762: (2025)
+1763: FailSafe: reasoning and recovery from failures in vision-language-action models
+1764: .
+1765: External Links:
+1766: 2510.01642
+1767: ,
+1768: Link
+1769: Cited by:
+1770: §2
+1771: .
+1772: [35]
+1773: H. Liu, C. Li, Q. Wu, and Y. J. Lee
+1774: (2023)
+1775: Visual instruction tuning
+1776: .
+1777: Advances in neural information processing systems
+1778: 36
+1779: ,
+1780: pp. 34892–34916
+1781: .
+1782: Cited by:
+1783: §1
+1784: .
+1785: [36]
+1786: Y. J. Ma, J. Hejna, A. Wahid, C. Fu, D. Shah, J. Liang, Z. Xu, S. Kirmani, P. Xu, D. Driess, T. Xiao, J. Tompson, O. Bastani, D. Jayaraman, W. Yu, T. Zhang, D. Sadigh, and F. Xia
+1787: (2024)
+1788: Vision language models are in-context value learners
+1789: .
+1790: ArXiv
+1791: abs/2411.04549
+1792: .
+1793: External Links:
+1794: Link
+1795: Cited by:
+1796: §1
+1797: ,
+1798: §2
+1799: ,
+1800: §4.2
+1801: .
+1802: [37]
+1803: Y. J. Ma, W. Liang, V. Som, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+1804: (2023)
+1805: LIV: language-image representations and rewards for robotic control
+1806: .
+1807: In
+1808: International Conference on Machine Learning
+1809: ,
+1810: External Links:
+1811: Link
+1812: Cited by:
+1813: §2
+1814: .
+1815: [38]
+1816: M. Nakamoto, O. Mees, A. Kumar, and S. Levine
+1817: (2025)
+1818: Steering your generalists: improving robotic foundation models via value guidance
+1819: .
+1820: External Links:
+1821: 2410.13816
+1822: ,
+1823: Link
+1824: Cited by:
+1825: §2
+1826: .
+1827: [39]
+1828: S. Nasiriany, A. Maddukuri, L. Zhang, A. Parikh, A. Lo, A. Joshi, A. Mandlekar, and Y. Zhu
+1829: (2024)
+1830: RoboCasa: large-scale simulation of everyday tasks for generalist robots
+1831: .
+1832: ArXiv
+1833: abs/2406.02523
+1834: .
+1835: External Links:
+1836: Link
+1837: Cited by:
+1838: §4.1
+1839: ,
+1840: Table 1
+1841: .
+1842: [40]
+1843: S. Nasiriany, S. Nasiriany, A. Maddukuri, and Y. Zhu
+1844: (2026)
+1845: RoboCasa365: a large-scale simulation framework for training and benchmarking generalist robots
+1846: .
+1847: External Links:
+1848: 2603.04356
+1849: ,
+1850: Link
+1851: Cited by:
+1852: §5.2
+1853: .
+1854: [41]
+1855: NVIDIA, J. Bjorck, N. C. Fernando Castañeda, X. Da, R. Ding, L. ”. Fan, Y. Fang, D. Fox, F. Hu, S. Huang, J. Jang, Z. Jiang, J. Kautz, K. Kundalia, L. Lao, Z. Li, Z. Lin, K. Lin, G. Liu, E. Llontop, L. Magne, A. Mandlekar, A. Narayan, S. Nasiriany, S. Reed, Y. L. Tan, G. Wang, Z. Wang, J. Wang, Q. Wang, J. Xiang, Y. Xie, Y. Xu, Z. Xu, S. Ye, Z. Yu, A. Zhang, H. Zhang, Y. Zhao, R. Zheng, and Y. Zhu
+1856: (2025)
+1857: GR00T N1: an open foundation model for generalist humanoid robots
+1858: .
+1859: In
+1860: ArXiv Preprint
+1861: ,
+1862: External Links:
+1863: 2503.14734
+1864: Cited by:
+1865: §C.2
+1866: ,
+1867: §5.2
+1868: .
+1869: [42]
+1870: P. Pacaud, R. Garcia, S. Chen, and C. Schmid
+1871: (2025)
+1872: Guardian: detecting robotic planning and execution errors with vision-language models
+1873: .
+1874: ArXiv
+1875: abs/2512.01946
+1876: .
+1877: External Links:
+1878: Link
+1879: Cited by:
+1880: §2
+1881: .
+1882: [43]
+1883: A. Padalkar, A. Pooley, A. Jain, A. Bewley, A. Herzog, A. Irpan, A. Khazatsky, A. Rai, A. Singh, A. Brohan, A. Raffin, A. Wahid, B. Burgess-Limerick, B. Kim, B. Schölkopf, B. Ichter, C. Lu, C. Xu, C. Finn, C. Xu, C. Chi, C. Huang, C. Chan, C. Pan, C. Fu, C. Devin, D. Driess, D. Pathak, D. Shah, D. Büchler, D. Kalashnikov, D. Sadigh, E. Johns, F. Ceola, F. Xia, F. Stulp, G. Zhou, G. S. Sukhatme, G. Salhotra, G. Yan, G. Schiavi, H. Su, H. Fang, H. Shi, H. B. Amor, H. I. Christensen, H. Furuta, H. R. Walke, H. Fang, I. Mordatch, I. Radosavovic, I. Leal, J. Liang, J. Kim, J. Schneider, J. Hsu, J. Bohg, J. Bingham, J. Wu, J. Wu, J. Luo, J. Gu, J. Tan, J. Oh, J. Malik, J. Tompson, J. Yang, J. J. Lim, J. Silvério, J. Han, K. Rao, K. Pertsch, K. Hausman, K. Go, K. Gopalakrishnan, K. Goldberg, K. Byrne, K. Oslund, K. Kawaharazuka, K. Zhang, K. Majd, K. Rana, K. P. Srinivasan, L. Y. Chen, L. Pinto, L. Tan, L. Ott, L. Lee, M. Tomizuka, M. Du, M. Ahn, M. Zhang, M. Ding, M. K. Srirama, M. Sharma, M. J. Kim, M. Z. Irshad, N. Kanazawa, N. Hansen, N. M. O. Heess, N. J. Joshi, N. Suenderhauf, N. D. Palo, N. M. Shafiullah, O. Mees, O. Kroemer, P. R. Sanketi, P. Wohlhart, P. Xu, P. Sermanet, P. Sundaresan, Q. H. Vuong, R. Rafailov, R. Tian, R. Doshi, R. Mendonca, R. Shah, R. Hoque, R. C. Julian, S. Bustamante, S. Kirmani, S. Levine, S. Moore, S. Bahl, S. Dass, S. Song, S. Xu, S. Haldar, S. Adebola, S. Guist, S. Nasiriany, S. Schaal, S. Welker, S. Tian, S. Dasari, S. Belkhale, T. Osa, T. Harada, T. Matsushima, T. Xiao, T. Yu, T. Ding, T. Davchev, T. Zhao, T. Armstrong, T. Darrell, V. Jain, V. Vanhoucke, W. Zhan, W. Zhou, W. Burgard, X. Chen, X. Wang, X. Zhu, X. Li, Y. Lu, Y. Chebotar, Y. Zhou, Y. Zhu, Y. Xu, Y. Wang, Y. Bisk, Y. Cho, Y. Lee, Y. Cui, Y. Wu, Y. Tang, Y. Zhu, Y. Li, Y. Iwasawa, Y. Matsuo, Z. Xu, and Z. J. Cui
+1884: (2023)
+1885: Open x-embodiment: robotic learning datasets and rt-x models : open x-embodiment collaboration0
+1886: .
+1887: 2024 IEEE International Conference on Robotics and Automation (ICRA)
+1888: ,
+1889: pp. 6892–6903
+1890: .
+1891: External Links:
+1892: Link
+1893: Cited by:
+1894: §2
+1895: .
+1896: [44]
+1897: J. Park, J. Yoon, B. Jeon, J. Park, J. Shin, N. Cho, K. Lee, S. Yun, and S. Choi
+1898: (2025)
+1899: Hierarchical vision language action model using success and failure demonstrations
+1900: .
+1901: External Links:
+1902: 2512.03913
+1903: ,
+1904: Link
+1905: Cited by:
+1906: §2
+1907: .
+1908: [45]
+1909: W. Pumacay, I. Singh, J. Duan, R. Krishna, J. Thomason, and D. Fox
+1910: (2024)
+1911: THE colosseum: a benchmark for evaluating generalization for robotic manipulation
+1912: .
+1913: ArXiv
+1914: abs/2402.08191
+1915: .
+1916: External Links:
+1917: Link
+1918: Cited by:
+1919: §2
+1920: .
+1921: [46]
+1922: H. Qi, H. Yin, Y. Du, and H. Yang
+1923: (2025)
+1924: Strengthening generative robot policies through predictive world modeling
+1925: .
+1926: ArXiv
+1927: abs/2502.00622
+1928: .
+1929: External Links:
+1930: Link
+1931: Cited by:
+1932: §2
+1933: .
+1934: [47]
+1935: P. Schroeder, O. Biza, T. Weng, H. Luo, and J. R. Glass
+1936: (2025)
+1937: ROVER: recursive reasoning over videos with vision-language models for embodied tasks
+1938: .
+1939: ArXiv
+1940: abs/2508.01943
+1941: .
+1942: External Links:
+1943: Link
+1944: Cited by:
+1945: §1
+1946: ,
+1947: §2
+1948: ,
+1949: §4.2
+1950: .
+1951: [48]
+1952: T. L. Team, J. Barreiros, A. Beaulieu, A. Bhat, R. Cory, E. Cousineau, H. Dai, C. Fang, K. Hashimoto, M. Z. Irshad, M. Itkina, N. Kuppuswamy, K. Lee, K. Liu, D. Mcconachie, I. McMahon, H. Nishimura, C. Phillips-Grafflin, C. Richter, P. Shah, K. P. Srinivasan, B. Wulfe, C. Xu, M. Zhang, A. Alspach, M. Angeles, K. Arora, V. Guizilini, A. M. Castro, D. Chen, T. Chu, S. Creasey, S. Curtis, R. Denitto, E. Dixon, E. Dusel, M. B. R. Ferreira, A. Goncalves, G. E. Gould, D. Guoy, S. Gupta, X. Han, K. Hatch, B. Hathaway, A. Henry, H. Hochsztein, P. Horgan, S. Iwase, D. Jackson, S. Karamcheti, S. S. Keh, J. Masterjohn, J. Mercat, P. T. Miller, P. C. Mitiguy, T. K. Nguyen, J. W. Nimmer, Y. Noguchi, R. Ong, A. O. Onol, O. Pfannenstiehl, R. Poyner, L. P. M. Rocha, G. Richardson, C. Rodriguez, D. Seale, M. Sherman, M. Smith-Jones, D. Tago, P. Tokmakov, M. T. Tran, B. V. Hoorick, I. Vasiljevic, S. Zakharov, M. Zolotas, R. Ambrus, K. Fetzer-Borelli, B. Burchfiel, H. Kress-Gazit, S. Feng, S. Ford, and R. Tedrake
+1953: (2025)
+1954: A careful examination of large behavior models for multitask dexterous manipulation
+1955: .
+1956: ArXiv
+1957: abs/2507.05331
+1958: .
+1959: External Links:
+1960: Link
+1961: Cited by:
+1962: §4.1
+1963: .
+1964: [49]
+1965: Y. Wang, L. Wang, Y. Du, B. Sundaralingam, X. Yang, Y. Chao, C. Pérez-D’Arpino, D. Fox, and J. A. Shah
+1966: (2024)
+1967: Inference-time policy steering through human interactions
+1968: .
+1969: 2025 IEEE International Conference on Robotics and Automation (ICRA)
+1970: ,
+1971: pp. 15626–15633
+1972: .
+1973: External Links:
+1974: Link
+1975: Cited by:
+1976: §2
+1977: .
+1978: [50]
+1979: Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson
+1980: (2024)
+1981: RL-vlm-f: reinforcement learning from vision language foundation model feedback
+1982: .
+1983: In
+1984: International Conference on Machine Learning
+1985: ,
+1986: External Links:
+1987: Link
+1988: Cited by:
+1989: §2
+1990: .
+1991: [51]
+1992: B. Wu, C. Zou, C. Li, D. Huang, F. Yang, H. Tan, J. Peng, J. Wu, J. Xiong, J. Jiang, Linus, Patrol, P. Zhang, P. Chen, P. Zhao, Q. Tian, S. Liu, W. Kong, W. Wang, X. He, X. Li, X. Deng, X. Zhe, Y. Li, Y. Long, Y. Peng, Y. Wu, Y. Liu, Z. Wang, Z. Dai, B. Peng, C. Li, G. Gong, G. Xiao, J. Tian, J. Lin, J. Liu, J. Zhang, J. Lian, K. Pan, L. Wang, L. Niu, M. Chen, M. Chen, M. Zheng, M. Yang, Q. Hu, Q. Yang, Q. Xiao, R. Wu, R. Xu, R. Yuan, S. Sang, S. Huang, S. Gong, S. Huang, W. Guo, X. Yuan, X. Chen, X. Hu, W. Sun, X. Wu, X. Ren, X. Yuan, X. Mi, Y. Zhang, Y. Sun, Y. Lu, Y. Li, Y. Huang, Y. Tang, Y. Li, Y. Deng, Y. Zhou, Z. Hu, Z. Liu, Z. Yang, Z. Yang, Z. Lu, Z. Zhou, and Z. Zhong
+1993: (2025)
+1994: HunyuanVideo 1.5 technical report
+1995: .
+1996: External Links:
+1997: 2511.18870
+1998: ,
+1999: Link
+2000: Cited by:
+2001: §C.3
+2002: ,
+2003: §C.3
+2004: ,
+2005: §3.2
+2006: ,
+2007: §5.1
+2008: .
+2009: [52]
+2010: W. Wu, F. Lu, Y. Wang, S. Yang, S. Liu, F. Wang, Q. Zhu, H. Sun, Y. Wang, S. Ma,
+2011: et al.
+2012: (2026)
+2013: A pragmatic vla foundation model
+2014: .
+2015: arXiv preprint arXiv:2601.18692
+2016: .
+2017: Cited by:
+2018: §2
+2019: .
+2020: [53]
+2021: Y. Wu, R. Tian, G. Swamy, and A. Bajcsy
+2022: (2025)
+2023: From foresight to forethought: vlm-in-the-loop policy steering via latent alignment
+2024: .
+2025: ArXiv
+2026: abs/2502.01828
+2027: .
+2028: External Links:
+2029: Link
+2030: Cited by:
+2031: §1
+2032: ,
+2033: §2
+2034: .
+2035: [54]
+2036: H. Xie, B. Wen, J. Zheng, Z. Chen, F. Hong, H. Diao, and Z. Liu
+2037: (2026)
+2038: DynamicVLA: a vision-language-action model for dynamic object manipulation
+2039: .
+2040: arXiv preprint arXiv:2601.22153
+2041: .
+2042: Cited by:
+2043: §2
+2044: .
+2045: [55]
+2046: C. Xu, T. K. Nguyen, E. Dixon, C. Rodriguez, P. Miller, R. Lee, P. Shah, R. Ambrus, H. Nishimura, and M. Itkina
+2047: (2025)
+2048: Can we detect failures without failure data? uncertainty-aware runtime failure detection for imitation learning policies
+2049: .
+2050: External Links:
+2051: 2503.08558
+2052: ,
+2053: Link
+2054: Cited by:
+2055: §2
+2056: .
+2057: [56]
+2058: Z. Xue, J. An, X. Yang, and K. Grauman
+2059: (2024)
+2060: Progress-aware video frame captioning
+2061: .
+2062: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2063: ,
+2064: pp. 13639–13650
+2065: .
+2066: External Links:
+2067: Link
+2068: Cited by:
+2069: §2
+2070: .
+2071: [57]
+2072: S. Yang, Y. Du, K. Ghasemipour, J. Tompson, L. Kaelbling, D. Schuurmans, and P. Abbeel
+2073: (2024)
+2074: Learning interactive real-world simulators
+2075: .
+2076: External Links:
+2077: 2310.06114
+2078: ,
+2079: Link
+2080: Cited by:
+2081: §3.2
+2082: .
+2083: [58]
+2084: X. Yue, Y. Ni, K. Zhang, T. Zheng, R. Liu, G. Zhang, S. Stevens, D. Jiang, W. Ren, Y. Sun, C. Wei, B. Yu, R. Yuan, R. Sun, M. Yin, B. Zheng, Z. Yang, Y. Liu, W. Huang, H. Sun, Y. Su, and W. Chen
+2085: (2023)
+2086: MMMU: a massive multi-discipline multimodal understanding and reasoning benchmark for expert agi
+2087: .
+2088: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2089: ,
+2090: pp. 9556–9567
+2091: .
+2092: External Links:
+2093: Link
+2094: Cited by:
+2095: §2
+2096: .
+2097: [59]
+2098: S. Zhai, Q. Zhang, T. Zhang, F. Huang, H. Zhang, M. Zhou, S. Zhang, L. Liu, S. Lin, and J. Pang
+2099: (2025)
+2100: A vision-language-action-critic model for robotic real-world reinforcement learning
+2101: .
+2102: ArXiv
+2103: abs/2509.15937
+2104: .
+2105: External Links:
+2106: Link
+2107: Cited by:
+2108: §2
+2109: .
+2110: [60]
+2111: J. Zhang, C. Qian, H. Sun, H. Lu, D. Wang, L. Xue, and H. Liu
+2112: (2026)
+2113: PROGRESSLM: towards progress reasoning in vision-language models
+2114: .
+2115: ArXiv
+2116: abs/2601.15224
+2117: .
+2118: External Links:
+2119: Link
+2120: Cited by:
+2121: §1
+2122: ,
+2123: §2
+2124: ,
+2125: §4.2
+2126: .
+2127: [61]
+2128: W. Zhao, J. Chen, Z. Meng, D. Mao, R. Song, and W. Zhang
+2129: (2024)
+2130: VLMPC: vision-language model predictive control for robotic manipulation
+2131: .
+2132: ArXiv
+2133: abs/2407.09829
+2134: .
+2135: External Links:
+2136: Link
+2137: Cited by:
+2138: §1
+2139: ,
+2140: §2
+2141: .
+2142: [62]
+2143: W. Zhou, M. Tao, C. Zhao, H. Guo, H. Dong, M. Tang, and J. Wang
+2144: (2025)
+2145: PhysVLM: enabling visual language models to understand robotic physical reachability
+2146: .
+2147: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)
+2148: ,
+2149: pp. 6940–6949
+2150: .
+2151: External Links:
+2152: Link
+2153: Cited by:
+2154: §2
+2155: .
+2156: Appendix
+2157: Appendix A
+2158: Additional Critic results
+2159: A.1
+2160: Fine vs coarse performance
+2161: To isolate the effect of visual difference magnitude, we evaluate ROVER, ProgressLM, and our method under two sampling regimes. In the
+2162: fine-grained
+2163: regime, we sample query frames with small temporal intervals (
+2164: l
+2165: =
+2166: 16
+2167: ,
+2168: 32
+2169: ,
+2170: 48
+2171: l=16,32,48
+2172: steps apart), where differences are subtle. In the
+2173: coarse
+2174: regime, we sample frames at larger intervals (
+2175: l
+2176: =
+2177: 74,100,150
+2178: l=74,100,150
+2179: ), where more pronounced changes occur. Figure
+2180: 4(a)
+2181: and Figure
+2182: 4(b)
+2183: show that increasing the frame interval substantially boosts performance for prompted models, indicating that these models are more reliable when differences are large. However, practical policy guidance requires performance in the fine-grained regime as well.
+2184: (a)
+2185: RoboCasa
+2186: (b)
+2187: Real World
+2188: Figure 4:
+2189: Coarse vs fine-grained critic performance
+2190: . Current VLM performance degrades when judging fine grained visual differences in task performance. Fine-tuning for fine-grained task progress recognition can boost these scores.
+2191: A.2
+2192: Generalization to unseen tasks
+2193: We evaluate the three strongest methods (ROVER, ProgressLM, and ours) on held-out tasks that are unseen for ProgressLM and our method. ROVER remains prompted and continues to receive one-shot examples, as in other splits. Our method generalizes to new tasks that it was never fine-tuned on (Table
+2194: 4
+2195: ), suggesting a promising path toward broader generalization as training data and task diversity scale. We believe that this VLM critic finetuning recipe can build strong critic backbones with task finetuning for more learning about policy specific success/failures.
+2196: Task
+2197: ROVER
+2198: ProgressLM
+2199: Ours (Success+Failure)
+2200: TurnSinkSpout
+2201: 0.372
+2202: 0.601
+2203: 0.700
+2204: OpenDrawer
+2205: 0.559
+2206: 0.565
+2207: 0.825
+2208: CloseSingleDoor
+2209: 0.490
+2210: 0.365
+2211: 0.750
+2212: CloseDoubleDoor
+2213: 0.571
+2214: 0.583
+2215: 0.695
+2216: OpenDoubleDoor
+2217: 0.740
+2218: 0.783
+2219: 0.655
+2220: OpenSingleDoor
+2221: 0.473
+2222: 0.652
+2223: 0.815
+2224: Avg. Multi-task Acc.
+2225: 0.533
+2226: 0.591
+2227: 0.740
+2228: Table 4:
+2229: Generalization to tasks unseen
+2230: during finetuning for ProgressLM and our method (ROVER remains prompted with one-shot examples). Our method generalizes to new tasks never seen during finetuning.
+2231: Appendix B
+2232: Additional Policy results
+2233: Strong robot policies are typically represented as stochastic distributions, and most behavior cloning evaluations report the mean success rate over a small number of independent runs (different random seeds). Figure
+2234: 6
+2235: shows that rather than averaging, best-of-
+2236: K
+2237: K
+2238: sampling yields large gains even for
+2239: K
+2240: ≤
+2241: 5
+2242: K\leq 5
+2243: , indicating that successful action sequences frequently exist in the policy’s support but are not sampled reliably under a single rollout. Furthermore, Figure
+2244: 6
+2245: shows the variance in joint values output by the policy when taking 5 samples at test time. This motivates using a learned critic to select among candidate rollouts at test time.
+2246: Figure 5:
+2247: Best-of-
+2248: K
+2249: K
+2250: sampling
+2251: reveals substantial headroom for Diffusion Policy, increasing success rate from 31% to 48%.
+2252: Figure 6:
+2253: Per-joint sample variance
+2254: across K=5 samples. Variance indicates the multimodality of the policy.
+2255: Appendix C
+2256: Experiment Details
+2257: C.1
+2258: Experimental Setup
+2259: We set up two stereo cameras (Intel RealSense D435i cameras) spaced approximately 660 mm apart at a 45 degree angle. The distance between the cameras and the table is about 500 mm. The realworld demonstrations are recorded at a resolution of 1280×720 (each model crops and resizes it to fit the specific model’s input requirements). The robot used is I2RT’s Yam Pro Arm with 7dof, and we record/store the absolute joint angles of the follower. We use the Yam Pro Leader Arm for teleoperation during data collection. For all tasks, we allow the policy to rollout for a maximum number of steps which is set to 1.5x the average number of steps used during data collection. Task success for the Pick and Place Lego to Bowl and Stacking tasks are binary and defined by a human. For calculating the mIoU in the Push Bowl experiment, the view from one of the stereo cameras is used.
+2260: Task
+2261: Type
+2262: # Demos
+2263: Avg. Length
+2264: Push-Bowl
+2265: Success
+2266: 30
+2267: 227.7
+2268: Failure
+2269: 11
+2270: 367.0
+2271: Random
+2272: 10
+2273: 4,359.9
+2274: Stacking
+2275: Success
+2276: 50
+2277: 184.5
+2278: Failure
+2279: 39
+2280: 187.3
+2281: Random
+2282: 20
+2283: 825.5
+2284: PickPlace Lego to Bowl
+2285: Success
+2286: 200
+2287: 265.6
+2288: Failure
+2289: 49
+2290: 760.7
+2291: Random
+2292: 10
+2293: 2,675.4
+2294: Table 5:
+2295: Real World dataset
+2296: statistics by task and trajectory type. Average length is measured in timesteps per demonstration.
+2297: Task
+2298: # Succ.
+2299: # Fail
+2300: # S–S
+2301: # S–F
+2302: Lego (PnP)
+2303: 69
+2304: 39
+2305: 10,829
+2306: 1,438
+2307: Push Bowl
+2308: 30
+2309: 11
+2310: 14,376
+2311: 1,446
+2312: Stacking
+2313: 48
+2314: 38
+2315: 18,890
+2316: 3,134
+2317: (a) Real-world tasks
+2318: Task
+2319: # Succ.
+2320: # Fail
+2321: # S–S
+2322: # S–F
+2323: CloseBlenderLid
+2324: 18
+2325: 232
+2326: 836
+2327: 474
+2328: CloseFridge
+2329: 193
+2330: 57
+2331: 40,934
+2332: 3,887
+2333: CloseToasterOvenDoor
+2334: 89
+2335: 161
+2336: 7,895
+2337: 3,616
+2338: CoffeeSetupMug
+2339: 40
+2340: 210
+2341: 4,271
+2342: 2,754
+2343: OpenCabinet
+2344: 125
+2345: 125
+2346: 20,235
+2347: 5,595
+2348: OpenDrawer
+2349: 136
+2350: 114
+2351: 13,175
+2352: 3,712
+2353: OpenStandMixerHead
+2354: 147
+2355: 103
+2356: 8,206
+2357: 1,274
+2358: PickPlaceCounterToCabinet
+2359: 190
+2360: 60
+2361: 19,809
+2362: 1,071
+2363: PickPlaceCounterToStove
+2364: 174
+2365: 76
+2366: 19,894
+2367: 2,277
+2368: PickPlaceDrawerToCounter
+2369: 29
+2370: 221
+2371: 2,896
+2372: 1,832
+2373: PickPlaceSinkToCounter
+2374: 222
+2375: 28
+2376: 26,865
+2377: 880
+2378: PickPlaceToasterToCounter
+2379: 195
+2380: 55
+2381: 28,107
+2382: 3,143
+2383: SlideDishwasherRack
+2384: 75
+2385: 175
+2386: 5,088
+2387: 1,339
+2388: TurnOffStove
+2389: 26
+2390: 224
+2391: 2,729
+2392: 1,938
+2393: TurnOnElectricKettle
+2394: 87
+2395: 163
+2396: 6,077
+2397: 2,231
+2398: TurnOnMicrowave
+2399: 96
+2400: 154
+2401: 10,505
+2402: 5,370
+2403: TurnOnSinkFaucet
+2404: 110
+2405: 140
+2406: 12,251
+2407: 6,889
+2408: (b) RoboCasa-365 tasks
+2409: Table 6:
+2410: VLM critic finetuning datasets
+2411: . For real-world tasks, we use human collected data demonstrating success and failures. For Robocasa365, we rollout on 50 initial conditions per task 5 times, which generates multiple success/failure demos (counts shown in columns). From these gathered demos, we generate success–success (S–S) and success–failure (S–F) pairs using our finetuning method. Raw counts are shown before balancing.
+2412: Hyperparam.
+2413: Value
+2414: Hyperparam.
+2415: Value
+2416: State Norm.
+2417: Yes
+2418: Action Norm.
+2419: Yes
+2420: Img. Chunk
+2421: 2
+2422: Img. Size
+2423: 640
+2424: ×
+2425: 360
+2426: 640{\times}360
+2427: State Dim.
+2428: 7
+2429: Action Dim.
+2430: 7
+2431: Exec. Hor.
+2432: 16
+2433: Pred. Hor.
+2434: 32
+2435: Batch Size
+2436: 64
+2437: Epochs
+2438: 250
+2439: LR
+2440: 10
+2441: −
+2442: 4
+2443: 10^{-4}
+2444: Workers
+2445: 4
+2446: Train Steps
+2447: 100
+2448: Infer. Steps
+2449: 16
+2450: Table 7:
+2451: Diffusion Policy training hyperparameters
+2452: for real-world experiments.
+2453: C.2
+2454: Base Policy
+2455: We use Diffusion Policy
+2456: [
+2457: 9
+2458: ]
+2459: as our robot policy for real world experiments which has the ability to model multimodal distributions and complex robot behaviors. We train a per-task policy on all successful demos for real-world. In simulation, we use the finetune checkpoint GR00T N1.5
+2460: [
+2461: 41
+2462: ]
+2463: which is a single language-conditioned multi-task policy. Training hyperparameter details are listed in Table
+2464: 7
+2465: .
+2466: C.3
+2467: Action-Conditioned Video Generation Model
+2468: We finetune the pretrained HunyuanVideo-1.5 model
+2469: [
+2470: 51
+2471: ]
+2472: by adapting its architecture to incorporate action conditioning. Specifically, we add cross-attention blocks to the video generation Diffusion Transformer (DiT), enabling the model to condition video synthesis on robot action trajectories.
+2473: We denote the model input as
+2474: (
+2475: x
+2476: 0
+2477: ,
+2478: a
+2479: 0
+2480: :
+2481: T
+2482: )
+2483: (x_{0},a_{0:T})
+2484: , where
+2485: x
+2486: 0
+2487: ∈
+2488: ℝ
+2489: H
+2490: ×
+2491: W
+2492: ×
+2493: 3
+2494: x_{0}\in\mathbb{R}^{H\times W\times 3}
+2495: is the initial RGB image observation of the environment and
+2496: a
+2497: 0
+2498: :
+2499: T
+2500: ∈
+2501: ℝ
+2502: T
+2503: ×
+2504: 7
+2505: a_{0:T}\in\mathbb{R}^{T\times 7}
+2506: is the sequence of 7-DoF robot arm states corresponding to the
+2507: T
+2508: T
+2509: frames of the generated video. For action conditioning, each robot arm state is projected into a single action token with dimension
+2510: D
+2511: a
+2512: D_{a}
+2513: using an input MLP, producing an action-token sequence in
+2514: ℝ
+2515: T
+2516: ×
+2517: D
+2518: a
+2519: \mathbb{R}^{T\times D_{a}}
+2520: . A 4-layer transformer encoder then processes these tokens along the temporal dimension while preserving the sequence shape, yielding encoded action tokens in
+2521: ℝ
+2522: T
+2523: ×
+2524: D
+2525: a
+2526: \mathbb{R}^{T\times D_{a}}
+2527: . The resulting action tokens are used as conditioning inputs to cross-attention blocks inserted before the self-attention block in each layer of the video generation DiT, and the video tokens query the encoded action-token sequence through cross-attention. The outputs of the cross-attention blocks are further passed through a projection layer to produce action-dependent modulation signals. These signals are injected into the DiT through the timestep modulation pathway by adding the action modulation to the original timestep modulation. We initialize the model from the pretrained checkpoint and finetune it on all demonstration data described in Table
+2528: 5
+2529: . Training uses the standard flow-matching video generation objective adopted during pretraining of the base video model
+2530: [
+2531: 51
+2532: ]
+2533: . The model and training hyperparameters are summarized in Table
+2534: 8
+2535: .
+2536: For the action-conditioned video generation model, we found that sufficient diversity in the random demonstrations is important for enabling the world model to learn a broad range of environment state transitions.
+2537: Hyperparameter
+2538: Value
+2539: Base Model
+2540: Pretrained HunyuanVideo-1.5
+2541: LoRA
+2542: Rank 64 on Pretrained Blocks
+2543: Training Precision
+2544: bf16
+2545: Video Resolution
+2546: 848
+2547: ×
+2548: \times
+2549: 480
+2550: Video Length
+2551: 33 frames
+2552: Action Length
+2553: 33 frames
+2554: Optimizer
+2555: Muon
+2556: Action Blocks Learning Rate
+2557: 1
+2558: ​
+2559: e
+2560: −
+2561: 4
+2562: 1e-4
+2563: LoRA Learning Rate
+2564: 1
+2565: ​
+2566: e
+2567: −
+2568: 5
+2569: 1e-5
+2570: Weight Decay
+2571: 0.01
+2572: Effective Batch Size
+2573: 32
+2574: Training Steps
+2575: 4000
+2576: Table 8:
+2577: Action-conditioned video generation model hyperparameters.
+2578: C.4
+2579: VLM critic
+2580: We finetune the VLM critic on the collected successful and failure data (dataset details provided in Table
+2581: 6
+2582: ). The critic in the real world is trained per-task while for simulation we train a single multi-task critic across all 18 atomic tasks. We provide the details of the hyperparameters used to finetune the VLM critic in Table
+2583: 9
+2584: . Furthermore, the details on the prompts used per baseline in Figure
+2585: 7
+2586: .
+2587: Hyperparameter
+2588: Value
+2589: Base Model
+2590: Qwen2.5-VL-3B-Instruct
+2591: Fine-tuning
+2592: Full (all parameters)
+2593: Attention Implementation
+2594: FlashAttention-2
+2595: Mixed Precision
+2596: bf16
+2597: Distributed Backend
+2598: DeepSpeed ZeRO-2
+2599: Number of GPUs
+2600: 8
+2601: Images per Comparison
+2602: 2
+2603: Max Image Resolution
+2604: 960
+2605: ×
+2606: \times
+2607: 540
+2608: Optimizer
+2609: AdamW
+2610: Learning Rate
+2611: 1
+2612: ​
+2613: e
+2614: −
+2615: 5
+2616: 1e-5
+2617: LR Schedule
+2618: Linear
+2619: Warmup Ratio
+2620: 0.05
+2621: Weight Decay
+2622: 0.0
+2623: Max Gradient Norm
+2624: 1.0
+2625: Per-Device Batch Size
+2626: 4
+2627: Gradient Accumulation Steps
+2628: 2
+2629: Effective Batch Size
+2630: 64
+2631: Number Steps
+2632: 1400
+2633: Completion-Only Loss
+2634: Yes
+2635: Balance Failure vs. Success
+2636: Yes
+2637: (a)
+2638: Real World
+2639: Hyperparameter
+2640: Value
+2641: Base Model
+2642: Qwen2.5-VL-3B-Instruct
+2643: Fine-tuning
+2644: Full (all parameters)
+2645: Attention Implementation
+2646: FlashAttention-2
+2647: Mixed Precision
+2648: bf16
+2649: Distributed Backend
+2650: DeepSpeed ZeRO-2
+2651: Number of GPUs
+2652: 8
+2653: Images per Comparison
+2654: 2
+2655: Max Image Resolution
+2656: 848
+2657: ×
+2658: \times
+2659: 480
+2660: Optimizer
+2661: AdamW
+2662: Learning Rate
+2663: 1.5
+2664: ​
+2665: e
+2666: −
+2667: 5
+2668: 1.5e-5
+2669: LR Schedule
+2670: Linear
+2671: Warmup Steps
+2672: 200
+2673: Weight Decay
+2674: 0.0
+2675: Max Gradient Norm
+2676: 1.0
+2677: Per-Device Batch Size
+2678: 12
+2679: Gradient Accumulation Steps
+2680: 2
+2681: Effective Batch Size
+2682: 192
+2683: Number Steps
+2684: 4500
+2685: Completion-Only Loss
+2686: Yes
+2687: Balance Failure vs. Success
+2688: Yes
+2689: (b)
+2690: RoboCasa365 Simulation
+2691: Table 9:
+2692: VLM Critic Fine-tuning Hyperparameters.
+2693: Figure 7:
+2694: Prompt templates
+2695: used for baselines and our method.

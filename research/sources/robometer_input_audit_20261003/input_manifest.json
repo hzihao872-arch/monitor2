@@ -1,0 +1,946 @@
+{
+  "status": "coordinate reconstruction, not actual inference",
+  "model_predictions": null,
+  "episodes": [
+    {
+      "episode": 621,
+      "video": "research/sources/recovery_search_20261003/upstream_trace/stack_three_color_cubes_ep2_36_cam_high.mp4",
+      "video_sha256": "4d2bf2a935cdc6f946bff321cb0b7f0e202abea717a7559f7765f13bd3641e08",
+      "native_task": {
+        "episode_id": 621,
+        "image_dir": "images/ep621",
+        "total_frames": 29,
+        "num_segments": 2,
+        "segments": [
+          {
+            "start_frame": 0,
+            "end_frame": 22,
+            "reward_label": 1
+          },
+          {
+            "start_frame": 22,
+            "end_frame": 28,
+            "reward_label": -1
+          }
+        ],
+        "task_instruction": "Use the left arm to stack the green cube on top of the blue cube. Subsequently, use the right arm to place the red cube on top of the green one to complete the three-layer structure."
+      },
+      "source_fps": 25.0,
+      "source_frame_count": 361,
+      "grids": {
+        "published_array": [
+          6,
+          18,
+          31,
+          43,
+          56,
+          68,
+          81,
+          93,
+          106,
+          118,
+          131,
+          143,
+          156,
+          168,
+          181,
+          193,
+          206,
+          218,
+          231,
+          243,
+          256,
+          268,
+          281,
+          293,
+          306,
+          318,
+          331,
+          343,
+          356
+        ],
+        "mp4_default_1fps": [
+          0,
+          27,
+          55,
+          83,
+          110,
+          138,
+          166,
+          193,
+          221,
+          249,
+          276,
+          304,
+          332,
+          360
+        ]
+      }
+    },
+    {
+      "episode": 618,
+      "video": "research/sources/recovery_search_20261003/upstream_trace/stack_three_color_cubes_ep1_58_cam_high.mp4",
+      "video_sha256": "927301efc99e4a42446c1eda65e0b8c0182cc7ee4cb7d2b2a0a4b4cab9aaba2b",
+      "native_task": {
+        "episode_id": 618,
+        "image_dir": "images/ep618",
+        "total_frames": 30,
+        "num_segments": 2,
+        "segments": [
+          {
+            "start_frame": 0,
+            "end_frame": 18,
+            "reward_label": 1
+          },
+          {
+            "start_frame": 18,
+            "end_frame": 29,
+            "reward_label": -1
+          }
+        ],
+        "task_instruction": "Use the left arm to stack the green cube on top of the blue cube. Subsequently, use the right arm to place the red cube on top of the green one to complete the three-layer structure."
+      },
+      "source_fps": 25.0,
+      "source_frame_count": 376,
+      "grids": {
+        "published_array": [
+          6,
+          18,
+          31,
+          43,
+          56,
+          68,
+          81,
+          93,
+          106,
+          118,
+          131,
+          143,
+          156,
+          168,
+          181,
+          193,
+          206,
+          218,
+          231,
+          243,
+          256,
+          268,
+          281,
+          293,
+          306,
+          318,
+          331,
+          343,
+          356,
+          368
+        ],
+        "mp4_default_1fps": [
+          0,
+          26,
+          53,
+          80,
+          107,
+          133,
+          160,
+          187,
+          214,
+          241,
+          267,
+          294,
+          321,
+          348,
+          375
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 22,
+      "current_source_frame": 281,
+      "current_playback_seconds": 11.24,
+      "server_indices": [
+        0,
+        7,
+        14,
+        22
+      ],
+      "source_frames": [
+        6,
+        93,
+        181,
+        281
+      ],
+      "playback_seconds": [
+        0.24,
+        3.72,
+        7.24,
+        11.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 23,
+      "current_source_frame": 293,
+      "current_playback_seconds": 11.72,
+      "server_indices": [
+        0,
+        7,
+        15,
+        23
+      ],
+      "source_frames": [
+        6,
+        93,
+        193,
+        293
+      ],
+      "playback_seconds": [
+        0.24,
+        3.72,
+        7.72,
+        11.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 24,
+      "current_source_frame": 306,
+      "current_playback_seconds": 12.24,
+      "server_indices": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "source_frames": [
+        6,
+        106,
+        206,
+        306
+      ],
+      "playback_seconds": [
+        0.24,
+        4.24,
+        8.24,
+        12.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 25,
+      "current_source_frame": 318,
+      "current_playback_seconds": 12.72,
+      "server_indices": [
+        0,
+        8,
+        16,
+        25
+      ],
+      "source_frames": [
+        6,
+        106,
+        206,
+        318
+      ],
+      "playback_seconds": [
+        0.24,
+        4.24,
+        8.24,
+        12.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 26,
+      "current_source_frame": 331,
+      "current_playback_seconds": 13.24,
+      "server_indices": [
+        0,
+        8,
+        17,
+        26
+      ],
+      "source_frames": [
+        6,
+        106,
+        218,
+        331
+      ],
+      "playback_seconds": [
+        0.24,
+        4.24,
+        8.72,
+        13.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 27,
+      "current_source_frame": 343,
+      "current_playback_seconds": 13.72,
+      "server_indices": [
+        0,
+        9,
+        18,
+        27
+      ],
+      "source_frames": [
+        6,
+        118,
+        231,
+        343
+      ],
+      "playback_seconds": [
+        0.24,
+        4.72,
+        9.24,
+        13.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "published_array",
+      "query_index": 28,
+      "current_source_frame": 356,
+      "current_playback_seconds": 14.24,
+      "server_indices": [
+        0,
+        9,
+        18,
+        28
+      ],
+      "source_frames": [
+        6,
+        118,
+        231,
+        356
+      ],
+      "playback_seconds": [
+        0.24,
+        4.72,
+        9.24,
+        14.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 621,
+      "branch": "mp4_default_1fps",
+      "query_index": 11,
+      "current_source_frame": 304,
+      "current_playback_seconds": 12.16,
+      "server_indices": [
+        0,
+        3,
+        7,
+        11
+      ],
+      "source_frames": [
+        0,
+        83,
+        193,
+        304
+      ],
+      "playback_seconds": [
+        0.0,
+        3.32,
+        7.72,
+        12.16
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 621,
+      "branch": "mp4_default_1fps",
+      "query_index": 12,
+      "current_source_frame": 332,
+      "current_playback_seconds": 13.28,
+      "server_indices": [
+        0,
+        4,
+        8,
+        12
+      ],
+      "source_frames": [
+        0,
+        110,
+        221,
+        332
+      ],
+      "playback_seconds": [
+        0.0,
+        4.4,
+        8.84,
+        13.28
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 621,
+      "branch": "mp4_default_1fps",
+      "query_index": 13,
+      "current_source_frame": 360,
+      "current_playback_seconds": 14.4,
+      "server_indices": [
+        0,
+        4,
+        8,
+        13
+      ],
+      "source_frames": [
+        0,
+        110,
+        221,
+        360
+      ],
+      "playback_seconds": [
+        0.0,
+        4.4,
+        8.84,
+        14.4
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 18,
+      "current_source_frame": 231,
+      "current_playback_seconds": 9.24,
+      "server_indices": [
+        0,
+        6,
+        12,
+        18
+      ],
+      "source_frames": [
+        6,
+        81,
+        156,
+        231
+      ],
+      "playback_seconds": [
+        0.24,
+        3.24,
+        6.24,
+        9.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 19,
+      "current_source_frame": 243,
+      "current_playback_seconds": 9.72,
+      "server_indices": [
+        0,
+        6,
+        12,
+        19
+      ],
+      "source_frames": [
+        6,
+        81,
+        156,
+        243
+      ],
+      "playback_seconds": [
+        0.24,
+        3.24,
+        6.24,
+        9.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 20,
+      "current_source_frame": 256,
+      "current_playback_seconds": 10.24,
+      "server_indices": [
+        0,
+        6,
+        13,
+        20
+      ],
+      "source_frames": [
+        6,
+        81,
+        168,
+        256
+      ],
+      "playback_seconds": [
+        0.24,
+        3.24,
+        6.72,
+        10.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 21,
+      "current_source_frame": 268,
+      "current_playback_seconds": 10.72,
+      "server_indices": [
+        0,
+        7,
+        14,
+        21
+      ],
+      "source_frames": [
+        6,
+        93,
+        181,
+        268
+      ],
+      "playback_seconds": [
+        0.24,
+        3.72,
+        7.24,
+        10.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 22,
+      "current_source_frame": 281,
+      "current_playback_seconds": 11.24,
+      "server_indices": [
+        0,
+        7,
+        14,
+        22
+      ],
+      "source_frames": [
+        6,
+        93,
+        181,
+        281
+      ],
+      "playback_seconds": [
+        0.24,
+        3.72,
+        7.24,
+        11.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 23,
+      "current_source_frame": 293,
+      "current_playback_seconds": 11.72,
+      "server_indices": [
+        0,
+        7,
+        15,
+        23
+      ],
+      "source_frames": [
+        6,
+        93,
+        193,
+        293
+      ],
+      "playback_seconds": [
+        0.24,
+        3.72,
+        7.72,
+        11.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 24,
+      "current_source_frame": 306,
+      "current_playback_seconds": 12.24,
+      "server_indices": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "source_frames": [
+        6,
+        106,
+        206,
+        306
+      ],
+      "playback_seconds": [
+        0.24,
+        4.24,
+        8.24,
+        12.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 25,
+      "current_source_frame": 318,
+      "current_playback_seconds": 12.72,
+      "server_indices": [
+        0,
+        8,
+        16,
+        25
+      ],
+      "source_frames": [
+        6,
+        106,
+        206,
+        318
+      ],
+      "playback_seconds": [
+        0.24,
+        4.24,
+        8.24,
+        12.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 26,
+      "current_source_frame": 331,
+      "current_playback_seconds": 13.24,
+      "server_indices": [
+        0,
+        8,
+        17,
+        26
+      ],
+      "source_frames": [
+        6,
+        106,
+        218,
+        331
+      ],
+      "playback_seconds": [
+        0.24,
+        4.24,
+        8.72,
+        13.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 27,
+      "current_source_frame": 343,
+      "current_playback_seconds": 13.72,
+      "server_indices": [
+        0,
+        9,
+        18,
+        27
+      ],
+      "source_frames": [
+        6,
+        118,
+        231,
+        343
+      ],
+      "playback_seconds": [
+        0.24,
+        4.72,
+        9.24,
+        13.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 28,
+      "current_source_frame": 356,
+      "current_playback_seconds": 14.24,
+      "server_indices": [
+        0,
+        9,
+        18,
+        28
+      ],
+      "source_frames": [
+        6,
+        118,
+        231,
+        356
+      ],
+      "playback_seconds": [
+        0.24,
+        4.72,
+        9.24,
+        14.24
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "published_array",
+      "query_index": 29,
+      "current_source_frame": 368,
+      "current_playback_seconds": 14.72,
+      "server_indices": [
+        0,
+        9,
+        19,
+        29
+      ],
+      "source_frames": [
+        6,
+        118,
+        243,
+        368
+      ],
+      "playback_seconds": [
+        0.24,
+        4.72,
+        9.72,
+        14.72
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "Falling interval binding"
+    },
+    {
+      "episode": 618,
+      "branch": "mp4_default_1fps",
+      "query_index": 9,
+      "current_source_frame": 241,
+      "current_playback_seconds": 9.64,
+      "server_indices": [
+        0,
+        3,
+        6,
+        9
+      ],
+      "source_frames": [
+        0,
+        80,
+        160,
+        241
+      ],
+      "playback_seconds": [
+        0.0,
+        3.2,
+        6.4,
+        9.64
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 618,
+      "branch": "mp4_default_1fps",
+      "query_index": 10,
+      "current_source_frame": 267,
+      "current_playback_seconds": 10.68,
+      "server_indices": [
+        0,
+        3,
+        6,
+        10
+      ],
+      "source_frames": [
+        0,
+        80,
+        160,
+        267
+      ],
+      "playback_seconds": [
+        0.0,
+        3.2,
+        6.4,
+        10.68
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 618,
+      "branch": "mp4_default_1fps",
+      "query_index": 11,
+      "current_source_frame": 294,
+      "current_playback_seconds": 11.76,
+      "server_indices": [
+        0,
+        3,
+        7,
+        11
+      ],
+      "source_frames": [
+        0,
+        80,
+        187,
+        294
+      ],
+      "playback_seconds": [
+        0.0,
+        3.2,
+        7.48,
+        11.76
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 618,
+      "branch": "mp4_default_1fps",
+      "query_index": 12,
+      "current_source_frame": 321,
+      "current_playback_seconds": 12.84,
+      "server_indices": [
+        0,
+        4,
+        8,
+        12
+      ],
+      "source_frames": [
+        0,
+        107,
+        214,
+        321
+      ],
+      "playback_seconds": [
+        0.0,
+        4.28,
+        8.56,
+        12.84
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 618,
+      "branch": "mp4_default_1fps",
+      "query_index": 13,
+      "current_source_frame": 348,
+      "current_playback_seconds": 13.92,
+      "server_indices": [
+        0,
+        4,
+        8,
+        13
+      ],
+      "source_frames": [
+        0,
+        107,
+        214,
+        348
+      ],
+      "playback_seconds": [
+        0.0,
+        4.28,
+        8.56,
+        13.92
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    },
+    {
+      "episode": 618,
+      "branch": "mp4_default_1fps",
+      "query_index": 14,
+      "current_source_frame": 375,
+      "current_playback_seconds": 15.0,
+      "server_indices": [
+        0,
+        4,
+        9,
+        14
+      ],
+      "source_frames": [
+        0,
+        107,
+        241,
+        375
+      ],
+      "playback_seconds": [
+        0.0,
+        4.28,
+        9.64,
+        15.0
+      ],
+      "no_future_pixels": true,
+      "visibility_review": "visibility_review.json; single reviewer; no method prediction",
+      "original_label": "NOT transferred as scored label; only placed in source-time span"
+    }
+  ],
+  "exact_model_processor_pixels_verified": false,
+  "processor_limit": "collator branches and image processor configuration not instantiated; packet views are decoded source images, not verified model tensors"
+}

@@ -1,0 +1,56 @@
+run_id,utc,kind,track,method,backend,status,ticks_recorded,call_attempts,input_tokens_known,output_tokens_known,elapsed_ms_known,peak_vram_bytes,error
+1865ddae-97ab-4ff8-ad63-211b76538d61,2026-10-03T04:10:53.323167+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,S0,FixtureBackend,completed,2,2,200,80,0.0,0,
+71d422ee-a0e5-4d11-9f72-7b308c541bac,2026-10-03T04:10:53.325094+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,S1,FixtureBackend,completed,2,2,228,80,0.0,0,
+e57faf17-d9c7-4ae0-8857-c8a42e176b9f,2026-10-03T04:10:53.326094+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,C1,FixtureBackend,completed,2,2,228,80,0.0,0,
+d01edd29-3381-4ae4-8c22-9f47d905c092,2026-10-03T04:14:30.745882+00:00,model_smoke,synthetic_fixture_v1,S0_1image,Qwen3-VL-2B-Instruct BF16,failed,0,1,,,,,"ImportError: 
+AutoVideoProcessor requires the Torchvision library but it was not found in your environment. Check out the instructions on the
+installation page: https://pytorch.org/get-started/locally/ and follow the ones that match your environment.
+Please note that you may need to restart your runtime after installation.
+"
+e7b6ec38-f4bb-4f6a-8e75-519cbd255ee6,2026-10-03T04:15:10.115634+00:00,model_smoke,synthetic_fixture_v1,S0_1image,Qwen3-VL-2B-Instruct BF16,completed,1,1,256,64,3398.9168000407517,4322736128,
+307a853b-e3f4-4cb8-81e6-1d1ed3e74de5,2026-10-03T04:15:12.751004+00:00,model_smoke,synthetic_fixture_v1,S0_4image,Qwen3-VL-2B-Instruct BF16,completed,1,1,475,64,2633.238899987191,4392874496,
+b5726886-6760-48b5-9658-ff0c3de9425a,2026-10-03T04:16:05.435996+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,S1,QwenBackend,completed,2,2,625,196,8932.449499843642,4350695936,
+acffcb81-73f1-4fc7-8f5c-7207ffc19e6f,2026-10-03T04:16:34.536004+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,S0,QwenBackend,completed,2,2,583,140,5591.896099969745,4345912320,
+d75c4d83-9a1c-499f-844e-db874b747e28,2026-10-03T04:16:49.599392+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,C1,QwenBackend,completed,2,2,665,194,7510.770599823445,4358057984,
+4fe44a8e-cbcc-4a0c-a08f-85ef7a532775,2026-10-03T04:18:07.281661+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,S1,QwenBackend,completed,2,2,782,93,4495.011600200087,4376271872,
+111223a6-e3c2-4a27-8185-98a8a72b53e8,2026-10-03T04:18:27.909617+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,S0,QwenBackend,completed,2,2,719,71,3545.3844000585377,4365048832,
+0f690709-52d9-41e8-81c6-7a2a83400c4e,2026-10-03T04:18:40.359013+00:00,track_run,experiments\artifacts\fixture_chain\online_track.json,C1,QwenBackend,completed,2,2,837,115,5106.31539998576,4386579456,
+0e1abafb-1337-4723-9b0c-fe568c16ec02,2026-10-03T04:20:22.551704+00:00,track_run,experiments\artifacts\fixture_chain_v2\online_track.json,S0,FixtureBackend,completed,2,2,200,80,0.05559995770454407,0,
+09552224-4ed6-499f-a7e7-a98cde88b6b8,2026-10-03T04:20:22.553709+00:00,track_run,experiments\artifacts\fixture_chain_v2\online_track.json,S1,FixtureBackend,completed,2,2,228,80,0.0396000687032938,0,
+1734fea0-b968-44a1-b7ab-7cb0d9a9c702,2026-10-03T04:20:22.554710+00:00,track_run,experiments\artifacts\fixture_chain_v2\online_track.json,C1,FixtureBackend,completed,2,2,228,80,0.040499959141016006,0,
+41436c17-94ff-43dc-bdf5-f2f1eb2bb47d,2026-10-03T04:20:37.051479+00:00,track_run,experiments\artifacts\fixture_chain_v2\online_track.json,S0,QwenBackend,completed,2,2,719,74,3434.9191000219434,4365048832,
+64660178-b086-4bad-b978-7e52761a33a4,2026-10-03T04:20:48.296841+00:00,track_run,experiments\artifacts\fixture_chain_v2\online_track.json,S1,QwenBackend,completed,2,2,782,96,4181.352300103754,4376271872,
+e130c76c-53c9-44d7-9a87-cb624377486f,2026-10-03T04:21:01.200603+00:00,track_run,experiments\artifacts\fixture_chain_v2\online_track.json,C1,QwenBackend,completed,2,2,838,154,6035.991499898955,4386879488,
+backfill-setup-001,2026-10-03T04:21:25+00:00,environment_setup,.venv,torch-2.11.0+cu128,pip,failed,0,0,,,,,Backfilled log time; initial indexed wheel download failed SHA256 check; no hash bypass
+backfill-fixture-001,2026-10-03T04:21:25+00:00,fixture_setup,experiments/artifacts/fixture_chain,S0,FixtureBackend,failed,0,0,,,,,Backfilled log time; missing synthetic image directory fixed before next run
+audit-v1-provenance,2026-10-03T04:21:25+00:00,provenance_audit,experiments/artifacts/fixture_chain/online_track.json,S0-S1-C1,local_hash_check,invalidated,0,0,,,,,Earlier model_smoke overwrote shared synthetic image paths; v1 integrated runs cannot be reproduced from recorded frame hashes; rerun on isolated v2 fixture
+cfa6729d-0041-4137-b6d5-f70b842f1e66,2026-10-03T04:26:51.525649+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,S0,FixtureBackend,completed,2,2,200,80,0.07509998977184296,0,
+0ae5e8be-def1-4639-ac28-16c8e61445db,2026-10-03T04:26:51.527143+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,S1,FixtureBackend,completed,2,2,228,80,0.07529999129474163,0,
+1e3bc320-d239-412b-9d66-aa45b27a9386,2026-10-03T04:26:51.528148+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,C1,FixtureBackend,completed,2,2,228,80,0.0567000824958086,0,
+e30d16fb-22df-4b9f-a2de-cc55f081f967,2026-10-03T04:27:06.305459+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,S0,QwenBackend,completed,2,2,719,74,3726.8506998661906,4365048832,
+3659b62c-e656-418d-834c-42f6e2fa4960,2026-10-03T04:27:18.055787+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,S1,QwenBackend,completed,2,2,782,96,4178.997999755666,4376271872,
+e664796e-0f5c-467f-af00-290114a070be,2026-10-03T04:27:31.211499+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,C1,QwenBackend,completed,2,2,838,154,6113.579500000924,4386879488,
+4076b068-8fa6-40e7-81de-9def85536c2c,2026-10-03T04:28:30.144608+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,S0,QwenBackend,completed,2,2,719,74,3453.989899950102,4365048832,
+24fff5c0-47eb-4925-9b39-c38126b7ab36,2026-10-03T04:28:40.731765+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,S1,QwenBackend,completed,2,2,782,96,4287.654000101611,4376271872,
+249fc1f9-c8a4-438d-8597-c66b40e6ab69,2026-10-03T04:28:53.781291+00:00,track_run,experiments\artifacts\fixture_chain_v3\online_track.json,C1,QwenBackend,completed,2,2,838,154,6456.520500127226,4386879488,
+61ccfabd-9de0-4054-8072-46a309062f31,2026-10-03T07:19:57.804088+00:00,track_run,research\sources\recovery_search_20261003\upstream_trace\p0\ep618\online_track.json,S0,QwenBackend,completed,16,16,9297,972,38674.17799984105,4446430208,
+10642f7a-6516-477e-838f-2e18a5fa8306,2026-10-03T07:22:24.458514+00:00,track_run,research\sources\recovery_search_20261003\upstream_trace\p0\ep618\online_track.json,S1,QwenBackend,completed,16,16,11665,4096,146643.93309992738,4501991424,
+5cbed137-a584-4d9a-ba9b-8bce99ce94f4,2026-10-03T07:22:59.904182+00:00,track_run,research\sources\recovery_search_20261003\upstream_trace\p0\ep621\online_track.json,S0,QwenBackend,completed,15,15,8672,980,35437.51779990271,4446394368,
+4340aac0-5154-4d0d-bbf6-9731cc883bbd,2026-10-03T07:25:19.173783+00:00,track_run,research\sources\recovery_search_20261003\upstream_trace\p0\ep621\online_track.json,S1,QwenBackend,completed,15,15,10892,3840,139259.61289997213,4501720064,
+6705cb4d-d7e9-4f8e-9e4d-ef33d4db664a,2026-10-03T07:50:22.696928+00:00,track_run,experiments\artifacts\r1_interface_repair_20261003\probe_track.json,S0,QwenBackend,completed,3,3,1560,114,5105.172600131482,4433944064,
+51c88c5e-1f76-4158-8248-b3a9ae4e348f,2026-10-03T07:50:48.649607+00:00,track_run,experiments\artifacts\r1_interface_repair_20261003\probe_track.json,S1,QwenBackend,completed,3,3,2004,768,25945.610200054944,4488696832,
+f0c54db5-e7d0-419d-8ea1-03d6903fda79,2026-10-03T07:50:52.823453+00:00,track_run,experiments\artifacts\r1_interface_repair_20261003\probe_track.json,S0,QwenBackend,completed,3,3,1560,114,4170.2781999483705,4433944064,
+8c5464e1-8440-4214-84ad-2570ce60faa2,2026-10-03T07:51:13.663115+00:00,track_run,experiments\artifacts\r1_interface_repair_20261003\probe_track.json,S1,QwenBackend,completed,3,3,1755,607,20835.913800168782,4455387648,
+r1-isolation-text-q0,2026-10-03T08:02:50.950931+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,text,QwenBackend,returned,1,1,326,24,1659.9847001489252,4341852160,
+r1-isolation-json-q0,2026-10-03T08:02:59.408645+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,json,QwenBackend,returned,1,1,340,256,8457.077900180593,4360670208,
+r1-isolation-joint-q0,2026-10-03T08:03:02.332770+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,joint,QwenBackend,returned,1,1,393,86,2924.234500154853,4361672192,
+r1-isolation-text-q2,2026-10-03T08:03:03.728434+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,text,QwenBackend,returned,1,1,472,38,1394.4989000447094,4388899328,
+r1-isolation-json-q2,2026-10-03T08:03:12.330380+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,json,QwenBackend,returned,1,1,486,256,8600.724900141358,4393129472,
+r1-isolation-joint-q2,2026-10-03T08:03:15.371667+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,joint,QwenBackend,returned,1,1,539,87,3040.6841998919845,4413144064,
+r1-isolation-text-q6,2026-10-03T08:03:16.729745+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,text,QwenBackend,returned,1,1,545,36,1357.4727000668645,4420236288,
+r1-isolation-json-q6,2026-10-03T08:03:18.285564+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,json,QwenBackend,returned,1,1,559,42,1554.5810000039637,4425444864,
+r1-isolation-joint-q6,2026-10-03T08:03:21.662591+00:00,output_task_isolation,experiments\artifacts\r1_summary_isolation_20261003\isolation_records.jsonl,joint,QwenBackend,returned,1,1,612,98,3376.817899988964,4443588608,
+local8b-probe_neutral_q0-q0,2026-10-03T08:31:46.032214+00:00,local8b_exploratory,experiments\artifacts\r1_local_stronger_20261003\probe_neutral_q0\records.jsonl,neutral,Ollama-local-Q4_K_M,returned,1,1,1099,24,9790.135700022802,,
+local8b-probe_joint_q0-q0,2026-10-03T08:31:48.269267+00:00,local8b_exploratory,experiments\artifacts\r1_local_stronger_20261003\probe_joint_q0\records.jsonl,S1,Ollama-local-Q4_K_M,returned,1,1,1364,70,2224.656900158152,,
+local8b-probe_joint_q2-q2,2026-10-03T08:31:54.870573+00:00,local8b_exploratory,experiments\artifacts\r1_local_stronger_20261003\probe_joint_q2\records.jsonl,S1,Ollama-local-Q4_K_M,returned,1,1,3426,73,6592.613399960101,,
+local8b-probe_joint_q6-q6,2026-10-03T08:31:55.221861+00:00,local8b_exploratory,experiments\artifacts\r1_local_stronger_20261003\probe_joint_q6\records.jsonl,S1,Ollama-local-Q4_K_M,runtime_failure,1,1,0,0,326.9539999309927,,<HTTPError 400: 'Bad Request'>

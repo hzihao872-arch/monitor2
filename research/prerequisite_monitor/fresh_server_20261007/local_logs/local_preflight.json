@@ -1,0 +1,39 @@
+{
+  "utc": "2026-10-07T08:45:22.110395+00:00",
+  "shanghai": "2026-10-07T16:45:22.130079+08:00",
+  "freeze_command": [
+    "D:\\monitor2\\.venv\\Scripts\\python.exe",
+    "-m",
+    "experiments.prerequisite_probe.fresh_prerequisite.freeze",
+    "--root",
+    "research\\prerequisite_monitor\\fresh_scenes_20261006",
+    "--verify"
+  ],
+  "freeze_exit_code": 0,
+  "freeze_stdout": "{\n  \"status\": \"pass\",\n  \"issues\": [],\n  \"file_count\": 949,\n  \"manifest_sha256\": \"be2af5aaa8afe8d32a1e5481631f190c6748b825ea7d0c8027a09d873a60534b\"\n}\n",
+  "freeze_stderr": "",
+  "checks": {
+    "p0_code_sha": true,
+    "p1_code_sha": true,
+    "model_side_code.zip_crc": true,
+    "model_side_code.zip_no_truth_names": true,
+    "optional_p1_code.zip_crc": true,
+    "optional_p1_code.zip_no_truth_names": true,
+    "p3_static_input/access_gate/model_input.zip_crc": true,
+    "p3_static_input/access_gate/model_input.zip_no_truth_names": true,
+    "p3_static_input/support_surface/model_input.zip_crc": true,
+    "p3_static_input/support_surface/model_input.zip_no_truth_names": true
+  },
+  "sha256": {
+    "access_gate_zip": "3e57af3072091bafbc10b81eea17d8ebd597337458cae5edd6b8433ab5842e78",
+    "support_surface_zip": "3124b5117820707f3458696d4a553f0fee27d41aa969d45eca78bfd84b6cfc9d",
+    "model_side_code_zip": "42c1892ada623216519f9da252cfdfb2626d6bd3e126c25fda57aab04614467a",
+    "optional_p1_code_zip": "ebb567b6beebbc1ce1b69ea6d33eb3f0285ad44d140714f6178ad4a8f5116de9",
+    "p3_access_gate_zip": "8aea344bb497e5ce6a81d9d3e6b9815218bb5369fa6f0de692870edb5797ebf2",
+    "p3_support_surface_zip": "41320aa3abafbbe42aa459f3a8013eddbfa9b4131c5cc411affcc9cba0411e0a",
+    "run_remote_p0": "d0a56f2808c8723aa0e35b664c7090d07a46f9f738bcf98320d6136746603000",
+    "run_remote_extra": "6959dd4730b463a85b4543fcee3af9b3ae56c1006bdc77d1747a975c37cc8588",
+    "tests_final_log": "7c4cda5aa44b8f583ce17ce72eb47b62ecee890794c23509208c5a3abb8c7be2",
+    "native_decoder_precheck_log": "f630236aec4bd9bf96deb88542711ce49ff782cb857fcb88ed5dee27065d5452"
+  }
+}

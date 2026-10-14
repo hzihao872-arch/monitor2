@@ -1,0 +1,112 @@
+{
+  "version": "single-reviewer-draft-1",
+  "protocol": "S6-draft-4 unchanged",
+  "created_before_model_run": true,
+  "independent_review": false,
+  "h1_eligible": false,
+  "clock": "source video playback / LeRobot nominal n/25; physical robot acquisition clock unverified",
+  "task_binding": "Original ViFailback per-episode annotation task and subtasks, exact linked source video, same task_index=99 in converted episodes; no observed revision field, not proof no revision occurred",
+  "object": "green_on_blue",
+  "semantics": "Released green cube stacked on / supported by blue cube; no added continuous-maintenance prohibition; H historical placement, C current relation; P not scored",
+  "episodes": [
+    {
+      "robopulse_episode": 618,
+      "source_task": "stack_three_color_cubes_ep1",
+      "source_episode": "episode_58",
+      "lerobot_episode": 5060,
+      "single_reviewer_reference": "Green-on-blue established after left gripper releases; maintained in observed later right-arm unsuccessful attempt, through source frame 375. No observed loss or repair. Not a global successful task.",
+      "reference_positive_anchors": [
+        150,
+        175,
+        200,
+        250,
+        300,
+        350,
+        375
+      ],
+      "P0_H_positive_ticks": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "P0_C_positive_ticks": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "P0_loss_event": null,
+      "retention_comparison_anchor_tick": 14,
+      "reference_event_te": null,
+      "reference_unknown": "No physical-state sensor truth; continuous subframe invariance not proved."
+    },
+    {
+      "robopulse_episode": 621,
+      "source_task": "stack_three_color_cubes_ep2",
+      "source_episode": "episode_36",
+      "lerobot_episode": 5197,
+      "single_reviewer_reference": "Green-on-blue established before right-arm approach. Right arm approaches the already built stack rather than the red cube on the gray platform; relation then destroyed. Wrist confirms displacement of green relative to blue; exact contact/force mechanism not established. No restoration in remainder through source frame 360.",
+      "reference_positive_anchors": [
+        200,
+        225,
+        250,
+        275,
+        290
+      ],
+      "reference_loss_bracket_source_frames": [
+        290,
+        310
+      ],
+      "reference_loss_bracket_playback_seconds": [
+        11.6,
+        12.4
+      ],
+      "reference_loss_bracket_status": "Conservative single-reviewer interval, not author keyframe boundary, not physical hardware time",
+      "P0_H_positive_ticks": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "P0_C_positive_ticks": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "P0_C_uncertain_ticks": [
+        12,
+        13
+      ],
+      "P0_C_negative_ticks": [
+        14
+      ],
+      "P0_first_negative_tick_draft": 14,
+      "P0_tv_status": "Single reviewer saw full reference first; prospective independent prefix-only review not done",
+      "repair": "No observed repair before record ends; reversibility and later continuation unknown"
+    }
+  ],
+  "limitations": [
+    "Not independent blinded reference or online review",
+    "Not a causal matched experiment; layouts and second-step error types differ",
+    "15-second recorded episodes are short examples of multi-step interaction, not long-horizon validation",
+    "Ep621 end remains partially occluded; confirm q14 in independent prefix-only review",
+    "No author interval or avoid/correct frame treated as te/tv"
+  ]
+}

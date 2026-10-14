@@ -1,0 +1,174 @@
+{
+  "issued": 24,
+  "completed": 24,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior": 164,
+  "cumulative": 188,
+  "counts": {
+    "images_opposed_first": {
+      "n": 6,
+      "correct_ai": 6,
+      "unknown": 0,
+      "input_tokens": 18716
+    },
+    "images_positive_first": {
+      "n": 6,
+      "correct_ai": 6,
+      "unknown": 0,
+      "input_tokens": 18716
+    },
+    "video_opposed_first": {
+      "n": 6,
+      "correct_ai": 6,
+      "unknown": 0,
+      "input_tokens": 10124
+    },
+    "video_positive_first": {
+      "n": 6,
+      "correct_ai": 5,
+      "unknown": 0,
+      "input_tokens": 10124
+    }
+  },
+  "pairs": [
+    {
+      "representation": "images",
+      "probe": "confirm_o_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "images",
+      "probe": "confirm_p_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "images",
+      "probe": "grasp_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "images",
+      "probe": "inside_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "images",
+      "probe": "opening_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "images",
+      "probe": "plate_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "video",
+      "probe": "confirm_o_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "video",
+      "probe": "confirm_p_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "video",
+      "probe": "grasp_14",
+      "reference_ai": "False",
+      "states": [
+        "False",
+        "False"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "video",
+      "probe": "inside_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "video",
+      "probe": "opening_14",
+      "reference_ai": "True",
+      "states": [
+        "True",
+        "True"
+      ],
+      "order_consistent": true,
+      "both_correct_ai": true
+    },
+    {
+      "representation": "video",
+      "probe": "plate_14",
+      "reference_ai": "False",
+      "states": [
+        "True",
+        "False"
+      ],
+      "order_consistent": false,
+      "both_correct_ai": false
+    }
+  ],
+  "audit_errors": [],
+  "wall_seconds": 20.6238528736867,
+  "adapter_seconds": 12.939945036545396,
+  "input_tokens": 57680,
+  "peak_vram_gib": 17.24582862854004,
+  "status": "same sparse RGB pixels, unequal representation tokens; AI development only"
+}

@@ -1,0 +1,22 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are attempting to use Flash Attention 2 without specifying a torch dtype. This might lead to unexpected behaviour
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:01<00:03,  1.07s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:02<00:02,  1.01s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:02<00:00,  1.04it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:03<00:00,  1.23it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:03<00:00,  1.13it/s]
+2026-10-08 12:29:57.279 | INFO     | topreward.clients.qwen:__init__:28 - <class 'transformers.models.qwen3_vl.processing_qwen3_vl.Qwen3VLProcessor'>
+Asked to sample `fps` frames per second but no video metadata was provided which is required when sampling with `fps`. Defaulting to `fps=24`. Please provide `video_metadata` for more accurate results.
+2026-10-08 12:29:58.141 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-22.1250 (1 tokens)
+2026-10-08 12:29:58.228 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-21.8750 (1 tokens)
+2026-10-08 12:29:58.337 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-23.6250 (1 tokens)
+2026-10-08 12:29:58.443 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-23.7500 (1 tokens)
+2026-10-08 12:29:58.552 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-24.0000 (1 tokens)
+2026-10-08 12:29:58.665 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-24.1250 (1 tokens)
+2026-10-08 12:29:58.785 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-23.8750 (1 tokens)
+2026-10-08 12:29:58.915 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-23.8750 (1 tokens)
+2026-10-08 12:29:59.043 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-23.8750 (1 tokens)
+2026-10-08 12:29:59.176 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-23.8750 (1 tokens)
+2026-10-08 12:29:59.311 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-23.7500 (1 tokens)
+2026-10-08 12:29:59.450 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-23.7500 (1 tokens)
+2026-10-08 12:29:59.599 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-23.8750 (1 tokens)
+2026-10-08 12:29:59.750 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-23.8750 (1 tokens)
+2026-10-08 12:29:59.907 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-23.7500 (1 tokens)
+{"output_dir": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/evidence_to_architecture_v02_20261008/text_pilot", "videos": 1}
+TEXT_PREP_DONE

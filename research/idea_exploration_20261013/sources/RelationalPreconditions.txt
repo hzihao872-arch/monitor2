@@ -1,0 +1,2877 @@
+0001: Relational Learning for Skill Preconditions
+0002: Title:
+0003: Content selection saved. Describe the issue below:
+0004: Description:
+0005: arXiv is now an independent nonprofit!
+0006: Learn more
+0007: ×
+0008: License: CC BY 4.0
+0009: arXiv:2012.01693v1 [cs.RO] 03 Dec 2020
+0010: Relational Learning for Skill Preconditions
+0011: Mohit Sharma
+0012: Affiliation:
+0013: Robotics Institute
+0014: Affiliation:
+0015: Carnegie Mellon University
+0016: Email:
+0017: mohits1@andrew.cmu.edu
+0018: Oliver Kroemer
+0019: Affiliation:
+0020: Robotics Institute
+0021: Affiliation:
+0022: Carnegie Mellon University
+0023: Email:
+0024: okroemer@andrew.cmu.edu
+0025: Abstract
+0026: To determine if a skill can be executed in any given environment, a robot needs to learn the preconditions for the skill.
+0027: As robots begin to operate in dynamic and unstructured environments, precondition models will need to generalize to variable number of objects with different shapes and sizes.
+0028: In this work, we focus on learning precondition models for manipulation skills in unconstrained environments.
+0029: Our work is motivated by the intuition that many complex manipulation tasks, with multiple objects, can be simplified by focusing on less complex pairwise object relations.
+0030: We propose an object-relation model that learns continuous representations for these pairwise object relations.
+0031: Our object-relation model is trained completely in simulation, and once learned, is used by a separate precondition model to predict skill preconditions for real world tasks.
+0032: We evaluate our precondition model on
+0033: 3
+0034: 3
+0035: different manipulation tasks: sweeping, cutting, and unstacking.
+0036: We show that our approach leads to significant improvements in predicting preconditions for all
+0037: 3
+0038: 3
+0039: tasks, across objects of different shapes and sizes.
+0040: 1
+0041: Introduction
+0042: Skill
+0043: preconditions
+0044: are necessary for a robot to know when a given skill can be executed across different situations. For robot manipulators to operate in complex and unstructured environments, we require precondition models to be able to adapt to variable number and type of objects in the scene,
+0045: e.g.
+0046: , preconditions for food cutting should generalize between apples and carrots.
+0047: Additionally, since collecting large amounts of real world data for every skill is impractical, we also require precondition models to learn from few samples.
+0048: To achieve the above requirements, we observe that many complex manipulation tasks often require specific relations between a number of objects to be valid. Thus, these tasks can often be simplified by decomposing them into less complex object interactions.
+0049: We therefore focus on modeling pairwise relations between objects.
+0050: Moreover, these object relations are also often shared across multiple tasks. Thus, we also aim to learn a common representation for these relations, which can be directly used by our precondition models.
+0051: Our work uses a compositional approach for precondition learning.
+0052: We learn precondition models from a few different example scenes. Each scene is decomposed into its constituent objects and their relations as shown in Figure
+0053: 1
+0054: . Learning precondition models from such a structured representation requires us to infer object identities and pairwise object relations.
+0055: While object labels can be found using state-of-the-art algorithms
+0056: [
+0057: 1
+0058: ]
+0059: , we focus on learning representations for object pair relations.
+0060: Most of the prior work uses discrete representations for object relations
+0061: [
+0062: 2
+0063: ,
+0064: 3
+0065: ,
+0066: 4
+0067: ]
+0068: . These discrete relations are mostly fixed and often insufficient to distinguish between similar scenes.
+0069: For instance, in Figure
+0070: 1
+0071: , even though both relations might be classified as “above” the semantics of each scene are very different.
+0072: Although recent approaches have looked at learning continuous representations for object relations
+0073: [
+0074: 5
+0075: ,
+0076: 6
+0077: ]
+0078: ,
+0079: these approaches use a pre-defined set of relations.
+0080: They further assume access to binary labels which allows them to cluster scenes with similar relations together.
+0081: Figure 1:
+0082: Overview of the overall precondition learning process. We learn precondition model by decomposing a scene into its objects and relations. To learn continuous representations for object relations we utilize simulations to observe how objects interact with each other.
+0083: Instead of assuming a fixed set of relations we propose a novel data-driven approach to learn continuous representations for object relations. We leverage simulations to allow for unconstrained interactions between object pairs.
+0084: Using simulations provides us access to a large set of labeled data underlying these interactions, such as object contacts, pose changes.
+0085: We use these interaction effects to create a contrastive loss formulation that allows us to learn continuous representations for object relations.
+0086: Our main contributions include
+0087: 1) We propose a novel approach that leverages simulations to learn a continuous representation for object relations.
+0088: 2) Our approach is grounded in object interactions and hence does not assume a fixed set of object relations.
+0089: 3) We show that our continuous representations, which are learned via simulation, can be directly used for precondition learning of real world manipulation tasks, without requiring any specific sim2real adaptation.
+0090: 2
+0091: Related Works
+0092: Learning skill preconditions is closely related with symbol learning. Symbolic language formulations explicitly include pre-conditions and post-conditions
+0093: [
+0094: 7
+0095: ]
+0096: .
+0097: Thus previous approaches have looked at inferring discrete symbols and predicates from continuous states.
+0098: There have been two sets of approaches in this regard.
+0099: At one end, previous works have looked into classifying continuous states into pre-defined symbolic forms
+0100: [
+0101: 8
+0102: ,
+0103: 9
+0104: ,
+0105: 10
+0106: ,
+0107: 3
+0108: ]
+0109: . Alternately, other works aim to discover these discrete forms by methods such as clustering
+0110: [
+0111: 11
+0112: ,
+0113: 12
+0114: ,
+0115: 13
+0116: ,
+0117: 2
+0118: ]
+0119: .
+0120: Some of the above approaches have also looked into learning discrete representations for object relations. For instance,
+0121: [
+0122: 3
+0123: ]
+0124: uses histogram features extracted from point clouds to classify object relations into discrete categories.
+0125: In
+0126: [
+0127: 2
+0128: ]
+0129: , the authors construct a graph of contact points between two objects, which is used to classify object relations using supervised learning.
+0130: While
+0131: [
+0132: 4
+0133: ]
+0134: learns discrete spatial relations by geometrically dividing the space around an object into a fixed set of regions.
+0135: In contrast to discrete symbolic forms, we focus on learning continuous representations for object relations.
+0136: Also, instead of solely focusing on either geometric relations
+0137: [
+0138: 4
+0139: ]
+0140: or contact points
+0141: [
+0142: 2
+0143: ]
+0144: , our approach is grounded in a robot’s interaction with pairs of objects.
+0145: This allows us to learn continuous relational representations by leveraging spatial geometry, contact information, and object-interaction dynamics all together.
+0146: Recent work has also focused on learning continuous representations for object relations
+0147: [
+0148: 5
+0149: ,
+0150: 6
+0151: ]
+0152: .
+0153: Both
+0154: [
+0155: 5
+0156: ,
+0157: 6
+0158: ]
+0159: learn these representations from a dataset of
+0160: N
+0161: ∼
+0162: 500
+0163: N\sim 500
+0164: scenes.
+0165: Each scene has a pair of objects, which are sampled from a set of known object templates.
+0166: The object pair arrangement is sampled from a pre-defined set of relations and the aim is to generalize these arrangements to new sets of objects. The dataset is manually labelled with binary similarity value for each scene pair
+0167: [
+0168: 5
+0169: ]
+0170: .
+0171: Based on this dataset
+0172: [
+0173: 5
+0174: ]
+0175: proposes a distance metric to extract similar scenes.
+0176: While
+0177: [
+0178: 6
+0179: ]
+0180: uses contrastive learning to learn this distance metric.
+0181: Although
+0182: [
+0183: 5
+0184: ,
+0185: 6
+0186: ]
+0187: learn continuous relationas, the dataset used to learn these consists of a pre-defined set of discrete relations only.
+0188: Additionally, using only binary labels to distinguish between scenes is limiting,
+0189: e.g.
+0190: scenes where object A is on the left of object B are labeled similarly irrespective of the distance between two objects.
+0191: By contrast, rather than manually labelling scenes, we leverage simulations to generate large amount of object pair interactions. We group similar scenes together based on effets of these interaction. Since these effects have continuous values, our model is able to learn richer relational representations.
+0192: Further, since these interactions are randomly generated, we do not assume any predefined set of relations.
+0193: Previous work
+0194: [
+0195: 14
+0196: ]
+0197: has also looked into precondition learning using objects, parts and their interactions. In
+0198: [
+0199: 14
+0200: ]
+0201: these are referred to as scene elements and represented by their mean 3D position. All scene elements are then used together for spatial precondition learning using random forests.
+0202: However, using position features alone is severely limiting since many manipulations tasks depend on object sizes, orientation, geometry, and specific contact distributions.
+0203: 3
+0204: Approach
+0205: We learn preconditions for manipulation skills by decomposing a scene
+0206: S
+0207: S
+0208: into its constituent objects
+0209: (
+0210: o
+0211: 1
+0212: ,
+0213: o
+0214: 2
+0215: ,
+0216: o
+0217: 3
+0218: ,
+0219: …
+0220: )
+0221: (o_{1},o_{2},o_{3},\ldots)
+0222: and their continuous relations
+0223: (
+0224: r
+0225: ⁡
+0226: (
+0227: o
+0228: 1
+0229: ,
+0230: o
+0231: 2
+0232: )
+0233: ,
+0234: r
+0235: ⁡
+0236: (
+0237: o
+0238: 1
+0239: ,
+0240: o
+0241: 3
+0242: )
+0243: ,
+0244: …
+0245: )
+0246: (r(o_{1},o_{2}),r(o_{1},o_{3}),\ldots)
+0247: .
+0248: We assume the scene decomposition is already known and object identities can be determined if required.
+0249: To infer object relations
+0250: r
+0251: ⁡
+0252: (
+0253: o
+0254: i
+0255: ,
+0256: o
+0257: j
+0258: )
+0259: r(o_{i},o_{j})
+0260: , we learn a function
+0261: f
+0262: rel
+0263: :
+0264: ℝ
+0265: C
+0266: ×
+0267: L
+0268: ×
+0269: W
+0270: ×
+0271: H
+0272: →
+0273: ℝ
+0274: K
+0275: f_{\text{rel}}:\mathbb{R}^{C\times L\times W\times H}\to\mathbb{R}^{K}
+0276: , which uses a 3D voxel based perceptual input,
+0277: where
+0278: C
+0279: C
+0280: is the number of channels and
+0281: L
+0282: ,
+0283: W
+0284: ,
+0285: H
+0286: L,W,H
+0287: are the length, width and height of the scene, and outputs a continuous relational embedding of size
+0288: K
+0289: K
+0290: .
+0291: This perceptual input consists of a pair of objects in the scene.
+0292: To learn
+0293: f
+0294: rel
+0295: f_{\text{rel}}
+0296: , we leverage simulations to generate a large set of pairwise object interactions and use their observed effects as our learning signal.
+0297: More specifically, we assume the existence of a set of simple perturbation actions that allow a robot to move an object around. These actions let the robot freely interact with pairs of objects.
+0298: The use of simulation also gives us access to the underlying effects of these interactions
+0299: e.g.
+0300: , change in pose, object contacts and normals, and force-torque values.
+0301: We utilize these observed effects to create a contrastive learning formulation which groups scenes together based on the similarity of these interaction effects.
+0302: Once we learn
+0303: f
+0304: rel
+0305: f_{\text{rel}}
+0306: , we use it to extract object relations
+0307: r
+0308: ⁡
+0309: (
+0310: o
+0311: i
+0312: ,
+0313: o
+0314: j
+0315: )
+0316: =
+0317: f
+0318: rel
+0319: ​
+0320: (
+0321: o
+0322: i
+0323: ,
+0324: o
+0325: j
+0326: )
+0327: r(o_{i},o_{j})=f_{\text{rel}}(o_{i},o_{j})
+0328: for all object pairs in the scene. These extracted relations are then used as input to our precondition learning model, which is trained directly on real world manipulation task data.
+0329: While training the precondition model, we do not fine-tune the object relation model
+0330: f
+0331: rel
+0332: f_{\text{rel}}
+0333: .
+0334: We show that
+0335: f
+0336: rel
+0337: f_{\text{rel}}
+0338: trained in simulation can be directly transferred to the real world without requiring any sim2real adaptation.
+0339: 3.1
+0340: Generating Pairwise Interactions In Simulation
+0341: Pairwise object relations are closely intertwined with their potential interactions. For instance, in Figure
+0342: 1
+0343: (right) if an object is gently placed on another object it will either stay in place or it might tilt over and fall. Although both of these scenes might classify a discrete object relation as being “above”, the exact semantics of these relations are quite different.
+0344: To generate object pair interactions we use the V-REP simulator
+0345: [
+0346: 15
+0347: ]
+0348: with the underlying Bullet physics engine (v2.83)
+0349: [
+0350: 16
+0351: ]
+0352: .
+0353: For each interaction, we initially create a scene with two objects
+0354: o
+0355: i
+0356: o_{i}
+0357: and
+0358: o
+0359: j
+0360: o_{j}
+0361: .
+0362: Each object’s shape is chosen from a fixed set of primitive shapes including cuboids, cylinders and spheres.
+0363: We generate a voxel representation for this scene using an object-centric approach,
+0364: i.e.
+0365: , the reference frame of the scene is centered on one of the objects, referred to as the anchor object (
+0366: o
+0367: i
+0368: o_{i}
+0369: ), while
+0370: o
+0371: j
+0372: o_{j}
+0373: is the the referrant object. Figure
+0374: 1
+0375: (right column) shows an example of such a voxel based representation.
+0376: To observe the interaction effects of these two objects we keep the anchor object static.
+0377: Since objects in the real world occur in varying spatial locations we do not assume any fixed object positions. However, since the scene reference frame is centered on the anchor object we do not need to set its position and orientation.
+0378: To position the referrant object we sample a location
+0379: (
+0380: x
+0381: ,
+0382: y
+0383: ,
+0384: z
+0385: )
+0386: (x,y,z)
+0387: around the anchor object such that the referrant object is less than
+0388: 0.5
+0389: 0.5
+0390: meter away from the anchor.
+0391: To set the orientation we rotate the object around the z-axis between
+0392: (
+0393: −
+0394: π
+0395: /
+0396: 6
+0397: ,
+0398: π
+0399: /
+0400: 6
+0401: )
+0402: (-\pi/6,\pi/6)
+0403: radians.
+0404: To create object pair interactions, we apply local perturbations to the referrant object. These local perturbations move the referrant object in the Euclidean space. Figure
+0405: 1
+0406: (right column) shows three different instances of local perturbations.
+0407: Formally, these perturbation can be expressed in polar format as
+0408: (
+0409: r
+0410: ,
+0411: θ
+0412: ,
+0413: ϕ
+0414: )
+0415: (r,\theta,\phi)
+0416: , where
+0417: r
+0418: r
+0419: is the action magnitude and
+0420: θ
+0421: ,
+0422: ϕ
+0423: \theta,\phi
+0424: , represents the action direction.
+0425: We sample action directions that are axes aligned with the objects reference frame as well as along the diagonals of each axis pair.
+0426: We use two different strategies to sample action magnitude.
+0427: First, we use a fixed action magnitude sampled from
+0428: [
+0429: 5
+0430: ​
+0431: c
+0432: ​
+0433: m
+0434: ,
+0435: 20
+0436: ​
+0437: c
+0438: ​
+0439: m
+0440: ]
+0441: \left[5cm,20cm\right]
+0442: . Additionally, we also use adaptive actions, wherein the action magnitude is set as the distance between the anchor and the referrant object centers. These adaptive actions ensure that objects will interact even if the distance between them is greater than the maximum fixed action magnitude.
+0443: To perform local perturbation actions, we add a virtual robot with a spring-damper system.
+0444: Given the data generation process, we generate
+0445: N
+0446: ∼
+0447: 100,000
+0448: N\sim 100,000
+0449: pairwise object scenes.
+0450: For each scene, we save the voxel representation for the anchor and referrant objects.
+0451: Additionally, for each action we also record the distance moved (in meters) by the referrant object
+0452: (
+0453: Δ
+0454: ​
+0455: p
+0456: )
+0457: (\Delta p)
+0458: , as well as the change in orientation (in radians) of the referrant object
+0459: (
+0460: Δ
+0461: ​
+0462: θ
+0463: )
+0464: (\Delta\theta)
+0465: when it interacts with the anchor object.
+0466: For scenes which involve contacts between objects we also record the contact position and the contact normals. These contact positions are recorded for the anchor object relative to its frame of reference.
+0467: More specific details can be found in the supplementary material.
+0468: 3.2
+0469: Learning Object Relations
+0470: We use pairwise object interactions to learn our object relation model
+0471: f
+0472: rel
+0473: f_{\text{rel}}
+0474: .
+0475: The input to
+0476: f
+0477: rel
+0478: f_{\text{rel}}
+0479: is 3D voxel representation of an object pair and it outputs a continuous low dimensional relation embedding.
+0480: This formulation does not require an action as an input and hence
+0481: f
+0482: rel
+0483: f_{\text{rel}}
+0484: can be used directly at test time.
+0485: Our main insight to learn
+0486: f
+0487: rel
+0488: f_{\text{rel}}
+0489: is based on the fact that the same actions on similar scenes should result in similar effects. These action effects refer to change in properties such as object position, orientation, contacts.
+0490: We use these action effects to train
+0491: f
+0492: rel
+0493: f_{\text{rel}}
+0494: using two different sets of losses.
+0495: First, we take a metric learning approach and use the action effects to create contrastive losses that group similar scenes together and away from dissimilar ones.
+0496: Second, we combine the output relation embedding with the action representation to directly predict the action effects.
+0497: Model:
+0498: Figure
+0499: 2
+0500: (Left) shows the architecture of our model. We use a ResNet
+0501: [
+0502: 17
+0503: ]
+0504: based architecture as our backbone model to process the 3D voxel input.
+0505: We use
+0506: [
+0507: 18
+0508: ]
+0509: to adapt the ResNet model to operate on 3D input.
+0510: The output of the model is projected down to
+0511: ℝ
+0512: K
+0513: =
+0514: 256
+0515: \mathbb{R}^{K=256}
+0516: using a linear projection.
+0517: We refer to the output of the linear projection as the relation embedding
+0518: r
+0519: ⁡
+0520: (
+0521: o
+0522: i
+0523: ,
+0524: o
+0525: j
+0526: )
+0527: =
+0528: f
+0529: rel
+0530: ​
+0531: (
+0532: X
+0533: )
+0534: r(o_{i},o_{j})=f_{\text{rel}}(X)
+0535: , where
+0536: o
+0537: i
+0538: o_{i}
+0539: ,
+0540: o
+0541: j
+0542: o_{j}
+0543: denotes the anchor and referrant object respectively and
+0544: X
+0545: X
+0546: is the perceptual input with the object pair.
+0547: The projected relation embedding
+0548: r
+0549: ⁡
+0550: (
+0551: o
+0552: i
+0553: ,
+0554: o
+0555: j
+0556: )
+0557: r(o_{i},o_{j})
+0558: is then concatenated with the action input
+0559: a
+0560: a
+0561: . We create
+0562: a
+0563: a
+0564: by combing the action vector of size
+0565: ℝ
+0566: 3
+0567: \mathbb{R}^{3}
+0568: with a one-hot label of size
+0569: ℝ
+0570: 2
+0571: \mathbb{R}^{2}
+0572: , this label is used to differentiate between fixed and adaptive perturbation actions.
+0573: This combined representation is then used to predict a set of outputs which correspond to the observed effects of this action.
+0574: Figure 2:
+0575: Left:
+0576: Overall architecture to learn object relation model
+0577: f
+0578: rel
+0579: f_{\text{rel}}
+0580: .
+0581: Right:
+0582: Precondition learning architecture based on GNNs, shows graph model at initialization and the graph edge and node models.
+0583: Loss:
+0584: We learn
+0585: f
+0586: rel
+0587: f_{\text{rel}}
+0588: using contrastive losses, which have been used to learn continuous embeddings from high dimensional data
+0589: [
+0590: 19
+0591: ,
+0592: 6
+0593: ,
+0594: 20
+0595: ,
+0596: 21
+0597: ]
+0598: .
+0599: Contrastive losses are useful for our formulation since they compare sample similarity directly in the representation space.
+0600: Amongst the multiple contrastive loss formulations we use the triplet loss
+0601: [
+0602: 19
+0603: ]
+0604: .
+0605: Formally, the triplet loss requires an anchor
+0606: (
+0607: a
+0608: )
+0609: (a)
+0610: and positive
+0611: (
+0612: p
+0613: )
+0614: (p)
+0615: - negative
+0616: (
+0617: n
+0618: )
+0619: (n)
+0620: pairs. The aim is to keep the anchor and positive samples together while pushing the negative sample away based on a margin,
+0621: L
+0622: triplet
+0623: =
+0624: (
+0625: d
+0626: a
+0627: ​
+0628: p
+0629: −
+0630: d
+0631: a
+0632: ​
+0633: n
+0634: +
+0635: γ
+0636: )
+0637: +
+0638: L_{\text{triplet}}=(d_{ap}-d_{an}+\gamma)_{+}
+0639: where
+0640: d
+0641: a
+0642: ​
+0643: p
+0644: d_{ap}
+0645: and
+0646: d
+0647: a
+0648: ​
+0649: n
+0650: d_{an}
+0651: are the squared euclidean distance between the anchor and positive embedding, and anchor and negative embedding respectively.
+0652: γ
+0653: \gamma
+0654: is a constant margin between similar and dissimilar pairs.
+0655: We utilize the observed effects of the perturbation actions to get positive and negative samples for the anchor scene.
+0656: Specifically, scenes where all local perturbations lead to similar effects are more similar than other scenes.
+0657: Based on this we add triplet loss for both position
+0658: (
+0659: Δ
+0660: ​
+0661: p
+0662: )
+0663: (\Delta p)
+0664: and orientation changes
+0665: (
+0666: Δ
+0667: ​
+0668: θ
+0669: )
+0670: (\Delta\theta)
+0671: separately.
+0672: To get positive samples for
+0673: (
+0674: Δ
+0675: ​
+0676: θ
+0677: )
+0678: (\Delta\theta)
+0679: , we compare all action effects using
+0680: |
+0681: Δ
+0682: ​
+0683: θ
+0684: 1
+0685: i
+0686: −
+0687: Δ
+0688: ​
+0689: θ
+0690: 2
+0691: i
+0692: |
+0693: <
+0694: Δ
+0695: ​
+0696: θ
+0697: sim
+0698: |\Delta\theta^{i}_{\text{1}}-\Delta\theta^{i}_{\text{2}}|<\Delta\theta_{\text{sim}}
+0699: , where
+0700: Δ
+0701: ​
+0702: θ
+0703: 1
+0704: i
+0705: \Delta\theta^{i}_{\text{1}}
+0706: , and
+0707: Δ
+0708: ​
+0709: θ
+0710: 2
+0711: i
+0712: \Delta\theta^{i}_{\text{2}}
+0713: are the effects of
+0714: i
+0715: i
+0716: ’th local perturbation action on two different scenes.
+0717: To achieve the same for position changes, instead of using
+0718: Δ
+0719: ​
+0720: p
+0721: \Delta p
+0722: directly we use the ratio of observed change in position to the desired change in position
+0723: Δ
+0724: ​
+0725: p
+0726: r
+0727: =
+0728: Δ
+0729: ​
+0730: p
+0731: observed
+0732: Δ
+0733: ​
+0734: p
+0735: desired
+0736: ,
+0737: \Delta p^{r}=\frac{\Delta p^{\text{observed}}}{\Delta p^{\text{desired}}},
+0738: where
+0739: Δ
+0740: ​
+0741: p
+0742: observed
+0743: \Delta p^{\text{observed}}
+0744: is the observed change in referrant object center position, and
+0745: Δ
+0746: ​
+0747: p
+0748: desired
+0749: \Delta p^{\text{desired}}
+0750: is the desired change
+0751: i.e.
+0752: action vector.
+0753: We set
+0754: Δ
+0755: ​
+0756: p
+0757: desired
+0758: \Delta p^{\text{desired}}
+0759: to 1 for normal actions, while for adaptive actions it is set to the voxel distance between objects centers.
+0760: This is required to allow adaptive actions to be compared against each other since these actions result in different
+0761: Δ
+0762: ​
+0763: p
+0764: desired
+0765: \Delta p^{\text{desired}}
+0766: values across different scenes.
+0767: We sample negative scenes by using
+0768: |
+0769: Δ
+0770: ​
+0771: θ
+0772: 1
+0773: i
+0774: −
+0775: Δ
+0776: ​
+0777: θ
+0778: 2
+0779: i
+0780: |
+0781: >
+0782: Δ
+0783: ​
+0784: θ
+0785: diff
+0786: |\Delta\theta^{i}_{\text{1}}-\Delta\theta^{i}_{\text{2}}|>\Delta\theta_{\text{diff}}
+0787: , where we set
+0788: Δ
+0789: ​
+0790: θ
+0791: diff
+0792: =
+0793: Δ
+0794: ​
+0795: θ
+0796: sim
+0797: +
+0798: ϵ
+0799: \Delta\theta_{\text{diff}}=\Delta\theta_{\text{sim}}+\epsilon
+0800: , where
+0801: ϵ
+0802: \epsilon
+0803: is a small value set manually.
+0804: We include implementation details, including the different hyper-parameters, for the contrastive loss, in the supplementary material.
+0805: In addition to contrastive losses, we also use the following prediction losses to train
+0806: f
+0807: rel
+0808: f_{\text{rel}}
+0809: :
+0810: Predicting object positions:
+0811: We use
+0812: f
+0813: rel
+0814: f_{\text{rel}}
+0815: to predict the change in object position
+0816: Δ
+0817: ​
+0818: p
+0819: \Delta p
+0820: for the referrant object. However, since we use voxels for our scene representation we lose the granularity of continuous movement in the euclidean space. Hence, instead of predicting the raw values of change in position we predict the voxel displacement of the referrant object’s origin
+0821: Δ
+0822: ​
+0823: p
+0824: v
+0825: \Delta p^{v}
+0826: .
+0827: We add a mean-squared loss on this prediction,
+0828: L
+0829: pos
+0830: =
+0831: ‖
+0832: Δ
+0833: ​
+0834: p
+0835: pred
+0836: v
+0837: −
+0838: Δ
+0839: ​
+0840: p
+0841: gt
+0842: v
+0843: ‖
+0844: 2
+0845: L_{\text{pos}}=||\Delta p^{v}_{\text{pred}}-\Delta p^{v}_{\text{gt}}||_{2}
+0846: Predicting object orientations:
+0847: We also predict the change in orientation
+0848: Δ
+0849: ​
+0850: θ
+0851: \Delta\theta
+0852: of the referrant object. Since the object is attached to a robot and moved controllably the magnitude of
+0853: Δ
+0854: ​
+0855: θ
+0856: \Delta\theta
+0857: is usually low
+0858: Δ
+0859: ​
+0860: θ
+0861: ∼
+0862: 0.1
+0863: \Delta\theta\sim 0.1
+0864: . Hence, instead of using
+0865: L
+0866: 2
+0867: L_{2}
+0868: loss we use
+0869: L
+0870: 1
+0871: L_{1}
+0872: loss,
+0873: L
+0874: orient
+0875: =
+0876: ‖
+0877: Δ
+0878: ​
+0879: θ
+0880: pred
+0881: −
+0882: Δ
+0883: ​
+0884: θ
+0885: gt
+0886: ‖
+0887: 1
+0888: L_{\text{orient}}=||\Delta\theta_{\text{pred}}-\Delta\theta_{\text{gt}}||_{1}
+0889: Predicting contact distributions:
+0890: We also predict the contact distributions between interacting objects. Given the contact data from simulation we fit a Gaussian model to predict the mean
+0891: (
+0892: x
+0893: ,
+0894: y
+0895: ,
+0896: z
+0897: )
+0898: (x,y,z)
+0899: of the contact point distribution. We then add the following loss,
+0900: L
+0901: contact
+0902: =
+0903: |
+0904: |
+0905: (
+0906: μ
+0907: pred
+0908: −
+0909: μ
+0910: gt
+0911: |
+0912: |
+0913: 2
+0914: L_{\text{contact}}=||(\mu_{\text{pred}}-\mu_{\text{gt}}||_{2}
+0915: .
+0916: 3.3
+0917: Learning Precondition Models
+0918: Once we learn the object relation model
+0919: f
+0920: rel
+0921: f_{\text{rel}}
+0922: from pairwise object interaction data we use it for downstream real-world precondition learning tasks.
+0923: Our precondition learning model is based on deep neural network architectures which can operate on a set of inputs which are provided by the learned
+0924: f
+0925: rel
+0926: f_{\text{rel}}
+0927: model.
+0928: Formally, given a scene
+0929: S
+0930: S
+0931: with objects
+0932: S
+0933: =
+0934: {
+0935: o
+0936: 1
+0937: ,
+0938: o
+0939: 2
+0940: ,
+0941: …
+0942: ,
+0943: o
+0944: N
+0945: }
+0946: S=\{o_{1},o_{2},\ldots,o_{N}\}
+0947: . We use
+0948: f
+0949: rel
+0950: f_{\text{rel}}
+0951: to get object relation embeddings for all
+0952: N
+0953: ×
+0954: (
+0955: N
+0956: −
+0957: 1
+0958: )
+0959: N\times(N-1)
+0960: object pairs
+0961: f
+0962: rel
+0963: ​
+0964: (
+0965: o
+0966: i
+0967: ,
+0968: o
+0969: j
+0970: )
+0971: f_{\text{rel}}(o_{i},o_{j})
+0972: , where
+0973: o
+0974: i
+0975: o_{i}
+0976: and
+0977: o
+0978: j
+0979: o_{j}
+0980: are the anchor and referrant object.
+0981: For our precondition learning model we use two different network architectures
+0982: i.e.
+0983: Relational Networks (RNs) and Graph Neural Networks (GNNs). RNs have been used to reason about objects and their relations
+0984: [
+0985: 22
+0986: ]
+0987: . GNNs are more general neural network architectures
+0988: where the input can be represented as a graph
+0989: G
+0990: =
+0991: (
+0992: V
+0993: ,
+0994: E
+0995: )
+0996: G=(V,E)
+0997: , with vertices
+0998: V
+0999: V
+1000: and edges
+1001: E
+1002: E
+1003: [
+1004: 23
+1005: ,
+1006: 24
+1007: ,
+1008: 25
+1009: ]
+1010: .
+1011: Figure
+1012: 2
+1013: (Right) shows our formulation of a scene
+1014: S
+1015: S
+1016: as a GNN. Specifically, we represent each object as a separate node
+1017: v
+1018: i
+1019: ≡
+1020: o
+1021: i
+1022: v_{i}\equiv o_{i}
+1023: and add bi-directional edges between every node pair. At initialization, we add
+1024: f
+1025: rel
+1026: ​
+1027: (
+1028: o
+1029: i
+1030: ,
+1031: o
+1032: j
+1033: )
+1034: f_{\text{rel}}(o_{i},o_{j})
+1035: as the edge information for edge
+1036: e
+1037: i
+1038: ​
+1039: j
+1040: =
+1041: (
+1042: v
+1043: i
+1044: ,
+1045: v
+1046: j
+1047: )
+1048: e_{ij}=(v_{i},v_{j})
+1049: Unless explicitly specified, we do not add any node information to the vertices. To allow for better inference, we stack two layers of our graph network architecture. The output of the final graph layer is classified using the sum of all the node and edge embeddings. More details are presented in the supplementary material.
+1050: Figure 3:
+1051: Left:
+1052: Example scenes with 3 and 4 objects used for the objects in line task.
+1053: Right:
+1054: Example scenes with 0 and 2 distractor objects for learning food cutting preconditions.
+1055: 4
+1056: Experiments
+1057: Our aim is to investigate the following questions,
+1058: 1) Given limited amount of precondition training data, how effective are the embeddings learned by our object relation model for precondition learning?
+1059: 2) Does a structured representation of a scene as objects and relations
+1060: help in precondition learning for scenes with variable number of objects?
+1061: and
+1062: 3) How effectively do the precondition models generalize to objects with different shapes and sizes than the train set?
+1063: To verify these we use three different manipulation tasks: sweeping objects in a line, food cutting, and 3D block unstacking.
+1064: Moreover, to show the effectiveness of our learned embeddings, we do not finetune the object relation model
+1065: f
+1066: rel
+1067: f_{\text{rel}}
+1068: during precondition learning.
+1069: Metrics:
+1070: Since precondition learning is a binary prediction problem we compare models using F1 and weighted F1 scores. F1 score is the harmonic mean of precision and recall with higher values (max: 1.0) indicating better models and wt. F1-score is used to account for data imbalance.
+1071: Baselines:
+1072: We compare our approach against both learning and non-learning baseline methods.
+1073: Among learning based methods we initially use models that use 3D scene input and output the binary precondition.
+1074: We use multiple baseline architectures to represent this learned model.
+1075: First, similar to our object relation model, we use a 3D ResNet-18 model with the output being projected down using multiple linear layers to predict the precondition output. To increase the representation capacity of this baseline model we also evaluate a ResNet-34 based model which is adapted in the same way as
+1076: [
+1077: 18
+1078: ]
+1079: .
+1080: Given the limited amount of real world data, we also compare against a smaller VGG
+1081: [
+1082: 26
+1083: ]
+1084: based model with 3D convolutions.
+1085: To verify the effectiveness of continuous relations we also use a discrete relation baseline, wherein instead of continuous relations we use discrete relations. We refer to this as
+1086: DiscreteRel
+1087: .
+1088: Finally, in addition to learning based methods we also evaluate another approach which utilizes the simulator to verify the preconditions. In this approach we transfer the 3D representation of a real world scene into the simulator. Once the scene has been transferred we simulate the task to verify the preconditions. We refer to this baseline as
+1089: real2sim
+1090: .
+1091: See appendix for training and implementation details.
+1092: Sweep Objects In Line
+1093: Food Cutting
+1094: Model
+1095: Train Set
+1096: (objects)
+1097: Test Set
+1098: (objects)
+1099: F1
+1100: Wt-F1
+1101: Train Set
+1102: (distractors)
+1103: Test Set
+1104: (distractors)
+1105: F1
+1106: Wt.-F1
+1107: ResNet-18
+1108: 3, 4
+1109: 4
+1110: 0.934
+1111: 0.951
+1112: 0, 1
+1113: 2
+1114: 0.667
+1115: 0.741
+1116: Resnet-34
+1117: 3, 4
+1118: 4
+1119: 0.934
+1120: 0.951
+1121: 0, 1
+1122: 2
+1123: 0.701
+1124: 0.741
+1125: VGG*
+1126: 3, 4
+1127: 4
+1128: 0.911
+1129: 0.948
+1130: 0, 1
+1131: 2
+1132: 0.720
+1133: 0.590
+1134: DiscreteRel
+1135: 3, 4
+1136: 4
+1137: 0.96
+1138: 0.96
+1139: 0, 1
+1140: 2
+1141: 0.38
+1142: 0.456
+1143: Real2Sim
+1144: 3, 4
+1145: 4
+1146: 0.869
+1147: 0.871
+1148: -
+1149: -
+1150: N/A
+1151: N/A
+1152: Our Model (RN)
+1153: 3, 4
+1154: 4
+1155: 0.949
+1156: 0.970
+1157: 0, 1
+1158: 2
+1159: 0.649
+1160: 0.720
+1161: Our Model (GNN)
+1162: 3, 4
+1163: 4
+1164: 0.921
+1165: 0.944
+1166: 0, 1
+1167: 2
+1168: 0.841
+1169: 0.804
+1170: ResNet-18
+1171: 3, 4
+1172: 6
+1173: 0.802
+1174: 0.771
+1175: 0,1,2
+1176: 3
+1177: 0.844
+1178: 0.902
+1179: ResNet-34
+1180: 3, 4
+1181: 6
+1182: 0.823
+1183: 0.833
+1184: 0,1,2
+1185: 3
+1186: 0.777
+1187: 0.871
+1188: VGG*
+1189: 3, 4
+1190: 6
+1191: 0.667
+1192: 0.481
+1193: 0,1,2
+1194: 3
+1195: 0.788
+1196: 0.842
+1197: DiscreteRel
+1198: 3, 4
+1199: 6
+1200: 0.98
+1201: 0.98
+1202: 0,1,2
+1203: 3
+1204: 0.200
+1205: 0.658
+1206: Real2Sim
+1207: 3, 4
+1208: 6
+1209: 0.960
+1210: 0.960
+1211: -
+1212: -
+1213: N/A
+1214: N/A
+1215: Our Model (RN)
+1216: 3, 4
+1217: 6
+1218: 0.971
+1219: 0.981
+1220: 0,1,2
+1221: 3
+1222: 0.880
+1223: 0.935
+1224: Our Model (GNN)
+1225: 3, 4
+1226: 6
+1227: 0.948
+1228: 0.969
+1229: 0,1,2
+1230: 3
+1231: 0.921
+1232: 0.940
+1233: ResNet-18
+1234: 3, 4
+1235: 6 (diff. size)
+1236: 0.695
+1237: 0.662
+1238: 0,1,2
+1239: 4
+1240: 0.827
+1241: 0.866
+1242: ResNet-34
+1243: 3, 4
+1244: 6
+1245: 0.692
+1246: 0.640
+1247: 0,1,2
+1248: 4
+1249: 0.833
+1250: 0.868
+1251: VGG*
+1252: 3, 4
+1253: 6
+1254: 0.640
+1255: 0.601
+1256: 0,1,2
+1257: 4
+1258: 0.720
+1259: 0.770
+1260: DiscreteRel
+1261: 3, 4
+1262: 6
+1263: 0.782
+1264: 0.801
+1265: 0,1,2
+1266: 4
+1267: 0.400
+1268: 0.590
+1269: Real2Sim
+1270: 3, 4
+1271: 6
+1272: 0.904
+1273: 0.912
+1274: 0,1,2
+1275: 4
+1276: N/A
+1277: N/A
+1278: Our Model (RN)
+1279: 3, 4
+1280: 6
+1281: 0.952
+1282: 0.952
+1283: 0,1,2
+1284: 4
+1285: 0.929
+1286: 0.944
+1287: Our Model (GNN)
+1288: 3, 4
+1289: 6
+1290: 0.952
+1291: 0.952
+1292: 0,1,2
+1293: 4
+1294: 0.960
+1295: 0.960
+1296: Table 1:
+1297: Precondition learning results for sweeping objects in a line and food food skill.
+1298: Figure 4:
+1299: Left:
+1300: Test set examples with
+1301: different
+1302: shapes and sizes for sweeping task. Baseline here referrs to visual baseline.
+1303: Right:
+1304: Example scenes for sweeping task when imported using the real2sim baseline. The top row shows the initial scene before the sweep while the bottom row shows the after scene.
+1305: 4.1
+1306: Sweeping Objects in Line
+1307: Humans are adept at inferring if objects lie in an approximately straight line.
+1308: However for robots, the presence of sensor noise, variances in object sizes and small amount of input data make this a challenging task.
+1309: Specifically, we look at task preconditions when a robot arm sweeps along the X-axis.
+1310: Figure
+1311: 3
+1312: (left) shows some examples from the train dataset.
+1313: We collect scenes with variable number of objects (3, 4 and 6) and train on 25 different scenes.
+1314: Table
+1315: 1
+1316: (left) shows results for multiple train-test sets.
+1317: For the first train-test split all methods perform well.
+1318: However, for the other splits
+1319: i.e.
+1320: , when we test on 6 objects and objects with different shapes and sizes, the learning baseline methods perform poorly (wt. F1-score of
+1321: 0.83
+1322: 0.83
+1323: and
+1324: 0.66
+1325: 0.66
+1326: ).
+1327: This is not unexpected given that we have limited training data and a large mismatch between train and test distributions.
+1328: While, discrete relations baseline performs quite well on the first two splits but poorly on the last split.
+1329: Also, real2sim is unaffected by the distribution mismatch and performs quite well with a small decrease in its performance on the
+1330: 3
+1331: 3
+1332: rd split.
+1333: Both of the latter baselines perform poorly due to more complex geometries of objects in the test set.
+1334: This leads to imperfect voxel representations,
+1335: which results in incorrect discrete relations and noisy simulation results when exported into the simulator respectively.
+1336: We visualise this in Figure
+1337: 4
+1338: (Right) which shows two different sets of scenes,
+1339: each containing two scenes with similar initial configurations
+1340: but very different final positions.
+1341: Alternately, both of our models are able to outperform the baseline methods with a wt. F1-score of
+1342: 0.96
+1343: 0.96
+1344: and
+1345: 0.95
+1346: 0.95
+1347: respectively.
+1348: Note that we only input object relation embeddings to our model and no other object specific information.
+1349: 4.2
+1350: Food Cutting
+1351: We use cutting food as our next task since it requires reasoning about multiple types of interactions.
+1352: For instance, to cut a food item the robot needs to hold the knife with its sharp edge in close contact with the food item, the knife should be oriented correctly to pass through the food item, and there should be no obstacle that can potentially hamper the back-and-forth cutting motion.
+1353: Since the simulator does not implement cutting we
+1354: cannot
+1355: use the real2sim baseline.
+1356: Figures
+1357: 3
+1358: (right) shows some samples of the collected data.
+1359: Table
+1360: 1
+1361: (right) shows results for this task.
+1362: For the initial case, wherein we train with only one distractor object and test on more than one distractor objects, all methods perform poorly with a maximum wt. F1-score of our GNN based model
+1363: 0.804
+1364: 0.804
+1365: .
+1366: We believe this happens because with just one distractor in the train set many different object permutations were never observed and hence the model performs poorly on the test set.
+1367: However, when we train models with upto 2 distractors the performance on test sets with 3 or 4 distractors is much better.
+1368: Also, for all of the train-test splits our relational precondition models are able to outperform all other baseline methods (wt. F1:
+1369: 0.960
+1370: 0.960
+1371: and
+1372: 0.940
+1373: 0.940
+1374: ).
+1375: Among our object relation based precondition models, the GNN based models perform slightly better. This can be attributed to their larger representation capacity, since we stack two GNN layers while the relation network model only contains one relational layer.
+1376: Model
+1377: Train Set
+1378: Test Set
+1379: F1
+1380: Wt-F1
+1381: Train Set
+1382: Test Set
+1383: F1
+1384: Wt.-F1
+1385: ResNet-18
+1386: 3,4,5
+1387: 7
+1388: 0.741
+1389: 0.836
+1390: 3,4,5,7
+1391: 6
+1392: 0.770
+1393: 0.820
+1394: ResNet-34
+1395: 3,4,5
+1396: 7
+1397: 0.712
+1398: 0.809
+1399: 3,4,5,7
+1400: 6
+1401: 0.769
+1402: 0.820
+1403: VGG*
+1404: 3,4,5
+1405: 7
+1406: 0.711
+1407: 0.804
+1408: 3,4,5,7
+1409: 6
+1410: 0.744
+1411: 0.818
+1412: DiscreteRel
+1413: 3,4,5
+1414: 7
+1415: 0.561
+1416: 0.655
+1417: 3,4,5,7
+1418: 6
+1419: 0.594
+1420: 0.617
+1421: Real2Sim
+1422: 3,4,5
+1423: 7
+1424: 0.671
+1425: 0.732
+1426: 3,4,5,7
+1427: 6
+1428: 0.651
+1429: 0.717
+1430: Our Model (RN)
+1431: 3,4,5
+1432: 7
+1433: 0.685
+1434: 0.775
+1435: 3,4,5,7
+1436: 6
+1437: 0.679
+1438: 0.771
+1439: Our Model (GNN) all edges
+1440: 3,4,5
+1441: 7
+1442: 0.825
+1443: 0.869
+1444: 3,4,5,7
+1445: 6
+1446: 0.819
+1447: 0.857
+1448: Our Model (GNN) sparse edges
+1449: 3,4,5
+1450: 7
+1451: 0.864
+1452: 0.898
+1453: 3,4,5,7
+1454: 6
+1455: 0.866
+1456: 0.894
+1457: Table 2:
+1458: Results for block unstacking task with two different train-test splits.
+1459: Model
+1460: F1
+1461: Wt-F1
+1462: ResNet-18
+1463: 0.695
+1464: 0.719
+1465: ResNet-34
+1466: 0.714
+1467: 0.673
+1468: VGG*
+1469: 0.545
+1470: 0.665
+1471: DiscreteRel
+1472: 0.200
+1473: 0.355
+1474: Real2Sim
+1475: 0.827
+1476: 0.817
+1477: Our Model (RN)
+1478: 0.697
+1479: 0.736
+1480: Our Model (GNN) all
+1481: 0.923
+1482: 0.919
+1483: Our Model (GNN) sparse
+1484: 0.923
+1485: 0.919
+1486: Table 3:
+1487: Results for precondition learning of box stacking task with completely different blocks (objects) in the test set.
+1488: Model
+1489: Task
+1490: F1
+1491: Wt-F1
+1492: Only predictive loss
+1493: Cutting Food
+1494: 0.72
+1495: 0.78
+1496: Only
+1497: Δ
+1498: ​
+1499: p
+1500: \Delta p
+1501: and
+1502: Δ
+1503: ​
+1504: θ
+1505: \Delta\theta
+1506: predictive loss
+1507: 0.72
+1508: 0.78
+1509: Only triplet loss
+1510: 0.828
+1511: 0.866
+1512: Only predictive loss
+1513: Block Unstacking
+1514: 0.802
+1515: 0.824
+1516: Only
+1517: Δ
+1518: ​
+1519: p
+1520: \Delta p
+1521: and
+1522: Δ
+1523: ​
+1524: θ
+1525: \Delta\theta
+1526: predictive loss
+1527: no contacts
+1528: 0.775
+1529: 0.800
+1530: Only triplet loss
+1531: 0.835
+1532: 0.849
+1533: Using mean position
+1534: 0.681
+1535: 0.721
+1536: Using mean position + bounding box
+1537: 0.776
+1538: 0.816
+1539: Only position loss (pred. + cont.)
+1540: 0.672
+1541: 0.759
+1542: Table 4:
+1543: Ablation results for different losses. The first three rows show values for food cutting task with 2 distractor objects in training and 4 the test set. The next 3 rows show block unstacking results with 3 to 5 objects in train set and 7 in the test set.
+1544: Figure 5:
+1545: Left:
+1546: Example scenes for block unstacking task.
+1547: Right:
+1548: Test set examples for block unstacking task. The black block shows the block to be removed. Baseline here refers to visual baseline.
+1549: 4.3
+1550: Block Unstacking
+1551: Block unstacking involves a large amount of geometric and contact based reasoning since the blocks can be arranged in many complex configurations.
+1552: We formulate the precondition learning problem to predict the stability of a stack of blocks given a particular block to be removed.
+1553: Figure
+1554: 5
+1555: (Left) shows examples with 3 blocks where the grey block can be safely removed from all scenes.
+1556: In addition to the previous models, we add another GNN based model where graph edges only exist between blocks (vertices) that are closer than a certain threshold (0.1m), thus easing the learning problem.
+1557: Table
+1558: 9
+1559: ,
+1560: 4
+1561: shows results for multiple train-test splits.
+1562: As seen above, our GNN based models outperform all other methods across all the different scenarios.
+1563: The 3D CNN based baseline models have a higher wt. F1-score
+1564: (
+1565: ∼
+1566: 0.80
+1567: )
+1568: (\sim 0.80)
+1569: for the 1st-two splits but when tested on objects with different sizes (Table
+1570: 4
+1571: , Figure
+1572: 6
+1573: (Left) ) they perform much worse. This shows that the 3D CNN based baseline models overfit to the train set objects and cannot transfer to objects with different shapes and sizes.
+1574: While the DiscreteRel baseline is clearly insufficient for this task.
+1575: For instance, given a 3-block configuration, with 1 block above and 2 supporting it from below.
+1576: Although, this configuration has the same discrete representation,
+1577: the overall stability of this 3-block configuration depends upon the location of the bottom blocks.
+1578: We discuss this in detail in
+1579: Appendix
+1580: H.2
+1581: .
+1582: Also, the real2sim baseline performs poorly on the 1st-two test splits, wt. F1-score
+1583: (
+1584: ∼
+1585: 0.70
+1586: )
+1587: (\sim 0.70)
+1588: .
+1589: This is because blocks are in contact and quite close to each other, their voxel representations are quite noisy
+1590: e.g.
+1591: with blocks often embedded into other blocks.
+1592: These noisy voxel representations when imported into VREP lead to inaccurate predictions. Figure
+1593: 6
+1594: (Right) visualizes scenes which are unstable but are predicted as stable in VREP.
+1595: Interestingly, amongst our models, the relational network (RN) performs similar to the baseline models and much worse than the corresponding GNN models.
+1596: We believe this is due to the complexity of the reasoning problem.
+1597: Since we only use one layer of the relational network model, its representation capacity is much less than the corresponding GNN models with 2 layers.
+1598: Figure 6:
+1599: Left:
+1600: Test set examples for block unstacking with
+1601: different shape and size
+1602: than train set. Baseline: visual baseline.
+1603: Right:
+1604: Example scenes which are unstable but are predicted as stable by the Real2Sim baseline.
+1605: 5
+1606: Ablation Study
+1607: We perform an ablation study to understand the effects of different architecture and algorithmic choices in our proposed approach. First, we look at the effects of different loss functions used to train the object relation model. Table
+1608: 4
+1609: shows the effect of different loss functions on the precondition learning problem.
+1610: As seen above, using triplet loss performs better than predictive losses for both food cutting and block unstacking tasks.
+1611: We believe this happens because the low dimensional embeddings learned using supervised losses alone might not be discriminatory enough for the downstream tasks. In comparison, since triplet loss explicitly forces embeddings to be further apart, it eases the learning problem for the precondition model.
+1612: Also, comparing Table
+1613: 4
+1614: with previous results we see that combining all the losses does outperform using any of the losses individually.
+1615: To illustrate the utility of our learned embeddings, we evaluate only using the mean 3D position (similar to
+1616: [
+1617: 14
+1618: ]
+1619: ) and bounding box of the blocks as input to our sparse GNN model.
+1620: The bounding box is estimated min-max values for each axes from the voxel representation of the block.
+1621: Table
+1622: 4
+1623: shows that using mean positions alone performs poorly (wt. F1-score: 0.72) while adding object bounds performs better (wt. F1-score: 0.816).
+1624: However, our GNN model with learned object relations still outperforms them.
+1625: One reason for this is the sensory noise in the input data, especially since object bounds are sensitive to outliers.
+1626: More importantly, these results indicate the utility of our learned embeddings which perform well despite sensory noise and limited data.
+1627: Table
+1628: 4
+1629: also shows the utility of the contact based losses for the block unstacking task. Using contacts based losses increase the wt. F1-score on the block unstacking task from
+1630: 0.80
+1631: 0.80
+1632: to
+1633: 0.824
+1634: 0.824
+1635: . This is not surprising since the block unstacking task requires inferring contact locations for stability prediction.
+1636: 6
+1637: Conclusion
+1638: We learn preconditions for manipulation skills by using structured scene representations that decompose scene into its objects and their relations.
+1639: We propose a novel approach to learn generalizable continuous representations for these object relations.
+1640: Our approach has several advantages.
+1641: First, it is grounded in a robot’s interaction with objects,
+1642: and hence we do not assume a fixed set of discrete object relations.
+1643: Second, simulations provides us access to large set of ground truth data such as contacts distribution which allow us to learn rich representations.
+1644: Finally, our approach can be directly used for
+1645: precondition learning in a sample efficient manner.
+1646: Acknowledgments
+1647: This research was in part supported by NSF Award No. CMMI-1925130, the Office of Naval Research Grant No. N00014-18-1-2775, ARL grant W911NF-18-2-0218 as part of the A2I2 program, and by Sony AI.
+1648: References
+1649: [1]
+1650: K. He, G. Gkioxari, P. Dollár, and R. Girshick.
+1651: Mask R-CNN.
+1652: In
+1653: Proceedings of the International Conference on Computer
+1654: Vision (ICCV)
+1655: , 2017.
+1656: [2]
+1657: B. Rosman and S. Ramamoorthy.
+1658: Learning spatial relationships between objects.
+1659: The International Journal of Robotics Research
+1660: , 30(11):1328–1342, 2011.
+1661: [3]
+1662: S. Fichtl, A. McManus, W. Mustafa, D. Kraft, N. Krüger, and F. Guerin.
+1663: Learning spatial relationships from 3d vision using histograms.
+1664: In
+1665: 2014 IEEE International Conference on Robotics and
+1666: Automation (ICRA)
+1667: , pages 501–508. IEEE, 2014.
+1668: [4]
+1669: K. Zampogiannis, Y. Yang, C. Fermüller, and Y. Aloimonos.
+1670: Learning the spatial semantics of manipulation actions through
+1671: preposition grounding.
+1672: In
+1673: 2015 IEEE international conference on robotics and
+1674: automation (ICRA)
+1675: , pages 1389–1396. IEEE, 2015.
+1676: [5]
+1677: O. Mees, N. Abdo, M. Mazuran, and W. Burgard.
+1678: Metric learning for generalizing spatial relations to new objects.
+1679: In
+1680: 2017 IEEE/RSJ International Conference on Intelligent Robots
+1681: and Systems (IROS)
+1682: , pages 3175–3182. IEEE, 2017.
+1683: [6]
+1684: P. Jund, A. Eitel, N. Abdo, and W. Burgard.
+1685: Optimization beyond the convolution: Generalizing spatial relations
+1686: with end-to-end metric learning.
+1687: In
+1688: 2018 IEEE International Conference on Robotics and
+1689: Automation (ICRA)
+1690: , pages 1–7. IEEE, 2018.
+1691: [7]
+1692: D. McDermott, M. Ghallab, A. Howe, C. Knoblock, A. Ram, M. Veloso, D. Weld, and
+1693: D. Wilkins.
+1694: Pddl-the planning domain definition language, 1998.
+1695: [8]
+1696: C. Paxton, F. Jonathan, M. Kobilarov, and G. D. Hager.
+1697: Do what i want, not what i did: Imitation of skills by planning
+1698: sequences of actions.
+1699: In
+1700: 2016 IEEE/RSJ International Conference on Intelligent Robots
+1701: and Systems (IROS)
+1702: , pages 3778–3785. IEEE, 2016.
+1703: [9]
+1704: L. P. Kaelbling and T. Lozano-Pérez.
+1705: Integrated task and motion planning in belief space.
+1706: The International Journal of Robotics Research
+1707: , 32(9-10):1194–1227, 2013.
+1708: [10]
+1709: M. Beetz, L. Mösenlechner, and M. Tenorth.
+1710: Cram—a cognitive robot abstract machine for everyday manipulation
+1711: in human environments.
+1712: In
+1713: 2010 IEEE/RSJ International Conference on Intelligent Robots
+1714: and Systems
+1715: , pages 1012–1017. IEEE, 2010.
+1716: [11]
+1717: J. Kulick, M. Toussaint, T. Lang, and M. Lopes.
+1718: Active learning for teaching a robot grounded relational symbols.
+1719: In
+1720: Twenty-Third International Joint Conference on Artificial
+1721: Intelligence
+1722: , 2013.
+1723: [12]
+1724: N. Jetchev, T. Lang, and M. Toussaint.
+1725: Learning grounded relational symbols from continuous data for
+1726: abstract reasoning.
+1727: 2013.
+1728: [13]
+1729: H. M. Pasula, L. S. Zettlemoyer, and L. P. Kaelbling.
+1730: Learning symbolic models of stochastic domains.
+1731: Journal of Artificial Intelligence Research
+1732: , 29:309–352, 2007.
+1733: [14]
+1734: O. Kroemer and G. S. Sukhatme.
+1735: Learning spatial preconditions of manipulation skills using random
+1736: forests.
+1737: In
+1738: 2016 IEEE-RAS 16th International Conference on Humanoid
+1739: Robots (Humanoids)
+1740: , pages 676–683. IEEE, 2016.
+1741: [15]
+1742: E. Rohmer, S. P. Singh, and M. Freese.
+1743: V-rep: A versatile and scalable robot simulation framework.
+1744: In
+1745: 2013 IEEE/RSJ International Conference on Intelligent Robots
+1746: and Systems
+1747: , pages 1321–1326. IEEE, 2013.
+1748: [16]
+1749: E. Coumans et al.
+1750: Bullet physics library.
+1751: Open source: bulletphysics. org
+1752: , 15(49):5,
+1753: 2013.
+1754: [17]
+1755: K. He, X. Zhang, S. Ren, and J. Sun.
+1756: Deep residual learning for image recognition.
+1757: In
+1758: Proceedings of the IEEE conference on computer vision and
+1759: pattern recognition
+1760: , pages 770–778, 2016.
+1761: [18]
+1762: K. Hara, H. Kataoka, and Y. Satoh.
+1763: Can spatiotemporal 3d cnns retrace the history of 2d cnns and
+1764: imagenet?
+1765: In
+1766: Proceedings of the IEEE Conference on Computer Vision and
+1767: Pattern Recognition (CVPR)
+1768: , pages 6546–6555, 2018.
+1769: [19]
+1770: F. Schroff, D. Kalenichenko, and J. Philbin.
+1771: Facenet: A unified embedding for face recognition and clustering.
+1772: In
+1773: Proceedings of the IEEE conference on computer vision and
+1774: pattern recognition
+1775: , pages 815–823, 2015.
+1776: [20]
+1777: R. Hadsell, S. Chopra, and Y. LeCun.
+1778: Dimensionality reduction by learning an invariant mapping.
+1779: In
+1780: 2006 IEEE Computer Society Conference on Computer Vision and
+1781: Pattern Recognition (CVPR’06)
+1782: , volume 2, pages 1735–1742. IEEE, 2006.
+1783: [21]
+1784: H. Oh Song, Y. Xiang, S. Jegelka, and S. Savarese.
+1785: Deep metric learning via lifted structured feature embedding.
+1786: In
+1787: Proceedings of the IEEE Conference on Computer Vision and
+1788: Pattern Recognition
+1789: , pages 4004–4012, 2016.
+1790: [22]
+1791: A. Santoro, D. Raposo, D. G. Barrett, M. Malinowski, R. Pascanu, P. Battaglia,
+1792: and T. Lillicrap.
+1793: A simple neural network module for relational reasoning.
+1794: In
+1795: Advances in neural information processing systems
+1796: , pages
+1797: 4967–4976, 2017.
+1798: [23]
+1799: F. Scarselli, M. Gori, A. C. Tsoi, M. Hagenbuchner, and G. Monfardini.
+1800: The graph neural network model.
+1801: IEEE Transactions on Neural Networks
+1802: , 20(1):61–80, 2008.
+1803: [24]
+1804: T. N. Kipf and M. Welling.
+1805: Semi-supervised classification with graph convolutional networks.
+1806: arXiv preprint arXiv:1609.02907
+1807: , 2016.
+1808: [25]
+1809: P. W. Battaglia, J. B. Hamrick, V. Bapst, A. Sanchez-Gonzalez, V. Zambaldi,
+1810: M. Malinowski, A. Tacchetti, D. Raposo, A. Santoro, R. Faulkner, et al.
+1811: Relational inductive biases, deep learning, and graph networks.
+1812: arXiv preprint arXiv:1806.01261
+1813: , 2018.
+1814: [26]
+1815: K. Simonyan and A. Zisserman.
+1816: Very deep convolutional networks for large-scale image recognition.
+1817: arXiv preprint arXiv:1409.1556
+1818: , 2014.
+1819: [27]
+1820: B. Curless and M. Levoy.
+1821: A volumetric method for building complex models from range images.
+1822: In
+1823: Proceedings of the 23rd annual conference on Computer
+1824: graphics and interactive techniques
+1825: , pages 303–312, 1996.
+1826: [28]
+1827: D. P. Kingma and J. Ba.
+1828: Adam: A method for stochastic optimization.
+1829: arXiv preprint arXiv:1412.6980
+1830: , 2014.
+1831: Appendix A
+1832: Generating Pairwise Interactions in Simulation
+1833: To position the referrant object in the scene we sample a location
+1834: (
+1835: x
+1836: ,
+1837: y
+1838: ,
+1839: z
+1840: )
+1841: (x,y,z)
+1842: around the anchor object such that the distance between the anchor and referrant objects is less than 0.5 meter.
+1843: We assume that the referrant object will be upright and hence to set its orientation we rotate it only around the Z-axis between
+1844: [
+1845: −
+1846: p
+1847: i
+1848: /
+1849: 6
+1850: ,
+1851: p
+1852: i
+1853: /
+1854: 6
+1855: ]
+1856: [-pi/6,pi/6]
+1857: radians.
+1858: To set the size of both the anchor and referrant objects we randomly sample each object dimension from
+1859: [
+1860: 0.04
+1861: ​
+1862: m
+1863: ,
+1864: 0.20
+1865: ​
+1866: m
+1867: ]
+1868: [0.04m,0.20m]
+1869: . To save the voxel representation for each pairwise scene we set the voxel size to
+1870: 0.01
+1871: ​
+1872: m
+1873: 0.01m
+1874: .
+1875: To perform the local perturbation actions we use a virtual robot which can move an object around. Our virtual robot consists of prismatic joints which allow it to move along the XYZ axis and revolute joints to rotate around them.
+1876: We use a spring-damper system to control these joints.
+1877: For the prismatic joints we set
+1878: K
+1879: =
+1880: 100
+1881: ​
+1882: N
+1883: /
+1884: m
+1885: K=100N/m
+1886: and
+1887: C
+1888: =
+1889: 10
+1890: ​
+1891: N
+1892: ​
+1893: s
+1894: /
+1895: m
+1896: C=10Ns/m
+1897: , while for revolute joints we use
+1898: K
+1899: =
+1900: 10
+1901: ​
+1902: N
+1903: /
+1904: m
+1905: K=10N/m
+1906: and
+1907: C
+1908: =
+1909: 3
+1910: ​
+1911: N
+1912: ​
+1913: s
+1914: /
+1915: m
+1916: C=3Ns/m
+1917: .
+1918: Appendix B
+1919: Experimental Setup
+1920: Figure
+1921: 7
+1922: shows our setup to collect real world data and perform skills based on the learned precondition models. We have 5 cameras mounted near the robot’s workspace that allow us to create a full 3D scene. To create the 3D scene we collect point cloud data from all the cameras and project them onto a common frame. We finally use volumetric tsdf integration
+1923: [
+1924: 27
+1925: ]
+1926: to fuse all of the point clouds together.
+1927: Appendix C
+1928: Input Format
+1929: The input to our object relation mdoel and the baselines is of size
+1930: (
+1931: C
+1932: ,
+1933: 100
+1934: ,
+1935: 100
+1936: ,
+1937: 100
+1938: )
+1939: (C,100,100,100)
+1940: , where
+1941: C
+1942: C
+1943: is the number of channels. We next detail the exact input format for both the baseline and object relation model.
+1944: C.1
+1945: Visual Baseline
+1946: Since the input scene contains variable number of objects we use two different input formats for our baseline methods.
+1947: First, we only add masks for each object, i.e., each voxel is labeled with a value of 1 if it is occupied by any object, while unoccupied voxels are labeled with 0. Thus, this input format only requires one channel in its formulation.
+1948: For our second input format we add another channel to the input. This additional channel contains labels for each object in the scene. Thus, if a voxel is occupied by
+1949: i
+1950: ′
+1951: ​
+1952: t
+1953: ​
+1954: h
+1955: i^{\prime}th
+1956: object we label it with integer
+1957: i
+1958: i
+1959: . This input format consists of 2 channels.
+1960: Additionally, we found using colored voxel representations to be extremely noisy since many objects in our experiments were quite close to each other.
+1961: We next discuss some changes to the input format for each specific task.
+1962: For the food cutting task we add labels that represent the knife object and the food object if they are present in the scene. For all other objects in the scene we add a separate distractor label.
+1963: For the block unstacking task we use two different labels. The block to be removed is marked by one label, while all the other objects in the scene use the other label. As before, we experiment with object ids for each block. But for the block unstacking task this method performed much worse and did not generalize at all when tested on a larger set of blocks.
+1964: Figure 7:
+1965: Experimental Setup with 5 cameras mounted around the robot arm. We combine the 3D point cloud output from each camera to create a full 3D scene.
+1966: C.2
+1967: Object Relation Model
+1968: The input to our object relational model
+1969: f
+1970: rel
+1971: f_{\text{rel}}
+1972: consists of 3 channels, where the first channel contains binary masks for both anchor and referrant objects. The second and third channel contains the binary masks for the anchor and referrant object separately.
+1973: When using the object relation model on real world manipulation data we take the object masks of two objects
+1974: i
+1975: i
+1976: and
+1977: j
+1978: j
+1979: . We set
+1980: i
+1981: i
+1982: as the anchor object and
+1983: j
+1984: j
+1985: as the referrant object.
+1986: We transform the view such that the anchor object
+1987: i
+1988: i
+1989: is in the middle of the scene and centered at
+1990: (
+1991: 0
+1992: ,
+1993: 0
+1994: ,
+1995: 0
+1996: )
+1997: (0,0,0)
+1998: . This is similar to the formulation used to train
+1999: f
+2000: rel
+2001: f_{\text{rel}}
+2002: in simulation.
+2003: Appendix D
+2004: Baselines
+2005: D.1
+2006: DiscreteRel
+2007: To get discrete relations directly using the input scenes with voxels we use an approach similar to
+2008: [
+2009: 4
+2010: ]
+2011: .
+2012: We divide the space around each object (anchor) into multiple regions.
+2013: These regions estimated using the bounds of the voxel objects.
+2014: Specifically, we use
+2015: 26
+2016: 26
+2017: regions since a 3D object can be divided into
+2018: 3
+2019: 3
+2020: 3^{3}
+2021: regions and we do not include the middle region which contains the object.
+2022: For every other object (referrant object) in the scene, we find the number of voxels of this referrant object which intersect with each of the above regions.
+2023: The region with most voxels is used to represent the discrete relation between the anchor and referrant object.
+2024: Once we have the discrete relation for the objects, we use it in exactly the similar way as a continuous
+2025: relation,
+2026: i.e.
+2027: , we use the same network architectures for the precondition classification model.
+2028: D.2
+2029: Real2Sim
+2030: As shown in the main paper we evaluate our approach against the real2sim baseline. The real2sim baseline we use the same voxel representations as used by our approach and other baseline methods.
+2031: As the first step to implement the real2sim baseline we need to import the voxel representations from the real world to VREP
+2032: [
+2033: 15
+2034: ]
+2035: .
+2036: Since these voxel representations do not conform to any fixed shape we cannot really import these object representations directly.
+2037: Hence we import each voxel for every object separately into VREP. Thus each voxel is initially added as cuboid object. Once all the voxels of a given object are imported we group them together to form one composite object. Once all the objects in a scene have been imported we use it to test our preconditions. In addition to this, we also tried convex decomposition of the non-convex object shapes, but we found this to be incredibly slow and inaccurate for our purpose.
+2038: Since the VREP simulator does not support cutting we use the sim2real baseline only for the sweeping objects in a line and block unstacking task.
+2039: To verify the preconditions for the sweeping objects in a line task we additionally add a virtual robot with a long cuboid attached to it. This robot consists of prismatic joints which allow us to move in the
+2040: X
+2041: ​
+2042: Y
+2043: ​
+2044: Z
+2045: XYZ
+2046: axes. As before we use a spring-damper system to move the robot. At the beginning of the task we move the robot to its start position. We set the initial
+2047: X
+2048: X
+2049: coordinate as the minimum
+2050: X
+2051: X
+2052: -position of all object corners minus some threshold
+2053: (
+2054: 0.02
+2055: ​
+2056: m
+2057: )
+2058: (0.02m)
+2059: . The
+2060: Y
+2061: Y
+2062: and
+2063: Z
+2064: Z
+2065: coordinates are set as the median of all object centers. This allows us to sweep through the scene in a consistent manner. To verify if the objects are indeed along a line, we evaluate if all the objects lie on one side (along the
+2066: X
+2067: X
+2068: -axes) of the robot handle.
+2069: We verify the preconditions for the block unstacking task by verifying if the blocks in the scene minus the block to be removed are stable or not. To achieve this we import all the blocks except the one to be removed into the simulator. Initially, all blocks are kept static. Once all of them have been imported we convert them to dynamic and allow them to interact with each other. To verify if the blocks are indeed stable we note each block’s position before and after allowing dynamic interactions. If any of the blocks move by more than a certain specified threshold we assume that the blocks are not stable.
+2070: To find the best threshold value we do a grid search in the set
+2071: (
+2072: 0.0005
+2073: ,
+2074: 0.001
+2075: ,
+2076: 0.0015
+2077: ,
+2078: 0.002
+2079: ,
+2080: 0.003
+2081: ,
+2082: 0.004
+2083: )
+2084: ​
+2085: m
+2086: (0.0005,0.001,0.0015,0.002,0.003,0.004)m
+2087: . We found
+2088: 0.0015
+2089: 0.0015
+2090: and
+2091: 0.002
+2092: 0.002
+2093: to give the best and very similar results.
+2094: Appendix E
+2095: Architecture Details
+2096: E.1
+2097: Baselines
+2098: For our baseline architecture we use the resnet model which has been adapted to operate on 3D input. We follow the architecture proposed in
+2099: [
+2100: 18
+2101: ]
+2102: .
+2103: However, we slightly tweak the ResNet architectures in
+2104: [
+2105: 18
+2106: ]
+2107: for our purposes.
+2108: For instance, we do not use the BatchNorm layers in the ResNet architectures since we empirically observed that they showed much worse performance. Additionally, in contrast to
+2109: [
+2110: 18
+2111: ]
+2112: for the first convolution layer we use the same stride for all three input channels. Besides these changes, we follow the same architecture as
+2113: [
+2114: 18
+2115: ]
+2116: . For other specific architecture details please look at Table 1 in
+2117: [
+2118: 18
+2119: ]
+2120: . The output of the ResNet model is forwarded through 2 fully-connected layers with outputs of size 64 and 1 respectively.
+2121: We also use another baseline similar in style to VGG
+2122: [
+2123: 26
+2124: ]
+2125: ,
+2126: i.e.
+2127: , our model consists of a series of convolutions and ReLU non-linearities. More-specifically our architecture consists of 6 convolution layers, each of which operates on 3D input. Table
+2128: 6
+2129: lists the different parameters for each of these convolution layers. The output of each convolution layer is passed through ReLU non-linearity. The final output of the convolution is flattened to a 512 dimensional vector. This vector is then passed through multiple fully-connected layers with output size
+2130: [
+2131: 256
+2132: ,
+2133: 64
+2134: ,
+2135: 1
+2136: ]
+2137: [256,64,1]
+2138: .
+2139: E.2
+2140: Precondition Learning Model
+2141: Relational Network:
+2142: We use the below form of relation network function,
+2143: R
+2144: ​
+2145: N
+2146: ​
+2147: (
+2148: S
+2149: )
+2150: =
+2151: g
+2152: ϕ
+2153: ​
+2154: (
+2155: ∑
+2156: i
+2157: ,
+2158: j
+2159: f
+2160: θ
+2161: ​
+2162: (
+2163: f
+2164: rel
+2165: ​
+2166: (
+2167: o
+2168: i
+2169: ,
+2170: o
+2171: j
+2172: )
+2173: ⊕
+2174: f
+2175: rel
+2176: ​
+2177: (
+2178: o
+2179: j
+2180: ,
+2181: o
+2182: i
+2183: )
+2184: )
+2185: )
+2186: ,
+2187: \displaystyle RN(S)=g_{\phi}\left(\sum_{i,j}f_{\theta}\left(f_{\text{rel}}(o_{i},o_{j})\oplus f_{\text{rel}}(o_{j},o_{i})\right)\right),
+2188: (1)
+2189: where
+2190: ⊕
+2191: \oplus
+2192: represents the concat operation, the function
+2193: f
+2194: θ
+2195: f_{\theta}
+2196: consists of two fully-connected (FC) layers with ReLU non-linearity in-between, and
+2197: g
+2198: ϕ
+2199: g_{\phi}
+2200: also consists of 2 FC layers with ReLU non-linearity.
+2201: For our relation network model we implement the function
+2202: f
+2203: θ
+2204: f_{\theta}
+2205: using a two layer neural network with fully connected layers with outputs of size 128 and 32 respectively.
+2206: We implement
+2207: g
+2208: ϕ
+2209: g_{\phi}
+2210: , which acts as an accumulator, again by using two fully connected layers with outputs of size 16 and 1 respectively.
+2211: We use the ReLU non-linearity for both
+2212: f
+2213: θ
+2214: f_{\theta}
+2215: and
+2216: g
+2217: ϕ
+2218: g_{\phi}
+2219: .
+2220: Graph Neural Network:
+2221: For our GNN model we use the following update model to process the output at each node,
+2222: v
+2223: i
+2224: (
+2225: 1
+2226: )
+2227: =
+2228: f
+2229: ψ
+2230: ​
+2231: (
+2232: v
+2233: i
+2234: ⊕
+2235: ∑
+2236: j
+2237: (
+2238: f
+2239: edge
+2240: ​
+2241: (
+2242: v
+2243: i
+2244: (
+2245: 0
+2246: )
+2247: ,
+2248: v
+2249: j
+2250: (
+2251: 0
+2252: )
+2253: ,
+2254: e
+2255: i
+2256: ​
+2257: j
+2258: )
+2259: )
+2260: ,
+2261: ψ
+2262: )
+2263: \displaystyle v^{(1)}_{i}=f_{\psi}\left(v_{i}\oplus\sum_{j}\left(f_{\text{edge}}(v^{(0)}_{i},v^{(0)}_{j},e_{ij})\right);\psi\right)
+2264: (2)
+2265: We add separate node and edge models for our GNN model. Our edge model takes the edge input and passes it through a fully connected layer with output size of 128, followed by ReLU, and finally with another fully connected layer which outputs a continuous embedding for this edge. These edge embeddings are used for the next graph layer as well as for each node being processed.
+2266: Our node model initially sums the edge embeddings for all the edges connected to this node. This sum of edge embeddings is then concatenated with the original node input and passed through a fully-connected layer with output size 128, followed by ReLU and then another fully conected layer with output size 128. This is similar in design to the edge update model.
+2267: We stack two layers of the above GNN model for precondition learning. The first layer uses an input of size 256 and outputs representations of size 128. The next layer uses an input of size 128 and outputs representations of size 128.
+2268: We sum the node and edge embeddings of the last GNN model and concatenate them together to form an input of size 256. This input is then passed through 2 fully conected layers with output size of 64 and 1 respectively.
+2269: E.3
+2270: Object Relation Model
+2271: Our object relation model initially uses the ResNet-18 model of
+2272: [
+2273: 18
+2274: ]
+2275: . As before, we make two changes to this model, we use a stride of
+2276: (
+2277: 2
+2278: ,
+2279: 2
+2280: ,
+2281: 2
+2282: )
+2283: (2,2,2)
+2284: for the first convolutional layer, and we do not use the BatchNorm layers. The convolutional layer output is flattened into a vector of size
+2285: 1536
+2286: 1536
+2287: which is then projected through 2 fully-connected layers with output size
+2288: 512
+2289: 512
+2290: and
+2291: 256
+2292: 256
+2293: . Thus, we get the final relational embedding of size
+2294: 256
+2295: 256
+2296: . We concatenate this with the action vector and pass them through three fully connected layers of size 128, 64 and 9 respectively. The final output of size 9 consists of the predicted position changes of size 3, predicted orientation changes of size 3 and predicted mean contact position of size 3.
+2297: Appendix F
+2298: Training Details
+2299: Model
+2300: Batch Size
+2301: Learning Rates
+2302: Object Relation
+2303: 256
+2304: 3e-4
+2305: RN based Precondition
+2306: 8
+2307: {1e-3, 3e-4}
+2308: GNN based Precondition
+2309: 8
+2310: {1e-3, 3e-4}
+2311: Baseline (Resnet-18/34)
+2312: 4, 8, 16
+2313: [1e-3, 1e-4]
+2314: VGG
+2315: 4, 8, 16
+2316: [1e-3, 1e-4]
+2317: Table 5:
+2318: Batch Size and Learning rates for different models used
+2319: conv-{1,2}
+2320: conv-{3, 4, 5, 6}
+2321: kernel
+2322: 5
+2323: 3
+2324: padding
+2325: (2, 2, 2)
+2326: (2, 2, 2)
+2327: stride
+2328: (1, 1, 1)
+2329: (1, 1, 1)
+2330: Table 6:
+2331: Parameters for the convolution layers of our VGG* network.
+2332: Table
+2333: 6
+2334: lists some of the training details for the different models used in our approach. Below we describe training details for each model separately.
+2335: F.1
+2336: Object Relation Model
+2337: As noted previously, for our embedding network we use a 3D CNN with a ResNet
+2338: [
+2339: 17
+2340: ]
+2341: based architecture
+2342: [
+2343: 18
+2344: ]
+2345: , specifically we use the ResNet-18 architecture. The output of the ResNet18 model is then downsampled using a linear layer to a size of 256.
+2346: To train the above embedding model, we use the Adam optimizer
+2347: [
+2348: 28
+2349: ]
+2350: and set an initial learning rate of
+2351: 3
+2352: ​
+2353: e
+2354: −
+2355: 4
+2356: 3e-4
+2357: and a batch size of 256.
+2358: Our overall loss function for the
+2359: The total loss for the object relation model can be written as,
+2360: ℒ
+2361: \displaystyle\mathcal{L}
+2362: =
+2363: λ
+2364: pos
+2365: cont
+2366: ×
+2367: ℒ
+2368: pos
+2369: cont
+2370: +
+2371: λ
+2372: orient
+2373: cont
+2374: ×
+2375: ℒ
+2376: orient
+2377: cont
+2378: \displaystyle=\lambda_{\text{pos}}^{\text{cont}}\times\mathcal{L}_{\text{pos}}^{\text{cont}}+\lambda_{\text{orient}}^{\text{cont}}\times\mathcal{L}_{\text{orient}}^{\text{cont}}
+2379: +
+2380: λ
+2381: pred
+2382: ×
+2383: ℒ
+2384: pred
+2385: +
+2386: λ
+2387: orient
+2388: ×
+2389: ℒ
+2390: orient
+2391: +
+2392: λ
+2393: contact
+2394: ×
+2395: ℒ
+2396: contact
+2397: ,
+2398: \displaystyle+\lambda_{\text{pred}}\times\mathcal{L}_{\text{pred}}+\lambda_{\text{orient}}\times\mathcal{L}_{\text{orient}}+\lambda_{\text{contact}}\times\mathcal{L}_{\text{contact}},
+2399: where the first set of losses
+2400: ℒ
+2401: pos
+2402: cont
+2403: \mathcal{L}_{\text{pos}}^{\text{cont}}
+2404: ,
+2405: ℒ
+2406: orient
+2407: cont
+2408: \mathcal{L}_{\text{orient}}^{\text{cont}}
+2409: are the position and orientation based contrastive losses.
+2410: The next set of losses
+2411: ℒ
+2412: pred
+2413: \mathcal{L}_{\text{pred}}
+2414: ,
+2415: ℒ
+2416: orient
+2417: \mathcal{L}_{\text{orient}}
+2418: ,
+2419: ℒ
+2420: contact
+2421: \mathcal{L}_{\text{contact}}
+2422: are the direct supervised losses.
+2423: When training the object relation model with all the above losses we set,
+2424: λ
+2425: pos
+2426: cont
+2427: =
+2428: 2
+2429: \lambda_{\text{pos}}^{\text{cont}}=2
+2430: ,
+2431: λ
+2432: orient
+2433: cont
+2434: =
+2435: 2
+2436: \lambda_{\text{orient}}^{\text{cont}}=2
+2437: . For the supervised losses we set
+2438: λ
+2439: pos
+2440: =
+2441: 1
+2442: \lambda_{\text{pos}}=1
+2443: , since orientation values change less we set
+2444: λ
+2445: orient
+2446: =
+2447: 10
+2448: \lambda_{\text{orient}}=10
+2449: , and finally
+2450: λ
+2451: contact
+2452: =
+2453: 1
+2454: \lambda_{\text{contact}}=1
+2455: .
+2456: Alternatively, when training the model with just contrastive losses we set
+2457: λ
+2458: pos
+2459: cont
+2460: =
+2461: λ
+2462: orient
+2463: cont
+2464: =
+2465: 1
+2466: \lambda_{\text{pos}}^{\text{cont}}=\lambda_{\text{orient}}^{\text{cont}}=1
+2467: .
+2468: Parameter
+2469: Value
+2470: Δ
+2471: ​
+2472: p
+2473: sim
+2474: r
+2475: \Delta p^{r}_{\text{sim}}
+2476: ,
+2477: Δ
+2478: ​
+2479: p
+2480: diff
+2481: r
+2482: \Delta p^{r}_{\text{diff}}
+2483: 0.2, 0.21
+2484: Δ
+2485: ​
+2486: θ
+2487: sim
+2488: \Delta\theta_{\text{sim}}
+2489: ,
+2490: Δ
+2491: ​
+2492: θ
+2493: diff
+2494: \Delta\theta_{\text{diff}}
+2495: 0.004, 0.008
+2496: γ
+2497: \gamma
+2498: for
+2499: Δ
+2500: ​
+2501: p
+2502: \Delta p
+2503: 2.0
+2504: γ
+2505: \gamma
+2506: for
+2507: Δ
+2508: ​
+2509: θ
+2510: \Delta\theta
+2511: 2.0
+2512: Table 7:
+2513: Different hyper-parameters for contrastive loss formulation.
+2514: Contrastive Loss:
+2515: To implement the contrastive loss we use a batch all strategy,
+2516: i.e.
+2517: , instead of explicitly sampling anchor, positive and negative pairs separately, we sample a batch of data and compare all scene triplets.
+2518: We compare normal and adaptive actions for each triplet pair separately,
+2519: i.e.
+2520: , for each scene in the triplet we compare their adaptive action effects with the other scene’s adaptive action effects only.
+2521: To compare normal actions with different action magnitudes we use a threshold of
+2522: 0.04
+2523: ​
+2524: m
+2525: 0.04m
+2526: to classify similar actions. Thus, scenes with difference in action magnitude greater than the above threshold are not compared directly in contrastive losses.
+2527: As noted in the paper, we use the following to compare the action effects on position changes,
+2528: Δ
+2529: ​
+2530: p
+2531: r
+2532: =
+2533: Δ
+2534: ​
+2535: p
+2536: observed
+2537: Δ
+2538: ​
+2539: p
+2540: desired
+2541: ,
+2542: \displaystyle\Delta p^{r}=\frac{\Delta p^{\text{observed}}}{\Delta p^{\text{desired}}},
+2543: (3)
+2544: where
+2545: Δ
+2546: ​
+2547: p
+2548: observed
+2549: \Delta p^{\text{observed}}
+2550: is the observed change in referrant object center position, and
+2551: Δ
+2552: ​
+2553: p
+2554: desired
+2555: \Delta p^{\text{desired}}
+2556: is the desired change i.e. action vector.
+2557: We set
+2558: Δ
+2559: ​
+2560: p
+2561: desired
+2562: \Delta p^{\text{desired}}
+2563: to 1 for normal actions, while for adaptive actions it is set to the voxel distance between objects centers.
+2564: To find scenes with similar action effects we use a threshold of
+2565: 0.2
+2566: 0.2
+2567: . More precisely, given two scenes (
+2568: m
+2569: m
+2570: and
+2571: n
+2572: n
+2573: ) and their action effects in terms of
+2574: Δ
+2575: ​
+2576: p
+2577: r
+2578: \Delta p^{r}
+2579: , we say these two scenes are similar if their action effects are below the threshold for all actions,
+2580: |
+2581: Δ
+2582: ​
+2583: p
+2584: m
+2585: r
+2586: −
+2587: Δ
+2588: ​
+2589: p
+2590: n
+2591: r
+2592: |
+2593: <
+2594: 0.2
+2595: |\Delta p^{r}_{m}-\Delta p^{r}_{n}|<0.2
+2596: . Analogously, if
+2597: |
+2598: Δ
+2599: ​
+2600: p
+2601: m
+2602: r
+2603: −
+2604: Δ
+2605: ​
+2606: p
+2607: n
+2608: r
+2609: |
+2610: >
+2611: 0.21
+2612: |\Delta p^{r}_{m}-\Delta p^{r}_{n}|>0.21
+2613: we set these two scenes as dissimilar.
+2614: For orientation changes we set
+2615: Δ
+2616: ​
+2617: θ
+2618: sim
+2619: =
+2620: 0.004
+2621: \Delta\theta_{\text{sim}}=0.004
+2622: and
+2623: Δ
+2624: ​
+2625: θ
+2626: diff
+2627: =
+2628: 0.008
+2629: \Delta\theta_{\text{diff}}=0.008
+2630: .
+2631: Finally, we set the contrastive loss margin
+2632: γ
+2633: =
+2634: 2.0
+2635: \gamma=2.0
+2636: for both position and orientation changes.
+2637: Table
+2638: 7
+2639: lists the above parameters for contrastive losses.
+2640: Figure 8:
+2641: Left:
+2642: : Example train scenes with 4 and 5 blocks used in the block unstacking task.
+2643: Right:
+2644: Sample test scenes which are correctly classified by our model but incorrectly by the learning based baselines. In both images the top block is at different locations.
+2645: Model
+2646: Train Set
+2647: Test Set
+2648: F1
+2649: Wt-F1
+2650: ResNet-18
+2651: 0, 1, 2 distractors
+2652: 3 distractors
+2653: 0.844
+2654: 0.902
+2655: ResNet-34
+2656: 0, 1, 2
+2657: 3
+2658: 0.877
+2659: 0.871
+2660: VGG*
+2661: 0, 1, 2
+2662: 3
+2663: 0.788
+2664: 0.842
+2665: DiscreteRel
+2666: 0, 1, 2
+2667: 3
+2668: 0.601
+2669: 0.658
+2670: Real2Sim
+2671: -
+2672: -
+2673: N/A
+2674: N/A
+2675: Our Model (RN)
+2676: 0, 1, 2
+2677: 3
+2678: 0.880
+2679: 0.935
+2680: Our Model (GNN)
+2681: 0, 1, 2
+2682: 3
+2683: 0.921
+2684: 0.940
+2685: Table 8:
+2686: Precondition learning results for cutting food skill.
+2687: Model
+2688: Train Set
+2689: Test Set
+2690: F1
+2691: Wt-F1
+2692: ResNet-18
+2693: 6, 7
+2694: 4
+2695: 0.735
+2696: 0.765
+2697: ResNet-34
+2698: 6, 7
+2699: 4
+2700: 0.765
+2701: 0.784
+2702: VGG*
+2703: 6, 7
+2704: 4
+2705: 0.688
+2706: 0.712
+2707: DiscreteRel
+2708: 6, 7
+2709: 4
+2710: 0.647
+2711: 0.621
+2712: Real2Sim
+2713: -
+2714: 4
+2715: 0.89
+2716: 0.86
+2717: Our Model (RN)
+2718: 6, 7
+2719: 4
+2720: 0.74
+2721: 0.764
+2722: Our Model (GNN) all edges
+2723: 6, 7
+2724: 4
+2725: 0.772
+2726: 0.798
+2727: Our Model (GNN) sparse edges
+2728: 6, 7
+2729: 4
+2730: 0.824
+2731: 0.825
+2732: Table 9:
+2733: Results for precondition learning of block unstacking task with 6 and 7 objects in the train set and 4 objects in the test set.
+2734: F.2
+2735: Precondition Learning Models
+2736: Our Model:
+2737: For our RN and GNN based models, we use the Adam optimizer
+2738: [
+2739: 28
+2740: ]
+2741: and set an initial learning rate of
+2742: 3
+2743: ​
+2744: e
+2745: −
+2746: 4
+2747: 3e-4
+2748: . For accelerated learning, we also test with a larger learning rate of
+2749: 1
+2750: ​
+2751: e
+2752: −
+2753: 3
+2754: 1e-3
+2755: .
+2756: Since the precondition model is trained on less data we use a smaller batch of size 8 only. We also decay the learning rate with 0.995 after every epoch.
+2757: Baselines:
+2758: For the baseline models we use the Adam optimizer as well. We experiment with both random initialization as well as kaiming initialization for the resnet based baseline methods
+2759: [
+2760: 17
+2761: ]
+2762: .
+2763: We do a grid search to find the best learning rate between
+2764: [
+2765: 1
+2766: ​
+2767: e
+2768: −
+2769: 3
+2770: ,
+2771: 1
+2772: ​
+2773: e
+2774: −
+2775: 4
+2776: ]
+2777: [1e-3,1e-4]
+2778: and report numbers with it.
+2779: Also, given the small train data size we test with multiple batch sizes of 4, 8 and 16 and report numbers with the best results.
+2780: Table
+2781: 6
+2782: lists the different parameters used to train the precondition models.
+2783: Appendix G
+2784: Task Setup
+2785: Cutting Food:
+2786: For the food cutting data we use a custom 3D printed tool holder with an embedded knife that the robot can grasp and use to cut food items.
+2787: We use multiple different target food items and obstacles with different shapes and sizes.
+2788: Unlike the sweeping objects in a line task we also add knife and food labels to their respective voxel representations, while all the other objects have no label.
+2789: We create scenes with food, knife and multiple objects with a maximum of upto 6 objects in the scene.
+2790: Block Unstacking:
+2791: To create the dataset we pre-program the robot to assemble a block of stacks in different configurations and then manually label which blocks are crucial for stability.
+2792: We create scenes with variable number of blocks from
+2793: 3
+2794: 3
+2795: to
+2796: 7
+2797: 7
+2798: . For each set of blocks we create between
+2799: 10
+2800: 10
+2801: to
+2802: 20
+2803: 20
+2804: scenes with different configurations.
+2805: In addition to the previous models, we add another GNN based model where graph edges only exist between blocks (vertices) that are closer than a certain threshold (0.1m). This allows us to remove edges between blocks which are far apart and thus eases the learning problem.
+2806: Figure 9:
+2807: Multiple different pairs of scenes containing 3 objects, where discrete relations are insufficient o predict the stability of the scene.
+2808: For each scene the
+2809: black
+2810: block is the block to be removed.
+2811: Appendix H
+2812: Additional Results
+2813: In this section we discuss some additional results for our main experiments.
+2814: H.1
+2815: Cutting Food
+2816: Table
+2817: 8
+2818: shows the results for the food cutting experiment when we have 3 distractor objects in the test set, but only upto 2 distractor objects in the train set.
+2819: As observed above, the GNN based model performs the best with a wt. F1-score of
+2820: 0.94
+2821: 0.94
+2822: . Additionally, the baseline models also perform well with a maximum wt. F1-score of
+2823: 0.902
+2824: 0.902
+2825: .
+2826: The good performance of the baseline models on food cutting task can be attributed to the fact that there exist only two main objects in the scene (food and the knife).
+2827: Since we provide separate labels to both of these objects, the baseline models only needs to focus on these objects and hence does not require complex compositional reasoning.
+2828: Thus, even with increasing number of distractor objects, the baseline model still performs quite well.
+2829: H.2
+2830: Block Unstacking
+2831: For the block unstacking task we also experiment with the scenario where the train set contains larger number of objects as compared to the test set. Table
+2832: 9
+2833: shows results when the train set contains 6 or 7 objects while the test set contains only 4 objects.
+2834: Interestingly, the performance of our GNN based models also reduces in this scenario. We get a max. wt. F1-score of
+2835: 0.825
+2836: 0.825
+2837: only, which is worse as compared to the previous train-test splits. However, our GNN based models still perform better than the visual baseline models, whose maximum wt F1 score is
+2838: 0.784
+2839: 0.784
+2840: .
+2841: This result indicates that although structured representations are extremely useful, we cannot assume that training on a large set of objects will automatically generalize to fewer objects as well. The real2sim baseline performs the best (wt. F1 score:
+2842: 0.889
+2843: 0.889
+2844: ) in this setting. This is because using 4 blocks, we can only create a limited number and types of block stacks. Hence, given only stacks with 3 blocks (since we remove 1 block before exporting into the simulator) the Real2Sim baseline is able to perform quite well.
+2845: Additionally, a small number of blocks also result in fewer perception errors, these errors when transferred to simulation do not affect the precondition output significantly.
+2846: This is also similar to the real2sim results for sweeping task (main paper) wherein we observe that larger number of objects lead to worse performance.
+2847: Figure
+2848: 8
+2849: (Right) shows example scenes which show the complex reasoning required for solving the block unstacking task.
+2850: The only difference between the two scenes in Figure
+2851: 8
+2852: (Right) is in the position of the top block which results in different ground truth precondition labels. While our precondition model is correctly able to predict the preconditions in both scenes, the visual baseline model always predicts false. The above example clearly shows that our model is able to perform complex reasoning using the learned object relational embeddings.
+2853: Why DiscreteRel baseline performs poorly?
+2854: We also look at why discrete relations are often insufficient to model relations for manipulation tasks.
+2855: To show this we use the block unstacking task, in the simplest possible setting – with only 3 objects in the scene.
+2856: Figure
+2857: 9
+2858: plots multiple different pairs (A, B, C) of such scenes.
+2859: Each of these scenes are part of the train set with 3 objects.
+2860: Also, for each scene pair the extracted discrete relations are similar (aside from image A, which shows the same scene).
+2861: This is because each referrant object occupies relatively similar amount of space around every anchor object.
+2862: However, despite similar discrete relations,
+2863: both scenes in each scene pair (A, B, C) have different precondition outputs (when the black block is removed).
+2864: For instance, in Figure
+2865: 9
+2866: (B)
+2867: removing the black box from left figure (scene) results in a stable block configuration.
+2868: While for the right scene in Figure
+2869: 9
+2870: (B),
+2871: this results in the orange block falling and hence not a stable configuration.
+2872: These results show the inability of discrete relations
+2873: to differentiate between seemingly similar scenes but
+2874: with very object arrangements.
+2875: Finally, each of the above scene only contains 3 objects.
+2876: With increasing number of objects in the scenes, the ambiguity associated with discrete relations increases further,
+2877: which results in an overall poor performance across all different task configurations.

@@ -1,0 +1,4785 @@
+HELP: Human-Efficient Large-Scale Robot Post-Training with Rollout Segmentation
+// Restore the saved color scheme preference, or
+  // enact the browser preference if "automatic", 
+  // without expecting DOM load to have completed.
+  //
+  // Also restore any saved readingmode and ToC display preferences.
+  function initializeReadingPreferences() {
+    let saved_theme = localStorage.getItem("ar5iv_theme") || "automatic";
+    if (saved_theme === "automatic") {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        saved_theme = "dark";
+      }
+    }
+    if (saved_theme == "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+
+    const tocDisplay = localStorage.getItem('arxiv_html_paper_toc_display');
+    if (tocDisplay) {
+      document.documentElement.setAttribute("data-toc-display", tocDisplay);
+    }
+    const readingMode = localStorage.getItem('arxiv_html_paper_reading_mode');
+    if (readingMode) {
+      document.documentElement.setAttribute("data-reading-mode", readingMode);
+    }
+    // Pre-apply spinout-banner dismissal here, before the banner paints, so it
+    // never flashes in only to be hidden later by the deferred arxiv-header.js.
+    // Key matches arxiv-header.js: "arxiv-banner-dismissed:" + data-banner-name.
+    if (localStorage.getItem('arxiv-banner-dismissed:spinout-nonprofit')) {
+      document.documentElement.setAttribute("data-banner-dismissed", "");
+    }
+  }
+  // Run as soon as JS starts, to minimize repainting
+  initializeReadingPreferences();
+/* Banner pre-dismissal (set above before paint -> no flash-then-hide) and
+     reading-mode chrome hiding. */
+  html[data-banner-dismissed] .ds-announcement { display: none; }
+  html[data-reading-mode="enabled"] .ds-announcement,
+  html[data-reading-mode="enabled"] .ds-site-footer { display: none; }
+  /* Keep the announcement text dark on the Open-Blue band in both colour themes
+     (otherwise it inherits the paper's warm-wash text in dark mode and washes out). */
+  .ds-announcement-text { color: var(--arxiv-ink, #1c1a17); }
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1
+Introduction
+2
+Related work
+Learned reward and progress models for embodied AI.
+Benchmarks for robot progress evaluations.
+3
+The HELP Framework
+3.1
+HELP System Architecture
+3.2
+Role-Specialized Supervision in HELP
+3.3
+Post-Training in HELP
+3.3.1
+Data Processing by
+VLAC-CUT
+3.3.2
+Algorithm
+4
+VLAC-CUT
+4.1
+VLAC-CUT
+as a Rollout Segmentation Critic
+4.2
+Process Supervision for
+VLAC-CUT
+4.3
+Instruction Tuning
+4.4
+The Video Progress Benchmark
+5
+Experiments
+5.1
+VLAC-Cut Evaluation on VPB
+5.1.1
+Experimental Setup
+5.1.2
+Evaluation Results
+Global-Level Progress Prediction
+Terminal-State Recognition
+Local Progress Direction
+5.2
+Real-World Post-Training Experiments
+5.2.1
+Evaluation Tasks
+5.2.2
+Quantitative Results
+Iterative policy improvement with HELP.
+Human-supervision amplification under matched HITL budgets.
+6
+Author Contribution Statement
+References
+A
+Additional Details for
+VLAC-CUT
+A.1
+Progress Annotation Dataset Details
+A.2
+Annotation Schema and Protocol
+A.3
+Curated Split and Data Usage
+A.4
+VLAC-CUT
+Training Details
+A.5
+VPB Task Definition and Metrics
+Global-Level Progress Metrics
+Progress Rank Correlation.
+Value-Order Correlation.
+Mean Absolute Error.
+Terminal-State Recognition Metrics
+Local Progress Direction Metrics
+B
+Teleoperation Assistance
+License: CC BY-SA 4.0
+arXiv:2607.09776v2 [cs.RO] 15 Jul 2026
+HELP: Human-Efficient Large-Scale Robot Post-Training with Rollout Segmentation
+Shaopeng Zhai
+*
+†
+\dagger
+, 
+Qi Zhang
+*
+, 
+Tianyi Zhang
+*
+, 
+Haoran Zhang
+*
+, 
+Fuxian Huang
+*
+Zhanhui Lin, 
+Zijun Xu, 
+Weinan Zhang
+Continuous Learning Team, Shanghai AI Laboratory
+*
+Core contributors.
+†
+\dagger
+Project Lead.
+Abstract
+When adapting Vision Language Action (VLA) models to downstream tasks, multiple rounds of post-training are often required to progressively address policy weaknesses. In this report, we focus on maximizing human efficiency during this iterative process, measured by policy improvement and task throughput per unit of human labor and time.
+We propose HELP, a Human-Efficient Large-scale robot Post-training pipeline in which two specialized operators supervise twelve robots concurrently. A trained Teleoperator provides high-value remote interventions and recovery demonstrations, while a Floor Operator monitors the robot fleet, triggers takeovers, and performs physical resets. This role specialization improves human efficiency by reducing task switching, lowering operator training costs, and expanding robot interaction coverage. Beyond increasing rollout volume, concurrent supervision also broadens the range of policy behaviors observed by the human team, making recurring failure modes easier to identify and enabling more targeted takeovers, resets, and recovery demonstrations.
+To efficiently utilize the large and mixed-quality rollout data, HELP incorporates
+VLAC-CUT
+, an automatic rollout segmentation critic specifically designed for this setting. It separates autonomous trajectories into progress-making, idle, failure-inducing, and recovery segments. Useful rollout segments are retained and combined with Human-in-the-Loop data for the next post-training round.
+Across four real-world manipulation tasks, HELP achieves 80%–95% success rates and improves task throughput by 1.7
+×
+\times
+–4.2
+×
+\times
+over the base model. Under matched HITL recovery budgets,
+VLAC-CUT
+further amplifies throughput gains by 1.20
+×
+\times
+–3.43
+×
+\times
+and success-rate gains by 1.50
+×
+\times
+–3.00
+×
+\times
+over HITL-only updates.
+Code:VLAC-CUT
+—
+Model:VLAC-CUT
+—
+Benchmark:VPB
+—
+Dataset
+1
+Introduction
+After pre-training, generalist policies like Vision Language Action (VLA) models require post-training to achieve reliable performance on downstream tasks. This phase typically begins with collecting task-specific data to fine-tune the VLA. However, because human operators cannot foresee all potential edge cases during the initial data collection, the models fine-tuned on this preliminary data inevitably exhibit flaws. Consequently, post-training inherently involves multiple iterations. In each round, the policy is evaluated, and its specific failure modes are explicitly recorded to guide targeted data collection in the subsequent phase.
+This iterative process is crucial for progressively mitigating weaknesses and improving the actual task success rate. However, each iteration also requires humans to evaluate failures, intervene in difficult states, reset physical scenes, and collect or curate new training data. As these costs accumulate across repeated post-training rounds, human labor becomes a central bottleneck for scaling real-world VLA adaptation. Therefore, the key question is not only how to improve the policy, but how much policy improvement and task throughput can be obtained per unit of human labor and time.
+Currently, real-world post-training paradigms generally fall into three categories. The first is real-world Reinforcement Learning (RL). This encompasses both fully online methods, where the boundaries between training iterations are entirely blurred, and near-online methods with clearly defined iterations, such as the approach used in pi0.6. These approaches require the model to autonomously collect data in the real world, generating a mixture of successful and failed rollouts. Unlike traditional supervised learning that relies purely on positive samples, RL methods can effectively extract useful training signals from these mixed trajectories. The second paradigm focuses on targeted human data collection, for example,
+(
+Intelligence et al., 2025
+)
+. Here, human operators conduct specific data collection to address the policy weaknesses identified in the previous round. This process yields a substantial volume of recovery data, helping the policy learn to recover from common errors. The third and most prevalent approach integrates the former two. It begins with an offline dataset, and as the model generates autonomous real-world rollouts, human operators can intervene at any moment to provide Human-in-the-Loop (HITL) recovery data. These diverse data sources are subsequently combined, allowing the policy to be trained through a hybrid strategy of RL and Supervised Fine Tuning (SFT).
+However, constrained by the limited exploration capabilities of current pre-trained policies, VLAs often struggle to autonomously execute correct manipulation behaviors when facing unfamiliar corner cases. Consequently, Human-in-the-Loop (HITL) intervention remains an absolute necessity. While some existing works attempt to learn a better policy from limited static datasets, our objective is fundamentally different. We do not aim to optimize sample efficiency on fixed data. Instead, we focus on maximizing how effectively limited human resources can be deployed to actively collect data that directly addresses policy weaknesses and resolves task bottlenecks. We define human efficiency as the post-training policy performance gain, specifically in success rate and system throughput, achieved per unit of human labor and time. Therefore, the core challenge lies in optimizing human roles and pairing them with an appropriate system framework and a dedicated generalist model. By lowering operator training costs and ensuring singular task assignments, this model-assisted paradigm enables humans to focus exclusively on the most critical tasks and the most urgently needed data.
+To address this challenge, we introduce HELP, a human-efficient pipeline for large-scale robot post-training. HELP combines role-specialized multi-robot supervision, targeted human takeover, autonomous rollout collection, and process-level rollout segmentation into a unified iterative post-training framework. Beyond increasing rollout volume, concurrent supervision also broadens the range of policy behaviors observed by the human team, making recurring failure modes easier to identify and enabling more targeted takeovers, resets, and recovery demonstrations. A key component of HELP is
+VLAC-CUT
+, a Vision-Language-Action Critic whose “cut” operation denotes its role in segmenting autonomous robot trajectories (see Fig.
+3
+).
+VLAC-CUT
+evaluates task-conditioned rollouts at the process level and separates reusable progress or recovery segments from idle and failure-inducing portions. It is designed specifically for HELP, serving as the rollout segmentation module that connects autonomous data collection, HITL recovery data, and subsequent policy training. HELP first improves human efficiency through role-specialized multi-robot supervision, while
+VLAC-CUT
+further amplifies the learning return from the resulting autonomous rollout data. In the real-world experiments, we further quantify the contribution of
+VLAC-CUT
+to supervision utilization using a human-supervision amplification factor under matched HITL recovery budgets.
+Our contributions are threefold:
+•
+Human-efficiency-centered post-training formulation:
+We identify human labor, rather than only robot interaction count or offline sample efficiency, as a central bottleneck in real-world VLA post-training. We therefore formulate human efficiency as the policy improvement, measured by success rate and task throughput, obtained per unit of human labor and time.
+•
+HELP: role-specialized large-scale robot post-training.
+We introduce HELP, a distributed multi-robot post-training pipeline in which two operators, assigned to two specialized roles, supervise twelve physical robots concurrently. By separating high-skill teleoperation from on-site monitoring and reset, HELP reduces task switching, lowers operator training barriers, and concentrates human effort on high-value takeover and recovery data. Beyond increasing interaction throughput, concurrent fleet supervision broadens policy-behavior coverage, helping the Floor Operator identify recurring failure modes and collect targeted corrective data.
+•
+VLAC-CUT
+-based rollout segmentation in HELP.
+We introduce
+VLAC-CUT
+as a process-level multimodal rollout segmentation critic within HELP.
+VLAC-CUT
+segments autonomous rollouts into progress-making, failure-inducing, idle, and recovery segments, allowing HELP to preserve useful robot-collected data while filtering behaviors that would otherwise reinforce inefficient trial-and-error patterns. Under matched HITL recovery budgets, this rollout curation further amplifies the throughput and success-rate gains obtained from the same human-supervision budget.
+We validate HELP in real-world multi-robot post-training experiments using a two-operator, twelve-robot deployment. Controlled comparisons under matched HITL recovery budgets further show that
+VLAC-CUT
+amplifies throughput gains by 1.20
+×
+\times
+–3.43
+×
+\times
+and success-rate gains by 1.50
+×
+\times
+–3.00
+×
+\times
+relative to HITL-only updates. Overall, our work shifts the focus of robot post-training from raw sample efficiency to systemic human efficiency, establishing a practical framework for high-throughput, human-robot collaborative learning at scale.
+2
+Related work
+Real-world post-training for robot policies
+has increasingly moved from static imitation learning toward iterative interaction, where autonomous rollouts expose policy weaknesses and subsequent data collection or optimization improves downstream performance. Real-world RL has demonstrated strong potential in locomotion
+(
+Smith et al., 2024
+;
+Smith et al., 2023
+)
+and dexterous or general manipulation
+(
+Hu et al., 2023
+)
+, but deploying such methods on physical robots remains expensive because each trial consumes real time, hardware lifetime, and human supervision. Many online or near-online systems therefore reuse previously collected trajectories through self-imitation, hindsight relabeling, or offline-to-online updates
+(
+Kumar et al., 2024
+;
+Zhou et al., 2024a
+;
+Luo et al., 2024
+)
+. For smaller manipulation policies, human-in-the-loop pipelines commonly begin with a small set of expert demonstrations and then combine robot interaction with human corrections to improve sample efficiency
+(
+Kang et al., 2025
+;
+Zhou et al., 2024b
+;
+Li et al., 2025
+)
+. Recent VLA-oriented post-training methods further benefit from pretrained multimodal priors, which increase the chance of discovering useful behaviors and make it possible to learn from mixed successful, failed, and recovered rollouts
+(
+Chen et al., 2025b
+;
+Lv et al., 2025
+;
+Park et al., 2025
+)
+. This trend has accelerated over the past year:
+π
+0.6
+∗
+\pi^{*}_{0.6}
+studies how VLAs can improve from real-world deployment data that combine demonstrations, on-policy rollouts, and expert teleoperated interventions
+(
+Physical Intelligence, 2025
+)
+; ROVE targets humanoid VLA post-training from imperfect human interventions and prioritizes high-value behaviors within mixed-quality trajectories
+(
+Xiao and others, 2026
+)
+; SOP and Learning While Deploying scale online post-training to robot fleets that stream on-policy experience and human intervention signals to a centralized learner
+(
+Pan and others, 2026
+;
+Wang and others, 2026
+)
+. Complementary work reduces the cost of physical interaction through world-model or sim-real post-training, using virtual environments, simulated RL, or latent world-model scoring to improve VLAs under limited real-world data
+(
+Xiao and others, 2025
+;
+Shi and others, 2026
+;
+Sun and others, 2026
+)
+.
+Despite this progress, real-world VLA post-training still depends critically on how raw interaction data are converted into reliable supervision. VLA policies differ substantially in their action interfaces: some produce discrete action tokens or structured textual actions
+(
+Kim et al., 2024
+;
+Pertsch et al., 2025
+;
+Zhai et al., 2024
+)
+, whereas others output continuous actions through diffusion or flow-based decoders
+(
+Black et al., 2024
+;
+Chi et al., 2023
+;
+Kim et al., 2025
+)
+. This heterogeneity makes it difficult to apply a single token-centric RL recipe across models, and existing methods often resort to value-guided sample selection, behavior-cloning regularization, conservative value learning, or trajectory filtering to stabilize policy improvement
+(
+He et al., 2024
+;
+Lv et al., 2025
+;
+Park et al., 2025
+;
+Ding and Jin, 2024
+;
+Physical Intelligence, 2025
+;
+Wang and others, 2026
+)
+. However, these strategies usually treat each rollout as a full episode or rely on coarse success/failure labels, while real robot trajectories often contain standard execution, failure-inducing detours, repeated trial-and-error, and useful recovery behaviors within the same episode. In this setting, blindly training on unedited rollouts can teach the policy to imitate avoidable failures, whereas discarding entire imperfect trajectories wastes valuable recovery data.
+VLAC-CUT
+addresses this rollout segmentation bottleneck directly. It performs process-level rollout segmentation, removes failure-inducing portions, and preserves both correct execution and recovery segments. This rollout-segmentation formulation is especially important for high-throughput multi-robot post-training, where manual inspection does not scale and human effort should be concentrated on high-value intervention rather than offline data cleaning.
+Learned reward and progress models for embodied AI.
+A central challenge in embodied learning is replacing hand-crafted task rewards with scalable reward, value, or progress estimators defined over vision and language. Early approaches derived proxy measures of task advancement from human videos, trajectories, or goal-conditioned visual embeddings (e.g., VIP, LIV, R3M)
+(
+Sermanet et al., 2016
+;
+Shao et al., 2020
+;
+Chen et al., 2021
+;
+Ma et al., 2022
+;
+Ma et al., 2023a
+;
+Nair et al., 2022
+;
+Yang et al., 2023
+;
+Sontakke et al., 2024
+)
+, but these are often task-specific and lack fine-grained language grounding. Subsequent foundation-model methods sought to shape or synthesize rewards directly from language and vision
+(
+Ma et al., 2023b
+;
+Rocamonde et al., 2023
+;
+Cui et al., 2025
+;
+Lin et al., 2024
+)
+, framing reward estimation as binary success prediction, image comparison, temporal reordering, or relative progress scoring
+(
+Du et al., 2023
+;
+Wang et al., 2024
+;
+Venkataraman et al., 2024
+;
+Luu et al., 2025
+;
+Singh et al., 2025
+;
+Alakuijala et al., 2024
+;
+Ma et al., 2024
+;
+Chen et al., 2025a
+)
+. While substantially improving scalability, these formulations highlight a persistent trade-off: success classifiers are often too coarse for dense shaping, and embedding distances struggle to capture complex intermediate progress
+(
+Du et al., 2023
+;
+Lynch et al., 2020
+;
+Andrychowicz et al., 2017
+;
+Escontrela et al., 2023
+;
+Lee et al., 2021
+;
+Ma et al., 2024
+)
+. To address this gap, recent work has shifted toward general-purpose, step-aware process reward modeling (PRM) to provide dense progress supervision. Methods such as VLAC, Robo-Dopamine, and Rewarding DINO extract dense progress deltas and step-aware signals to overcome the limitations of sparse or uniform reward designs
+(
+Zhai et al., 2025
+;
+Tan et al., 2025
+;
+Krack et al., 2026
+)
+. Concurrently, VLM-based estimators like RoboReward, ProgressLM, and Large Reward Models explicitly frame progress tracking as a long-horizon reasoning or sequence modeling problem, providing discretized progress labels and contrastive signals for closed-loop refinement
+(
+Lee et al., 2026
+;
+Zhang et al., 2026a
+;
+Wu et al., 2026
+)
+. Further extending these paradigms, Robometer incorporates inter-trajectory preference learning to resolve ambiguities in suboptimal demonstrations
+(
+Liang et al., 2026
+)
+, complementing a broader effort to leverage step decomposition, distance-to-goal estimation, and binary completion queries as robust interfaces for scalable reward supervision
+(
+Chen et al., 2025a
+;
+Ghasemipour et al., 2025
+;
+Yu et al., 2026
+;
+Mao et al., 2026
+;
+Intelligence et al., 2025
+;
+Chen et al., 2026
+)
+.
+Benchmarks for robot progress evaluations.
+Reward models have become increasingly important in modern foundation-model training, especially in post-training and reinforcement learning for large language models
+(
+Shao et al., 2024
+;
+DeepSeek-AI et al., 2025
+)
+. Accordingly, benchmarks such as RewardBench, RewardBench 2, VLRewardBench, and Multimodal RewardBench have been introduced to evaluate reward models in language and general multimodal settings
+(
+Lambert et al., 2024
+;
+Malik et al., 2025
+;
+Li et al., 2024
+;
+Yasunaga et al., 2025
+)
+. In embodied settings, however, benchmark construction remains limited and fragmented. OpenGVL evaluates temporal progress prediction from shuffled trajectory frames using a Value-Order Correlation metric, with a particular emphasis on automated data curation and filtering
+(
+Budzianowski et al., 2025
+)
+. ManiRewardBench advances reward benchmarking on real-world manipulation with subtask-level temporal annotations, enabling evaluation of progress sensitivity, completion detection, and cross-embodiment robustness
+(
+Chen et al., 2026
+)
+. RoboRewardBench broadens reward evaluation to diverse real-robot tasks and explicitly includes unsuccessful and near-miss trajectories, but is primarily framed around short-horizon, end-of-episode coarse progress rewards
+(
+Lee et al., 2026
+)
+. Robometer further introduces held-out evaluation sets that probe reward alignment, trajectory ranking, and success–failure separation across unseen institutions, embodiments, camera viewpoints, and scenes
+(
+Liang et al., 2026
+)
+. Adjacent to reward modeling, RoboFAC provides a failure-centric benchmark for task understanding, failure diagnosis, and hierarchical correction on simulated and real-world robot videos
+(
+Ye et al., 2025
+)
+. Overall, existing embodied benchmarks capture complementary aspects of temporal progress, reward calibration, and failure understanding, yet still leave room for evaluating long-horizon, process-level reward and value estimation with richer temporal structure and finer-grained supervision on realistic robotic trajectories.
+3
+The HELP Framework
+3.1
+HELP System Architecture
+HELP is designed to maximize human efficiency in large-scale real-world robot post-training, where a small number of operators must supervise a fleet of concurrently operating robots. Its system architecture is explicitly designed around the operational demands and collaborative workflows of the two specialized human roles.
+First, the Teleoperator undergoes extensive specialized training and incurs high training costs. To maximize their productivity, HELP must allow them to concentrate exclusively on high quality data collection without wasting time moving around or physically resetting scenes. This necessitates a seamless and stationary remote control interface. Second, the Floor Operator simultaneously manages multiple physical robots. Because they spend minimal time at any single robotic station while constantly observing the policy in action, they develop a profound understanding of the model capabilities and specific failure cases. Observing concurrent executions across the robot fleet not only increases data throughput, but also makes recurring policy weaknesses more visible and allows subsequent interventions to focus on the most informative failure states. Their cognitive effort must be concentrated on issuing takeover signals and manually resetting scenes to setups where the policy frequently fails. Consequently, the architecture must provide dedicated and lightweight communication modules for the Floor Operator to instantly broadcast reset and takeover commands. Finally, to sustain this continuous collaboration, HELP must seamlessly interleave Human-in-the-Loop (HITL) data with autonomous robot rollouts to support both online and offline training. This holistic pipeline is heavily supported by VLMs tasked with processing trajectory data, assessing task completion, and proactively predicting the necessity of takeovers. Driven by these human-centric requirements, we logically partition our distributed software architecture into three primary layers, as illustrated in Fig.
+1
+.
+Figure 1:
+System architecture of HELP, our distributed human-efficient robot post-training framework.
+•
+Centralized GPU workers:
+Deployed on a centralized server, these GPU workers manage parallel inference and continuous policy optimization using the Ray distributed framework. At each control step, an asynchronous coordination module aggregates multi modal observations from the distributed robotic fleet and routes them to parallel inference workers through dynamic load balancing. These workers execute the concurrent inference of the VLA policy
+π
+θ
+\pi_{\theta}
+, a predictive takeover model
+ϕ
+\phi
+, and a task termination model
+ψ
+\psi
+:
+𝐚
+t
+i
+=
+π
+θ
+​
+(
+s
+t
+i
+)
+,
+γ
+t
+i
+=
+ϕ
+⁡
+(
+s
+t
+i
+)
+,
+d
+t
+i
+=
+ψ
+⁡
+(
+s
+t
+i
+)
+\mathbf{a}_{t}^{i}=\pi_{\theta}(s_{t}^{i}),\quad\gamma_{t}^{i}=\phi(s_{t}^{i}),\quad d_{t}^{i}=\psi(s_{t}^{i})
+(1)
+where
+𝐚
+t
+i
+\mathbf{a}_{t}^{i}
+is the action chunk,
+γ
+t
+i
+∈
+{
+0
+,
+1
+}
+\gamma_{t}^{i}\in\{0,1\}
+indicates the model prediction on whether a takeover is currently required at step
+t
+t
+, and
+d
+t
+i
+∈
+{
+0
+,
+1
+}
+d_{t}^{i}\in\{0,1\}
+represents the model estimated task completion state. Following this parallel computation, the server bundles these outputs and directly transmits them back to the respective robotic client. The client then utilizes these flags to determine its execution state, where a takeover signal (
+γ
+t
+i
+=
+1
+\gamma_{t}^{i}=1
+or a manual override) or a reset signal (
+d
+t
+i
+=
+1
+d_{t}^{i}=1
+) will preempt the standard action execution. Once an episode concludes, the autonomous rollout trajectories are segmented by the learned
+VLAC-CUT
+model. The resulting curated rollout segments are then integrated into a centralized data service managed by a dedicated Ray worker. Concurrently, an asynchronous training pipeline samples from this data service to update
+θ
+\theta
+and
+ϕ
+\phi
+via gradient descent, asynchronously broadcasting the updated parameters to the inference workers to eliminate training induced latency.
+•
+Distributed Robot Clients:
+Running on each onboard computer, the Robot Clients interface directly with the robot and manage real time data routing. On one hand, the client continuously captures robot proprioceptive data and camera images, streaming them to the Centralized GPU Workers for parallel inference, while simultaneously executing the predicted action chunks returned by the server. On the other hand, it serves as the direct communication endpoint, receiving and executing intervention signals routed through the server.
+To enable a flexible and timely takeover experience for the human operators, the client utilizes a dual process and asynchronous multi threaded design. This architecture explicitly isolates the hardware control loop from the overhead of network I/O and VR telemetry streams. By leveraging ZeroMQ for robust asynchronous command fetching and local inter process communication to manage incoming payloads, the system structurally decouples communication from robot execution.
+Driven by these incoming streams, the client finite state machine transitions dynamically via a priority hierarchy:
+𝒮
+client
+i
+←
+{
+𝒮
+takeover
+if
+​
+u
+t
+i
+=
+takeover
+,
+𝒮
+hitl
+if
+​
+𝒮
+client
+i
+=
+𝒮
+takeover
+​
+and VR streaming is active
+,
+𝒮
+reset
+if
+​
+u
+t
+i
+=
+reset
+,
+𝒮
+model
+if
+​
+u
+t
+i
+=
+step
+⁡
+(
+𝐚
+t
+i
+)
+.
+\mathcal{S}_{\text{client}}^{i}\leftarrow\begin{cases}\mathcal{S}_{\text{takeover}}&\text{if }u_{t}^{i}=\operatorname{takeover},\\
+\mathcal{S}_{\text{hitl}}&\text{if }\mathcal{S}_{\text{client}}^{i}=\mathcal{S}_{\text{takeover}}\text{ and VR streaming is active},\\
+\mathcal{S}_{\text{reset}}&\text{if }u_{t}^{i}=\operatorname{reset},\\
+\mathcal{S}_{\text{model}}&\text{if }u_{t}^{i}=\operatorname{step}(\mathbf{a}_{t}^{i}).\end{cases}
+(2)
+In the autonomous execution state
+𝒮
+model
+\mathcal{S}_{\text{model}}
+, the client unrolls the received action chunks. When a takeover signal arrives from the Centralized GPU Workers, the client instantly purges stale actions and transitions through the standby state
+𝒮
+takeover
+\mathcal{S}_{\text{takeover}}
+into the active human control state
+𝒮
+hitl
+\mathcal{S}_{\text{hitl}}
+as soon as the VR stream synchronizes, guaranteeing a rapid and unimpeded handover for the Teleoperator. If a reset signal is issued, the client immediately aborts execution and notifies the Centralized GPU Workers to terminate the current episode recording, prompting the server to save and process the trajectory data. The client then enters the suspension state
+𝒮
+reset
+\mathcal{S}_{\text{reset}}
+, securely locking the robot to allow the Floor Operator to safely perform the scene reset.
+•
+Operator Console:
+Serving as the unified human interface, the Operator Console consists of a web frontend, a VR application, a hardware interface for the Floor Operator, and a centralized backend service. The Teleoperator utilizes the web frontend to monitor real time visual feeds from individual robots and to explicitly dictate the routing destination for the VR action commands. Once a target is assigned, the Teleoperator directly controls the robot to execute manipulation tasks through the VR application. To improve intervention efficiency under transient VR command latency or loss, the console also incorporates a lightweight VLA-based teleoperation assistance module, detailed in Appendix
+B
+. Concurrently, the interface for the Floor Operator pairs with a portable Bluetooth keyboard, enabling them to rapidly force any specific robot into
+𝒮
+takeover
+\mathcal{S}_{\text{takeover}}
+while monitoring the active robots on site. Underpinning these interactive modules is the backend service which manages the critical communication middleware. For VR control, it employs a dynamic UDP routing gateway to seamlessly redirect high frequency telemetry streams to the designated robot. For event handling, it captures the Bluetooth keyboard inputs and leverages ZeroMQ sockets to instantly trigger
+𝒮
+takeover
+\mathcal{S}_{\text{takeover}}
+for the corresponding robot.
+3.2
+Role-Specialized Supervision in HELP
+In HELP, the human supervision workload is divided into two specialized roles: the Teleoperator and the Floor Operator. In our typical operational configuration, this division allows two personnel to supervise twelve robots concurrently. By ensuring that each person focuses on a designated responsibility, HELP reduces the cognitive overhead and efficiency degradation typically caused by task switching. Furthermore, isolating these duties simplifies the onboarding process, enabling targeted, specialized training for each individual role and making skilled teleoperation labor available for high-value takeover and recovery data. This multi-robot supervision setup therefore serves not only as a mechanism for scaling data collection, but also as an active failure-mode discovery process that guides targeted takeovers, resets, and recovery demonstrations.
+•
+Teleoperator:
+The Teleoperator dedicates their entire cognitive focus exclusively to remote manipulation. A proficient data collector must exhibit both optimal behavioral patterns and highly consistent operational habits, as these factors directly determine the quality of the collected data, which in turn dictates the efficiency of post-training. For instance, in a test tube insertion task, the operator must deliberately reduce the manipulation speed during the high-precision insertion phase and appropriately elevate the robot end effector to increase the clearance between the tube base and the target hole. Training a skilled Teleoperator to internalize these specific manipulation patterns often requires weeks or even months. By keeping the Teleoperator responsibilities strictly singular, we can concentrate our training efforts on these essential skills while significantly lowering their overall cognitive workload. During operation, the Teleoperator remains stationary and uses a VR interface to monitor real-time camera feeds. When a robot is identified for a takeover by either the Floor Operator or the predictive model, a notification is transmitted to the Teleoperator. The system then seamlessly routes the corresponding camera feed to the VR interface, enabling the operator to quickly transmit action commands back to the robot. This remote operational paradigm reduces physical locomotion and time wasted walking between different robots. By isolating this role from manual scene resetting and physical movement, the Teleoperator achieves high data collection efficiency with fewer physical and cognitive interruptions.
+•
+Floor Operator:
+The Floor Operator is responsible for executing resets and continuously monitoring the policy execution on site, selectively forcing specific robots into
+𝒮
+takeover
+\mathcal{S}_{\text{takeover}}
+. Because they observe the autonomous rollouts over extended periods, the Floor Operator develops a highly intuitive and profound understanding of the policy behavior. They know exactly when the model is likely to fail, making them the ideal judge for determining the precise moment for a robot to enter the takeover state. Furthermore, their deep awareness of the policy weaknesses allows them to manually reset the environment to states where the policy frequently fails, thereby maximizing the collection of high-value data in the exact scenarios that expose model limitations. In practice, their operational duties remain tightly focused. They actively monitor the active robots and use a portable Bluetooth keyboard to instantly force a specific robot into
+𝒮
+takeover
+\mathcal{S}_{\text{takeover}}
+. When a robot halts and awaits a reset, they perform these targeted resets. By keeping their responsibilities strictly singular, the system empowers the Floor Operator to fully leverage their cognitive understanding of the policy behavioral characteristics. As the individual who most comprehensively observes the model in action, they play a critical role in creating the conditions to collect targeted data that addresses the policy shortcomings.
+Figure 2:
+Role specialization between the Teleoperator and the Floor Operator in HELP.
+3.3
+Post-Training in HELP
+3.3.1
+Data Processing by
+VLAC-CUT
+During HELP data collection, the system accumulates two distinct categories of interaction data. The first is rollout data generated entirely by the VLA policy. The second is Human-in-the-Loop data, which is collected when either the predictive takeover model or the Floor Operator forces the robot into
+𝒮
+takeover
+\mathcal{S}_{\text{takeover}}
+, with the subsequent actions executed by the Teleoperator. Consequently, a complete trajectory within HELP exhibits one of two structural configurations: a homogeneous trajectory composed exclusively of VLA rollouts, or a hybrid trajectory consisting of an initial VLA rollout prefix followed by a Human-in-the-Loop recovery suffix.
+In addition to serving as recovery demonstrations for policy post-training, the manually triggered HITL events also provide supervision for the takeover prediction model. Specifically, the observation at which the Floor Operator issues a takeover command is labeled as a positive takeover example, while observations sampled from normal autonomous rollouts are used as negative examples to train a 2B Qwen-VL based takeover predictor.
+As the policy is continuously trained on the accumulated recovery data, it gradually develops the capability to recover from failure states. Consequently, the raw VLA rollouts generated during continuous data collection frequently contain repetitive trial and error, where the policy continuously generates errors and then recovers from them. While this continuous trial and error maintains a high task success rate, directly incorporating these unedited trajectories into the training set would teach the policy to replicate these repetitive actions, ultimately reducing its overall task execution throughput.
+To address this issue, we employ
+VLAC-CUT
+to segment autonomous rollout trajectories into four types: progress-making and recovery segments, which are retained for policy training, and idle and failure-inducing segments, which are excluded from policy optimization. Our VLA is trained with a flow-matching objective, and in the setting considered in this work, we did not find a sufficiently reliable way to directly use failure-inducing action segments as negative learning signals under this objective. Training on unsegmented rollouts would therefore reinforce not only useful behaviors, but also the trial-and-error actions that caused the failure. We therefore combine the retained progress-making and recovery segments into the curated rollout dataset, which is subsequently mixed with HITL recovery data for the next optimization cycle.
+3.3.2
+Algorithm
+Training a unified policy on data from a distributed multi-robot fleet introduces inherent data imbalance and distribution shift challenges. First, a distribution mismatch exists between the standard rollout data and the Human-in-the-Loop recovery data, because the action distribution required to correct a failure differs significantly from that of standard execution. Second, the physical heterogeneity across different environments, including variations in object layouts, camera viewpoints, and task definitions, induces cross-environment interference. Consequently, optimizing the policy exclusively on newly collected continuous streams often degrades its performance on other environments and causes catastrophic forgetting of previously learned capabilities. To mitigate these distribution shifts and manage the continuous learning process, we formalize two distinct optimization strategies across training cycles:
+•
+Fully Online Incremental Optimization:
+As data collection proceeds continuously, the server initiates an immediate incremental training update once the accumulated data reaches a specified threshold. To mitigate catastrophic forgetting and cross environment interference inherent to this streaming continual learning setup, we integrate the ConSFT algorithm
+(
+Zhang et al., 2026b
+)
+. This approach establishes a self regulating learning dynamic that scales the optimization gradients based on per sample model confidence, eliminating the need for parallel reference networks or historical data buffers. The optimization objective is formulated as:
+𝒥
+ConSFT
+​
+(
+θ
+)
+=
+sg
+⁡
+[
+exp
+⁡
+(
+−
+ℒ
+SFT
+​
+(
+θ
+)
+τ
+)
+]
+⋅
+ℒ
+SFT
+​
+(
+θ
+)
+\mathcal{J}_{\mathrm{ConSFT}}(\theta)=\mathrm{sg}\left[\exp\left(-\frac{\mathcal{L}_{\mathrm{SFT}}(\theta)}{\tau}\right)\right]\cdot\mathcal{L}_{\mathrm{SFT}}(\theta)
+(3)
+where
+τ
+>
+0
+\tau>0
+is a temperature parameter regulating the conservative scaling sensitivity, and
+sg
+⁡
+[
+⋅
+]
+\mathrm{sg}[\cdot]
+denotes the stop gradient operator. During the initial phases of incremental adaptation, out of distribution behaviors, such as some recovery actions, generate large losses. This objective exponentially suppresses their gradient contributions to prevent disruptive parameter updates. As the policy gradually masters these novel behaviors, its confidence increases, causing the associated loss to decrease and consequently amplifying the update weights. This continuous feedback loop ensures a progressive and stable learning of new out of distribution behaviors while preserving previously learned capabilities.
+•
+Periodic Batched Optimization:
+This configuration operates with discrete training intervals. Following each policy update, the system accumulates a new batch of interaction trajectories. Once a predefined dataset size is reached, this current batch is combined with the entire historical dataset from all preceding rounds for joint training. By aggregating and mixing historical data across all robots and task configurations, this approach resolves distribution shifts and mitigates catastrophic forgetting, enabling standard supervised fine tuning via flow matching.
+4
+VLAC-CUT
+Figure 3:
+Overview of the
+VLAC-CUT
+rollout segmentation pipeline. Given a task-conditioned autonomous rollout trajectory,
+VLAC-CUT
+estimates process-level progress, diagnoses local state changes, and segments the trajectory into training-useful and training-harmful portions.
+4.1
+VLAC-CUT
+as a Rollout Segmentation Critic
+HELP relies on large-scale autonomous rollout segmentation to amplify limited human supervision.
+However, a raw autonomous rollout trajectory is rarely uniformly useful for policy post-training.
+It may contain correct progress, idle motion, failure-inducing detours, repeated trial-and-error, and recovery behavior within the same episode.
+Training on the entire trajectory can therefore teach the policy to imitate avoidable failures, while discarding the entire trajectory wastes useful robot-collected progress and recovery data.
+As shown in Fig.
+3
+,
+VLAC-CUT
+is designed to turn raw autonomous rollouts into training-ready segments.
+Given a task instruction and a rollout trajectory, prefix, or candidate segment,
+VLAC-CUT
+estimates signed task progress, diagnoses the visual and action-level causes of local progress changes, and predicts cut points that separate segments with different training value.
+Its output tells the post-training data service which parts of a rollout should be kept, which parts should be removed, and which recovery portions should be mixed with HITL data for the next policy update.
+Unlike a general-purpose reward function, which typically scores a state from its instantaneous state representation, our critic evaluates the state in the context of the trajectory in which it appears.
+As a result, the same state may receive different scores in different trajectories, depending on how the policy reached that state and what consequences its subsequent actions are expected to produce.
+In this sense,
+VLAC-CUT
+is closer to a policy-conditioned value estimator than a universal reward function, because its score reflects the expected downstream task progress under the deployed policy, conditioned on the current state and trajectory context, rather than an immediate, policy-agnostic reward assigned to the state alone.
+We use four segment types throughout the paper:
+progress-making
+segments correspond to standard execution that should reinforce correct behavior;
+idle
+segments contain little task-relevant progress;
+failure-inducing
+segments move the task state away from the goal or create avoidable errors; and
+recovery
+segments bring the system back from an error state toward task completion.
+The post-training data service keeps progress-making and recovery segments, removes failure-inducing and idle portions, and combines the curated rollout segments with HITL recovery data for the next optimization cycle.
+This formulation differs from endpoint success filtering.
+End-state labels can identify whether an episode eventually succeeds, but they cannot distinguish an efficient execution from a trial-and-error success, nor can they identify which intermediate actions caused stagnation, regression, or recovery.
+VLAC-CUT
+instead treats task progress as a temporal process variable, making autonomous rollout segmentation compatible with the human-efficiency objective of HELP.
+4.2
+Process Supervision for
+VLAC-CUT
+Training such a critic requires supervision beyond demonstrations and final success labels.
+We therefore construct a Progress Annotation Dataset in which each annotated episode contains a task instruction, a task-level plan, sparse timestamped progress points, diagnostic language, and optional grounding/action annotations.
+The progress labels are signed: positive values indicate movement toward task completion, zero denotes the initial state, and negative values represent regressive states worse than the initial setup.
+This schema directly supervises the distinctions needed by
+VLAC-CUT
+: partial progress, stagnation, regression, failure, and recovery.
+The dataset combines public robot sources with an in-house real-world ARX-data collection.
+Public datasets provide broad task and scene coverage, while ARX-data specifically increases coverage of physically executed non-monotonic behavior such as grasp failures, object drops, wrong-object interactions, inaccurate placements, re-grasping, and pose correction.
+Unlike public datasets that mainly contain successful executions, ARX-data intentionally includes failed, regressive, and recovery trajectories so that
+VLAC-CUT
+can learn to distinguish harmful trial-and-error behavior from useful progress and recovery segments.
+All selected videos are re-annotated using the same process-level schema; progress labels are not inherited from source datasets.
+The curated training/evaluation dataset contains 28,167 video-level records, 22,978 episodes, 15,206 task units, and 375,172 progress points.
+We reserve 3,515 records for held-out VPB evaluation and use the remaining training split to construct instruction-tuning data.
+Appendix
+A.1
+provides the full source inventory, annotation protocol, split table, and dataset visualizations.
+4.3
+Instruction Tuning
+We convert the training split into multimodal conversations that preserve the process structure of the annotations.
+Inputs may be a single image, an image pair, a sampled video clip, a rollout prefix, or optional robot/action context.
+Targets include progress values, state and action descriptions, progress explanations, success/failure analysis, correction plans, grounding labels, and relative action deltas.
+The annotation-derived instruction data are organized around four abilities.
+Task decomposition and grounding
+connects language goals with semantic milestones, task-relevant objects, gripper positions, and keypoints.
+Temporal progress prediction
+teaches the model to estimate timestamp-aligned progress from task-conditioned visual evidence rather than elapsed time.
+Diagnostic reasoning
+turns scalar progress supervision into explanations of why a segment is progress-making, idle, failure-inducing, or recoverable.
+In-context and action-conditioned supervision
+prepares
+VLAC-CUT
+for rollout segmentation by conditioning on reference episodes and, when robot trajectories are available, predicting relative action deltas over progress-point or kinematic-keyframe intervals.
+VLAC-CUT
+remains a rollout segmentation critic rather than a closed-loop control policy.
+We additionally use two targeted augmentations.
+Counterfactual reverse-progress augmentation constructs regression-and-recovery examples from pairs of annotated progress points, discouraging the shortcut that later frames are always more complete.
+Grounding-based rationale generation verbalizes geometric evidence from object boxes and gripper keypoints when it is consistent with the annotated progress direction.
+The supervised fine-tuning corpus is centered on this annotation-derived robot data and complemented with public multimodal, robotics, progress-reasoning, and spatial/video reasoning datasets.
+Implementation details and the full data mixture are provided in Appendix
+A.4
+.
+4.4
+The Video Progress Benchmark
+We introduce the Video Progress Benchmark (VPB) to evaluate whether a video-language model can recover task-conditioned progress on held-out robot trajectories.
+VPB uses the held-out split described above and reserves all progress annotations strictly for evaluation.
+The split is organized along two axes that match the intended use of
+VLAC-CUT
+: semantic task familiarity, separating seen and unseen task units, and progress-pattern type, separating expert-like trajectories from non-expert trajectories with regressive or recovery behavior.
+This design tests whether a model can estimate progress under both familiar and held-out task semantics, and whether it remains robust to non-monotonic executions such as failed grasps, wrong-object interactions, object drops, and recovery attempts.
+VPB evaluates progress understanding at three complementary scopes.
+Global progress metrics
+measure whether the model recovers the continuous progress trajectory, using Progress Rank Correlation (PRC), Value-Order Correlation (VOC) on expert trajectories, and Mean Absolute Error (MAE).
+Terminal-state metrics
+evaluate whether the model recognizes whether the final state reaches near-completion, using terminal-state accuracy and macro F1.
+Local direction metrics
+evaluate whether adjacent annotated keyframes are correctly classified as improvement, stagnation, or regression, which directly measures the effectiveness of video process segmentation (cutting).
+Appendix
+A.5
+gives the formal task definition, interpolation rule, and metric equations.
+5
+Experiments
+This section first evaluates
+VLAC-CUT
+as a process-level rollout segmentation critic on VPB, and then evaluates the full VLAC-Cut guided post-training pipeline in real-world robot tasks.
+5.1
+VLAC-Cut Evaluation on VPB
+5.1.1
+Experimental Setup
+We evaluate
+VLAC-CUT
+on the formal VPB evaluation split described in
+Section
+4.4
+with 3,515 held-out robot trajectory records.
+All methods are evaluated under the same official VPB protocol, using the
+three metric families defined in Section
+4.4
+: global
+progress prediction, which measures the accuracy of trajectory-level progress
+estimation; terminal-state recognition, which evaluates whether the final
+state is correctly identified as successful or failed/incomplete; and local
+progress direction, which measures whether adjacent transitions reflect
+progress or regression.
+We compare
+VLAC-CUT
+against representative progress- and reward-estimation
+baselines for robotic video understanding. ProgressLM-RL is included as a
+single-observation progress-reasoning baseline: each VPB query point is paired
+with a task demonstration and evaluated as an image-text progress estimation
+problem, after which the pointwise predictions are assembled into trajectory
+progress curves. Robometer and RoboReward represent video-based robotic reward
+models. For VPB, they are evaluated on trajectory prefixes so that each prefix
+yields a current progress estimate, which is then aligned with the official
+annotation points. Robo-Dopamine is included as a process reward modeling
+baseline based on relative progress estimation between earlier and later
+states; its pairwise progress predictions are converted into the same signed
+progress representation used by VPB. TOPReward is used as a zero-shot
+token-probability reward baseline: we query each trajectory prefix and convert
+its completion evidence into a normalized progress curve for evaluation.
+We also evaluate Generative Value Learning (GVL) style baselines, which use a
+VLM as an in-context progress estimator over selected keyframes. Since GVL is a
+prompting framework rather than a single fixed model, we instantiate it with
+three VLM backbones: GPT-5.5, Gemini-3.1-Pro, and Gemini-3.5-Flash. We report
+two variants for each backbone. The first, denoted GVL, follows the original
+shuffled-frame formulation, where keyframes are presented in a randomized order
+and the model predicts their task-completion percentages. The second, denoted
+Chrono-GVL, uses nearly identical keyframes and prompt structure but presents
+frames in chronological order. In both cases, predictions on selected keyframes
+are interpolated back to the full VPB timeline before computing metrics. This
+design lets us compare the original temporal-ordering formulation of GVL with a
+chronological variant while keeping the underlying VLM backbone explicit.
+5.1.2
+Evaluation Results
+Global-Level Progress Prediction
+Table
+1
+reports global progress prediction results on
+the full VPB split and on the four evaluation buckets.
+VLAC-CUT
+achieves the
+best overall MAE and PRC, with an MAE of 7.5600 and a PRC of 0.9260. It
+also obtains the lowest MAE in every bucket. The strongest non-
+VLAC-CUT
+method under overall MAE is Chrono-GVL-GPT-5.5, with 12.3511, while the
+strongest non-
+VLAC-CUT
+method under overall PRC is Chrono-GVL-Gemini-3.1-Pro,
+with 0.8997. Thus, the gains are not confined to either value calibration
+or temporal ordering:
+VLAC-CUT
+more accurately recovers both the absolute
+signed progress values and the shape of the progress trajectory.
+Figure 4:
+Qualitative comparison of signed progress prediction on a representative
+VPB trajectory. The top row shows sampled video frames, and the numbered
+markers link each frame to the corresponding timestamp on the progress
+curves. The ground-truth trajectory contains an early regression followed
+by gradual recovery and final task completion.
+Method
+Overall
+Expert Seen
+Expert Unseen
+Non-Expert Seen
+Non-Expert Unseen
+MAE
+↓
+\downarrow
+PRC
+↑
+\uparrow
+MAE
+↓
+\downarrow
+PRC
+↑
+\uparrow
+VOC
+↑
+\uparrow
+MAE
+↓
+\downarrow
+PRC
+↑
+\uparrow
+VOC
+↑
+\uparrow
+MAE
+↓
+\downarrow
+PRC
+↑
+\uparrow
+MAE
+↓
+\downarrow
+PRC
+↑
+\uparrow
+VLAC-CUT
+7.5600
+0.9260
+6.3858
+0.9910
+0.9933
+6.0478
+0.9859
+0.9877
+9.5572
+0.8284
+9.4845
+0.8413
+ProgressLM-RL
+30.7447
+0.2083
+30.5008
+0.2174
+0.2156
+30.2872
+0.2193
+0.2175
+31.0131
+0.1963
+31.4990
+0.1907
+Robometer
+21.1340
+0.6605
+20.0917
+0.7542
+0.7535
+20.8336
+0.7208
+0.7195
+22.2107
+0.5416
+22.0178
+0.5548
+RoboReward
+19.7949
+0.7521
+19.4609
+0.8318
+0.8302
+21.3870
+0.8155
+0.8137
+18.4670
+0.6506
+19.2844
+0.6381
+Robo-Dopamine
+29.5805
+0.5604
+27.6276
+0.6539
+0.6529
+29.3321
+0.6161
+0.6162
+30.4673
+0.4572
+31.9039
+0.4456
+TOPReward
+32.8329
+0.2692
+31.7592
+0.2911
+0.2854
+31.1262
+0.2982
+0.2945
+34.7699
+0.2410
+34.9541
+0.2233
+GVL-GPT-5.5
+25.1842
+0.4029
+24.3398
+0.4362
+0.4356
+24.4317
+0.4314
+0.4309
+26.6004
+0.3414
+26.1002
+0.3737
+GVL-Gemini-3.1-Pro
+25.3070
+0.4600
+22.5383
+0.5215
+0.5208
+23.7037
+0.4879
+0.4863
+28.6619
+0.3879
+28.3346
+0.4010
+GVL-Gemini-3.5-Flash
+22.8278
+0.5370
+19.7300
+0.6091
+0.6082
+21.3906
+0.5570
+0.5558
+25.9556
+0.4767
+26.3194
+0.4626
+Chrono-GVL-GPT-5.5
+12.3511
+0.8768
+10.0395
+0.9771
+0.9770
+10.6762
+0.9789
+0.9793
+15.3855
+0.7214
+15.1366
+0.7354
+Chrono-GVL-Gemini-3.1-Pro
+12.7982
+0.8997
+8.8988
+0.9818
+0.9818
+9.4287
+0.9869
+0.9868
+17.9306
+0.7629
+18.2758
+0.7836
+Chrono-GVL-Gemini-3.5-Flash
+12.8388
+0.8961
+9.0016
+0.9868
+0.9872
+9.2796
+0.9849
+0.9852
+18.1428
+0.7636
+18.3315
+0.7643
+Table 1:
+Global-level VPB results on the overall split and four evaluation
+buckets. Lower MAE is better; higher PRC and VOC are better. VOC is reported
+only for expert buckets, following the benchmark definition.
+The expert buckets isolate progress estimation under trajectories that are
+expected to be chronologically ordered. In this setting,
+VLAC-CUT
+obtains
+MAE 6.3858, PRC 0.9910, and VOC 0.9933 on expert seen tasks, and MAE
+6.0478, PRC 0.9859, and VOC 0.9877 on expert unseen tasks. Chrono-GVL
+variants also achieve strong ordering performance, and
+Chrono-GVL-Gemini-3.1-Pro slightly exceeds
+VLAC-CUT
+on expert-unseen PRC.
+However, its MAE remains substantially higher, indicating that
+chronological ordering alone is insufficient for calibrated signed-progress
+prediction. The non-expert buckets are more challenging because trajectories
+may regress or recover after failed intermediate actions.
+VLAC-CUT
+obtains
+MAE 9.5572 and PRC 0.8284 on non-expert seen tasks, and MAE 9.4845 and PRC
+0.8413 on non-expert unseen tasks, outperforming all baselines under both
+metrics. Figure
+4
+illustrates the same
+behavior qualitatively:
+VLAC-CUT
+follows the annotated regression and recovery
+pattern, whereas several baselines either produce unstable estimates or fail
+to capture the nuances of the regressive dynamics.
+Terminal-State Recognition
+Table
+2
+reports terminal-state recognition on the
+full VPB split and on the merged seen and unseen partitions. Terminal
+recognition evaluates whether the final predicted progress is calibrated
+to the task outcome. Since VPB contains both successful and
+failed/incomplete terminal states, we report class-wise F1 together with
+their macro average.
+Method
+Overall
+Seen
+Unseen
+TSA
+↑
+\uparrow
+F1
+S
+\mathrm{F1}_{S}
+↑
+\uparrow
+F1
+F
+\mathrm{F1}_{F}
+↑
+\uparrow
+MacroF1
+T
+\mathrm{MacroF1}_{T}
+↑
+\uparrow
+TSA
+↑
+\uparrow
+F1
+S
+\mathrm{F1}_{S}
+↑
+\uparrow
+F1
+F
+\mathrm{F1}_{F}
+↑
+\uparrow
+MacroF1
+T
+\mathrm{MacroF1}_{T}
+↑
+\uparrow
+TSA
+↑
+\uparrow
+F1
+S
+\mathrm{F1}_{S}
+↑
+\uparrow
+F1
+F
+\mathrm{F1}_{F}
+↑
+\uparrow
+MacroF1
+T
+\mathrm{MacroF1}_{T}
+↑
+\uparrow
+VLAC-CUT
+84.30
+90.17
+61.02
+75.59
+83.77
+89.76
+60.91
+75.33
+84.82
+90.57
+61.14
+75.85
+ProgressLM-RL
+18.63
+4.41
+29.17
+16.79
+18.34
+4.65
+28.59
+16.62
+18.93
+4.17
+29.75
+16.96
+Robometer
+24.78
+18.04
+30.49
+24.27
+24.60
+18.17
+30.10
+24.13
+24.96
+17.91
+30.89
+24.40
+RoboReward
+41.34
+46.50
+35.08
+40.79
+41.97
+47.66
+34.89
+41.28
+40.70
+45.31
+35.26
+40.28
+Robo-Dopamine
+47.23
+56.67
+32.52
+44.59
+46.87
+56.38
+32.05
+44.21
+47.58
+56.96
+32.99
+44.98
+TOPReward
+61.88
+73.07
+34.76
+53.92
+63.04
+74.05
+35.81
+54.93
+60.72
+72.08
+33.75
+52.91
+GVL-GPT-5.5
+51.92
+62.36
+33.46
+47.91
+51.37
+62.01
+32.44
+47.22
+52.47
+62.71
+34.48
+48.60
+GVL-Gemini-3.1-Pro
+51.24
+62.45
+30.49
+46.47
+52.33
+63.78
+30.31
+47.04
+50.14
+61.07
+30.67
+45.87
+GVL-Gemini-3.5-Flash
+55.90
+67.63
+30.87
+49.25
+57.00
+68.84
+30.67
+49.76
+54.80
+66.38
+31.05
+48.72
+Chrono-GVL-GPT-5.5
+67.82
+77.86
+41.12
+59.49
+69.31
+79.23
+41.22
+60.23
+66.34
+76.45
+41.04
+58.74
+Chrono-GVL-Gemini-3.1-Pro
+86.15
+91.99
+48.90
+70.44
+87.76
+92.95
+53.36
+73.16
+84.54
+91.01
+44.72
+67.86
+Chrono-GVL-Gemini-3.5-Flash
+86.69
+92.48
+42.08
+67.28
+88.72
+93.65
+49.49
+71.57
+84.65
+91.30
+35.10
+63.20
+Table 2:
+Terminal-state recognition results on VPB. Seen and unseen denote
+the merged task-familiarity partitions. TSA measures terminal-state
+accuracy;
+F1
+S
+\mathrm{F1}_{S}
+and
+F1
+F
+\mathrm{F1}_{F}
+are class-wise F1
+scores for successful and failed/incomplete terminal states, respectively.
+All values are reported in percent (%).
+On the overall split, Chrono-GVL-Gemini-3.5-Flash obtains the highest
+terminal-state accuracy and successful-terminal F1, with 86.69% TSA and
+92.48%
+F1
+S
+\mathrm{F1}_{S}
+. In contrast,
+VLAC-CUT
+achieves the best
+failed/incomplete-terminal F1 and the best terminal macro F1, with
+F1
+F
+=
+61.02
+%
+\mathrm{F1}_{F}=61.02\%
+and
+MacroF1
+T
+=
+75.59
+%
+\mathrm{MacroF1}_{T}=75.59\%
+. This
+indicates that chronological prompting is effective at recognizing visually
+plausible successful endings, while
+VLAC-CUT
+provides a more balanced terminal
+decision by substantially improving recognition of failed or incomplete final
+states.
+The same pattern largely holds across seen and unseen tasks. Chrono-GVL-Gemini-3.5-Flash
+has the highest TSA and
+F1
+S
+\mathrm{F1}_{S}
+on seen tasks and the highest
+F1
+S
+\mathrm{F1}_{S}
+on unseen tasks, whereas
+VLAC-CUT
+obtains the highest
+F1
+F
+\mathrm{F1}_{F}
+and
+MacroF1
+T
+\mathrm{MacroF1}_{T}
+in both partitions, as
+well as the highest unseen TSA. The gap is most important for the
+failed/incomplete class:
+VLAC-CUT
+reaches 60.91%
+F1
+F
+\mathrm{F1}_{F}
+on seen
+tasks and 61.14% on unseen tasks, outperforming all baselines. This
+suggests that dense signed-progress supervision improves terminal-state
+calibration beyond success-biased endpoint recognition.
+Local Progress Direction
+Table
+3
+reports local progress-direction AP on
+adjacent semantic-anchor transitions. The metric uses the predicted local
+progress difference as a ranking score for annotated increases, and its
+negation as a ranking score for annotated decreases. We report
+AP
++
+\mathrm{AP}_{+}
+,
+AP
+−
+\mathrm{AP}_{-}
+, and their average
+MacroAP
+D
+\mathrm{MacroAP}_{D}
+.
+Method
+Overall
+Seen
+Unseen
+AP
++
+\mathrm{AP}_{+}
+↑
+\uparrow
+AP
+−
+\mathrm{AP}_{-}
+↑
+\uparrow
+MacroAP
+D
+\mathrm{MacroAP}_{D}
+↑
+\uparrow
+AP
++
+\mathrm{AP}_{+}
+↑
+\uparrow
+AP
+−
+\mathrm{AP}_{-}
+↑
+\uparrow
+MacroAP
+D
+\mathrm{MacroAP}_{D}
+↑
+\uparrow
+AP
++
+\mathrm{AP}_{+}
+↑
+\uparrow
+AP
+−
+\mathrm{AP}_{-}
+↑
+\uparrow
+MacroAP
+D
+\mathrm{MacroAP}_{D}
+↑
+\uparrow
+VLAC-CUT
+95.90
+39.46
+67.68
+96.30
+38.34
+67.32
+95.53
+40.61
+68.07
+ProgressLM-RL
+91.41
+9.35
+50.38
+92.69
+9.52
+51.10
+90.22
+9.27
+49.74
+Robometer
+93.41
+11.46
+52.44
+94.19
+11.21
+52.70
+92.66
+11.73
+52.19
+RoboReward
+92.52
+15.02
+53.77
+93.67
+14.67
+54.17
+91.35
+15.45
+53.40
+Robo-Dopamine
+92.07
+10.12
+51.09
+92.94
+9.94
+51.44
+91.20
+10.34
+50.77
+TOPReward
+93.02
+10.24
+51.63
+93.69
+9.89
+51.79
+92.36
+10.64
+51.50
+GVL-GPT-5.5
+92.24
+9.11
+50.68
+93.41
+9.45
+51.43
+91.11
+8.87
+49.99
+GVL-Gemini-3.1-Pro
+92.19
+9.83
+51.01
+92.78
+9.52
+51.15
+91.62
+10.16
+50.89
+GVL-Gemini-3.5-Flash
+92.67
+10.77
+51.72
+93.65
+11.27
+52.46
+91.70
+10.44
+51.07
+Chrono-GVL-GPT-5.5
+94.83
+16.00
+55.42
+95.23
+16.59
+55.91
+94.41
+15.49
+54.95
+Chrono-GVL-Gemini-3.1-Pro
+93.65
+17.92
+55.78
+94.02
+17.23
+55.62
+93.27
+18.52
+55.90
+Chrono-GVL-Gemini-3.5-Flash
+94.40
+22.00
+58.20
+94.63
+21.32
+57.98
+94.16
+22.71
+58.43
+Table 3:
+Local progress-direction AP on adjacent semantic-anchor
+transitions.
+AP
++
+\mathrm{AP}_{+}
+ranks annotated progress increases using
+the predicted local progress difference, while
+AP
+−
+\mathrm{AP}_{-}
+ranks
+annotated progress decreases using the negated predicted local progress
+difference. All values are reported in percent (%).
+VLAC-CUT
+achieves the strongest local direction ranking performance across
+the overall, seen, and unseen partitions. On the overall split, it obtains
+AP
++
+=
+95.90
+%
+\mathrm{AP}_{+}=95.90\%
+,
+AP
+−
+=
+39.46
+%
+\mathrm{AP}_{-}=39.46\%
+, and
+MacroAP
+D
+=
+67.68
+%
+\mathrm{MacroAP}_{D}=67.68\%
+. The strongest non-
+VLAC-CUT
+macro score is
+58.20% from Chrono-GVL-Gemini-3.5-Flash. The largest gap appears in
+AP
+−
+\mathrm{AP}_{-}
+, where
+VLAC-CUT
+substantially exceeds the strongest
+non-
+VLAC-CUT
+score of 22.00%. This indicates that
+VLAC-CUT
+provides a much
+stronger ranking signal for regressive local changes, rather than merely
+following chronological progress.
+The seen and unseen results show the same trend.
+VLAC-CUT
+obtains
+MacroAP
+D
+=
+67.32
+%
+\mathrm{MacroAP}_{D}=67.32\%
+on seen tasks and 68.07% on unseen tasks,
+remaining ahead of all baselines in both partitions. Although chronological
+variants achieve high
+AP
++
+\mathrm{AP}_{+}
+, their
+AP
+−
+\mathrm{AP}_{-}
+remains
+substantially lower, indicating that chronological ordering alone is
+insufficient for ranking regressive semantic-anchor transitions. This
+highlights the value of process-level signed progress supervision for
+capturing local task-state reversals.
+5.2
+Real-World Post-Training Experiments
+Our real-world post-training experiments are conducted under the two-operator, twelve-robot HELP deployment. This role-specialized supervision setup already provides high system-level human efficiency by allowing limited human labor to oversee concurrent robot interactions, expose recurring policy failure modes, and collect targeted recovery demonstrations. On top of this shared operating setup, we evaluate whether
+VLAC-CUT
+further improves the policy gain obtained from the same HITL recovery supervision. We adopt Human-in-the-Loop (HITL) training as the baseline: when a rollout enters an error-prone state, the operator provides a corrective demonstration to recover the robot, producing targeted recovery data for policy improvement. We therefore compare HELP with HITL-only updates when both start from the same checkpoint and use the same number of HITL recovery trajectories, and quantify this effect using a human-supervision amplification factor.
+All real-world experiments use
+π
+0.5
+\pi_{0.5}
+VLA
+Physical Intelligence et al. (2025)
+, and standard flow-matching objective is adopted to optimize the policy.
+5.2.1
+Evaluation Tasks
+To evaluate policy performance,
+we conducted a comprehensive evaluation across four diverse real-world tasks:
+Refrigerator
+,
+Microplate
+,
+Test Tube
+,
+and
+Stirrer
+.
+We summarize the tasks below, with progress illustrations in Figure
+5
+:
+Refrigerator
+:
+In this task, the robot is required to open the refrigerator door, grasp a reagent-filled beaker with the gripper, place it stably inside the refrigerator, and then close the door.
+For quantitative evaluation, we count a trial as successful only when the robot completes
+the full task within 100 seconds without dropping the beaker or spilling any liquid during transfer. Although the policy may still recover by picking up the beaker after a drop, such cases are counted as failures to ensure consistent evaluation and reflect practical use. We use the following prompt as the instruction input to the VLA models for this task:
+Open the refrigerator door, grasp the beaker with the gripper, place it inside the refrigerator, and then close the door.
+Microplate
+:
+This task requires the robot to open the lid of the microplate reader, pick up a microplate from an arbitrary position on the table, transfer it into the reader, and close the lid. To be counted as successful, the robot must finish the full sequence within 100 seconds without dropping the microplate during transfer. Prompt:
+Turn on the microplate reader, place the microplate inside, then close the microplate reader.
+Test Tube
+:
+We evaluate our policies on the challenging long-horizon task of transferring four reagent-filled test tubes from a transparent plastic rack to a yellow wooden rack. Since the policy may succeed after multiple attempts during test-tube insertion, we set the time limit to 200 seconds for quantitative evaluation. Dropping any test tube during the transfer is also counted as a failure. Prompt:
+Move the test tube from the transparent rack to the yellow wooden rack
+Stirrer
+:
+This task involves grasping a magnetic stir bar from an arbitrary position on the table,
+placing it into a beaker containing liquid, and then transferring the beaker onto a magnetic stirrer. A trial is considered successful only if the full task is completed within 60 seconds and no liquid is spilled during the transfer. Prompt:
+Grasp the magnetic stir bar from the desktop, place it into the beaker, and then put the beaker onto the magnetic stirrer.
+Figure 5:
+Task execution progress.
+Each row shows execution states for tasks,
+and each column corresponds to a normalized task-completion progress from 0% to 100%.
+5.2.2
+Quantitative Results
+We use three metrics to evaluate the performance of models across different tasks: throughput, success rate, and failure progress. Throughput is defined as the number of tasks successfully completed per hour, measuring both execution efficiency and task completion capability. Success rate measures the proportion of episodes in which the policy successfully completes the task. We further evaluate failure progress, defined as the proportion of the task successfully completed before failure. This metric reflects a policy’s potential to complete the task as well as its robustness, providing additional performance information beyond the binary success/failure outcome of each episode.
+Iterative policy improvement with HELP.
+We first describe how HELP improves the policy through multiple rounds of data collection and training. In each round, HELP collects both HITL recovery data and autonomous rollout trajectories.
+VLAC-CUT
+segments the autonomous rollouts and extracts progress-making and recovery segments for the next policy update. As described in Section
+3
+, each iteration uses the best-performing model from the previous iteration to collect these data. We then construct a new training dataset by combining the curated rollout data, the HITL recovery data, and the data used to train the base model, approximately balancing them at a 1:1:1 ratio to achieve strong model performance. Finally, we train the current inference model on this combined dataset to obtain an updated policy, and the best-performing checkpoint is used as the inference model for the next round of data collection and training.
+For the Refrigerator, Microplate, and Test Tube tasks, we conducted two iterations of data collection and training to improve the policy. In contrast, the Stirrer task was relatively simple, with the policy reaching a 90% success rate after a single iteration;
+therefore, no additional iteration was performed for this task.
+Table
+4
+summarizes the policy evaluation results. After multiple iterations of training, HELP achieves substantial improvements in both throughput and success rate across the four evaluation tasks. Compared with the base model, the final policy improves these metrics by more than two times in most cases and by nearly three times in some tasks. In the final iteration, HELP achieves a success rate above 90% in all tasks, except for refrigerator opening. The success rate of the refrigerator-opening task saturates at 80%, likely because further improvement is constrained by the camera viewpoint and the mechanical structure. These results demonstrate that HELP can effectively improve policy performance.
+A closer analysis of the same results indicates that the throughput improvement is primarily driven by the increase in success rate, while the execution time first increases and then decreases over the two optimization iterations. For the three tasks with a second round of optimization, the first iteration substantially improves the success rate over the base model, but it also introduces a noticeable increase in execution time. This is mainly because the added HITL recovery data teaches the policy to recover from states that previously led to failures. When the policy enters these error-prone states, it often performs additional recovery actions before returning to the correct execution trajectory. As a result, the initial gain in success rate is achieved largely by correcting erroneous steps, at the cost of longer execution time.
+However, in the final iteration, throughput improves more substantially than in the first iteration. For the refrigerator task, throughput increases from 10 to 19 after the first iteration and further rises to 42 after the second iteration, corresponding to gains of 90% and 120%. Similar trends are observed in the Microplate task, where throughput increases from 13 to 18 and then to 42, with gains of 38% and 133%, respectively. In the Test Tube task, throughput increases from 14 to 20 and then to 37, corresponding to gains of 43% and 83%. This larger second-iteration improvement occurs because the stronger policy produces more successful autonomous rollout trajectories, which provide higher-quality data for the next round of training. Training on the curated rollout data enables the policy to execute correct actions more directly, rather than frequently entering error-prone states and relying on recovery behaviors as in the first iteration. Consequently, both execution time and success rate improve, leading to a larger throughput gain in the second iteration.
+The quantitative definition of task progress for each task is illustrated in Figure
+5
+. The trend in failure progress provides further evidence of improved policy robustness, as the policy is able to complete a larger portion of each task even when it eventually fails. In the final Microplate iteration, the remaining failures are mainly concentrated at the most difficult step, opening the microplate reader lid. Once this step is completed, the subsequent actions are typically successful. This bottleneck explains the relatively low average failure progress of 20%, since failed trials tend to terminate at the same early stage.
+Overall, these results show that HELP substantially improves both success rate and throughput across most tasks, demonstrating its effectiveness in improving policy performance through iterative data collection and training.
+Human-supervision amplification under matched HITL budgets.
+For an evaluation metric
+M
+M
+, we define the human-supervision amplification factor as
+A
+M
+=
+M
+⁡
+(
+π
+HELP
+)
+−
+M
+⁡
+(
+π
+start
+)
+M
+⁡
+(
+π
+HITL
+)
+−
+M
+⁡
+(
+π
+start
+)
+.
+A_{M}=\frac{M(\pi_{\mathrm{HELP}})-M(\pi_{\mathrm{start}})}{M(\pi_{\mathrm{HITL}})-M(\pi_{\mathrm{start}})}.
+(4)
+Here,
+π
+start
+\pi_{\mathrm{start}}
+is the common starting checkpoint for the matched comparison, while
+π
+HITL
+\pi_{\mathrm{HITL}}
+and
+π
+HELP
+\pi_{\mathrm{HELP}}
+are the policies after HITL-only and HELP updates, respectively. Because both methods use the same number of HITL recovery trajectories within each task-round,
+A
+M
+A_{M}
+is equivalent to the ratio of performance improvement per HITL recovery trajectory. A value
+A
+M
+>
+1
+A_{M}>1
+indicates that
+VLAC-CUT
+-curated autonomous rollouts produce a larger policy gain from the same HITL recovery budget.
+We compare HELP with multi-iteration HITL training under matched HITL recovery budgets. For each task and training iteration, both methods start from the same policy checkpoint and use the same number of HITL recovery trajectories, as summarized in Table
+5
+. HELP additionally reuses autonomous rollout segments curated by
+VLAC-CUT
+. Table
+6
+reports the resulting human-supervision amplification factors derived from the absolute policy results in Table
+4
+. Across all seven matched task-iteration comparisons, the throughput-gain amplification factor ranges from 1.20
+×
+\times
+to 3.43
+×
+\times
+, while the success-rate-gain amplification factor ranges from 1.50
+×
+\times
+to 3.00
+×
+\times
+. The arithmetic means across the seven comparisons are 2.15
+×
+\times
+for throughput gain and 2.21
+×
+\times
+for success-rate gain. The amplification is observed across all tasks and in both the first and second post-training iterations.
+These results quantify the learning-level component of human efficiency: HELP consistently outperforms HITL-only training under matched HITL recovery budgets. This improvement is enabled by
+VLAC-CUT
+, which extracts useful progress-making and recovery segments from autonomous rollouts without increasing the amount of human recovery supervision. These comparisons isolate the additional learning-level benefit of
+VLAC-CUT
+, since both settings already use the same two-operator, twelve-robot HELP supervision configuration. Multi-robot supervision first provides system-level human efficiency and failure-mode discovery, while
+VLAC-CUT
+further improves the utilization of the resulting rollout data. Together, these two levels of improvement support HELP as an overall human-efficient post-training pipeline.
+Task
+Model
+Throughput
+Success rate
+Execution Time (s)
+Failure progress
+Refrigerator
+Base model
+10
+20%
+72.3
+40%
+HITL(i=1)
+14
+35%
+89
+42.3%
+HELP(i=1)
+19
+45%
+85
+49%
+HITL(i=2)
+33
+60%
+65.6
+56%
+HELP(i=2)
+42
+80%
+67.2
+62.5%
+Microplate
+Base model
+13
+30%
+83.3
+30%
+HITL(i=1)
+16
+40%
+88.35
+27.5%
+HELP(i=1)
+18
+45%
+91.4
+34.5%
+HITL(i=2)
+25
+60%
+85.1
+51.3%
+HELP(i=2)
+42
+90%
+77.7
+20%
+Test Tube
+Base model
+14
+35%
+93
+38.9%
+HITL(i=1)
+19
+45%
+83
+41.2%
+HELP(i=1)
+20
+55%
+105
+45%
+HITL(i=2)
+28
+70%
+90.7
+65%
+HELP(i=2)
+37
+95%
+93.4
+76%
+Stirrer
+Base model
+66
+55%
+30
+33.3%
+HITL(i=1)
+83
+70%
+30.5
+35%
+HELP(i=1)
+112
+90%
+29
+45%
+Table 4:
+Real-world post-training performance of HELP across iterative training rounds.
+We report the throughput, success rate, average execution time, and failure progress for the
+base model, HITL-only updates, and HELP.
+For each matched task-round comparison, HITL and HELP start from the same checkpoint.
+Task
+Model
+Base demos.
+HITL recovery
+Curated rollout
+Refrigerator
+Base model
+94
+-
+-
+HITL(i=1)
+94
+201
+-
+HELP(i=1)
+94
+201
+100
+HITL(i=2)
+94
+242
+-
+HELP(i=2)
+94
+242
+117
+Microplate
+Base model
+112
+-
+-
+HITL(i=1)
+112
+168
+-
+HELP(i=1)
+112
+168
+173
+HITL(i=2)
+112
+134
+-
+HELP(i=2)
+112
+134
+116
+Test Tube
+Base model
+150
+-
+-
+HITL(i=1)
+150
+352
+-
+HELP(i=1)
+150
+352
+142
+HITL(i=2)
+150
+300
+-
+HELP(i=2)
+150
+300
+141
+Stirrer
+Base model
+101
+-
+-
+HITL(i=1)
+101
+230
+-
+HELP(i=1)
+101
+230
+334
+Table 5:
+Training-data composition for each task and iteration.
+Each entry denotes the number of base demonstrations, HITL recovery trajectories, or curated rollout segments used for training.
+Within each matched task-round comparison, HITL and HELP use the same number of base demonstrations and HITL recovery trajectories; HELP additionally uses
+VLAC-CUT
+-curated autonomous rollout segments.
+Task
+Round
+HITL budget
+Δ
+\Delta
+TP HITL
+Δ
+\Delta
+TP HELP
+A
+TP
+A_{\mathrm{TP}}
+Δ
+\Delta
+SR HITL
+Δ
+\Delta
+SR HELP
+A
+SR
+A_{\mathrm{SR}}
+Refrigerator
+1
+201
++4
++9
+2.25
+×
+\times
++15 pp
++25 pp
+1.67
+×
+\times
+Microplate
+1
+168
++3
++5
+1.67
+×
+\times
++10 pp
++15 pp
+1.50
+×
+\times
+Test Tube
+1
+352
++5
++6
+1.20
+×
+\times
++10 pp
++20 pp
+2.00
+×
+\times
+Stirrer
+1
+230
++17
++46
+2.71
+×
+\times
++15 pp
++35 pp
+2.33
+×
+\times
+Refrigerator
+2
+242
++14
++23
+1.64
+×
+\times
++15 pp
++35 pp
+2.33
+×
+\times
+Microplate
+2
+134
++7
++24
+3.43
+×
+\times
++15 pp
++45 pp
+3.00
+×
+\times
+Test Tube
+2
+300
++8
++17
+2.13
+×
+\times
++15 pp
++40 pp
+2.67
+×
+\times
+Arithmetic mean
+–
+–
+–
+–
+2.15
+×
+\times
+–
+–
+2.21
+×
+\times
+Table 6:
+Comparison between HELP and HITL-only training under matched HITL recovery budgets.
+For each task-round, HITL and HELP start from the same policy checkpoint and use the same number of HITL recovery trajectories.
+Δ
+\Delta
+denotes the performance improvement relative to the common starting checkpoint.
+A
+TP
+A_{\mathrm{TP}}
+and
+A
+SR
+A_{\mathrm{SR}}
+denote the amplification factors for throughput gain and success-rate gain, respectively. The final row reports the arithmetic mean across the seven matched task-round comparisons. This table quantifies supervision utilization and complements the system-level two-operator, twelve-robot result.
+6
+Author Contribution Statement
+The authors confirm their contributions as follows:
+•
+Shaopeng Zhai (zsp1197@163.com): led the project; designed the algorithm and technical roadmap; developed the infrastructure; and contributed to data collection, real-world experiments,
+VLAC-CUT
+and policy post-training.
+•
+Qi Zhang (zhangqi.fqz@gmail.com): led the development of
+VLAC-CUT
+including data collection, annotation, process, model training and VPB benchmark.
+•
+Tianyi Zhang (tianyizhang0729@163.com): contributed to real-world experiments, infrastructure development,
+VLAC-CUT
+data annotation, policy post-training, and data collection.
+•
+Haoran Zhang (zhrecnucee@gmail.com): VLA deployment and data collection, contributed substantially to policy post-training and eaperiments.
+•
+Fuxian Huang (hfuxian@zju.edu.cn): data collection and contributed substantially to
+VLAC-CUT
+data annotation.
+•
+Zhanhui Lin (zhanhuilin@link.cuhk.edu.cn): contributed to
+VLAC-CUT
+data preprocessing, collection, annotation, and model training; and contributed substantially to the VPB benchmark.
+•
+Zijun Xu (25113070118@m.fudan.edu.cn): contributed to teleoperation system development.
+References
+Alakuijala
+et al.
+(2024)
+M. Alakuijala, R. McLean, I. Woungang, N. Farsad, S. Kaski, P. Marttinen, and K. Yuan
+Video-language critic: transferable reward functions for language-conditioned robotics
+.
+arXiv preprint arXiv:2405.19988
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Andrychowicz
+et al.
+(2017)
+M. Andrychowicz, F. Wolski, A. Ray, J. Schneider, R. Fong, P. Welinder, B. McGrew, J. Tobin, P. Abbeel, and W. Zaremba
+Hindsight experience replay
+.
+In
+NeurIPS
+,
+Cited by:
+§2
+.
+Black
+et al.
+(2024)
+K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter,
+et al.
+p
+​
+i
+​
+_
+​
+0
+pi\_0
+: A vision-language-action flow model for general robot control
+.
+arXiv preprint arXiv:2410.24164
+.
+Cited by:
+§2
+.
+Budzianowski
+et al.
+(2025)
+P. Budzianowski, E. Wiśnios, G. Góral, I. Kulakov, V. Petrenko, and K. Walas
+OpenGVL–benchmarking visual temporal progress for data curation
+.
+arXiv preprint arXiv:2509.17321
+.
+Cited by:
+§2
+.
+Chen
+et al.
+(2021)
+A. S. Chen, S. Nair, and C. Finn
+Learning generalizable robotic reward functions from” in-the-wild” human videos
+.
+RSS
+.
+Cited by:
+§2
+.
+Chen
+et al.
+(2025a)
+Q. Chen, J. Yu, M. Schwager, P. Abbeel, Y. Shentu, and P. Wu
+SARM: stage-aware reward modeling for long horizon robot manipulation
+.
+arXiv preprint arXiv:2509.25358
+.
+Cited by:
+§2
+.
+Chen
+et al.
+(2026)
+S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna
+TOPReward: token probabilities as hidden zero-shot rewards for robotics
+.
+arXiv preprint arXiv:2602.19313
+.
+Cited by:
+§2
+,
+§2
+.
+Chen
+et al.
+(2025b)
+Y. Chen, S. Tian, S. Liu, Y. Zhou, H. Li, and D. Zhao
+Conrft: a reinforced fine-tuning method for vla models via consistency policy
+.
+arXiv preprint arXiv:2502.05450
+.
+Cited by:
+§2
+.
+Chi
+et al.
+(2023)
+C. Chi, Z. Xu, S. Feng, E. Cousineau, Y. Du, B. Burchfiel, R. Tedrake, and S. Song
+Diffusion policy: visuomotor policy learning via action diffusion
+.
+The International Journal of Robotics Research
+,
+pp. 02783649241273668
+.
+Cited by:
+§2
+.
+Cui
+et al.
+(2025)
+J. Cui, T. Liu, Z. Meng, J. Yu, R. Song, W. Zhang, Y. Zhu, and S. Huang
+Grove: a generalized reward for learning open-vocabulary physical skill
+.
+In
+Proceedings of the Computer Vision and Pattern Recognition Conference
+,
+pp. 15781–15790
+.
+Cited by:
+§2
+.
+DeepSeek-AI
+et al.
+(2025)
+DeepSeek-AI, D. Guo, D. Yang, H. Zhang, J. Song, R. Zhang, R. Xu, Q. Zhu, S. Ma, P. Wang, X. Bi, X. Zhang, X. Yu, Y. Wu, Z. F. Wu, Z. Gou, Z. Shao, Z. Li, Z. Gao, A. Liu, B. Xue, B. Wang, B. Wu, B. Feng, C. Lu, C. Zhao, C. Deng, C. Zhang, C. Ruan, D. Dai, D. Chen, D. Ji, E. Li, F. Lin, F. Dai, F. Luo, G. Hao, G. Chen, G. Li, H. Zhang, H. Bao, H. Xu, H. Wang, H. Ding, H. Xin, H. Gao, H. Qu, H. Li, J. Guo, J. Li, J. Wang, J. Chen, J. Yuan, J. Qiu, J. Li, J. L. Cai, J. Ni, J. Liang, J. Chen, K. Dong, K. Hu, K. Gao, K. Guan, K. Huang, K. Yu, L. Wang, L. Zhang, L. Zhao, L. Wang, L. Zhang, L. Xu, L. Xia, M. Zhang, M. Zhang, M. Tang, M. Li, M. Wang, M. Li, N. Tian, P. Huang, P. Zhang, Q. Wang, Q. Chen, Q. Du, R. Ge, R. Zhang, R. Pan, R. Wang, R. J. Chen, R. L. Jin, R. Chen, S. Lu, S. Zhou, S. Chen, S. Ye, S. Wang, S. Yu, S. Zhou, S. Pan, S. S. Li, S. Zhou, S. Wu, S. Ye, T. Yun, T. Pei, T. Sun, T. Wang, W. Zeng, W. Zhao, W. Liu, W. Liang, W. Gao, W. Yu, W. Zhang, W. L. Xiao, W. An, X. Liu, X. Wang, X. Chen, X. Nie, X. Cheng, X. Liu, X. Xie, X. Liu, X. Yang, X. Li, X. Su, X. Lin, X. Q. Li, X. Jin, X. Shen, X. Chen, X. Sun, X. Wang, X. Song, X. Zhou, X. Wang, X. Shan, Y. K. Li, Y. Q. Wang, Y. X. Wei, Y. Zhang, Y. Xu, Y. Li, Y. Zhao, Y. Sun, Y. Wang, Y. Yu, Y. Zhang, Y. Shi, Y. Xiong, Y. He, Y. Piao, Y. Wang, Y. Tan, Y. Ma, Y. Liu, Y. Guo, Y. Ou, Y. Wang, Y. Gong, Y. Zou, Y. He, Y. Xiong, Y. Luo, Y. You, Y. Liu, Y. Zhou, Y. X. Zhu, Y. Xu, Y. Huang, Y. Li, Y. Zheng, Y. Zhu, Y. Ma, Y. Tang, Y. Zha, Y. Yan, Z. Z. Ren, Z. Ren, Z. Sha, Z. Fu, Z. Xu, Z. Xie, Z. Zhang, Z. Hao, Z. Ma, Z. Yan, Z. Wu, Z. Gu, Z. Zhu, Z. Liu, Z. Li, Z. Xie, Z. Song, Z. Pan, Z. Huang, Z. Xu, Z. Zhang, and Z. Zhang
+DeepSeek-r1: incentivizing reasoning capability in llms via reinforcement learning
+.
+External Links:
+2501.12948
+,
+Link
+Cited by:
+§2
+.
+Ding and Jin (2024)
+Z. Ding and C. Jin
+Consistency models as a rich and efficient policy class for reinforcement learning
+.
+In
+The Twelfth International Conference on Learning Representations
+,
+Cited by:
+§2
+.
+Du
+et al.
+(2023)
+Y. Du, K. Konyushkova, M. Denil, A. Raju, J. Landon, F. Hill, N. de Freitas, and S. Cabi
+Vision-language models as success detectors
+.
+arXiv preprint arXiv:2303.07280
+.
+Cited by:
+§2
+.
+Escontrela
+et al.
+(2023)
+A. Escontrela, A. Adeniji, W. Yan, A. Jain, X. B. Peng, K. Goldberg, Y. Lee, D. Hafner, and P. Abbeel
+Video prediction models as rewards for reinforcement learning
+.
+Advances in Neural Information Processing Systems
+36
+,
+pp. 68760–68783
+.
+Cited by:
+§2
+.
+Ghasemipour
+et al.
+(2025)
+S. K. S. Ghasemipour, A. Wahid, J. Tompson, P. Sanketi, and I. Mordatch
+Self-improving embodied foundation models
+.
+arXiv preprint arXiv:2509.15155
+.
+Cited by:
+§2
+.
+He
+et al.
+(2024)
+L. He, L. Shen, J. Tan, and X. Wang
+Aligniql: policy alignment in implicit q-learning through constrained optimization
+.
+arXiv preprint arXiv:2405.18187
+.
+Cited by:
+§2
+.
+Hu
+et al.
+(2023)
+Z. Hu, A. Rovinsky, J. Luo, V. Kumar, A. Gupta, and S. Levine
+REBOOT: reuse data for bootstrapping efficient real-world dexterous manipulation
+.
+In
+Proceedings of The 7th Conference on Robot Learning
+,
+J. Tan, M. Toussaint, and K. Darvish (Eds.)
+,
+Proceedings of Machine Learning Research
+, Vol.
+229
+,
+pp. 1930–1949
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Intelligence
+et al.
+(2025)
+P. Intelligence, A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo, D. Driess, M. Equi, A. Esmail, Y. Fang, C. Finn, C. Glossop, T. Godden, I. Goryachev, L. Groom, H. Hancock, K. Hausman, G. Hussein, B. Ichter, S. Jakubczak, R. Jen, T. Jones, B. Katz, L. Ke, C. Kuchi, M. Lamb, D. LeBlanc, S. Levine, A. Li-Bell, Y. Lu, V. Mano, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, C. Sharma, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, W. Stoeckle, A. Swerdlow, J. Tanner, M. Torne, Q. Vuong, A. Walling, H. Wang, B. Williams, S. Yoo, L. Yu, U. Zhilinsky, and Z. Zhou
+π
+0.6
+∗
+\pi^{*}_{0.6}
+: A vla that learns from experience
+.
+arXiv:2511.14759
+.
+Cited by:
+§1
+,
+§2
+.
+Kang
+et al.
+(2025)
+Z. Kang, C. Hu, Y. Luo, Z. Yuan, R. Zheng, and H. Xu
+A forget-and-grow strategy for deep reinforcement learning scaling in continuous control
+.
+arXiv preprint arXiv:2507.02712
+.
+Cited by:
+§2
+.
+Khazatsky
+et al.
+(2024)
+A. Khazatsky, K. Pertsch, S. Nair, A. Balakrishna, S. Dasari, S. Karamcheti, S. Nasiriany, M. K. Srirama, L. Y. Chen, K. Ellis,
+et al.
+Droid: a large-scale in-the-wild robot manipulation dataset
+.
+arXiv preprint arXiv:2403.12945
+.
+Cited by:
+§A.1
+.
+Kim
+et al.
+(2025)
+M. J. Kim, C. Finn, and P. Liang
+Fine-tuning vision-language-action models: optimizing speed and success
+.
+arXiv preprint arXiv:2502.19645
+.
+Cited by:
+§2
+.
+Kim
+et al.
+(2024)
+M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. Foster, G. Lam, P. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn
+OpenVLA: an open-source vision-language-action model
+.
+arXiv preprint arXiv:2406.09246
+.
+Cited by:
+§2
+.
+Krack
+et al.
+(2026)
+P. Krack, T. Jülg, W. Burgard, and F. Walter
+Rewarding dino: predicting dense rewards with vision foundation models
+.
+arXiv preprint arXiv:2603.16978
+.
+Cited by:
+§2
+.
+Kumar
+et al.
+(2024)
+N. Kumar, T. Silver, W. McClinton, L. Zhao, S. Proulx, T. Lozano-Pérez, L. P. Kaelbling, and J. Barry
+Practice makes perfect: planning to learn skill parameter policies
+.
+In
+Robotics: Science and Systems (RSS)
+,
+Cited by:
+§2
+.
+Lambert
+et al.
+(2024)
+N. Lambert, V. Pyatkin, J. Morrison, L. J. Miranda, B. Y. Lin, K. Chandu, N. Dziri, S. Kumar, T. Zick, Y. Choi, N. A. Smith, and H. Hajishirzi
+RewardBench: evaluating reward models for language modeling
+.
+arXiv preprint arXiv:2403.13787
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Lee
+et al.
+(2026)
+T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+RoboReward: general-purpose vision-language reward models for robotics
+.
+arXiv preprint arXiv:2601.00675
+.
+Cited by:
+Table 8
+,
+§2
+,
+§2
+.
+Lee
+et al.
+(2021)
+Y. Lee, A. Szot, S. Sun, and J. J. Lim
+Generalizable imitation learning from observation via inferring goal proximity
+.
+Advances in Neural Information Processing Systems
+34
+.
+Cited by:
+§2
+.
+Li
+et al.
+(2024)
+L. Li, Y. Wei, Z. Xie, X. Yang, Y. Song, P. Wang, C. An, T. Liu, S. Li, B. Y. Lin, L. Kong, and Q. Liu
+VLRewardBench: a challenging benchmark for vision–language generative reward models
+.
+arXiv preprint arXiv:2411.17451
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Li
+et al.
+(2025)
+Q. Li, Z. Zhou, and S. Levine
+Reinforcement learning with action chunking
+.
+arXiv preprint arXiv:2507.07969
+.
+Cited by:
+§2
+.
+Liang
+et al.
+(2026)
+A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox,
+et al.
+Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+.
+arXiv preprint arXiv:2603.02115
+.
+Cited by:
+§2
+,
+§2
+.
+Lin
+et al.
+(2025)
+J. Lin, R. Xu, S. Zhu, S. Yang, P. Cao, Y. Ran, M. Hu, C. Zhu, Y. Xie, Y. Long,
+et al.
+MMSI-video-bench: a holistic benchmark for video-based spatial intelligence
+.
+arXiv preprint arXiv:2512.10863
+.
+Cited by:
+Table 8
+.
+Lin
+et al.
+(2024)
+M. Lin, S. Shi, Y. Guo, B. Chalaki, V. Tadiparthi, E. M. Pari, S. Stepputtis, J. P. Campbell, and K. P. Sycara
+Navigating noisy feedback: enhancing reinforcement learning with error-prone language models
+.
+In
+Findings of the Association for Computational Linguistics: EMNLP 2024
+,
+pp. 16002–16014
+.
+Cited by:
+§2
+.
+Liu
+et al.
+(2023a)
+B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+Libero: benchmarking knowledge transfer for lifelong robot learning
+.
+Advances in Neural Information Processing Systems
+36
+,
+pp. 44776–44791
+.
+Cited by:
+§A.1
+.
+Liu
+et al.
+(2023b)
+H. Liu, C. Li, Q. Wu, and Y. J. Lee
+Visual instruction tuning
+.
+Advances in neural information processing systems
+36
+,
+pp. 34892–34916
+.
+Cited by:
+Table 8
+.
+Luo
+et al.
+(2024)
+J. Luo, C. Xu, J. Wu, and S. Levine
+Precise and dexterous robotic manipulation via human-in-the-loop reinforcement learning
+.
+External Links:
+2410.21845
+Cited by:
+§2
+.
+Luu
+et al.
+(2025)
+T. M. Luu, Y. Lee, D. Lee, S. Kim, M. J. Kim, and C. D. Yoo
+ERL-vlm: enhancing rating-based reinforcement learning to effectively leverage feedback from large vision–language models
+.
+arXiv preprint arXiv:2506.12822
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Lv
+et al.
+(2025)
+L. Lv, Y. Li, Y. Luo, F. Sun, T. Kong, J. Xu, and X. Ma
+Flow-based policy for online reinforcement learning
+.
+arXiv preprint arXiv:2506.12811
+.
+Cited by:
+§2
+,
+§2
+.
+Lynch
+et al.
+(2020)
+C. Lynch, M. Khansari, T. Xiao, V. Kumar, J. Tompson, S. Levine, and P. Sermanet
+Learning latent plans from play
+.
+In
+CoRL
+,
+Cited by:
+§2
+.
+Ma
+et al.
+(2024)
+Y. J. Ma, J. Hejna, C. Fu, D. Shah, J. Liang, Z. Xu, S. Kirmani, P. Xu, D. Driess, T. Xiao,
+et al.
+Vision language models are in-context value learners
+.
+In
+The Thirteenth International Conference on Learning Representations
+,
+Cited by:
+§A.5
+,
+§2
+.
+Ma
+et al.
+(2023a)
+Y. J. Ma, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+Liv: language-image representations and rewards for robotic control
+.
+In
+International Conference on Machine Learning
+,
+pp. 23301–23320
+.
+Cited by:
+§2
+.
+Ma
+et al.
+(2023b)
+Y. J. Ma, W. Liang, G. Wang, D. Huang, O. Bastani, D. Jayaraman, Y. Zhu, L. Fan, and A. Anandkumar
+Eureka: human-level reward design via coding large language models
+.
+arXiv preprint arXiv:2310.12931
+.
+Cited by:
+§2
+.
+Ma
+et al.
+(2022)
+Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+VIP: towards universal visual reward and representation via value-implicit pre-training
+.
+In
+The Eleventh International Conference on Learning Representations
+,
+Cited by:
+§2
+.
+Malik
+et al.
+(2025)
+S. Malik, V. Pyatkin, S. Land, J. Morrison, N. A. Smith, H. Hajishirzi, and N. Lambert
+RewardBench 2: advancing reward model evaluation
+.
+arXiv preprint arXiv:2506.01937
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Mao
+et al.
+(2026)
+Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+ARM: advantage reward modeling for long-horizon manipulation
+.
+arXiv preprint arXiv:2604.03037
+.
+Cited by:
+§2
+.
+Nair
+et al.
+(2022)
+S. Nair, A. Rajeswaran, V. Kumar, C. Finn, and A. Gupta
+R3m: a universal visual representation for robot manipulation
+.
+In
+CoRL
+,
+Cited by:
+§2
+.
+Pan
+et al.
+(2026)
+C. Pan
+et al.
+SOP: a scalable online post-training system for vision-language-action models
+.
+External Links:
+2601.03044
+,
+Link
+Cited by:
+§2
+.
+Park
+et al.
+(2025)
+S. Park, Q. Li, and S. Levine
+Flow q-learning
+.
+arXiv preprint arXiv:2502.02538
+.
+Cited by:
+§2
+,
+§2
+.
+Pertsch
+et al.
+(2025)
+K. Pertsch, K. Stachowicz, B. Ichter, D. Driess, S. Nair, Q. Vuong, O. Mees, C. Finn, and S. Levine
+Fast: efficient action tokenization for vision-language-action models
+.
+arXiv preprint arXiv:2501.09747
+.
+Cited by:
+§2
+.
+Physical Intelligence
+et al.
+(2025)
+Physical Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai,
+et al.
+π
+0.5
+\pi_{0.5}
+: a vision-language-action model with open-world generalization
+.
+arXiv preprint arXiv:2504.16054
+.
+Cited by:
+§5.2
+.
+Physical Intelligence (2025)
+Physical Intelligence
+π
+0.6
+∗
+\pi^{*}_{0.6}
+: A VLA that learns from experience
+.
+External Links:
+2511.14759
+,
+Link
+Cited by:
+§2
+,
+§2
+.
+Rocamonde
+et al.
+(2023)
+J. Rocamonde, V. Montesinos, E. Nava, E. Perez, and D. Lindner
+Vision-language models are zero-shot reward models for reinforcement learning
+.
+arXiv preprint arXiv:2310.12921
+.
+Cited by:
+§2
+.
+Sermanet
+et al.
+(2024)
+P. Sermanet, T. Ding, J. Zhao, F. Xia, D. Dwibedi, K. Gopalakrishnan, C. Chan, G. Dulac-Arnold, S. Maddineni, N. J. Joshi,
+et al.
+Robovqa: multimodal long-horizon reasoning for robotics
+.
+In
+2024 IEEE International Conference on Robotics and Automation (ICRA)
+,
+pp. 645–652
+.
+Cited by:
+Table 8
+.
+Sermanet
+et al.
+(2016)
+P. Sermanet, K. Xu, and S. Levine
+Unsupervised perceptual rewards for imitation learning
+.
+arXiv preprint arXiv:1612.06699
+.
+Cited by:
+§2
+.
+Shao
+et al.
+(2020)
+L. Shao, T. Migimatsu, Q. Zhang, K. Yang, and J. Bohg
+Concept2Robot: learning manipulation concepts from instructions and human demonstrations
+.
+In
+Proceedings of Robotics: Science and Systems (RSS)
+,
+Cited by:
+§2
+.
+Shao
+et al.
+(2024)
+Z. Shao, P. Wang, Q. Zhu, R. Xu, J. Song, X. Bi, H. Zhang, M. Zhang, Y. K. Li, Y. Wu, and D. Guo
+DeepSeekMath: pushing the limits of mathematical reasoning in open language models
+.
+External Links:
+2402.03300
+,
+Link
+Cited by:
+§2
+.
+Shi
+et al.
+(2026)
+H. Shi
+et al.
+Beyond imitation: reinforcement learning-based sim-real co-training for vision-language-action models
+.
+External Links:
+2602.12628
+,
+Link
+Cited by:
+§2
+.
+Singh
+et al.
+(2025)
+A. Singh, A. Bhaskar, P. Yu, S. Chakraborty, R. Dasyam, A. Bedi, and P. Tokekar
+VARP: reinforcement learning from vision–language model feedback with agent-regularized preferences
+.
+arXiv preprint arXiv:2503.13817
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Smith
+et al.
+(2024)
+L. Smith, Y. Cao, and S. Levine
+Grow your limits: continuous improvement with real-world rl for robotic locomotion
+.
+In
+2024 IEEE International Conference on Robotics and Automation (ICRA)
+,
+pp. 10829–10836
+.
+Cited by:
+§2
+.
+Smith
+et al.
+(2023)
+L. Smith, I. Kostrikov, and S. Levine
+Demonstrating a walk in the park: learning to walk in 20 minutes with model-free reinforcement learning
+.
+Robotics: Science and Systems (RSS) Demo
+2
+(
+3
+),
+pp. 4
+.
+Cited by:
+§2
+.
+Sontakke
+et al.
+(2024)
+S. Sontakke, J. Zhang, S. Arnold, K. Pertsch, E. Bıyık, D. Sadigh, C. Finn, and L. Itti
+Roboclip: one demonstration is enough to learn robot policies
+.
+Advances in Neural Information Processing Systems
+36
+.
+Cited by:
+§2
+.
+Sun
+et al.
+(2026)
+X. Sun
+et al.
+AtomVLA: scalable post-training for robotic manipulation via predictive latent world models
+.
+External Links:
+2603.08519
+,
+Link
+Cited by:
+§2
+.
+Tan
+et al.
+(2025)
+H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co, S. Xie, G. Yao, P. Wang, Z. Wang, and S. Zhang
+Robo-dopamine: general process reward modeling for high-precision robotic manipulation
+.
+arXiv preprint arXiv:2512.23703
+.
+Cited by:
+§2
+.
+Venkataraman
+et al.
+(2024)
+S. Venkataraman, Y. Wang, Z. Wang, Z. Erickson, and D. Held
+Real-world offline reinforcement learning from vision language model feedback
+.
+arXiv preprint arXiv:2411.05273
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Wang
+et al.
+(2026)
+Y. Wang
+et al.
+Learning while deploying: fleet-scale reinforcement learning for generalist robot policies
+.
+External Links:
+2605.00416
+,
+Link
+Cited by:
+§2
+,
+§2
+.
+Wang
+et al.
+(2024)
+Y. Wang, Z. Sun, J. Zhang, Z. Xian, E. Biyik, D. Held, and Z. Erickson
+RL-vlm-f: reinforcement learning from vision–language foundation model feedback
+.
+arXiv preprint arXiv:2402.03681
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Wu
+et al.
+(2026)
+Y. Wu, W. Yuan, A. Qi, V. Guizilini, J. Mao, and Y. Wang
+Large reward models: generalizable online robot reward generation with vision-language models
+.
+arXiv preprint arXiv:2603.16065
+.
+Cited by:
+§2
+.
+Xiao
+et al.
+(2025)
+X. Xiao
+et al.
+World-Env: leveraging world model as a virtual environment for VLA post-training
+.
+External Links:
+2509.24948
+,
+Link
+Cited by:
+§2
+.
+Xiao
+et al.
+(2026)
+X. Xiao
+et al.
+ROVE: unlocking human interventions for humanoid manipulation via reinforcement learning
+.
+External Links:
+2606.17011
+,
+Link
+Cited by:
+§2
+.
+Xie
+et al.
+(2026)
+Y. Xie, X. Zhang, Y. Shan, H. Zhu, R. Tang, R. Wei, M. Song, Y. Wan, and J. Song
+Spatialqa: a benchmark for evaluating spatial logical reasoning in vision-language models
+.
+arXiv preprint arXiv:2602.20901
+.
+Cited by:
+Table 8
+.
+Yang
+et al.
+(2023)
+J. Yang, M. S. Mark, B. Vu, A. Sharma, J. Bohg, and C. Finn
+Robot fine-tuning made easy: pre-training rewards and policies for autonomous real-world reinforcement learning
+.
+External Links:
+2310.15145
+Cited by:
+§2
+.
+Yasunaga
+et al.
+(2025)
+M. Yasunaga, L. Zettlemoyer, and M. Ghazvininejad
+Multimodal rewardbench: holistic evaluation of reward models for vision–language models
+.
+arXiv preprint arXiv:2502.14191
+.
+External Links:
+Link
+Cited by:
+§2
+.
+Ye
+et al.
+(2025)
+Z. Ye, W. Lu, M. Ye, T. Lin, S. Yang, J. Yan, and B. Zhao
+Robofac: a comprehensive framework for robotic failure analysis and correction
+.
+arXiv preprint arXiv:2505.12224
+.
+Cited by:
+§2
+.
+Yu
+et al.
+(2026)
+C. Yu, C. Sima, G. Jiang, H. Zhang, H. Mai, H. Li, H. Wang, J. Chen, K. Wu, L. Chen,
+et al.
+χ
+0
+\chi_{0}
+: resource-aware robust manipulation via taming distributional inconsistencies
+.
+arXiv preprint arXiv:2602.09021
+.
+Cited by:
+§2
+.
+Zhai
+et al.
+(2024)
+S. Zhai, J. Wang, T. Zhang, F. Huang, Q. Zhang, M. Zhou, J. Hou, Y. Qiao, and Y. Liu
+Building open-ended embodied agent via language-policy bidirectional adaptation
+.
+External Links:
+2401.00006
+,
+Link
+Cited by:
+§2
+.
+Zhai
+et al.
+(2025)
+S. Zhai, Q. Zhang, T. Zhang, F. Huang, H. Zhang, M. Zhou, S. Zhang, L. Liu, S. Lin, and J. Pang
+A vision-language-action-critic model for robotic real-world reinforcement learning
+.
+arXiv preprint arXiv:2509.15937
+.
+Cited by:
+§2
+.
+Zhang
+et al.
+(2025a)
+J. Zhang, Y. Luo, A. Anwar, S. A. Sontakke, J. J. Lim, J. Thomason, E. Bıyık, and J. Zhang
+ReWiND: language-guided rewards teach robot policies without new demonstrations
+.
+arXiv preprint arXiv:2505.10911
+.
+External Links:
+Link
+Cited by:
+§A.1
+.
+Zhang
+et al.
+(2026a)
+J. Zhang, C. Qian, H. Sun, H. Lu, D. Wang, L. Xue, and H. Liu
+PROGRESSLM: towards progress reasoning in vision-language models
+.
+arXiv preprint arXiv:2601.15224
+.
+Cited by:
+Table 8
+,
+§2
+.
+Zhang
+et al.
+(2025b)
+S. Zhang, Z. Xu, P. Liu, X. Yu, Y. Li, Q. Gao, Z. Fei, Z. Yin, Z. Wu, Y. Jiang,
+et al.
+Vlabench: a large-scale benchmark for language-conditioned robotics manipulation with long-horizon reasoning tasks
+.
+In
+Proceedings of the IEEE/CVF International Conference on Computer Vision
+,
+pp. 11142–11152
+.
+Cited by:
+§A.1
+.
+Zhang
+et al.
+(2026b)
+T. Zhang, S. Zhai, H. Zhang, F. Huang, and Q. Zhang
+Preserving foundational capabilities in flow-matching vlas through conservative sft
+.
+arXiv preprint arXiv:2605.08879
+.
+Cited by:
+1st item
+.
+Zhou
+et al.
+(2024a)
+Z. Zhou, P. Atreya, A. Lee, H. Walke, O. Mees, and S. Levine
+Autonomous improvement of instruction following skills via foundation models
+.
+arXiv preprint arXiv:407.20635
+.
+Cited by:
+§2
+.
+Zhou
+et al.
+(2024b)
+Z. Zhou, A. Peng, Q. Li, S. Levine, and A. Kumar
+Efficient online reinforcement learning fine-tuning need not retain offline data
+.
+arXiv preprint arXiv:2412.07762
+.
+Cited by:
+§2
+.
+Appendix A
+Additional Details for
+VLAC-CUT
+A.1
+Progress Annotation Dataset Details
+The full annotation inventory is constructed from public robot datasets and a targeted in-house real-world collection.
+DROID
+(
+Khazatsky et al., 2024
+)
+contributes diverse real-world manipulation videos, while LIBERO
+(
+Liu et al., 2023a
+)
+and VLABench
+(
+Zhang et al., 2025b
+)
+provide simulated task variation and benchmark-style manipulation scenarios.
+From these datasets, we extract task instructions, camera videos, trajectory metadata, and semantic task information, and then re-annotate selected videos with our progress labels.
+Although these public datasets expand task and scene coverage, they are largely demonstration-centric: most trajectories correspond to successful or near-expert executions.
+This distribution is insufficient for learning a general-purpose progress critic that must evaluate policy behavior beyond nominal demonstrations.
+A critic trained primarily on expert-like trajectories may implicitly assume that execution quality improves monotonically with time and fail to distinguish partial progress, stagnation, regression, recoverable errors, and unrecoverable failure.
+Reverse or rewound video augmentation can expose models to synthetic decreasing-progress examples
+(
+Zhang et al., 2025a
+)
+, but it cannot fully substitute for physically executed non-expert robot rollouts with realistic contact dynamics and out-of-expert-distribution failure modes.
+To address this limitation, we collect ARX-data, a targeted in-house real-world robot dataset designed to increase coverage of physically executed non-monotonic progress.
+ARX-data is predominantly collected on a single-robot real-world platform built around an ARX-5 robot under master–slave teleoperation, with synchronized multi-view videos.
+In addition to successful demonstrations, the collection includes deliberately induced deviations from nominal execution, covering grasp failures, workspace collisions, unstable contacts, wrong-object interactions, inaccurate placements, object drops, deviations from the intended motion, and recovery behaviors such as re-grasping or correcting an object pose after failure, as displayed in Figure
+6
+.
+These trajectories provide physically grounded examples in which task progress may increase, stagnate, decrease, or later recover.
+Figure 6:
+Representative failure (Err.) and recovery modes (Rec.) in ARX-data. These examples provide visual evidence for annotating stagnation, regression, and recovery in signed progress trajectories.
+Overall, the source design prioritizes real-world robot behavior.
+DROID provides large-scale real-world manipulation diversity, while ARX-data complements it with physically executed non-monotonic progress trajectories.
+LIBERO and VLABench are retained as supplementary simulated sources for controlled task variation and additional manipulation coverage, rather than as the main basis of the dataset.
+Progress labels are not inherited from any source dataset; all selected videos are re-annotated using our process-level schema to produce view-conditioned signed progress supervision.
+The full annotation inventory contains 35,230 records, 26,615 episodes, 15,206 task units, and 464,446 progress points.
+A record denotes one annotated video-level sample and is the basic unit of progress annotation.
+An episode denotes one physical task execution and may correspond to multiple camera- or view-specific records.
+A task unit denotes a semantic manipulation task used for measuring task coverage and organizing benchmark splits.
+For progress-pattern analysis, a non-expert record is defined as one whose ordered progress points contain at least one adjacent decrease in signed progress; otherwise it is expert.
+Under this annotation-derived criterion, the full inventory contains 20,885 expert records and 14,345 non-expert records.
+Figures
+7
+and
+8
+summarize source composition, execution-quality distribution, signed progress statistics, temporal annotation density, and semantic/action diversity.
+Figure 7:
+Full annotation inventory statistics. (a) Source composition and execution-quality distribution of the annotated robot video corpus. ARX-data and DROID dominate the real-world portion, while LIBERO and VLABench provide supplementary simulated coverage. (b) Signed progress statistics across data sources. The distribution of progress values and adjacent progress deltas shows that the corpus contains not only forward progress but also stagnation, regression, and recovery behavior. (c) Temporal characteristics of the progress annotations. Most trajectories are short manipulation episodes, while each episode contains multiple progress points that provide dense process-level supervision.
+Figure 8:
+Semantic and action diversity of the full annotation inventory. The corpus covers a broad range of manipulation objects, spatial relations, and action categories, with pick-and-place tasks forming the largest group.
+A.2
+Annotation Schema and Protocol
+Each progress point is task-conditioned rather than time-conditioned: the same visual motion may indicate progress for one instruction and irrelevant or harmful behavior for another.
+Annotators therefore mark sparse keyframes where task state changes, including forward progress, stagnation, regression, and recovery.
+For each episode, the annotator first reviews the task instruction and creates a task-level plan.
+The plan decomposes the instruction into semantic milestones that describe the nominal progression of the task, typically spanning the 0–100% completion range.
+This plan provides a task-conditioned reference for assigning signed progress values, but pointwise progress labels themselves are not restricted to monotonic completion.
+Progress points may take negative values when the execution moves away from the goal or interacts with an incorrect object.
+The annotator then marks progress points at meaningful timestamps.
+A progress point is not a uniformly sampled frame; it is a semantic event where the task state changes, a subgoal is achieved, an error occurs, the execution stagnates, or the trajectory reaches an inflection point.
+Annotators are instructed to identify moments where progress reverses, such as failed grasps, object drops, incorrect placements, or recovery attempts.
+These inflection points define the temporal boundaries at which a trajectory can transition from improvement to stagnation, regression, or recovery.
+Each progress point aligns visual time with structured language supervision and optional spatial grounding.
+The textual annotation contains five complementary components: state description, action description, progress explanation, success/failure analysis, and correction plan.
+Optional grounding annotations localize the gripper end-effector and task-relevant objects on the keyframe corresponding to each progress point.
+This grounding links language explanations to visual evidence and supports models that reason jointly about object state, robot motion, and task progress.
+Figure
+9
+summarizes the annotation schema.
+Figure 9:
+Example of sparse progress annotation for a robot manipulation trajectory. Only selected keyframes are manually annotated with signed progress values and structured diagnostic supervision, including state description, action description, progress explanation, success/failure analysis, and correction planning. Intermediate video frames are shown as unannotated temporal context, while the current keyframe corresponds to the active annotation target.
+We use an interactive annotation interface to support process-level labeling at scale.
+The interface allows annotators to inspect multi-view videos, edit the task plan, mark progress points, assign signed progress values, and provide corresponding state, action, explanation, success/failure, correction, and grounding annotations.
+For datasets that provide robot trajectories or action information, the system can initialize candidate progress points using kinematic analysis.
+The kinematic mode loads robot positions and gripper states, rescales position, orientation, and gripper dimensions, unwraps rotations, filters trajectories, computes velocity and acceleration, extracts candidate keyframes, and refines them under weighted position, rotation, and gripper costs.
+The extracted trajectory indices are then mapped to video timestamps and frame numbers, producing candidate annotation anchors in the visual stream.
+These automatically extracted keyframes are not treated as final progress labels; annotators can add, remove, or modify points according to task semantics.
+A.3
+Curated Split and Data Usage
+After constructing the full annotation inventory, we curate a train–evaluation dataset for supervised training and diagnostic evaluation.
+The split is designed to evaluate two complementary forms of generalization: semantic task familiarity and progress-pattern recognition.
+Semantic task familiarity is measured by separating evaluation records into seen and unseen task units, while progress-pattern recognition is measured by separating expert-like trajectories from trajectories that contain non-monotonic or regressive progress patterns.
+Seen and unseen are defined at the semantic task-unit level with respect to the annotation-derived instruction data used for supervised training.
+A seen evaluation record belongs to a task unit that appears in the training split, but the evaluated video record and its progress annotations are held out.
+An unseen evaluation record belongs to a task unit excluded from training instruction construction.
+Progress-pattern type is defined by the annotated progress trajectory: expert records correspond to trajectories without annotated progress regression, while non-expert records contain at least one regressive progress transition.
+Combining the semantic and progress-pattern axes yields four held-out evaluation buckets: expert seen, expert unseen, non-expert seen, and non-expert unseen.
+To prevent leakage between training and evaluation, all progress annotations in the held-out split are excluded from prompt generation, data augmentation, in-context extension, and model fine-tuning.
+Records from the same physical execution, including different camera views of the same episode, are assigned to the same split.
+Within each evaluation bucket, each record corresponds to a distinct task unit, which prevents the benchmark from being inflated by repeated records of the same semantic task within a bucket.
+The resulting curated split is summarized in Table
+7
+.
+Split
+Records
+Tasks
+Points
+Expert / Non-exp.
+ARX / DROID / Sim.
+Train
+24,652
+13,996
+331,762
+15,467 / 9,185
+10,357 / 13,457 / 838
+Expert seen
+1,043
+1,043
+11,769
+1,043 / 0
+356 / 641 / 46
+Expert unseen
+1,043
+1,043
+12,333
+1,043 / 0
+356 / 641 / 46
+Non-expert seen
+713
+713
+9,458
+0 / 713
+540 / 165 / 8
+Non-expert unseen
+716
+716
+9,850
+0 / 716
+540 / 168 / 8
+Curated total
+28,167
+15,206
+375,172
+17,553 / 10,614
+12,149 / 15,072 / 946
+Table 7:
+Training and held-out evaluation split summary for the curated dataset.
+Records are video-level annotation units, and tasks denote semantic
+manipulation tasks. The source column reports ARX-data,
+DROID-derived, and simulated records, where simulated records combine LIBERO
+and VLABench.
+A.4
+VLAC-CUT
+Training Details
+The annotation-derived instruction data are complemented by targeted augmentations.
+Robotic executions are often non-monotonic: the robot may lose contact, move the object away from the goal, undo partial success, or recover after failure.
+To expose the model to such cases, we construct counterfactual reverse-progress examples from pairs of annotated progress points.
+An augmented clip traverses the visual segment from a later state back to an earlier state and then returns forward, while the target progress curve decreases during the reversed portion and increases during the recovery portion.
+This creates explicit regression-and-recovery supervision without additional robot rollouts and discourages the shortcut that later frames are always more complete.
+When object boxes and gripper keypoints are available at consecutive progress points, we generate grounding-based rationales as additional training targets.
+The procedure compares object centers, gripper positions, and task-relevant distances across time, then verbalizes geometric evidence that supports increasing, stagnant, or decreasing progress.
+We retain rationales only when the geometric evidence is consistent with the annotated progress direction, so this component aligns numerical progress prediction with visible spatial evidence rather than introducing a separate model module.
+For episodes with robot trajectory information, we derive action-conditioned samples from kinematic keyframes or adjacent progress points.
+The input may contain one to four selected camera views, wrist views when available, the task instruction, the current robot state, and an optional action-intent sentence.
+The target is a relative action delta between the start and end states of the interval, expressed in millimeters for translation, degrees for rotation, and percentage units for gripper motion.
+Intervals with negligible motion are filtered out.
+This supervision helps the critic relate progress diagnosis and correction plans to executable robot motion, while the benchmark and downstream use still evaluate
+VLAC-CUT
+as a video-language critic rather than a policy.
+The supervised fine-tuning corpus is centered on annotation-derived robot data and complemented with public multimodal, robotics, progress-reasoning, and spatial/video reasoning datasets.
+The annotation-derived component supplies the process supervision needed by
+VLAC-CUT
+: task planning, progress estimation, state/action description, progress explanation, failure diagnosis, correction planning, grounding-aware reasoning, and action-conditioned prediction.
+It also contains both expert-like executions and non-expert trajectories with stagnation, regression, failed attempts, and recovery behavior, which is essential for training a critic rather than a final-success classifier.
+Auxiliary datasets are included to preserve broad visual instruction following and robot-centered reasoning capabilities.
+Table
+8
+summarizes the mixture.
+Data group
+Role in training
+Used amount
+Annotation-derived robot data
+Robotic process understanding, failure diagnosis, correction, and action-aware reasoning
+4.76M selected samples
+LLaVA-style instruction data
+(
+Liu et al., 2023b
+)
+General visual instruction following
+200K converted samples
+RoboReward
+(
+Lee et al., 2026
+)
+Robot reward and trajectory-quality judgment
+45K examples
+RoboVQA
+(
+Sermanet et al., 2024
+)
+Robot-centered VQA and long-horizon reasoning
+50K samples
+Spatial QA data
+(
+Xie et al., 2026
+)
+Spatial relation and logical reasoning
+250K samples
+ProgressLM CoT
+(
+Zhang et al., 2026a
+)
+Progress reasoning from partial observations
+24K CoT SFT samples
+MMSI-Video-Bench
+(
+Lin et al., 2025
+)
+Video-based spatial intelligence
+0.7K samples
+Table 8:
+Training data mixture used for supervised fine-tuning. Annotation-derived robot data form the core of the corpus, while auxiliary public datasets preserve general multimodal reasoning, robotics reasoning, progress estimation, and spatial/video understanding.
+All components are converted into the same conversation format.
+This unified format allows image, video, language, grounding, and action-conditioned examples to be optimized under a single supervised fine-tuning interface.
+VLAC-CUT
+uses Qwen3-VL-30B-A3B-Instruct as the base backbone and is fine-tuned as a multimodal instruction-following progress critic.
+Training samples are formatted as multimodal conversations containing task instructions, task plans, images or video frames, and optional robot/action context.
+The model is trained to generate structured textual responses that include progress estimates, state and action descriptions, progress explanations, success/failure analysis, correction plans, grounding labels, and relative action deltas.
+We use supervised fine-tuning with an autoregressive language-modeling objective over assistant responses, so all prediction and explanation tasks share a unified generative interface.
+During training, we use an effective global batch size of 2304, a maximum sequence length of 15,240 tokens, and a peak learning rate of
+3
+×
+10
+−
+5
+3\times 10^{-5}
+with cosine decay.
+Training is conducted with MS-SWIFT and DeepSpeed ZeRO-3 on 144 NVIDIA A800-SXM4-80GB GPUs, and the full run takes 16 days.
+A.5
+VPB Task Definition and Metrics
+VPB evaluates video-language progress prediction over a dataset
+𝒟
+=
+{
+(
+l
+i
+,
+𝐨
+i
+,
+𝐏
+i
+key
+,
+𝐩
+i
+)
+}
+i
+=
+1
+N
+\mathcal{D}=\{(l_{i},\mathbf{o}_{i},\mathbf{P}_{i}^{\text{key}},\mathbf{p}_{i})\}_{i=1}^{N}
+,
+where
+l
+i
+l_{i}
+is the natural language instruction describing the task,
+𝐨
+i
+=
+(
+o
+i
+,
+1
+,
+o
+i
+,
+2
+,
+…
+,
+o
+i
+,
+T
+i
+)
+\mathbf{o}_{i}=(o_{i,1},o_{i,2},\ldots,o_{i,T_{i}})
+is the observation video consisting of
+T
+i
+T_{i}
+frames,
+𝐏
+i
+key
+=
+{
+(
+t
+i
+,
+m
+,
+p
+i
+,
+m
+key
+)
+}
+m
+=
+1
+K
+i
+\mathbf{P}_{i}^{\text{key}}=\{(t_{i,m},p_{i,m}^{\text{key}})\}_{m=1}^{K_{i}}
+is a set of
+K
+i
+K_{i}
+keyframe annotations, where
+t
+i
+,
+m
+∈
+{
+1
+,
+…
+,
+T
+i
+}
+t_{i,m}\in\{1,\ldots,T_{i}\}
+denotes a frame index and
+p
+i
+,
+m
+key
+∈
+[
+−
+100,100
+]
+p_{i,m}^{\text{key}}\in[-100,100]
+is the corresponding progress value,
+and
+𝐩
+i
+=
+(
+p
+i
+,
+1
+,
+…
+,
+p
+i
+,
+T
+i
+)
+\mathbf{p}_{i}=(p_{i,1},\ldots,p_{i,T_{i}})
+is the dense ground-truth progress trajectory.
+The progress value
+p
+∈
+[
+−
+100,100
+]
+p\in[-100,100]
+represents the task completion status:
+p
+=
+100
+p=100
+indicates full completion,
+p
+=
+0
+p=0
+denotes the initial state, and
+p
+<
+0
+p<0
+represents regressive states worse than the initial setup.
+Given sparse keyframe annotations
+𝐏
+i
+key
+\mathbf{P}_{i}^{\text{key}}
+with
+t
+i
+,
+1
+<
+t
+i
+,
+2
+<
+⋯
+<
+t
+i
+,
+K
+i
+t_{i,1}<t_{i,2}<\cdots<t_{i,K_{i}}
+, the dense trajectory
+𝐩
+i
+\mathbf{p}_{i}
+is obtained via linear interpolation between adjacent keyframes:
+p
+i
+,
+t
+=
+p
+i
+,
+m
+key
++
+t
+−
+t
+i
+,
+m
+t
+i
+,
+m
++
+1
+−
+t
+i
+,
+m
+​
+(
+p
+i
+,
+m
++
+1
+key
+−
+p
+i
+,
+m
+key
+)
+,
+t
+i
+,
+m
+≤
+t
+≤
+t
+i
+,
+m
++
+1
+,
+m
+∈
+{
+1
+,
+…
+,
+K
+i
+−
+1
+}
+.
+p_{i,t}=p_{i,m}^{\text{key}}+\frac{t-t_{i,m}}{t_{i,m+1}-t_{i,m}}\left(p_{i,m+1}^{\text{key}}-p_{i,m}^{\text{key}}\right),\quad t_{i,m}\leq t\leq t_{i,m+1},\,m\in\{1,\ldots,K_{i}-1\}.
+(5)
+Given an instruction
+l
+i
+l_{i}
+and video
+𝐨
+i
+\mathbf{o}_{i}
+, a method should output a progress sequence
+𝐩
+^
+i
+=
+(
+p
+^
+i
+,
+1
+,
+…
+,
+p
+^
+i
+,
+T
+i
+)
+\hat{\mathbf{p}}_{i}=(\hat{p}_{i,1},\ldots,\hat{p}_{i,T_{i}})
+.
+The predicted trajectory
+𝐩
+^
+i
+\hat{\mathbf{p}}_{i}
+is evaluated against the ground-truth
+𝐩
+i
+\mathbf{p}_{i}
+across multiple metrics.
+VPB evaluates progress understanding at three complementary scopes: global trajectory, terminal state, and local transitions. To accommodate fine-grained analysis across diverse execution regimes (e.g., seen vs. unseen semantics, expert vs. regressive patterns), all metrics are formally defined with respect to an arbitrary evaluation subset
+𝒮
+⊆
+𝒟
+\mathcal{S}\subseteq\mathcal{D}
+.
+Global-Level Progress Metrics
+Global-level evaluation measures whether a model recovers the continuous progress trajectory of the entire video. For a given record
+i
+i
+, we first compute the record-level metrics and then report their expectation over the subset
+𝒮
+\mathcal{S}
+.
+Progress Rank Correlation.
+Progress Rank Correlation (PRC) measures whether the predicted sequence preserves the temporal ordering of the annotated progress states using Spearman rank correlation
+ρ
+S
+\rho_{S}
+:
+PRC
+i
+=
+ρ
+S
+​
+(
+𝐩
+^
+i
+,
+𝐩
+i
+)
+,
+PRC
+⁡
+(
+𝒮
+)
+=
+1
+|
+𝒮
+|
+​
+∑
+i
+∈
+𝒮
+PRC
+i
+.
+\mathrm{PRC}_{i}=\rho_{S}\left(\hat{\mathbf{p}}_{i},\mathbf{p}_{i}\right),\qquad\mathrm{PRC}(\mathcal{S})=\frac{1}{|\mathcal{S}|}\sum_{i\in\mathcal{S}}\mathrm{PRC}_{i}.
+(6)
+Higher PRC indicates better agreement between the predicted and ground-truth progress orderings.
+Value-Order Correlation.
+Value-Order Correlation (VOC) follows the rank-correlation evaluation introduced by GVL for value prediction on expert videos
+(
+Ma et al., 2024
+)
+. It assesses whether the predicted values increase monotonically with the chronological progression of frames. Since chronological monotonicity is a structural property unique to flawless demonstrations, VOC is evaluated exclusively on expert data. For an applicable subset
+𝒮
+\mathcal{S}
+consisting of expert executions, the record-level and set-level VOC are defined as:
+VOC
+i
+=
+ρ
+S
+​
+(
+𝐩
+^
+i
+,
+(
+1
+,
+2
+,
+…
+,
+T
+i
+)
+)
+,
+VOC
+⁡
+(
+𝒮
+)
+=
+1
+|
+𝒮
+|
+​
+∑
+i
+∈
+𝒮
+VOC
+i
+.
+\mathrm{VOC}_{i}=\rho_{S}\left(\hat{\mathbf{p}}_{i},(1,2,\ldots,T_{i})\right),\qquad\mathrm{VOC}(\mathcal{S})=\frac{1}{|\mathcal{S}|}\sum_{i\in\mathcal{S}}\mathrm{VOC}_{i}.
+(7)
+Mean Absolute Error.
+Mean Absolute Error (MAE) evaluates the absolute calibration error of the predictions mapped to the VPB scale:
+MAE
+i
+=
+1
+T
+i
+​
+∑
+t
+=
+1
+T
+i
+|
+p
+^
+i
+,
+t
+−
+p
+i
+,
+t
+|
+,
+MAE
+⁡
+(
+𝒮
+)
+=
+1
+|
+𝒮
+|
+​
+∑
+i
+∈
+𝒮
+MAE
+i
+.
+\mathrm{MAE}_{i}=\frac{1}{T_{i}}\sum_{t=1}^{T_{i}}\left|\hat{p}_{i,t}-p_{i,t}\right|,\qquad\mathrm{MAE}(\mathcal{S})=\frac{1}{|\mathcal{S}|}\sum_{i\in\mathcal{S}}\mathrm{MAE}_{i}.
+(8)
+Terminal-State Recognition Metrics
+Terminal-state metrics evaluate whether a method reliably discriminates the ultimate task outcome. We use
+90
+%
+90\%
+as a near-completion threshold to tolerate minor annotation and prediction noise. A record is deemed terminally successful if its final progress achieves a predefined completion threshold (
+≥
+90
+\geq 90
+):
+y
+i
+T
+=
+𝕀
+[
+p
+i
+,
+T
+i
+≥
+90
+]
+,
+y
+^
+i
+T
+=
+𝕀
+[
+p
+^
+i
+,
+T
+i
+≥
+90
+]
+.
+y_{i}^{T}=\mathbb{I}\left[p_{i,T_{i}}\geq 90\right],\qquad\hat{y}_{i}^{T}=\mathbb{I}\left[\hat{p}_{i,T_{i}}\geq 90\right].
+(9)
+Aggregating these binary predictions over the subset
+𝒮
+\mathcal{S}
+yields the total counts of true positives (
+TP
+\mathrm{TP}
+), false positives (
+FP
+\mathrm{FP}
+), true negatives (
+TN
+\mathrm{TN}
+), and false negatives (
+FN
+\mathrm{FN}
+). We report the Terminal-State Accuracy (
+TSA
+\mathrm{TSA}
+) as the overall classification accuracy across
+𝒮
+\mathcal{S}
+:
+TSA
+⁡
+(
+𝒮
+)
+=
+TP
++
+TN
+TP
++
+FP
++
+TN
++
+FN
+.
+\mathrm{TSA}(\mathcal{S})=\frac{\mathrm{TP}+\mathrm{TN}}{\mathrm{TP}+\mathrm{FP}+\mathrm{TN}+\mathrm{FN}}.
+(10)
+To account for class imbalance within specific evaluation buckets, we additionally compute the class-wise F1 scores for successful states (
+F1
+S
+\mathrm{F1}_{S}
+) and failed/incomplete states (
+F1
+F
+\mathrm{F1}_{F}
+):
+F1
+S
+​
+(
+𝒮
+)
+=
+2
+​
+T
+​
+P
+2
+​
+T
+​
+P
++
+FP
++
+FN
+,
+F1
+F
+​
+(
+𝒮
+)
+=
+2
+​
+T
+​
+N
+2
+​
+T
+​
+N
++
+FP
++
+FN
+,
+\mathrm{F1}_{S}(\mathcal{S})=\frac{2\mathrm{TP}}{2\mathrm{TP}+\mathrm{FP}+\mathrm{FN}},\qquad\mathrm{F1}_{F}(\mathcal{S})=\frac{2\mathrm{TN}}{2\mathrm{TN}+\mathrm{FP}+\mathrm{FN}},
+(11)
+and report their macro average:
+MacroF1
+T
+​
+(
+𝒮
+)
+=
+1
+2
+​
+(
+F1
+S
+​
+(
+𝒮
+)
++
+F1
+F
+​
+(
+𝒮
+)
+)
+.
+\mathrm{MacroF1}_{T}(\mathcal{S})=\frac{1}{2}\left(\mathrm{F1}_{S}(\mathcal{S})+\mathrm{F1}_{F}(\mathcal{S})\right).
+(12)
+Local Progress Direction Metrics
+Local progress-direction metrics are computed on adjacent semantic
+anchors and evaluate whether a model assigns larger directional scores
+to event-level progress changes of the corresponding type. For each
+trajectory
+i
+i
+, let
+𝐏
+i
+key
+=
+{
+(
+t
+i
+,
+m
+,
+p
+i
+,
+m
+key
+)
+}
+m
+=
+1
+K
+i
+\mathbf{P}^{\mathrm{key}}_{i}=\{(t_{i,m},p^{\mathrm{key}}_{i,m})\}_{m=1}^{K_{i}}
+denote the annotated semantic-anchor progress values. Predictions are
+sampled at the same anchor frames, yielding
+𝐏
+^
+i
+key
+=
+{
+(
+t
+i
+,
+m
+,
+p
+^
+i
+,
+m
+key
+)
+}
+m
+=
+1
+K
+i
+.
+\hat{\mathbf{P}}^{\mathrm{key}}_{i}=\{(t_{i,m},\hat{p}^{\mathrm{key}}_{i,m})\}_{m=1}^{K_{i}}.
+When a method does not produce a prediction exactly at an anchor frame,
+p
+^
+i
+,
+m
+key
+\hat{p}^{\mathrm{key}}_{i,m}
+is obtained by linear interpolation over
+the method’s sampled prediction sequence.
+For each adjacent anchor pair
+(
+m
+,
+m
++
+1
+)
+(m,m+1)
+, define the annotated and
+predicted local progress differences as
+Δ
+​
+p
+i
+,
+m
+key
+=
+p
+i
+,
+m
++
+1
+key
+−
+p
+i
+,
+m
+key
+,
+Δ
+​
+p
+^
+i
+,
+m
+key
+=
+p
+^
+i
+,
+m
++
+1
+key
+−
+p
+^
+i
+,
+m
+key
+.
+\Delta p^{\mathrm{key}}_{i,m}=p^{\mathrm{key}}_{i,m+1}-p^{\mathrm{key}}_{i,m},\qquad\Delta\hat{p}^{\mathrm{key}}_{i,m}=\hat{p}^{\mathrm{key}}_{i,m+1}-\hat{p}^{\mathrm{key}}_{i,m}.
+(13)
+For an evaluation subset
+𝒮
+\mathcal{S}
+, let
+ℳ
+(
+𝒮
+)
+=
+{
+(
+i
+,
+m
+)
+:
+i
+∈
+𝒮
+,
+1
+≤
+m
+<
+K
+i
+}
+\mathcal{M}(\mathcal{S})=\{(i,m):i\in\mathcal{S},\;1\leq m<K_{i}\}
+(14)
+be the set of evaluated semantic-anchor transitions.
+We formulate local direction evaluation as two one-vs-rest ranking
+problems. The improvement target and score are
+y
+i
+,
+m
++
+=
+𝕀
+[
+Δ
+p
+i
+,
+m
+key
+>
+0
+]
+,
+s
+i
+,
+m
++
+=
+Δ
+p
+^
+i
+,
+m
+key
+.
+y^{+}_{i,m}=\mathbb{I}\left[\Delta p^{\mathrm{key}}_{i,m}>0\right],\qquad s^{+}_{i,m}=\Delta\hat{p}^{\mathrm{key}}_{i,m}.
+(15)
+The regression target and score are
+y
+i
+,
+m
+−
+=
+𝕀
+[
+Δ
+p
+i
+,
+m
+key
+<
+0
+]
+,
+s
+i
+,
+m
+−
+=
+−
+Δ
+p
+^
+i
+,
+m
+key
+.
+y^{-}_{i,m}=\mathbb{I}\left[\Delta p^{\mathrm{key}}_{i,m}<0\right],\qquad s^{-}_{i,m}=-\Delta\hat{p}^{\mathrm{key}}_{i,m}.
+(16)
+Thus, larger
+s
+i
+,
+m
++
+s^{+}_{i,m}
+ranks a transition as stronger predicted
+local advancement, while larger
+s
+i
+,
+m
+−
+s^{-}_{i,m}
+ranks it as stronger
+predicted local reversal.
+The improvement and regression average precision scores are
+AP
++
+​
+(
+𝒮
+)
+=
+AP
+⁡
+(
+{
+y
+i
+,
+m
++
+}
+(
+i
+,
+m
+)
+∈
+ℳ
+⁡
+(
+𝒮
+)
+,
+{
+s
+i
+,
+m
++
+}
+(
+i
+,
+m
+)
+∈
+ℳ
+⁡
+(
+𝒮
+)
+)
+,
+\mathrm{AP}_{+}(\mathcal{S})=\mathrm{AP}\left(\{y^{+}_{i,m}\}_{(i,m)\in\mathcal{M}(\mathcal{S})},\{s^{+}_{i,m}\}_{(i,m)\in\mathcal{M}(\mathcal{S})}\right),
+(17)
+AP
+−
+​
+(
+𝒮
+)
+=
+AP
+⁡
+(
+{
+y
+i
+,
+m
+−
+}
+(
+i
+,
+m
+)
+∈
+ℳ
+⁡
+(
+𝒮
+)
+,
+{
+s
+i
+,
+m
+−
+}
+(
+i
+,
+m
+)
+∈
+ℳ
+⁡
+(
+𝒮
+)
+)
+.
+\mathrm{AP}_{-}(\mathcal{S})=\mathrm{AP}\left(\{y^{-}_{i,m}\}_{(i,m)\in\mathcal{M}(\mathcal{S})},\{s^{-}_{i,m}\}_{(i,m)\in\mathcal{M}(\mathcal{S})}\right).
+(18)
+Both scores are computed over the same transition set
+ℳ
+⁡
+(
+𝒮
+)
+\mathcal{M}(\mathcal{S})
+. The local direction macro AP is
+MacroAP
+D
+​
+(
+𝒮
+)
+=
+1
+2
+​
+(
+AP
++
+​
+(
+𝒮
+)
++
+AP
+−
+​
+(
+𝒮
+)
+)
+.
+\mathrm{MacroAP}_{D}(\mathcal{S})=\frac{1}{2}\left(\mathrm{AP}_{+}(\mathcal{S})+\mathrm{AP}_{-}(\mathcal{S})\right).
+(19)
+For a binary ranking problem
+{
+(
+y
+j
+,
+s
+j
+)
+}
+j
+=
+1
+M
+\{(y_{j},s_{j})\}_{j=1}^{M}
+with
+N
++
+=
+∑
+j
+=
+1
+M
+y
+j
+N_{+}=\sum_{j=1}^{M}y_{j}
+target
+instances, let
+π
+\pi
+be the permutation that sorts examples by
+descending score. Average precision is computed as
+AP
+=
+1
+N
++
+​
+∑
+r
+=
+1
+M
+y
+π
+r
+​
+∑
+q
+=
+1
+r
+y
+π
+q
+r
+.
+\mathrm{AP}=\frac{1}{N_{+}}\sum_{r=1}^{M}y_{\pi_{r}}\frac{\sum_{q=1}^{r}y_{\pi_{q}}}{r}.
+(20)
+Appendix B
+Teleoperation Assistance
+VR teleoperation provides an intuitive interface for collecting robot demonstrations, but packet loss, network jitter, packet reordering, and deadline misses may leave individual control slots without a valid command. A missing slot does not imply zero-motion intent, while holding the robot pose, repeating the last command, or applying temporal interpolation can introduce pauses or stale motion and cannot reliably recover task-dependent human intent.
+Figure 10:
+Overview of the VLA-based teleoperation assistance module. Observed VR commands are preserved as human anchors, while briefly missing control slots are inpainted using the deployed VLA policy and executed through a gated controller.
+As illustrated in Fig.
+10
+, we address this problem through
+context-aware human-intent inpainting
+. Importantly, the inpainting model is not a separate teleoperation policy; it reuses the same VLA policy
+π
+θ
+\pi_{\theta}
+currently deployed on the robots for autonomous execution and continuously updated during post-training. We regard the VR command stream as a partially observed action trajectory. Incoming commands are assigned to fixed-rate control slots, forming a partially observed action chunk
+𝐀
+t
+obs
+\mathbf{A}^{\mathrm{obs}}_{t}
+and an availability mask
+𝐦
+t
+\mathbf{m}_{t}
+. The deployed VLA completes the missing slots according to
+𝐀
+^
+t
+∼
+p
+θ
+​
+(
+𝐀
+∣
+𝐨
+t
+,
+𝐬
+t
+,
+ℓ
+,
+𝐀
+t
+obs
+,
+𝐦
+t
+)
+,
+𝐀
+^
+t
+,
+i
+=
+𝐀
+t
+,
+i
+obs
+∀
+i
+​
+such that
+​
+m
+t
+,
+i
+=
+1
+,
+\hat{\mathbf{A}}_{t}\sim p_{\theta}\!\left(\mathbf{A}\mid\mathbf{o}_{t},\mathbf{s}_{t},\ell,\mathbf{A}^{\mathrm{obs}}_{t},\mathbf{m}_{t}\right),\qquad\hat{\mathbf{A}}_{t,i}=\mathbf{A}^{\mathrm{obs}}_{t,i}\quad\forall i\text{ such that }m_{t,i}=1,
+(21)
+where
+p
+θ
+p_{\theta}
+is the conditional action distribution induced by the deployed VLA policy
+π
+θ
+\pi_{\theta}
+, and
+𝐨
+t
+\mathbf{o}_{t}
+,
+𝐬
+t
+\mathbf{s}_{t}
+, and
+ℓ
+\ell
+denote the visual observation, robot state, and task instruction.
+At inference time, unknown slots are generated jointly as a short-horizon, context-consistent action sequence, while every observed slot is preserved through hard projection. A fresh VR command is always executed directly; the inpainted action is used only when the current slot is briefly unavailable. A signal-quality gate disables model-generated motion when the latest command becomes stale or the interruption exceeds a predefined duration, causing the robot to hold its current pose until direct human control resumes.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

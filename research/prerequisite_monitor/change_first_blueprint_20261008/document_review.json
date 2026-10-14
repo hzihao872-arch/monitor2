@@ -1,0 +1,52 @@
+{
+  "checked_at_beijing": "2026-10-08T20:05:28.093312+08:00",
+  "document": "D:\\monitor2\\docs\\plans\\2026-10-08-change-first-monitor-architecture-blueprint-zh.md",
+  "document_sha256": "67ebd611565780b418d2203b86fd750092c75262f9d051987032bb9eabf72578",
+  "character_count": 42969,
+  "line_count": 806,
+  "local_link_missing": [],
+  "json_examples_parsed": 2,
+  "fences_balanced": true,
+  "table_column_mismatches": [],
+  "source_files_changed_since_hash_audit": [],
+  "requirement_coverage": {
+    "latest_freeze_priority": true,
+    "VICtoR_and_ARS": true,
+    "alternatives": true,
+    "modules_IO": true,
+    "prompts_and_schema": true,
+    "visual_reinspection": true,
+    "prefix_boundary": true,
+    "multiple_changes_unknown": true,
+    "fair_baselines": true,
+    "labels": true,
+    "metrics_statistics": true,
+    "generalization": true,
+    "compute_cost": true,
+    "stop_rules": true,
+    "downstream": true,
+    "hypotheses": true,
+    "user_server_clarification": true
+  },
+  "budget_request_counts_recalculated": {
+    "S1": 96,
+    "S2": 1728,
+    "S3": 1056,
+    "S4": 4608,
+    "S5": 18432,
+    "downstream_labeling": 24576
+  },
+  "scientific_review_notes": [
+    "Planning only; no new efficacy results.",
+    "Remote availability confirmed by user; current occupancy/resources not measured; no remote connection.",
+    "Primary stateless prefix mode and optional stateful mode distinguished.",
+    "Strong K+ and D4-direct included; same pixels vs adaptive views separated.",
+    "Unknown/invalid/missed events and hallucinated events explicitly scored.",
+    "Source hashes do not constitute a full historic seal revalidation."
+  ],
+  "limits": [
+    "Schema contracts are design specifications, not implemented validators.",
+    "Human annotation consistency, throughput, token caps and efficacy thresholds await pilot.",
+    "Power calculation uses assumed cluster variance; sample size is not yet frozen."
+  ]
+}

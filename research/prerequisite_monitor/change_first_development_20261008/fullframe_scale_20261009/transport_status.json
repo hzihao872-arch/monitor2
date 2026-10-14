@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_fullframe_scale_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_fullframe_scale_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 15:03:01 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\":24,\"last\":\"confirm_p_14_rgb_opposed_first\",\"parent\":307,\"total\":331}{\"id\":\"confirm_o_14_rgb_opposed_first\",\"issued\":20,\"state\":\"False\"}\n{\"id\":\"confirm_p_00_rgb_positive_first\",\"issued\":21,\"state\":\"True\"}\n{\"id\":\"confirm_p_00_rgb_opposed_first\",\"issued\":22,\"state\":\"True\"}\n{\"id\":\"confirm_p_14_rgb_positive_first\",\"issued\":23,\"state\":\"True\"}\n{\"id\":\"confirm_p_14_rgb_opposed_first\",\"issued\":24,\"state\":\"True\"}\n",
+  "stderr": "",
+  "exit_code": 0
+}

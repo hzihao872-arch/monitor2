@@ -1,0 +1,149 @@
+2026-10-04T21:52:56+08:00
+Sun Oct  4 21:52:56 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.76.05              Driver Version: 580.76.05      CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 5090        On  |   00000000:27:00.0 Off |                  N/A |
+| 40%   27C    P8             13W /  575W |       0MiB /  32607MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+VERSIONS 3.12.3 | packaged by Anaconda, Inc. | (main, May  6 2024, 19:46:43) [GCC 11.2.0] 2.8.0+cu128 12.8 4.57.1 2.8.3 1.12.0 0.0.14 5.0.0
+VERIFIED /root/autodl-tmp/hf/hub/models--Qwen--Qwen3-VL-8B-Instruct/snapshots/0c351dd01ed87e9c1b53cbc748cba10e6187ff3b/model-00001-of-00004.safetensors d5d0aef0eb170fc7453a296c43c0849a56f510555d3588e4fd662bb35490aefa
+VERIFIED /root/autodl-tmp/hf/hub/models--Qwen--Qwen3-VL-8B-Instruct/snapshots/0c351dd01ed87e9c1b53cbc748cba10e6187ff3b/model-00002-of-00004.safetensors 8be88fb5501e4d5719a6d4cc212e6a13480330e74f3e8c77daa1a68f199106b5
+VERIFIED /root/autodl-tmp/hf/hub/models--Qwen--Qwen3-VL-8B-Instruct/snapshots/0c351dd01ed87e9c1b53cbc748cba10e6187ff3b/model-00003-of-00004.safetensors 83de00eafe6e0d57ccd009dbcf71c9974d74df2f016c27afb7e95aafd16b2192
+VERIFIED /root/autodl-tmp/hf/hub/models--Qwen--Qwen3-VL-8B-Instruct/snapshots/0c351dd01ed87e9c1b53cbc748cba10e6187ff3b/model-00004-of-00004.safetensors 0a88b98e9f96270973f567e6a2c103ede6ccdf915ca3075e21c755604d0377a5
+VERIFIED_MODEL Qwen/Qwen3-VL-8B-Instruct@0c351dd01ed87e9c1b53cbc748cba10e6187ff3b
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are attempting to use Flash Attention 2 without specifying a torch dtype. This might lead to unexpected behaviour
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:01<00:03,  1.04s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:02<00:02,  1.11s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:03<00:01,  1.11s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:04<00:00,  1.04it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:04<00:00,  1.01s/it]
+2026-10-04 21:53:22.542 | INFO     | topreward.clients.qwen:__init__:28 - <class 'transformers.models.qwen3_vl.processing_qwen3_vl.Qwen3VLProcessor'>
+Asked to sample `fps` frames per second but no video metadata was provided which is required when sampling with `fps`. Defaulting to `fps=24`. Please provide `video_metadata` for more accurate results.
+2026-10-04 21:53:24.192 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-21.2500 (1 tokens)
+2026-10-04 21:53:24.279 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-21.5000 (1 tokens)
+2026-10-04 21:53:24.398 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-22.5000 (1 tokens)
+2026-10-04 21:53:24.506 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-21.7500 (1 tokens)
+2026-10-04 21:53:24.617 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-23.0000 (1 tokens)
+2026-10-04 21:53:24.730 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-21.6250 (1 tokens)
+2026-10-04 21:53:24.908 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-25.3750 (1 tokens)
+2026-10-04 21:53:25.027 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-22.5000 (1 tokens)
+2026-10-04 21:53:25.217 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-25.3750 (1 tokens)
+2026-10-04 21:53:25.345 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-25.1250 (1 tokens)
+2026-10-04 21:53:25.475 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-27.7500 (1 tokens)
+2026-10-04 21:53:25.622 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-26.7500 (1 tokens)
+2026-10-04 21:53:25.887 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-27.3750 (1 tokens)
+2026-10-04 21:53:26.037 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-27.7500 (1 tokens)
+2026-10-04 21:53:26.250 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-27.3750 (1 tokens)
+SCORED 0001.mp4 -> /root/autodl-tmp/monitor2/experiments/prerequisite_probe/artifacts/model_results/topreward/0001.json
+2026-10-04 21:53:26.410 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-21.3750 (1 tokens)
+2026-10-04 21:53:26.495 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-21.3750 (1 tokens)
+2026-10-04 21:53:26.599 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-22.6250 (1 tokens)
+2026-10-04 21:53:26.705 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-22.0000 (1 tokens)
+2026-10-04 21:53:26.815 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-23.3750 (1 tokens)
+2026-10-04 21:53:26.929 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-21.8750 (1 tokens)
+2026-10-04 21:53:27.045 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-25.3750 (1 tokens)
+2026-10-04 21:53:27.172 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-22.2500 (1 tokens)
+2026-10-04 21:53:27.295 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-25.5000 (1 tokens)
+2026-10-04 21:53:27.420 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-24.6250 (1 tokens)
+2026-10-04 21:53:27.613 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-28.8750 (1 tokens)
+2026-10-04 21:53:27.743 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-28.3750 (1 tokens)
+2026-10-04 21:53:27.933 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-23.8750 (1 tokens)
+2026-10-04 21:53:28.134 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-23.7500 (1 tokens)
+2026-10-04 21:53:28.337 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-24.2500 (1 tokens)
+SCORED 0002.mp4 -> /root/autodl-tmp/monitor2/experiments/prerequisite_probe/artifacts/model_results/topreward/0002.json
+2026-10-04 21:53:28.478 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-25.3750 (1 tokens)
+2026-10-04 21:53:28.564 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-24.7500 (1 tokens)
+2026-10-04 21:53:28.666 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-26.3750 (1 tokens)
+2026-10-04 21:53:28.770 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:28.878 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-27.1250 (1 tokens)
+2026-10-04 21:53:28.989 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-27.2500 (1 tokens)
+2026-10-04 21:53:29.105 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-27.3750 (1 tokens)
+2026-10-04 21:53:29.223 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-27.1250 (1 tokens)
+2026-10-04 21:53:29.346 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-26.5000 (1 tokens)
+2026-10-04 21:53:29.480 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:29.616 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-27.0000 (1 tokens)
+2026-10-04 21:53:29.754 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-27.5000 (1 tokens)
+2026-10-04 21:53:29.926 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-27.1250 (1 tokens)
+2026-10-04 21:53:30.134 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:30.334 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-27.6250 (1 tokens)
+SCORED 0003.mp4 -> /root/autodl-tmp/monitor2/experiments/prerequisite_probe/artifacts/model_results/topreward/0003.json
+2026-10-04 21:53:30.472 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-25.1250 (1 tokens)
+2026-10-04 21:53:30.556 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-25.5000 (1 tokens)
+2026-10-04 21:53:30.656 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:30.760 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-26.8750 (1 tokens)
+2026-10-04 21:53:30.867 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-27.1250 (1 tokens)
+2026-10-04 21:53:30.976 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-27.2500 (1 tokens)
+2026-10-04 21:53:31.088 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-27.2500 (1 tokens)
+2026-10-04 21:53:31.205 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-27.6250 (1 tokens)
+2026-10-04 21:53:31.327 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-27.2500 (1 tokens)
+2026-10-04 21:53:31.451 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-26.8750 (1 tokens)
+2026-10-04 21:53:31.576 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-26.5000 (1 tokens)
+2026-10-04 21:53:31.702 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-25.7500 (1 tokens)
+2026-10-04 21:53:31.841 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-27.2500 (1 tokens)
+2026-10-04 21:53:32.030 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:32.231 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-27.0000 (1 tokens)
+SCORED 0004.mp4 -> /root/autodl-tmp/monitor2/experiments/prerequisite_probe/artifacts/model_results/topreward/0004.json
+2026-10-04 21:53:32.367 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-25.0000 (1 tokens)
+2026-10-04 21:53:32.447 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-25.3750 (1 tokens)
+2026-10-04 21:53:32.546 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-26.2500 (1 tokens)
+2026-10-04 21:53:32.712 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-26.0000 (1 tokens)
+2026-10-04 21:53:32.819 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-23.6250 (1 tokens)
+2026-10-04 21:53:32.927 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-23.5000 (1 tokens)
+2026-10-04 21:53:33.056 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-22.6250 (1 tokens)
+2026-10-04 21:53:33.174 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-22.3750 (1 tokens)
+2026-10-04 21:53:33.322 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-19.7500 (1 tokens)
+2026-10-04 21:53:33.446 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-15.1250 (1 tokens)
+2026-10-04 21:53:33.575 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-14.2500 (1 tokens)
+2026-10-04 21:53:33.707 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-14.0000 (1 tokens)
+2026-10-04 21:53:33.920 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-15.2500 (1 tokens)
+2026-10-04 21:53:34.131 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-14.8750 (1 tokens)
+2026-10-04 21:53:34.338 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-15.0000 (1 tokens)
+SCORED 0005.mp4 -> /root/autodl-tmp/monitor2/experiments/prerequisite_probe/artifacts/model_results/topreward/0005.json
+2026-10-04 21:53:34.496 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   1 frames: reward=-25.2500 (1 tokens)
+2026-10-04 21:53:34.579 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   2 frames: reward=-25.2500 (1 tokens)
+2026-10-04 21:53:34.680 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   3 frames: reward=-26.7500 (1 tokens)
+2026-10-04 21:53:34.784 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   4 frames: reward=-26.7500 (1 tokens)
+2026-10-04 21:53:34.892 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   5 frames: reward=-27.0000 (1 tokens)
+2026-10-04 21:53:35.003 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   6 frames: reward=-26.3750 (1 tokens)
+2026-10-04 21:53:35.116 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   7 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:35.232 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   8 frames: reward=-26.6250 (1 tokens)
+2026-10-04 21:53:35.352 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix   9 frames: reward=-25.8750 (1 tokens)
+2026-10-04 21:53:35.473 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  10 frames: reward=-25.8750 (1 tokens)
+2026-10-04 21:53:35.598 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  11 frames: reward=-26.2500 (1 tokens)
+2026-10-04 21:53:35.725 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  12 frames: reward=-26.2500 (1 tokens)
+2026-10-04 21:53:35.925 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  13 frames: reward=-26.3750 (1 tokens)
+2026-10-04 21:53:36.160 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  14 frames: reward=-26.3750 (1 tokens)
+2026-10-04 21:53:36.338 | INFO     | topreward.clients.qwen:compute_instruction_rewards_for_prefixes:380 - Prefix  15 frames: reward=-26.5000 (1 tokens)
+SCORED 0006.mp4 -> /root/autodl-tmp/monitor2/experiments/prerequisite_probe/artifacts/model_results/topreward/0006.json
+2026-10-04T21:53:37+08:00
+Sun Oct  4 21:53:37 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.76.05              Driver Version: 580.76.05      CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 5090        On  |   00000000:27:00.0 Off |                  N/A |
+| 42%   38C    P0            100W /  575W |       0MiB /  32607MiB |     21%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+

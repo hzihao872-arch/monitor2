@@ -1,0 +1,22 @@
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+Unsloth: WARNING `trust_remote_code` is True.
+Are you certain you want to do remote code execution?
+==((====))==  Unsloth 2026.8.18: Fast Qwen3_Vl patching. Transformers: 4.57.6.
+   \\   /|    NVIDIA GeForce RTX 5090. Num GPUs = 1. Max memory: 31.357 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.8.0+cu128. CUDA: 12.0. CUDA Toolkit: 12.8. Triton: 3.4.0
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Using bfloat16 full finetuning which cuts memory usage by 50%.
+To enable float32 training, use `float32_mixed_precision = True` during FastLanguageModel.from_pretrained
+{
+  "video": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/20261007_dev_v2_01/extra/p3/inputs/support_surface/model_input/0001.mp4",
+  "num_frames": 15,
+  "model_path": "/root/autodl-tmp/hf/hub/models--robometer--Robometer-4B/snapshots/beef63bc914c5c189329d49c6d712d96d632aa34",
+  "out_rewards": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/20261007_dev_v2_01/extra/p3/raw/support_surface/robometer/0001.npy",
+  "out_success_probs": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/20261007_dev_v2_01/extra/p3/raw/support_surface/robometer/0001_success_probs.npy",
+  "out_plot": "/root/autodl-tmp/monitor2/fresh_prerequisite_runs/20261007_dev_v2_01/extra/p3/raw/support_surface/robometer/0001_progress_success.png",
+  "reward_min": 0.4921879172325134,
+  "reward_max": 0.6439089179039001,
+  "reward_mean": 0.6000044941902161
+}

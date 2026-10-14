@@ -1,0 +1,3332 @@
+Beyond Monotonic Progress: Retry-Supervised Value Learning for Robot Imitation
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+1
+Introduction
+2
+Related Works
+2.1
+Learned Value and Reward Models for Robot Learning
+2.2
+Learning Policy from Suboptimal Demonstrations
+3
+Method
+3.1
+Problem Setup
+Value Function.
+Progress Supervision.
+Data Annotations.
+3.2
+Pairwise Value Learning from Retry Events
+Pair Construction.
+Soft-Window Weighting.
+Preference Loss.
+3.3
+Value-Guided Behavior Cloning
+4
+Experiments
+Baselines.
+Tasks and Datasets.
+4.1
+Value Evaluation
+4.2
+Policy Learning
+4.3
+Ablation and Analysis
+5
+Conclusion
+Limitations
+References
+A
+Implementation Details
+A.1
+Value Model Training
+Data preprocessing.
+Architecture and hyperparameters.
+A.2
+Downstream Weighted Behavior Cloning
+A.3
+Robot Setup and Tasks
+B
+Evaluation Metrics
+B.1
+Global Metrics
+Value-Order Correlation (VOC).
+Success/Failure (S/F) Detection.
+B.2
+Local Retry Metrics
+Drop AUC.
+Drop Probability.
+Pre
+>
+>
+Retry and Post
+>
+>
+Retry.
+C
+Retry Annotation Analysis
+C.1
+Retry Keypoint Definition
+C.2
+Annotation Cost and Consistency
+D
+Additional Experimental Results
+D.1
+Ablation Visualizations
+D.2
+Analysis of Downstream Weights
+License: arXiv.org perpetual non-exclusive license
+arXiv:2606.24633v2 [cs.RO] 06 Jul 2026
+Äpgjy
+Beyond Monotonic Progress:
+Retry-Supervised Value Learning for Robot Imitation
+Xinyao Qin
+*
+†
+\dagger
+Affiliation:
+Tsinghua University
+Junjie Lu
+*
+†
+\dagger
+Affiliation:
+University of Technology Sydney
+Kaixin Wang
+Affiliation:
+Microsoft Research Asia
+Chuheng Zhang
+Affiliation:
+Microsoft Research Asia
+Sinjae Kang
+Affiliation:
+KAIST
+Kimin Lee
+Affiliation:
+KAIST
+Affiliation:
+Config
+Min Xu
+Affiliation:
+University of Technology Sydney
+Bin Liang
+Affiliation:
+Tsinghua University
+Jun Yang
+Affiliation:
+Tsinghua University
+Li Zhao
+Affiliation:
+Microsoft Research Asia
+Human demonstrations for robot imitation learning often contain mistakes and corrective behaviors, such as imprecise grasps, object misalignment, unstable contact, and repeated attempts. While these segments are commonly treated as noisy or suboptimal data, they provide valuable evidence about when execution deviates from a desirable path and how task feasibility can be restored. However, existing reward and value models often rely on monotonic progress assumptions, which capture coarse task advancement but may overlook local execution errors and corrective behaviors in imperfect demonstrations. In this work, we propose ReTVL (
+ReT
+ry-Supervised
+V
+alue
+L
+earning), a framework for learning mistake-sensitive value functions from mixed-quality robot demonstrations by leveraging retry events as sparse supervision. ReTVL captures the local degradation-and-recovery structure around mistakes by combining global progress calibration with local pairwise preference learning induced by sparsely annotated retry keypoints. The learned value model is then used to reweight demonstration chunks for downstream behavior cloning, reducing the influence of harmful execution errors while preserving useful corrective behaviors. Experiments on real-robot manipulation tasks show that ReTVL produces more fine-grained value estimates than progress-based baselines and improves imitation learning from imperfect demonstrations.
+Keywords: Robot Learning, Value Learning, Reward Modeling
+demo:
+https://youtu.be/6aF6QrPg2To
+1
+Introduction
+Vision-Language-Action (VLA) models have significantly improved the capabilities of general-purpose robotic policies in recent years
+[
+8
+,
+7
+,
+5
+,
+20
+,
+3
+,
+24
+,
+30
+,
+42
+,
+11
+]
+.
+By integrating visual and language understanding into action generation, these models have demonstrated great generality across diverse manipulation tasks
+[
+21
+,
+41
+,
+50
+,
+15
+,
+39
+,
+27
+]
+.
+At the same time, applying VLAs to downstream real-world tasks still relies heavily on human demonstration data, which can be noisy and imperfect in practice
+[
+25
+,
+43
+,
+49
+,
+22
+]
+.
+Such data often contains hesitation, imprecise manipulations, and repeated attempts, yet these noisy or suboptimal segments are often ignored or simply discarded.
+In this work, we study the problem of value learning from such imperfect demonstration data.
+Recent work learns value or reward functions from robot data by estimating task progress
+[
+26
+,
+29
+,
+14
+,
+3
+,
+13
+,
+33
+,
+40
+,
+47
+,
+28
+]
+.
+These methods typically assume that task progress can be represented as a monotonically increasing scalar signal along a trajectory, which fails to capture intermediate imperfect segments such as mistakes and retries.
+For example, as illustrated at the top of Figure
+1
+, a teleoperator may overshoot or make mistakes and later correct their behavior.
+Modeling such trajectories as monotonic progress can therefore lead to inaccurate value functions, as shown by the line plot in Figure
+1
+.
+Consequently, using these inaccurate value estimates for downstream robot imitation learning can degrade the performance of the resulting policy.
+Figure 1
+:
+ReTVL turns retry events into pairwise value supervision.
+Progress-based value models may overlook subtle execution errors and assign overly smooth increasing values. ReTVL uses retry keypoints to learn local value drops before correction and rebounds after recovery, enabling better identification of harmful and corrective trajectory segments.
+Addressing this issue requires explicitly accounting for retry events during value learning.
+Such retry events are common in robot demonstration data and often incur little additional labeling cost, yet they are typically ignored or discarded.
+An intuitive observation is that a retry event often indicates that execution has deviated from a desirable path and is subsequently brought back through corrective behavior.
+Rather than treating such retries as noisy or low-quality data, we leverage them as sparse supervisory signals for value learning.
+Specifically, the temporal neighborhood around a retry reveals a local value structure: value should decrease as execution drifts toward a degraded state that requires correction, and increase as corrective behavior restores task feasibility.
+These retry events therefore induce local pairwise preferences, allowing the value model to capture value drops and rebounds around subtle execution errors without requiring dense frame-level progress labels.
+Based on this insight, we propose ReTVL, a new value learning framework that leverages retry events as sparse supervision.
+Specifically, ReTVL constructs state pairs around retry events and introduces a preference-based loss to train the value function.
+We find that this design is critical for accurate value estimation, whereas a naive strategy that simply penalizes retry events within conventional progress-regression-based value learning performs poorly.
+We evaluate ReTVL on four real-world robot manipulation tasks against three representative value estimation methods: TOPReward
+[
+14
+]
+, Robometer
+[
+29
+]
+, and RECAP-Value
+[
+3
+]
+.
+The results show that ReTVL accurately assigns lower values to harmful segments and higher values to useful corrective behaviors, capturing the value dynamics around retry events without collapsing into an uninformative monotonic trend.
+We further apply the learned value functions to downstream policy learning by reweighting action chunks from suboptimal demonstration datasets.
+Compared with standard behavior cloning and progress-based baselines, ReTVL achieves higher success rates across diverse manipulation tasks.
+Our contributions are summarized as follows:
+(1)
+We identify retry events as informative supervision for value learning, revealing local value drops and rebounds that are often hidden by coarse progress labels.
+(2)
+We propose ReTVL, which combines global progress supervision with local relative preferences to learn values that reflect both execution errors and corrective behaviors.
+(3)
+We show that ReTVL improves both value estimation and downstream policy learning on mixed-quality demonstrations, outperforming progress-based value models and their corresponding value-weighted policy learning baselines.
+2
+Related Works
+2.1
+Learned Value and Reward Models for Robot Learning
+Learned reward and value models have been widely used to provide dense
+supervision for robot learning when task success is sparse or difficult to
+specify manually. Early work infers rewards from demonstrations through inverse
+reinforcement learning, but often faces scalability challenges in
+high-dimensional, long-horizon problems
+[
+35
+,
+1
+,
+51
+,
+18
+]
+.
+Other work learns dense reward signals from human videos
+[
+12
+,
+32
+]
+,
+cross-embodiment videos
+[
+2
+]
+, or language-image
+supervision
+[
+31
+,
+2
+]
+, enabling reward estimation for
+downstream manipulation tasks.
+More recent methods scale reward modeling with large robotics datasets and
+vision-language models, learning general-purpose reward or value models from
+progress labels
+[
+26
+,
+3
+]
+, success signals
+[
+29
+,
+28
+]
+, trajectory comparisons
+[
+29
+]
+, or stage
+annotations
+[
+13
+,
+40
+]
+.
+These learned values have been used for success-failure prediction, data
+filtering, and policy improvement in downstream tasks
+[
+13
+,
+3
+]
+.
+While prior methods mainly capture global progress and success likelihood, they may fail to reflect subtle execution errors. Our method instead leverages retry-based supervision to learn local mistake-and-recovery dynamics.
+2.2
+Learning Policy from Suboptimal Demonstrations
+Learning from suboptimal demonstrations has been widely studied to reduce the need for clean expert data. Prior imitation learning methods estimate demonstration quality through
+confidence scores
+[
+44
+]
+, learned reliability or confidence
+estimation
+[
+49
+]
+, distribution matching
+[
+23
+]
+,
+or discriminator-based weighting
+[
+45
+]
+, and use these signals to
+select or reweight useful demonstrations for imitation learning.
+Other work uses ranked demonstrations
+[
+9
+,
+10
+]
+or
+preference feedback
+[
+17
+,
+38
+,
+36
+]
+to guide policy optimization beyond suboptimal demonstrators without manually
+specified rewards.
+A more closely related direction learns value functions and applies offline RL
+or weighted behavior cloning to prioritize useful actions during policy
+learning
+[
+3
+,
+13
+,
+48
+,
+19
+]
+. Our method follows this weighted BC paradigm, but derives the weights from a
+retry-supervised value model, which more directly suppresses local mistake
+segments in mixed-quality demonstrations.
+3
+Method
+3.1
+Problem Setup
+Value Function.
+Let
+h
+t
+=
+𝐨
+t
+−
+H
++
+1
+:
+t
+h_{t}=\mathbf{o}_{t-H+1:t}
+denote the history observation window of size
+H
+H
+ending at time
+t
+t
+.
+Given
+h
+t
+h_{t}
+and a task instruction
+ℓ
+\ell
+, the value model estimates the current task progress as
+V
+θ
+​
+(
+h
+t
+,
+ℓ
+)
+∈
+[
+0
+,
+1
+]
+V_{\theta}(h_{t},\ell)\in[0,1]
+.
+In practice, we use a distributional value function that predicts a categorical distribution over
+K
+K
+discretized progress bins for the stability and reliability of value estimation.
+Let
+p
+θ
+​
+(
+k
+∣
+h
+t
+,
+ℓ
+)
+p_{\theta}(k\mid h_{t},\ell)
+be the predicted probability of the
+k
+k
+-th bin, and
+b
+k
+b_{k}
+denote the center value of that bin.
+We compute the scalar value as the expected progress under the predicted distribution:
+V
+θ
+​
+(
+h
+t
+,
+ℓ
+)
+=
+∑
+k
+=
+0
+K
+−
+1
+b
+k
+​
+p
+θ
+​
+(
+k
+∣
+h
+t
+,
+ℓ
+)
+.
+V_{\theta}(h_{t},\ell)=\sum_{k=0}^{K-1}b_{k}\,p_{\theta}(k\mid h_{t},\ell).
+(1)
+Progress Supervision.
+To provide a global progress reference, we apply absolute progress supervision to frames outside retry neighborhoods. For a successful trajectory of length
+T
+T
+, the target progress at timestep
+t
+t
+is defined as
+v
+t
+⋆
+=
+t
+/
+T
+∈
+[
+0
+,
+1
+]
+v_{t}^{\star}=t/T\in[0,1]
+, which provides a coarse estimate of how far the execution has advanced. For failed trajectories, we assign
+v
+t
+⋆
+=
+0
+v_{t}^{\star}=0
+at terminal frames.
+Each target progress value
+v
+⋆
+v^{\star}
+is discretized into a target bin
+b
+⋆
+b^{\star}
+, and the model is trained to predict this bin with a cross-entropy loss
+[
+3
+]
+:
+ℒ
+abs
+=
+−
+𝔼
+(
+h
+t
+,
+b
+t
+⋆
+)
+​
+log
+⁡
+p
+θ
+​
+(
+b
+t
+⋆
+∣
+h
+t
+,
+ℓ
+)
+,
+\mathcal{L}_{\mathrm{abs}}=-\mathbb{E}_{(h_{t},b_{t}^{\star})}\log p_{\theta}(b_{t}^{\star}\mid h_{t},\ell),
+(2)
+This objective provides a global progress signal by assigning lower values to earlier states and higher values to later states along the trajectory.
+Data Annotations.
+We consider a demonstration dataset
+𝒟
+=
+{
+τ
+i
+}
+i
+=
+1
+N
+\mathcal{D}=\{\tau_{i}\}_{i=1}^{N}
+,
+where each trajectory
+τ
+i
+\tau_{i}
+is associated with a binary outcome label
+y
+i
+∈
+{
+0
+,
+1
+}
+y_{i}\in\{0,1\}
+indicating task failure or success.
+For trajectories that contain retry behaviors, we additionally annotate a set
+of retry keypoints
+ℛ
+i
+=
+{
+r
+i
+,
+j
+}
+j
+=
+1
+M
+i
+\mathcal{R}_{i}=\{r_{i,j}\}_{j=1}^{M_{i}}
+.
+Each keypoint
+r
+i
+,
+j
+r_{i,j}
+marks the start of the
+j
+j
+-th corrective behavior
+in trajectory
+τ
+i
+\tau_{i}
+.
+Notably, we do not annotate the full retry segment such as the start of deviation or the completion of recovery. Instead, we only annotate the moment when corrective behavior starts. This choice makes the supervision more reliable and easier to obtain, since the full retry segment can be annotator-dependent, while the start of correction is usually easy to label during data collection or extracted from existing human-correction datasets
+[
+22
+,
+46
+]
+.
+Figure 2
+:
+ReTVL learns retry-sensitive value estimates from sparse retry annotations.
+The model takes an observation history and language instruction as input, and predicts a scalar value through a VLM backbone and discrete value head.
+Training combines absolute progress calibration with retry-induced preference supervision, where values drop near retry states and rebound after recovery.
+3.2
+Pairwise Value Learning from Retry Events
+Pair Construction.
+For each retry keypoint
+r
+i
+,
+j
+r_{i,j}
+, we construct preference pairs based on a simple but natural drop-and-rebound assumption: values should decrease before the correction starts and increase after effective corrective behavior begins.
+To this end, we divide the retry neighborhood into three regions:
+𝒲
+i
+,
+j
+pre
+\displaystyle\mathcal{W}^{\mathrm{pre}}_{i,j}
+=
+{
+t
+∣
+r
+i
+,
+j
+−
+Δ
+pre
+≤
+t
+<
+r
+i
+,
+j
+−
+Δ
+near
+}
+,
+\displaystyle=\left\{t\mid r_{i,j}-\Delta_{\mathrm{pre}}\leq t<r_{i,j}-\Delta_{\mathrm{near}}\right\},
+(3)
+𝒲
+i
+,
+j
+near
+\displaystyle\mathcal{W}^{\mathrm{near}}_{i,j}
+=
+{
+t
+∣
+r
+i
+,
+j
+−
+Δ
+near
+≤
+t
+≤
+r
+i
+,
+j
++
+Δ
+near
+}
+,
+\displaystyle=\left\{t\mid r_{i,j}-\Delta_{\mathrm{near}}\leq t\leq r_{i,j}+\Delta_{\mathrm{near}}\right\},
+(4)
+𝒲
+i
+,
+j
+post
+\displaystyle\mathcal{W}^{\mathrm{post}}_{i,j}
+=
+{
+t
+∣
+r
+i
+,
+j
++
+Δ
+near
+<
+t
+≤
+r
+i
+,
+j
++
+Δ
+post
+}
+.
+\displaystyle=\left\{t\mid r_{i,j}+\Delta_{\mathrm{near}}<t\leq r_{i,j}+\Delta_{\mathrm{post}}\right\}.
+(5)
+Here,
+Δ
+near
+\Delta_{\mathrm{near}}
+defines a small neighborhood around the retry keypoint, while
+Δ
+pre
+\Delta_{\mathrm{pre}}
+and
+Δ
+post
+\Delta_{\mathrm{post}}
+define the temporal ranges used for sampling before and after the retry, respectively.
+We then sample preference pairs
+(
+h
++
+,
+h
+−
+)
+(h^{+},h^{-})
+such that the retry neighborhood forms a local value minimum, as it corresponds to a degraded state where correction becomes necessary.
+On the pre-retry side, values are expected to be higher than those in the near-retry region and gradually decrease before the retry keypoint. On the post-retry side, values should increase over time and remain higher than those in the near-retry region.
+This construction provides local supervision for both the value drop before a retry and the value rebound after corrective behavior.
+Soft-Window Weighting.
+The retry neighborhoods defined above are only approximate partitions of the local retry region and can be ambiguous in practice.
+Assigning equally strong preference constraints to all sampled pairs may therefore introduce noisy
+supervision, especially for pairs that rely on frames far from the retry
+keypoint or close to uncertain window boundaries. To mitigate this issue, we use a soft-window weighting scheme.
+For each sampled pair
+(
+h
++
+,
+h
+−
+)
+(h^{+},h^{-})
+around retry keypoint
+r
+i
+,
+j
+r_{i,j}
+, we compute the weight using the endpoint farther from the retry keypoint, which corresponds to the preferred history
+h
++
+h^{+}
+under the drop-and-rebound assumption. Let
+t
++
+t^{+}
+denote the ending timestep of
+h
++
+h^{+}
+. We define
+its temporal distance to the retry keypoint as
+d
+⁡
+(
+h
++
+,
+r
+i
+,
+j
+)
+=
+|
+t
++
+−
+r
+i
+,
+j
+|
+.
+d(h^{+};r_{i,j})=|t^{+}-r_{i,j}|.
+(6)
+The soft weight is then defined as
+w
+(
+h
++
+,
+h
+−
+)
+=
+exp
+(
+−
+d
+(
+h
++
+;
+r
+i
+,
+j
+)
+/
+τ
+w
+)
+,
+w(h^{+},h^{-})=\exp\!\left(-d(h^{+};r_{i,j})/\tau_{w}\right),
+(7)
+where
+τ
+w
+\tau_{w}
+controls the decay rate. This weighting assigns stronger
+supervision to pairs whose anchor is closer to the retry keypoint and
+smoothly downweights pairs whose anchor is farther away, making the preference
+loss less sensitive to imprecise retry-window boundaries.
+Preference Loss.
+Given a sampled preference pair
+(
+h
++
+,
+h
+−
+)
+(h^{+},h^{-})
+, where
+h
++
+h^{+}
+should have a
+higher value than
+h
+−
+h^{-}
+, we optimize the soft-weighted pairwise logistic loss
+[
+6
+,
+16
+]
+:
+ℒ
+pref
+=
+−
+𝔼
+(
+h
++
+,
+h
+−
+)
+​
+w
+​
+(
+h
++
+,
+h
+−
+)
+​
+log
+⁡
+σ
+⁡
+(
+V
+θ
+​
+(
+h
++
+,
+ℓ
+)
+−
+V
+θ
+​
+(
+h
+−
+,
+ℓ
+)
+T
+pref
+)
+.
+\mathcal{L}_{\mathrm{pref}}=-\mathbb{E}_{(h^{+},h^{-})}w(h^{+},h^{-})\log\sigma\left(\frac{V_{\theta}(h^{+},\ell)-V_{\theta}(h^{-},\ell)}{T_{\mathrm{pref}}}\right).
+(8)
+Here,
+T
+pref
+T_{\mathrm{pref}}
+is a temperature parameter that controls the sharpness of the preference comparison,
+σ
+⁡
+(
+⋅
+)
+\sigma(\cdot)
+denotes the sigmoid function, and
+w
+⁡
+(
+h
++
+,
+h
+−
+)
+w(h^{+},h^{-})
+is the soft-window weight. This loss enforces local value
+ordering around retry events, encouraging value drops before correction and
+value recovery after corrective behavior.
+We then train the value model on a mixed-quality demonstration dataset combining absolute loss and preference loss. Absolute progress samples are drawn from
+all trajectories, except for frames inside retry neighborhoods where
+monotonic progress labels may be unreliable. In contrast, retry-based
+preference pairs are sampled from retry regions to provide
+local relative supervision. The two supervision sources are mixed with a fixed
+sampling ratio
+ρ
+pref
+\rho_{\mathrm{pref}}
+.
+The total training objective combines global progress calibration and local
+retry-based preference learning, balanced by
+λ
+abs
+\lambda_{\mathrm{abs}}
+and
+λ
+pref
+\lambda_{\mathrm{pref}}
+:
+ℒ
+value
+=
+λ
+abs
+​
+ℒ
+abs
++
+λ
+pref
+​
+ℒ
+pref
+.
+\mathcal{L}_{\mathrm{value}}=\lambda_{\mathrm{abs}}\mathcal{L}_{\mathrm{abs}}+\lambda_{\mathrm{pref}}\mathcal{L}_{\mathrm{pref}}.
+(9)
+3.3
+Value-Guided Behavior Cloning
+We use our value model to guide policy learning from mixed-quality demonstrations
+to evaluate whether it brings practical improvements to downstream robot learning.
+This evaluation follows the weighted behavior cloning procedure from prior
+work
+[
+13
+,
+37
+,
+34
+]
+.
+For an action chunk starting at time
+t
+t
+with stride
+Δ
+a
+\Delta_{a}
+, we compute
+its weight from the predicted progress improvement and normalize the weight using
+offline dataset statistics:
+r
+t
+=
+V
+θ
+​
+(
+h
+t
++
+Δ
+a
+,
+ℓ
+)
+−
+V
+θ
+​
+(
+h
+t
+,
+ℓ
+)
+,
+α
+t
+=
+clip
+⁡
+(
+r
+t
+−
+(
+μ
+−
+2
+​
+σ
+)
+4
+​
+σ
++
+ϵ
+,
+0
+,
+1
+)
+,
+r_{t}=V_{\theta}(h_{t+\Delta_{a}},\ell)-V_{\theta}(h_{t},\ell),\qquad\alpha_{t}=\mathrm{clip}\left(\frac{r_{t}-(\mu-2\sigma)}{4\sigma+\epsilon},0,1\right),
+(10)
+where
+μ
+\mu
+and
+σ
+\sigma
+are the offline mean and standard deviation of
+value improvements over the training dataset.
+The policy
+π
+ψ
+\pi_{\psi}
+is trained with a normalized weighted BC objective, which downweights chunks with low or negative predicted progress improvement while emphasizing chunks that move toward higher predicted task progress:
+ℒ
+wBC
+​
+(
+ψ
+)
+=
+∑
+t
+α
+t
+​
+ℓ
+BC
+​
+(
+π
+ψ
+​
+(
+h
+t
+)
+,
+a
+t
+)
+∑
+t
+α
+t
++
+ϵ
+.
+\mathcal{L}_{\mathrm{wBC}}(\psi)=\frac{\sum_{t}\alpha_{t}\,\ell_{\mathrm{BC}}\!\left(\pi_{\psi}(h_{t}),a_{t}\right)}{\sum_{t}\alpha_{t}+\epsilon}.
+(11)
+4
+Experiments
+Our experiments aim to study whether ReTVL can produce mistake-sensitive value estimates for subtle execution errors and thereby improve downstream policy learning. Specifically, we organize our experiments to answer the following questions:
+(Q1) Value Evaluation:
+Does our value model better capture sublte
+execution errors and show value changes than progress-based reward or
+value models?
+(Q2) Policy Learning:
+Given the same mixed-quality demonstration dataset,
+can our learned values identify more useful trajectory segments and improve
+downstream imitation learning?
+(Q3) Ablation and Analysis:
+Which components of ReTVL are most important, and why does it improve value quality and policy performance?
+Baselines.
+We compare ReTVL against the strongest available reward and value models
+that can provide dense scores for robot learning. These baselines cover three representative forms of dense supervision for robot learning: zero-shot VLM-based progress estimation, general-purpose robotic reward modeling, and progress-supervised value learning.
+•
+TOPReward
+[
+14
+]
+directly prompts a pre-trained VLM to judge whether
+the task is completed and use the normalized probability of the “true” token as a progress score.
+•
+Robometer
+[
+29
+]
+is a general-purpose robotic reward model trained on large-scale robot data. It uses trajectory rewinding and trajectory-level preferences to learn rewards for failed and suboptimal executions beyond progress supervision.
+•
+RECAP-Value
+denotes our implementation of the value component in RECAP
+[
+3
+]
+. It uses Monte Carlo step-to-success targets to learn a progress value function with a discrete value head.
+Tasks and Datasets.
+We evaluate our method on 4 real-robot manipulation tasks using a Piper robot
+arm, as illustrated in Appendix A.
+Pick up Spoon
+is a
+relatively simple pick-and-place task, while the other three tasks are
+long-horizon tasks covering different manipulation challenges:
+Stack Blocks
+requires fine-grained alignment when stacking three blocks,
+Fold Towel
+involves deformable-object manipulation, and
+Open Drawer
+requires interacting with an articulated object.
+For each task, we use 30 annotated trajectories to train the value model and evaluate the learned values on 20 held-out trajectories.
+The trained value model is then used to score a separate mixed-quality dataset for downstream policy learning, consisting of 200 trajectories per task except
+Pick up Spoon
+, which uses 80 trajectories.
+4.1
+Value Evaluation
+We first evaluate whether ReTVL can achieve strong global value estimation while better capturing subtle execution errors than baselines.
+We report both global and local metrics in Table
+1
+.
+The global metrics include Value-Order Correlation (VOC) on clean successful trajectories and Success-Fail
+Detection (S/F Det.).
+They evaluate whether the value model captures temporal progress in successful executions and distinguishes successful trajectories from failed ones, reflecting its basic ability to estimate global task progress and terminal success.
+The local metrics evaluate whether the value model produces a localized value drop around subtle execution errors and recovers after correction.
+Drop PR-AUC and Drop Probability measure the alignment and frequency of such drops near retry events, while Pre
+>
+>
+Retry and Post
+>
+>
+Retry measure whether pre-mistake and post-recovery states are valued higher than retry states.
+We provide formal definitions in Appendix B.
+Table 1:
+Value evaluation across four real-world tasks. Global metrics measure trajectory-level success calibration, while local metrics measure retry-related mistake sensitivity.
+Method
+Global Metrics
+Local Metrics
+VOC
+↑
+\uparrow
+S/F Det.
+↑
+\uparrow
+Drop AUC
+↑
+\uparrow
+Drop Prob.
+↑
+\uparrow
+Pre
+>
+>
+Retry
+↑
+\uparrow
+Post
+>
+>
+Retry
+↑
+\uparrow
+TOPReward
+0.903
+0.844
+0.264
+0.612
+0.329
+0.917
+Robometer
+0.994
+0.964
+0.237
+0.435
+0.086
+0.828
+RECAP-Value
+0.985
+1.000
+0.372
+0.721
+0.296
+0.854
+ReTVL
+0.987
+1.000
+0.797
+0.874
+0.740
+0.967
+Figure 3
+:
+Visualization of value evaluation.
+We show value predictions on three other tasks beyond stack blocks. ReTVL captures local value drops around retry keypoints and rebounds after correction more clearly than progress-based baselines.
+Table
+1
+shows that ReTVL achieves competitive global value estimation while substantially improving local mistake sensitivity.
+On global metrics, ReTVL obtains a VOC score of 0.987, close to the best score from Robometer, and achieves the best Success-Fail Detection score of 1.000, matching RECAP-Value.
+These results indicate that ReTVL retains the basic ability to model trajectory-level progress and distinguish successful executions from failures.
+The main advantage of ReTVL lies in local retry-centered metrics.
+It achieves consistent improvements across all four local metrics, indicating that it more reliably captures retry-related local value changes.
+The improvement is especially large on Pre
+>
+>
+Retry, where ReTVL reaches 0.740 while all baselines remain below 0.330.
+This suggests that existing methods often fail to assign lower values to bad actions or problematic states that trigger retries, as illustrated in Figure
+3
+.
+Notably, although Robometer achieves the highest VOC score, its Pre
+>
+>
+Retry score is the lowest, only 0.086, suggesting that strong global progress correlation does not necessarily imply sensitivity to local execution mistakes.
+In contrast, ReTVL induces the desired local value shape around mistakes, decreasing in degraded states and recovering after correction.
+4.2
+Policy Learning
+Next, we evaluate whether the learned value model can improve downstream imitation learning from mixed-quality demonstrations.
+We compare
+ReTVL-BC
+against two baselines:
+Standard BC
+, which trains on all demonstrations with uniform weights, and
+RECAP-BC
+, which uses RECAP-Value to weight demonstration chunks.
+RECAP-Value is chosen because it provides the strongest local mistake detection among the baselines while maintaining competitive global value estimation in above Section
+4.1
+.
+For both value-weighted methods, we split trajectories into action chunks and apply the same weighting rule from Section
+3.3
+.
+The only difference is whether the weights are computed by RECAP-Value or our ReTVL model.
+Task
+Standard
+BC
+RECAP
+-BC
+ReTVL
+-BC
+Pick up Spoon
+60
+65
+85
+Stack Blocks
+45
+80
+95
+Fold Towel
+50
+65
+80
+Open Drawer
+10
+40
+60
+Average
+41
+63
+80
+Table 2
+:
+Success rate (%) of the learned policies on 4 real-robot tasks, calculated from 20 trials per task.
+Figure 4
+:
+Average training weight assigned to annotated bad-action chunks in recovery
+trajectories. Lower is better.
+Table
+2
+shows that ReTVL-BC consistently improves downstream policy learning across all four real-robot tasks.
+Standard BC is sensitive to the quality of mixed demonstrations, achieving an average success rate of only 41.25%, as it imitates both clean successful actions and locally harmful actions from failed or retry trajectories.
+RECAP-BC improves the average success rate to 62.50% by assigning larger weights to higher-progress chunks, but its progress-based value signal is still less effective in separating useful corrections from locally mistaken actions.
+In contrast, ReTVL-BC achieves the best average success rate of 80.00%, improving over Standard BC by +38.75% and over RECAP-BC by +17.50%.
+These improvements suggest that retry-supervised values produce a better imitation-learning distribution by down-weighting mistake segments while emphasizing clean or recovery-relevant actions.
+We further analyze the weights assigned to bad actions in Fig.
+4
+, where bad actions are manually annotated on the held-out test set from Section
+4.1
+.
+Standard BC assigns all actions a weight of 1.0.
+RECAP-BC reduces the average bad-action weight to 0.54, while ReTVL-BC further lowers it to 0.11, a 80% reduction over RECAP-BC.
+ReTVL also shows much smaller variance, suggesting that it consistently suppresses harmful actions rather than only down-weighting a few obvious mistakes.
+4.3
+Ablation and Analysis
+We conduct ablation studies to identify which components of ReTVL contribute to mistake-sensitive value estimation.
+Table
+3
+first shows that the retry-induced preference loss is crucial for learning mistake-sensitive values.
+The
+w/o Preference Loss
+variant replaces our pairwise preference objective with an intuitive alternative: directly regressing to a shaped progress target with manually injected value drops around retry windows.
+Although this variant preserves strong global metrics, achieving even higher VOC (0.994) and the same Success-Fail Detection (1.000), it fails on local mistake-sensitive metrics.
+Drop AUC decreases sharply from 0.797 to 0.510, Pre
+>
+>
+Retry falls from 0.740 to 0.486, and Post
+>
+>
+Retry drops from 0.967 to 0.742.
+These results indicate that simply adding local drop penalties to a progress target does not reliably teach the model the relative ordering between mistaken and recovered states.
+In contrast, our preference loss directly supervises local comparisons around retry events, which is essential for capturing mistake-and-recovery structure.
+Table 3:
+Ablation study on held-out trajectories. We report representative global and
+local metrics averaged over four tasks.
+Method
+VOC
+↑
+\uparrow
+S/F Det.
+↑
+\uparrow
+Drop AUC
+↑
+\uparrow
+Drop Prob.
+↑
+\uparrow
+Pre
+>
+>
+Retry
+↑
+\uparrow
+Post
+>
+>
+Retry
+↑
+\uparrow
+ReTVL
+0.987
+1.000
+0.797
+0.874
+0.740
+0.967
+w/o Preference Loss
+0.994
+1.000
+0.510
+0.836
+0.486
+0.742
+w/o Soft Window
+0.940
+1.000
+0.785
+0.874
+0.707
+0.971
+w/o Abs. Calibration
+0.929
+0.967
+0.857
+0.872
+0.789
+0.959
+The other two ablations reveal the complementary roles of soft windowing and
+absolute calibration. The
+w/o Soft Window
+variant removes the soft
+retry-window weighting and applies retry-related supervision uniformly. Its local
+metrics remain broadly comparable to the full model, but VOC decreases from
+0.987 to 0.940. This suggests that hard retry supervision can create conflicts
+with the absolute progress targets, especially near the boundary between normal
+progress regions and retry neighborhoods. The
+w/o Absolute Calibration
+variant removes the absolute progress and
+success-failure calibration losses, leaving only retry-induced preference
+supervision. Although it can still learn local retry-centered ordering, its
+global value structure becomes weaker, with VOC dropping from 0.987 to 0.929 and
+Success-Fail Detection from 1.000 to 0.967. Overall, ReTVL benefits from all
+three components: preference supervision provides local mistake sensitivity,
+absolute calibration anchors the global value scale, and soft windowing
+stabilizes their interaction. Detailed visualizations of the ablation behaviors
+are provided in Appendix B.
+5
+Conclusion
+We presented ReTVL, a retry-supervised value learning framework for robot imitation from mixed-quality demonstrations.
+By using sparsely annotated retry keypoints as local supervision anchors, ReTVL combines global progress calibration with retry-induced preference learning to capture both coarse task progress and local mistake-recovery structure.
+The learned values further improve downstream behavior cloning by down-weighting harmful mistake segments and emphasizing useful recovery behavior.
+Real-world manipulation experiments show that ReTVL improves local mistake sensitivity over progress-based baselines while maintaining competitive global value estimation, leading to better imitation learning from imperfect demonstrations.
+These results suggest that corrective behaviors are not merely noisy artifacts, but useful supervision for learning mistake-aware robot policies.
+Limitations
+ReTVL still has several limitations.
+First, we assume that values around retry events follow a local degradation-and-recovery pattern.
+Although this is more flexible than a monotonic progress assumption, it may not cover all real-world correction patterns, such as exploratory retries or unsuccessful corrections.
+Second, we currently use the learned value model only for offline behavior cloning reweighting, and have not explored broader closed-loop policy improvement or online RL settings.
+Third, our experiments are conducted on a limited set of real-robot tasks rather than large-scale datasets, so broader evaluation is needed to assess generalization across more tasks, robots, and demonstration styles.
+References
+[1]
+P. Abbeel and A. Y. Ng
+(2004)
+Apprenticeship learning via inverse reinforcement learning
+.
+In
+Proceedings of the twenty-first international conference on Machine learning
+,
+pp. 1
+.
+Cited by:
+§2.1
+.
+[2]
+M. Alakuijala, R. McLean, I. Woungang, N. Farsad, S. Kaski, P. Marttinen, and K. Yuan
+(2024)
+Video-language critic: transferable reward functions for language-conditioned robotics
+.
+arXiv preprint arXiv:2405.19988
+.
+Cited by:
+§2.1
+.
+[3]
+A. Amin, R. Aniceto, A. Balakrishna, K. Black, K. Conley, G. Connors, J. Darpinian, K. Dhabalia, J. DiCarlo, D. Driess, M. Equi, A. Esmail, Y. Fang, C. Finn, C. Glossop, T. Godden, I. Goryachev, L. Groom, H. Hancock, K. Hausman, G. Hussein, B. Ichter, S. Jakubczak, R. Jen, T. Jones, B. Katz, L. Ke, C. Kuchi, M. Lamb, D. LeBlanc, S. Levine, A. Li-Bell, Y. Lu, V. Mano, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, C. Sharma, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, W. Stoeckle, A. Swerdlow, J. Tanner, M. Torne, Q. Vuong, A. Walling, H. Wang, B. Williams, S. Yoo, L. Yu, U. Zhilinsky, and Z. Zhou
+(2025)
+π
+0.6
+∗
+\pi^{*}_{0.6}
+: A vla that learns from experience
+.
+arXiv preprint arXiv:2511.14759
+.
+Cited by:
+§1
+,
+§1
+,
+§1
+,
+§2.1
+,
+§2.2
+,
+§3.1
+,
+3rd item
+.
+[4]
+S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge,
+et al.
+(2025)
+Qwen3-vl technical report
+.
+arXiv preprint arXiv:2511.21631
+.
+Cited by:
+§A.1
+.
+[5]
+K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, L. X. Shi, J. Tanner, Q. Vuong, A. Walling, H. Wang, and U. Zhilinsky
+(2026)
+π
+0
+\pi_{0}
+: A vision-language-action flow model for general robot control
+.
+External Links:
+2410.24164
+,
+Link
+Cited by:
+§1
+.
+[6]
+R. A. Bradley and M. E. Terry
+(1952)
+Rank analysis of incomplete block designs: i. the method of paired comparisons
+.
+Biometrika
+39
+(
+3/4
+),
+pp. 324–345
+.
+Cited by:
+§3.2
+.
+[7]
+A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, X. Chen, K. Choromanski, T. Ding, D. Driess, A. Dubey, C. Finn, P. Florence, C. Fu, M. G. Arenas, K. Gopalakrishnan, K. Han, K. Hausman, A. Herzog, J. Hsu, B. Ichter, A. Irpan, N. Joshi, R. Julian, D. Kalashnikov, Y. Kuang, I. Leal, L. Lee, T. E. Lee, S. Levine, Y. Lu, H. Michalewski, I. Mordatch, K. Pertsch, K. Rao, K. Reymann, M. Ryoo, G. Salazar, P. Sanketi, P. Sermanet, J. Singh, A. Singh, R. Soricut, H. Tran, V. Vanhoucke, Q. Vuong, A. Wahid, S. Welker, P. Wohlhart, J. Wu, F. Xia, T. Xiao, P. Xu, S. Xu, T. Yu, and B. Zitkovich
+(2023)
+RT-2: vision-language-action models transfer web knowledge to robotic control
+.
+External Links:
+2307.15818
+,
+Link
+Cited by:
+§1
+.
+[8]
+A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu, J. Ibarz, B. Ichter, A. Irpan, T. Jackson, S. Jesmonth, N. J. Joshi, R. Julian, D. Kalashnikov, Y. Kuang, I. Leal, K. Lee, S. Levine, Y. Lu, U. Malla, D. Manjunath, I. Mordatch, O. Nachum, C. Parada, J. Peralta, E. Perez, K. Pertsch, J. Quiambao, K. Rao, M. Ryoo, G. Salazar, P. Sanketi, K. Sayed, J. Singh, S. Sontakke, A. Stone, C. Tan, H. Tran, V. Vanhoucke, S. Vega, Q. Vuong, F. Xia, T. Xiao, P. Xu, S. Xu, T. Yu, and B. Zitkovich
+(2023)
+RT-1: robotics transformer for real-world control at scale
+.
+External Links:
+2212.06817
+,
+Link
+Cited by:
+§1
+.
+[9]
+D. S. Brown, W. Goo, P. Nagarajan, and S. Niekum
+(2019)
+Extrapolating beyond suboptimal demonstrations via inverse reinforcement learning from observations
+.
+In
+Proceedings of the 36th International Conference on Machine Learning
+,
+Proceedings of Machine Learning Research
+, Vol.
+97
+,
+pp. 783–792
+.
+Cited by:
+§2.2
+.
+[10]
+D. S. Brown, W. Goo, and S. Niekum
+(2020)
+Better-than-demonstrator imitation learning via automatically-ranked demonstrations
+.
+In
+Proceedings of the Conference on Robot Learning
+,
+Proceedings of Machine Learning Research
+, Vol.
+100
+,
+pp. 330–359
+.
+Cited by:
+§2.2
+.
+[11]
+Q. Bu, J. Cai, L. Chen, X. Cui, Y. Ding, S. Feng, S. Gao, X. He, X. Hu, X. Huang,
+et al.
+(2025)
+Agibot world colosseo: a large-scale manipulation platform for scalable and intelligent embodied systems
+.
+arXiv preprint arXiv:2503.06669
+.
+Cited by:
+§1
+.
+[12]
+A. S. Chen, S. Nair, and C. Finn
+(2021)
+Learning generalizable robotic reward functions from “in-the-wild” human videos
+.
+In
+Proceedings of Robotics: Science and Systems (RSS)
+,
+Cited by:
+§2.1
+.
+[13]
+Q. Chen, J. Yu, M. Schwager, P. Abbeel, F. Shentu, and P. Wu
+(2025)
+SARM: stage-aware reward modeling for long horizon robot manipulation
+.
+arXiv preprint arXiv:2509.25358
+.
+Cited by:
+§1
+,
+§2.1
+,
+§2.2
+,
+§3.3
+.
+[14]
+S. Chen, C. Harrison, Y. Lee, A. J. Yang, Z. Ren, L. J. Ratliff, J. Duan, D. Fox, and R. Krishna
+(2026)
+TOPReward: token probabilities as hidden zero-shot rewards for robotics
+.
+arXiv preprint arXiv:2602.19313
+.
+Cited by:
+§1
+,
+§1
+,
+1st item
+.
+[15]
+X. Chen, H. Wei, P. Zhang, C. Zhang, K. Wang, Y. Guo, R. Yang, Y. Wang, X. Xiao, L. Zhao, J. Chen, and J. Bian
+(2025)
+Villa-x: enhancing latent action modeling in vision-language-action models
+.
+External Links:
+2507.23682
+,
+Link
+Cited by:
+§1
+.
+[16]
+P. F. Christiano, J. Leike, T. Brown, M. Martic, S. Legg, and D. Amodei
+(2017)
+Deep reinforcement learning from human preferences
+.
+Advances in neural information processing systems
+30
+.
+Cited by:
+§3.2
+.
+[17]
+P. F. Christiano, J. Leike, T. B. Brown, M. Martic, S. Legg, and D. Amodei
+(2017)
+Deep reinforcement learning from human preferences
+.
+In
+Advances in Neural Information Processing Systems
+,
+Vol.
+30
+.
+Cited by:
+§2.2
+.
+[18]
+C. Finn, S. Levine, and P. Abbeel
+(2016)
+Guided cost learning: deep inverse optimal control via policy optimization
+.
+In
+International conference on machine learning
+,
+pp. 49–58
+.
+Cited by:
+§2.1
+.
+[19]
+W. Huang, P. Ren, J. Wang, Q. Qi, and H. Sun
+(2020)
+Awr: adaptive weighting regression for 3d hand pose estimation
+.
+In
+Proceedings of the AAAI Conference on Artificial Intelligence
+,
+pp. 11061–11068
+.
+Cited by:
+§2.2
+.
+[20]
+P. Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, M. Y. Galliker, D. Ghosh, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, D. LeBlanc, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, J. Tanner, Q. Vuong, H. Walke, A. Walling, H. Wang, L. Yu, and U. Zhilinsky
+(2025)
+π
+0.5
+\pi_{0.5}
+: A vision-language-action model with open-world generalization
+.
+External Links:
+2504.16054
+,
+Link
+Cited by:
+§1
+.
+[21]
+Y. Jiang, A. Gupta, Z. Zhang, G. Wang, Y. Dou, Y. Chen, L. Fei-Fei, A. Anandkumar, Y. Zhu, and L. Fan
+(2023)
+VIMA: general robot manipulation with multimodal prompts
+.
+External Links:
+2210.03094
+,
+Link
+Cited by:
+§1
+.
+[22]
+M. Kelly, C. Sidrane, K. Driggs-Campbell, and M. J. Kochenderfer
+(2019)
+HG-DAgger: interactive imitation learning with human experts
+.
+In
+Proceedings of the IEEE International Conference on Robotics and Automation
+,
+pp. 8077–8083
+.
+External Links:
+Document
+Cited by:
+§1
+,
+§3.1
+.
+[23]
+G. Kim, S. Seo, J. Lee, W. Jeon, H. Hwang, H. Yang, and K. Kim
+(2022)
+DemoDICE: offline imitation learning with supplementary imperfect demonstrations
+.
+In
+International Conference on Learning Representations
+,
+Cited by:
+§2.2
+.
+[24]
+M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. Foster, G. Lam, P. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn
+(2024)
+OpenVLA: an open-source vision-language-action model
+.
+External Links:
+2406.09246
+,
+Link
+Cited by:
+§1
+.
+[25]
+M. Laskey, J. Lee, R. Fox, A. Dragan, and K. Goldberg
+(2017)
+DART: noise injection for robust imitation learning
+.
+External Links:
+1703.09327
+,
+Link
+Cited by:
+§1
+.
+[26]
+T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn
+(2026)
+RoboReward: general-purpose vision-language reward models for robotics
+.
+arXiv preprint arXiv:2601.00675
+.
+Cited by:
+§1
+,
+§2.1
+.
+[27]
+P. Li, Y. Chen, H. Wu, X. Ma, X. Wu, Y. Huang, L. Wang, T. Kong, and T. Tan
+(2025)
+BridgeVLA: input-output alignment for efficient 3d manipulation learning with vision-language models
+.
+External Links:
+2506.07961
+,
+Link
+Cited by:
+§1
+.
+[28]
+Y. Li, X. Ma, J. Xu, Y. Cui, Z. Cui, Z. Han, L. Huang, T. Kong, Y. Liu, H. Niu,
+et al.
+(2025)
+Gr-rl: going dexterous and precise for long-horizon robotic manipulation
+.
+arXiv preprint arXiv:2512.01801
+.
+Cited by:
+§1
+,
+§2.1
+.
+[29]
+A. Liang, Y. Korkmaz, J. Zhang, M. Hwang, A. Anwar, S. Kaushik, A. Shah, A. S. Huang, L. Zettlemoyer, D. Fox, Y. Xiang, A. Li, A. Bobu, A. Gupta, S. Tu, E. Biyik, and J. Zhang
+(2026)
+Robometer: scaling general-purpose robotic reward models via trajectory comparisons
+.
+arXiv preprint arXiv:2603.02115
+.
+Cited by:
+§A.1
+,
+§1
+,
+§1
+,
+§2.1
+,
+2nd item
+.
+[30]
+S. Liu, L. Wu, B. Li, H. Tan, H. Chen, Z. Wang, K. Xu, H. Su, and J. Zhu
+(2024)
+Rdt-1b: a diffusion foundation model for bimanual manipulation
+.
+arXiv preprint arXiv:2410.07864
+.
+Cited by:
+§1
+.
+[31]
+Y. J. Ma, W. Liang, V. Som, V. Kumar, A. Zhang, O. Bastani, and D. Jayaraman
+(2023)
+LIV: language-image representations and rewards for robotic control
+.
+In
+Proceedings of the 40th International Conference on Machine Learning (ICML)
+,
+Cited by:
+§2.1
+.
+[32]
+Y. J. Ma, S. Sodhani, D. Jayaraman, O. Bastani, V. Kumar, and A. Zhang
+(2022)
+VIP: towards universal visual reward and representation via value-implicit pre-training
+.
+arXiv preprint arXiv:2210.00030
+.
+Cited by:
+§2.1
+.
+[33]
+Y. Mao, Z. Yu, W. Mao, Y. Li, Q. Hu, Z. Lan, M. Zhu, and H. Chen
+(2026)
+ARM: advantage reward modeling for long-horizon manipulation
+.
+arXiv preprint arXiv:2604.03037
+.
+Cited by:
+§1
+.
+[34]
+A. Nair, A. Gupta, M. Dalal, and S. Levine
+(2021)
+AWAC: accelerating online reinforcement learning with offline datasets
+.
+External Links:
+2006.09359
+,
+Link
+Cited by:
+§3.3
+.
+[35]
+A. Y. Ng and S. J. Russell
+(2000)
+Algorithms for inverse reinforcement learning
+.
+In
+Proceedings of the Seventeenth International Conference on Machine Learning
+,
+ICML ’00
+,
+San Francisco, CA, USA
+,
+pp. 663–670
+.
+External Links:
+ISBN 1558607072
+Cited by:
+§2.1
+.
+[36]
+M. Palan, N. C. Landolfi, G. Shevchuk, and D. Sadigh
+(2019)
+Learning reward functions by integrating human demonstrations and preferences
+.
+In
+Proceedings of Robotics: Science and Systems
+,
+Cited by:
+§2.2
+.
+[37]
+X. B. Peng, A. Kumar, G. Zhang, and S. Levine
+(2019)
+Advantage-weighted regression: simple and scalable off-policy reinforcement learning
+.
+External Links:
+1910.00177
+,
+Link
+Cited by:
+§3.3
+.
+[38]
+D. Sadigh, A. D. Dragan, S. S. Sastry, and S. A. Seshia
+(2017)
+Active preference-based learning of reward functions
+.
+In
+Proceedings of Robotics: Science and Systems
+,
+External Links:
+Document
+Cited by:
+§2.2
+.
+[39]
+M. Shukor, D. Aubakirova, F. Capuano, P. Kooijmans, S. Palma, A. Zouitine, M. Aractingi, C. Pascal, M. Russi, A. Marafioti, S. Alibert, M. Cord, T. Wolf, and R. Cadene
+(2025)
+SmolVLA: a vision-language-action model for affordable and efficient robotics
+.
+External Links:
+2506.01844
+,
+Link
+Cited by:
+§1
+.
+[40]
+H. Tan, S. Chen, Y. Xu, Z. Wang, Y. Ji, C. Chi, Y. Lyu, Z. Zhao, X. Chen, P. Co,
+et al.
+(2025)
+Robo-dopamine: general process reward modeling for high-precision robotic manipulation
+.
+arXiv preprint arXiv:2512.23703
+.
+Cited by:
+§1
+,
+§2.1
+.
+[41]
+O. M. Team, D. Ghosh, H. Walke, K. Pertsch, K. Black, O. Mees, S. Dasari, J. Hejna, T. Kreiman, C. Xu, J. Luo, Y. L. Tan, L. Y. Chen, P. Sanketi, Q. Vuong, T. Xiao, D. Sadigh, C. Finn, and S. Levine
+(2024)
+Octo: an open-source generalist robot policy
+.
+External Links:
+2405.12213
+,
+Link
+Cited by:
+§1
+.
+[42]
+J. Wen, Y. Zhu, J. Li, Z. Tang, C. Shen, and F. Feng
+(2025)
+Dexvla: vision-language model with plug-in diffusion expert for general robot control
+.
+arXiv preprint arXiv:2502.05855
+.
+Cited by:
+§1
+.
+[43]
+Y. Wu, N. Charoenphakdee, H. Bao, V. Tangkaratt, and M. Sugiyama
+(2019)
+Imitation learning from imperfect demonstration
+.
+External Links:
+1901.09387
+,
+Link
+Cited by:
+§1
+.
+[44]
+Y. Wu, N. Charoenphakdee, H. Bao, V. Tangkaratt, and M. Sugiyama
+(2019)
+Imitation learning from imperfect demonstration
+.
+In
+Proceedings of the 36th International Conference on Machine Learning
+,
+Proceedings of Machine Learning Research
+, Vol.
+97
+,
+pp. 6818–6827
+.
+Cited by:
+§2.2
+.
+[45]
+H. Xu, X. Zhan, H. Yin, and H. Qin
+(2022)
+Discriminator-weighted offline imitation learning from suboptimal demonstrations
+.
+In
+Proceedings of the 39th International Conference on Machine Learning
+,
+Proceedings of Machine Learning Research
+, Vol.
+162
+,
+pp. 24725–24742
+.
+Cited by:
+§2.2
+.
+[46]
+X. Xu, Y. Hou, Z. Liu, and S. Song
+(2026)
+Compliant residual dagger: improving real-world contact-rich manipulation with human corrections
+.
+Advances in Neural Information Processing Systems
+38
+,
+pp. 139559–139581
+.
+Cited by:
+§3.1
+.
+[47]
+J. Yang, K. Lin, J. Li, W. Zhang, T. Lin, L. Wu, Z. Su, H. Zhao, Y. Zhang, L. Chen,
+et al.
+(2026)
+Rise: self-improving robot policy with compositional world model
+.
+arXiv preprint arXiv:2602.11075
+.
+Cited by:
+§1
+.
+[48]
+R. Yang, H. Wang, C. Liu, X. Yan, Y. Wang, X. Du, S. Yue, Y. Liu, C. Zhang, L. Qi,
+et al.
+(2026)
+ALOE: action-level off-policy evaluation for vision-language-action model post-training
+.
+arXiv preprint arXiv:2602.12691
+.
+Cited by:
+§2.2
+.
+[49]
+S. Zhang, Z. Cao, D. Sadigh, and Y. Sui
+(2021)
+Confidence-aware imitation learning from demonstrations with varying optimality
+.
+In
+Advances in Neural Information Processing Systems
+,
+Vol.
+34
+.
+Cited by:
+§1
+,
+§2.2
+.
+[50]
+W. Zhao, P. Ding, M. Zhang, Z. Gong, S. Bai, H. Zhao, and D. Wang
+(2025)
+VLAS: vision-language-action model with speech instructions for customized robot manipulation
+.
+External Links:
+2502.13508
+,
+Link
+Cited by:
+§1
+.
+[51]
+B. D. Ziebart, A. L. Maas, J. A. Bagnell, A. K. Dey,
+et al.
+(2008)
+Maximum entropy inverse reinforcement learning.
+.
+In
+Aaai
+,
+Vol.
+8
+,
+pp. 1433–1438
+.
+Cited by:
+§2.1
+.
+Appendix A
+Implementation Details
+A.1
+Value Model Training
+Data preprocessing.
+All value models are trained and evaluated using the same local 5 Hz data
+protocol. The raw robot trajectories are recorded at 30 Hz and then downsampled
+by taking every sixth frame. We use this lower frame rate because adjacent 30 Hz
+frames typically show very small visual changes, which adds temporal redundancy
+and can make value estimation more sensitive to frame-level noise. Since the four tasks have substantially different horizons, we do not
+truncate trajectories to a fixed length after resampling. Instead, we keep all
+usable 5 Hz frames and construct fixed-length inputs later during sampling.
+Each trajectory used for value-model training contains the task instruction,
+primary-view images, wrist-view images, the success/failure outcome, and retry
+keypoints. For the value-model test set, we additionally annotate bad-action
+start points and back-to-normal points, which are used only for analysis and
+evaluation. In all value-model training and evaluation, the model takes only the primary
+camera view as visual input.
+For value-model training and evaluation, the input at endpoint
+t
+t
+is an
+8-frame history window
+h
+t
+=
+o
+t
+−
+7
+:
+t
+h_{t}=o_{t-7:t}
+.
+When
+t
+<
+7
+t<7
+, we left-pad the window by repeating the first frame. The model
+predicts the value of the last frame in the window, while the preceding frames
+serve as temporal context.
+Architecture and hyperparameters.
+For a fair comparison, we use Robometer-4B
+[
+29
+]
+as the backbone for all trainable value models, which is
+pretrained on large-scale robotic data and follows the
+Qwen/Qwen3-VL-4B-Instruct
+[
+4
+]
+architecture. We attach a two-layer MLP value
+head on top of the vision-language hidden state.
+For history-window inputs, frames are fed as separate images in the multi-image
+input. The value head is applied only to the hidden representation of the last
+frame in the window.
+We fine-tune the backbone with LoRA and train the value head jointly with the
+LoRA parameters. All trainable methods use the same hyperparameters, summarized
+in Table
+4
+.
+For ReTVL, we instantiate the pre-retry, retry-centered, and
+post-recovery regions on the 5 Hz endpoint timeline as defined in Sec.
+3.2
+. In each training step, the
+sampler draws one of the active pair types from four pair types with equal probability: pre-vs-near,
+near-vs-post, pre-vs-pre and post-vs-post.
+For pre-vs-near and near-vs-post pairs, the retry-centered window is treated as
+the lower-value side of the comparison. For
+pre-vs-pre and post-vs-post, we sample two endpoints from the same side of the
+retry keypoint and assign the lower value to the endpoint closer to the retry.
+Thus, values are encouraged to decrease as the trajectory approaches the retry
+from the pre-retry side and to increase as it moves away from the retry on the
+post-recovery side. We apply the same soft-window weighted
+pairwise preference loss described in Sec.
+3.2
+. We use the same sampling parameters for all four tasks as summarized in Table
+4
+. Algorithm
+1
+summarizes the overall training procedure.
+Algorithm 1
+Training Procedure for ReTVL
+1:
+Mixed-quality demonstration dataset
+𝒟
+\mathcal{D}
+, retry keypoints
+{
+ℛ
+i
+}
+\{\mathcal{R}_{i}\}
+, value model
+V
+θ
+V_{\theta}
+2:
+for
+each training iteration
+do
+3:
+Sample trajectories
+{
+τ
+i
+}
+∼
+𝒟
+\{\tau_{i}\}\sim\mathcal{D}
+4:
+Sample absolute progress examples outside retry neighborhoods
+5:
+Compute absolute progress loss
+ℒ
+abs
+\mathcal{L}_{\mathrm{abs}}
+using Eq.
+2
+6:
+Sample retry keypoints
+r
+i
+,
+j
+∈
+ℛ
+i
+r_{i,j}\in\mathcal{R}_{i}
+and construct
+𝒲
+i
+,
+j
+pre
+\mathcal{W}^{\mathrm{pre}}_{i,j}
+,
+𝒲
+i
+,
+j
+near
+\mathcal{W}^{\mathrm{near}}_{i,j}
+,
+𝒲
+i
+,
+j
+post
+\mathcal{W}^{\mathrm{post}}_{i,j}
+7:
+Sample preference pairs
+(
+h
++
+,
+h
+−
+)
+(h^{+},h^{-})
+and compute weights
+w
+⁡
+(
+h
++
+,
+h
+−
+)
+w(h^{+},h^{-})
+8:
+Compute preference loss
+ℒ
+pref
+\mathcal{L}_{\mathrm{pref}}
+using Eq.
+8
+9:
+Update
+V
+θ
+V_{\theta}
+with
+ℒ
+value
+=
+λ
+abs
+​
+ℒ
+abs
++
+λ
+pref
+​
+ℒ
+pref
+\mathcal{L}_{\mathrm{value}}=\lambda_{\mathrm{abs}}\mathcal{L}_{\mathrm{abs}}+\lambda_{\mathrm{pref}}\mathcal{L}_{\mathrm{pref}}
+10:
+end
+for
+A.2
+Downstream Weighted Behavior Cloning
+For downstream policy learning, we use a flow-matching Vision-Language-Action
+policy with a
+π
+0
+\pi_{0}
+-style backbone. The policy takes the task instruction,
+RGB observations, and robot proprioception as input, and predicts an
+action chunk.
+Given the chunk weight
+α
+t
+\alpha_{t}
+computed by Eq.
+10
+, we apply
+value-weighted behavior cloning directly to the flow-matching objective:
+ℒ
+wBC
+=
+∑
+t
+α
+t
+​
+‖
+v
+ψ
+​
+(
+z
+s
+,
+h
+t
+,
+s
+)
+−
+u
+s
+‖
+2
+2
+∑
+t
+α
+t
++
+ϵ
+,
+\mathcal{L}_{\mathrm{wBC}}=\frac{\sum_{t}\alpha_{t}\left\|v_{\psi}(z_{s},h_{t},s)-u_{s}\right\|_{2}^{2}}{\sum_{t}\alpha_{t}+\epsilon},
+where
+z
+s
+z_{s}
+is the interpolated noisy action chunk at flow time
+s
+s
+, and
+u
+s
+u_{s}
+is the corresponding target velocity. Standard BC uses the same objective with
+uniform chunk weights. For ReTVL-BC and RECAP-BC, the policy architecture,
+training data, and optimization settings are identical; only the value model
+used to compute
+α
+t
+\alpha_{t}
+differs.
+We fine-tune all policy parameters and use the same downstream training
+hyperparameters for all methods, as summarized in
+Table
+4
+. Following the SARM-style
+weighting rule, we use task-specific thresholds
+κ
+\kappa
+: chunks with value
+improvement larger than
+κ
+\kappa
+are assigned weight
+1
+1
+. For each task,
+κ
+\kappa
+is chosen to roughly correspond to the 80th percentile of positive
+chunk improvements.
+Table 4
+:
+Implementation hyperparameters used in our experiments.
+Value Model Training
+ReTVL Pair Sampling
+Hyperparameter
+Value
+Hyperparameter
+Value
+Input frame rate
+5 Hz
+Pre-retry window
+[
+r
+−
+12
+,
+r
+−
+2
+]
+[r-12,r-2]
+History window
+8 frames
+Retry-centered window
+[
+r
+−
+1
+,
+r
++
+1
+]
+[r-1,r+1]
+MLP dims
+[
+512,512
+]
+[512,512]
+Post-recovery window
+[
+r
++
+2
+,
+r
++
+12
+]
+[r+2,r+12]
+MLP activation
+GELU
+Soft-window temperature
+τ
+w
+=
+6.0
+\tau_{w}=6.0
+Distributional value bins
+64
+Preference temperature
+T
+pref
+=
+0.1
+T_{\mathrm{pref}}=0.1
+MLP dropout
+0.1
+Abs. loss weight
+λ
+abs
+=
+1.0
+\lambda_{\mathrm{abs}}=1.0
+LoRA rank
+32
+Pref. loss weight
+λ
+pref
+=
+3.0
+\lambda_{\mathrm{pref}}=3.0
+LoRA alpha
+64
+Downstream Policy Training
+LoRA dropout
+0.05
+Learning rate
+5
+×
+10
+−
+5
+5\times 10^{-5}
+Batch size
+64
+Training steps
+20k
+Learning rate
+1
+×
+10
+−
+4
+1\times 10^{-4}
+Batch size
+256
+Scheduler
+Cosine
+Action chunk size
+16
+Training steps
+500
+Inference flow steps
+10
+Figure 5
+:
+Real-world manipulation tasks used for policy evaluation.
+A.3
+Robot Setup and Tasks
+All real-robot experiments are conducted on an AgileX Piper robot arm. We collect
+demonstrations through leader-follower teleoperation. The setup includes one
+fixed third-person primary camera and one wrist-mounted camera. During policy
+execution, the policy takes the task instruction, RGB observations from both cameras, and the current robot proprioception as input. The
+policy outputs a 6-DoF end-effector pose command together with a continuous gripper
+command.
+We evaluate four manipulation tasks, as illustrated in
+Fig.
+5
+. In
+Pick up Spoon
+, the robot grasps a spoon
+and places it onto a plate. In
+Stack Blocks
+, the robot first stacks the
+blue block on top of the green block and then stacks the red block on top of the
+blue block. In
+Fold Towel
+, the robot folds a towel twice to form a
+square-like shape. In
+Open Drawer
+, the robot opens a drawer, places a
+purple cylinder inside, and then closes the drawer.
+Each policy is evaluated with 20 independent real-robot trials per task. Object
+positions are randomized before each trial. A trial is counted as successful only
+if the full task sequence is completed and the final task state satisfies the
+task-specific success criterion.
+Appendix B
+Evaluation Metrics
+We evaluate each value model on held-out trajectories that are disjoint from the
+annotated trajectories used for training. For each trajectory, we first evaluate the
+value model on all 5 Hz frames and then linearly interpolate the predicted values
+back to the raw-frame timeline. This produces a dense value trace
+v
+i
+​
+(
+t
+)
+v_{i}(t)
+,
+where
+t
+t
+denotes the raw frame index.
+We group held-out trajectories into three categories: clean successful
+trajectories, suboptimal successful trajectories with retry behavior, referred to as retry trajectories below, and failed
+trajectories. Global metrics evaluate whether the value model captures overall
+task progress and final task outcome, while local retry metrics evaluate whether
+the value trace exhibits the desired drop-and-rebound pattern around annotated
+retry events.
+B.1
+Global Metrics
+Value-Order Correlation (VOC).
+VOC measures whether the predicted value increases with task progress on clean
+successful demonstrations. For each clean successful held-out trajectory, we compute the Spearman rank correlation between the 5 Hz frame index and the predicted value. We then report the average correlation over all clean successful trajectories. Recovery and failure trajectories are not included in VOC.
+Success/Failure (S/F) Detection.
+S/F Detection measures whether the terminal value correctly predicts the final
+trajectory outcome. This metric is computed over all held-out successful and
+failed trajectories, where successful trajectories include both clean successes
+and retry trajectories. For each trajectory, we use the
+value score at the last evaluated frame as the trajectory-level score. We use a fixed threshold of
+0.9
+0.9
+to distinguish successful and failed trajectories. The reported S/F Detection score is the
+classification accuracy against the ground-truth trajectory outcome. All value scores are normalized to the same range before computing this metric.
+B.2
+Local Retry Metrics
+Local retry metrics evaluate whether a value model detects local mistakes and
+recovery around annotated retry events. These metrics are computed only on
+held-out recovery trajectories. We use a fixed evaluation radius
+K
+=
+30
+K=30
+on the
+raw-frame timeline. This radius is used both for computing local value drops and
+for defining retry-centered evaluation windows. It is different from the
+pre-retry, retry-centered, and post-recovery sampling windows used for training
+in Sec.
+3.2
+; here it is used only to evaluate whether the
+predicted value drops near the annotated retry keypoint and whether the retry
+region forms a local value minimum.
+Let
+ℛ
+i
+\mathcal{R}_{i}
+denote the set of retry keypoints in trajectory
+i
+i
+, and
+let
+v
+i
+​
+(
+t
+)
+v_{i}(t)
+be the interpolated value at raw frame
+t
+t
+. We compute a local
+drop score at each raw frame by comparing the current value with the maximum
+value within the preceding
+K
+K
+-frame window:
+D
+i
+​
+(
+t
+)
+=
+max
+u
+∈
+[
+max
+⁡
+(
+0
+,
+t
+−
+K
+)
+,
+t
+]
+⁡
+v
+i
+​
+(
+u
+)
+−
+v
+i
+​
+(
+t
+)
+.
+D_{i}(t)=\max_{u\in[\max(0,t-K),t]}v_{i}(u)-v_{i}(t).
+A large
+D
+i
+​
+(
+t
+)
+D_{i}(t)
+indicates that the predicted value has recently dropped from
+a nearby local maximum. For a retry keypoint
+r
+r
+, we use
+[
+r
+−
+K
+,
+r
++
+K
+]
+[r-K,r+K]
+as its retry-centered evaluation window.
+Drop AUC.
+Drop AUC measures whether value drops are concentrated near annotated retry
+events. For each retry keypoint, we use the maximum drop score within its
+retry-centered window as the positive-window score. Negative
+windows are sampled from regions at least
+2
+​
+K
+2K
+raw frames away from any retry
+keypoint, and their scores are computed in the same way. Let
+{
+(
+s
+j
+,
+y
+j
+)
+}
+j
+=
+1
+N
+\{(s_{j},y_{j})\}_{j=1}^{N}
+denote the resulting window-level examples, where
+s
+j
+s_{j}
+is the maximum drop score in the window and
+y
+j
+∈
+{
+0
+,
+1
+}
+y_{j}\in\{0,1\}
+indicates
+whether the window is retry-centered. We sort windows by
+s
+j
+s_{j}
+in descending
+order and compute the precision-recall AUC:
+Drop
+​
+AUC
+=
+∑
+n
+=
+1
+N
+(
+R
+n
+−
+R
+n
+−
+1
+)
+​
+P
+n
+,
+\mathrm{Drop~AUC}=\sum_{n=1}^{N}\left(R_{n}-R_{n-1}\right)P_{n},
+where
+P
+n
+P_{n}
+and
+R
+n
+R_{n}
+are the precision and recall after taking the top
+n
+n
+windows. A higher Drop AUC indicates that large value drops are more
+localized around annotated retry events.
+Drop Probability.
+Drop Probability measures how often annotated retries are accompanied by a
+salient value drop. For each trajectory, we define a trajectory-specific
+threshold
+η
+i
+=
+max
+⁡
+(
+Quantile
+0.9
+⁡
+{
+D
+i
+​
+(
+t
+)
+:
+0
+≤
+t
+≤
+T
+i
+}
+,
+0.01
+)
+.
+\eta_{i}=\max\left(\operatorname{Quantile}_{0.9}\{D_{i}(t):0\leq t\leq T_{i}\},0.01\right).
+We then report the fraction of retry keypoints whose retry-centered window
+contains at least one drop score greater than
+η
+i
+\eta_{i}
+. Unlike Drop AUC, this
+metric does not use negative windows; it directly measures how consistently the
+model produces a detectable value drop around annotated retry events.
+Pre
+>
+>
+Retry and Post
+>
+>
+Retry.
+These metrics test whether the annotated retry keypoint corresponds to a local
+low-value state. For each retry keypoint
+r
+r
+, we use the same evaluation
+radius
+K
+K
+defined above and compute the average values before and after the
+retry keypoint:
+v
+i
+pre
+​
+(
+r
+)
+=
+1
+K
+​
+∑
+t
+=
+r
+−
+K
+r
+−
+1
+v
+i
+​
+(
+t
+)
+,
+v
+i
+post
+​
+(
+r
+)
+=
+1
+K
+​
+∑
+t
+=
+r
++
+1
+r
++
+K
+v
+i
+​
+(
+t
+)
+.
+v_{i}^{\mathrm{pre}}(r)=\frac{1}{K}\sum_{t=r-K}^{r-1}v_{i}(t),\qquad v_{i}^{\mathrm{post}}(r)=\frac{1}{K}\sum_{t=r+1}^{r+K}v_{i}(t).
+Boundary cases where the full pre- or post-window is not available are skipped.
+Pre
+>
+>
+Retry
+reports the fraction of retry events satisfying
+v
+i
+pre
+​
+(
+r
+)
+>
+v
+i
+​
+(
+r
+)
+v_{i}^{\mathrm{pre}}(r)>v_{i}(r)
+, while
+Post
+>
+>
+Retry
+reports the
+fraction satisfying
+v
+i
+post
+​
+(
+r
+)
+>
+v
+i
+​
+(
+r
+)
+v_{i}^{\mathrm{post}}(r)>v_{i}(r)
+. These metrics check
+whether the value decreases toward the retry keypoint and recovers after
+corrective behavior.
+Appendix C
+Retry Annotation Analysis
+C.1
+Retry Keypoint Definition
+A retry keypoint marks the start of correction after a local execution error,
+rather than the mistake onset or the completion of recovery. In our setting,
+retry events mainly capture localized but consequential execution errors that
+require immediate correction, such as misaligned grasps, missed grasps, or
+inaccurate placements.
+We do not treat all execution errors as retry events. Instead, we only
+keep cases with a clear localized correction signal. We exclude long off-task
+error segments, such as grasping the wrong object and later completing the
+task, collisions with the environment, failed corrections that do not improve
+the state, and irreversible failures such as objects falling outside the
+reachable workspace. This keeps retry supervision tied to recoverable local
+execution errors rather than broad trajectory-level failures.
+C.2
+Annotation Cost and Consistency
+We further evaluate the annotation cost and temporal consistency of retry-related
+labels.
+For annotation cost, three annotators independently label the value-model training
+trajectories for each task. We report the average annotation time per trajectory and its variation across
+annotators in Table
+5
+. This
+measures the practical cost of obtaining sparse retry supervision. Table
+5
+shows that our sparse retry annotation can be
+obtained efficiently: even for the slowest annotator, labeling all 30
+trajectories for a task takes no more than 30 minutes, corresponding to less
+than one minute per trajectory on average.
+Table 5:
+Annotation cost on the value-model training datasets. We report the total annotation time for each of three annotators
+in minutes and the per-trajectory time across
+annotators in seconds.
+Task
+# Retry/Succ./Fail Traj.
+# Retry Keypts.
+Ann. 1
+Ann. 2
+Ann. 3
+Sec./Traj.
+Pick up Spoon
+20/5/5
+20
+10 min
+15 min
+8 min
+22.0
+±
+7.2
+22.0\pm 7.2
+Stack Blocks
+18/7/5
+32
+23 min
+26 min
+19 min
+45.3
+±
+7.0
+45.3\pm 7.0
+Fold Towel
+22/5/3
+23
+30 min
+27 min
+28 min
+56.7
+±
+3.1
+56.7\pm 3.1
+Open Drawer
+20/5/5
+29
+21 min
+25 min
+24 min
+46.7
+±
+4.2
+46.7\pm 4.2
+Average
+–
+26.0
+21.0 min
+23.3 min
+19.8 min
+42.7
+±
+14.1
+42.7\pm 14.1
+We next evaluate the temporal consistency of retry-related annotations.
+We measure consistency from both inter-annotator and intra-annotator
+perspectives. For inter-annotator consistency, three annotators independently
+label the same retry events. For intra-annotator consistency, the same annotator
+labels the same events three times. For each labeled timestep, let
+t
+1
+,
+t
+2
+,
+t
+3
+t_{1},t_{2},t_{3}
+denote the three labeled timestamps, either from three annotators
+or three repeated passes. We compute the mean pairwise difference as
+error
+=
+|
+t
+1
+−
+t
+2
+|
++
+|
+t
+1
+−
+t
+3
+|
++
+|
+t
+2
+−
+t
+3
+|
+3
+.
+\mathrm{error}=\frac{|t_{1}-t_{2}|+|t_{1}-t_{3}|+|t_{2}-t_{3}|}{3}.
+We report mean absolute timing errors averaged over retry events in
+Table
+6
+. All errors are reported in seconds.
+Table
+6
+shows that retry keypoints are temporally
+consistent across annotators. The average inter-annotator error for retry
+keypoints is only 0.19 seconds, which is less than one frame under our 5 Hz
+annotation rate and is acceptable for value-model training. In contrast, the
+auxiliary pre-retry and post-recovery timestamps are substantially less
+consistent, reflecting the ambiguity of when degradation begins or recovery is
+fully completed. This supports our design choice of using only the retry
+keypoint as supervision and applying a soft temporal window around it, rather
+than directly supervising the less reliable pre/post timestamps.
+Table 6
+:
+Temporal consistency of retry-related annotations. Inter-annotator errors are computed across three annotators, and
+intra-annotator errors are computed across three repeated passes by the same
+annotator. All values are in seconds.
+Task
+Inter-annotator error
+Intra-annotator error
+Pre
+Retry
+Post
+Pre
+Retry
+Post
+Pick up Spoon
+0.42
+0.17
+0.46
+0.24
+0.09
+0.27
+Stack Blocks
+0.55
+0.14
+0.72
+0.16
+0.09
+0.20
+Fold Towel
+0.64
+0.27
+0.81
+0.30
+0.14
+0.42
+Open Drawer
+0.43
+0.19
+0.63
+0.21
+0.16
+0.31
+Average
+0.51
+0.19
+0.66
+0.22
+0.12
+0.29
+Appendix D
+Additional Experimental Results
+D.1
+Ablation Visualizations
+We further provide representative value-curve visualizations to complement the
+ablation results in Sec. 4.3.
+Figure
+6
+shows that the drop-regression baseline without
+preference loss does not reliably align value drops with annotated retry events.
+Although this variant is trained with manually injected drops around retry
+windows, its predicted value curve often exhibits misplaced or weak drops on
+held-out trajectories. This suggests that directly shaping the absolute progress
+target does not necessarily teach the model to recognize the visual meaning of
+local execution errors. Instead, the model may fit the injected numeric pattern
+in the training data without learning robust visual cues for mistake states.
+The visualizations also show that removing soft-window weighting or absolute
+calibration leads to less stable global progress estimates. Without soft-window
+weighting, retry-related supervision is applied uniformly across approximate
+retry neighborhoods, which can create sharper conflicts with the absolute
+progress target near window boundaries. As a result, the value curve becomes
+more oscillatory even on successful trajectories. Without absolute calibration,
+the model relies mainly on local retry-induced preferences and loses a stable
+global progress anchor, which similarly increases value fluctuations and weakens
+the monotonic progress structure.
+Figure 6
+:
+Representative value-curve visualizations for ablation variants on held-out trajectories.
+D.2
+Analysis of Downstream Weights
+We further report the chunk-weighting results of ReTVL and the baselines on the test set. This analysis complements the retry-centered value-shape
+metrics in Table
+1
+, as it directly evaluates whether the
+resulting behavior-cloning weights preserve useful chunks and suppress harmful
+chunks. This analysis is less tied to the training loss and therefore provides a more direct view of how the learned values affect downstream policy learning.
+We report four metrics in Table
+7
+.
+Success Weight
+measures the average training weight assigned to chunks from successful
+trajectories.
+Post-retry Weight
+measures the average weight assigned to
+manually annotated recovery chunks after retry.
+Success Deletion
+measures
+the fraction of successful chunks that are incorrectly assigned zero weight,
+while
+Strict-bad Retention
+measures the fraction of manually annotated
+harmful chunks that are incorrectly retained with positive weight. Lower Success
+Deletion and Strict-bad Retention indicate better filtering behavior.
+Table 7
+:
+Chunk-weighting analysis averaged over four real-robot tasks.
+Method
+Success W.
+↑
+\uparrow
+Post-retry W.
+↑
+\uparrow
+Success Del.
+↓
+\downarrow
+Strict-bad Ret.
+↓
+\downarrow
+TOPReward
+0.539
+0.498
+0.330
+0.695
+Robometer
+0.845
+0.432
+0.085
+0.896
+RECAP-Value
+0.716
+0.438
+0.150
+0.743
+ReTVL
+0.769
+0.636
+0.146
+0.206
+Table
+7
+shows that ReTVL achieves the most favorable
+trade-off between preserving useful chunks and suppressing harmful ones.
+Robometer assigns the highest weights to successful chunks and has the lowest
+Success Deletion rate, but it also retains most strict-bad chunks, with a
+Strict-bad Retention rate of 0.896. In contrast, ReTVL assigns the highest
+weights to post-retry recovery chunks while reducing Strict-bad Retention to
+0.206, substantially lower than all baselines. These results support the central
+role of retry-supervised value learning: ReTVL does not merely suppress all
+retry-related data, but learns a more selective weighting signal that preserves
+useful recovery behavior and downweights harmful mistake segments.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Points2Reward: Robotic Manipulation Rewards from Just One Video">
+  <meta name="keywords" content="reward generation, point tracking, robotics, learning from human videos">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Points2Reward: Robotic Manipulation Rewards from Just One Video</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/VLMgineer.ico">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<!-- <nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="#">
+      <span class="icon">
+          <i class="fas fa-home"></i>
+      </span>
+      </a>
+
+      <!-- <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://hypernerf.github.io">
+            HyperNeRF
+          </a>
+          <a class="navbar-item" href="https://nerfies.github.io">
+            Nerfies
+          </a>
+          <a class="navbar-item" href="https://latentfusion.github.io">
+            LatentFusion
+          </a>
+          <a class="navbar-item" href="https://photoshape.github.io">
+            PhotoShape
+          </a>
+        </div>
+      </div> -->
+  <!--  </div>
+
+  </div>
+</nav> -->
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Points2Reward: Robotic Manipulation Rewards from Just One Video</h1>
+          
+          <!-- Authors -->
+          <div class="is-size-4 publication-authors">
+            <span class="author-block">
+              <a href="https://junyaoshi.github.io/" target="_blank">Junyao Shi</a>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.linkedin.com/in/joshua-smith-32b165158/" target="_blank">Joshua Smith</a>,
+            </span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=o67NTxYAAAAJ&hl=en" target="_blank">Jianing Qian</a>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.seas.upenn.edu/~dineshj/" target="_blank">Dinesh Jayaraman</a>
+            </span>
+          </div>
+          
+
+          <!-- Affiliations -->
+          <div class="is-size-4 publication-authors">
+            <span class="author-block">University of Pennsylvania</span>
+          </div>
+          <div class="is-size-4 publication-authors">
+            <span class="author-block">RSS Workshop on Semantic Reasoning and Goal Understanding in Robotics, 2025</span>
+          </div>
+          <!-- <div class="is-size-5 publication-authors">
+            <span class="author-block">Also <strong>Oral Spotlight</strong>✨ at <a href="https://rss-hardware-intelligence.github.io/" target="_blank">RSS Workshop on Robot Hardware-Aware Intelligence</a>, 2025</span>
+          </div> -->
+          
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://points2reward.github.io/static/Points2Reward.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- Video Link. -->
+              <!-- <span class="link-block">
+                <a href="https://www.youtube.com/watch?v=MrKrnHhk8IA"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video</span>
+                </a>
+              </span> -->
+              <!-- Dataset Link. -->
+              <!-- <span class="link-block">
+                <a href="https://github.com/google/nerfies/releases/tag/0.1"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Data</span>
+                  </a>
+              </span> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Overview. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Overview of Points2Reward</h2>
+        <figure class="image">
+          <img src="./static/images/p2r_method.png">
+        </figure>
+        <br>
+        <div class="content has-text-justified">
+          <p>
+            <strong>Points2Reward</strong> takes a demonstration video and a rollout video as input. We use semantic point correspondence and off-the-shelf point tracking to generate matching point
+            tracks of the demonstration and rollout video. We then use the two point tracks to compute a goal-based reward.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Detailed and dense reward functions provided clearly graded signals that enable a robot to evaluate and improve its policy, but generating such functions for new tasks is often cumbersome and expertise-intensive. On the other hand, end users can often easily record a video demonstrating the desired object trajectories and goal configurations involved in a new skill, but we lack methods to reliably learn from such a simple specification. We propose "Points2Reward" (P2R), which effectively computes dense rewards from a single video. To do this, P2R tracks task-relevant object points in task demonstrations and policy rollouts, and matches them to compare the desired and achieved object trajectories to generate reward scores. Exploiting recent advances in point tracking and semantic point correspondences, P2R produces high-quality rewards even under significant domain gaps between the demo video and the robot setup, such as embodiment gaps (human vs. robot) or camera viewpoint changes. We demonstrate that P2R correctly evaluates trajectories of varying quality in diverse real-world settings as well as in nine simulated manipulation tasks in standard benchmark suites. We further demonstrate that P2R policy evaluations enable improved downstream policy synthesis in the simulated tasks.          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Real World Results -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Real World Results</h2>
+      </div>
+    </div>
+
+    <!-- Rotate Valve -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h3 class="title is-4">Rotate Valve</h3>
+        <div class="columns is-vcentered">
+          <div class="column is-3">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/rotate_valve/rotate_valve_demo.gif">
+            </figure>
+            <p>Human Demo</p>
+          </div>
+          <div class="column is-6">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/rotate_valve/14_match.jpg">
+            </figure>
+            <p>Point Matches</p>
+          </div>
+          <div class="column is-3">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/rotate_valve/rotate_valve_robot.gif">
+            </figure>
+            <p>Robot Rollout</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Open Drawer -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h3 class="title is-4">Open Drawer</h3>
+        <div class="columns is-vcentered">
+          <div class="column is-3">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/open_drawer/open_drawer_demo.gif">
+            </figure>
+            <p>Human Demo</p>
+          </div>
+          <div class="column is-6">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/open_drawer/4_match.jpg">
+            </figure>
+            <p>Point Matches</p>
+          </div>
+          <div class="column is-3">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/open_drawer/open_drawer_robot.gif">
+            </figure>
+            <p>Robot Rollout</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fold Towel -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column">
+        <h3 class="title is-4">Fold Towel</h3>
+        <div class="columns is-vcentered">
+          <div class="column is-3">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/fold_towel/fold_towel_demo.gif">
+            </figure>
+            <p>Human Demo</p>
+          </div>
+          <div class="column is-6">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/fold_towel/91_match.jpg">
+            </figure>
+            <p>Point Matches</p>
+          </div>
+          <div class="column is-3">
+            <figure class="image">
+              <img src="./RealWorldResults/talk_materials/fold_towel/fold_towel_robot_new.gif">
+            </figure>
+            <p>Robot Rollout</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full Policy Timelapse -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h3 class="title is-4">Full Policy Timelapse</h3>
+        <div class="columns is-vcentered">
+          <div class="column">
+            <figure class="image">
+              <img src="./RealWorldResults/rotate_valve.gif">
+            </figure>
+            <p>Rotate Valve</p>
+          </div>
+          <div class="column">
+            <figure class="image">
+              <img src="./RealWorldResults/open_drawer.gif">
+            </figure>
+            <p>Open Drawer</p>
+          </div>
+          <div class="column">
+            <figure class="image">
+              <img src="./RealWorldResults/fold_towel.gif">
+            </figure>
+            <p>Fold Towel</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quantitative Results -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h3 class="title is-4">Quantitative Results</h3>
+        <figure class="image">
+          <img src="./RealWorldResults/talk_materials/real_world_preformance.png">
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+      <div class="content has-text-centered">
+        <p>
+        Website template borrowed from <a href="https://nerfies.github.io/">NeRFies</a>.
+        </p>
+      </div>
+      </div>
+    </div>
+    </div>
+</footer>
+
+</body>
+</html>

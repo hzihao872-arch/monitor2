@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      name="description"
+      content="RynnValue scales robotic value foundation models with temporal distance for progress estimation, failure detection, real-world reinforcement learning, data filtering, and inference-time value guidance."
+    />
+    <meta
+      name="citation_title"
+      content="RynnValue: Scaling Robotic Value Foundation Models with Temporal Distance"
+    />
+    <meta name="citation_author" content="Dongchi Huang" />
+    <meta name="citation_author" content="Hongyin Zhang" />
+    <meta name="citation_author" content="Bohan Hou" />
+    <meta name="citation_author" content="Siteng Huang" />
+    <meta name="citation_author" content="Zhian Su" />
+    <meta name="citation_author" content="Hang Guo" />
+    <meta name="citation_author" content="Tong Lu" />
+    <meta name="citation_author" content="Zhaofeng Xu" />
+    <meta name="citation_author" content="Jiahao Tang" />
+    <meta name="citation_author" content="Jianfei Yang" />
+    <meta name="citation_author" content="Donglin Wang" />
+    <meta name="citation_author" content="Peixi Peng" />
+    <meta name="citation_author" content="Mingxiu Chen" />
+    <meta name="citation_author" content="Deli Zhao" />
+    <meta name="citation_author" content="Xin Li" />
+    <meta
+      property="og:title"
+      content="RynnValue: Scaling Robotic Value Foundation Models with Temporal Distance"
+    />
+    <meta
+      property="og:description"
+      content="A scalable value foundation model for progress estimation, failure detection, real-world reinforcement learning, data filtering, and inference-time value guidance."
+    />
+    <meta property="og:type" content="website" />
+    <title>RynnValue — Robotic Value Foundation Models</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <div class="background-scene" aria-hidden="true">
+      <div class="bg-layer"></div>
+      <div class="bg-ripple bg-ripple-one"></div>
+      <div class="bg-ripple bg-ripple-two"></div>
+      <div class="vignette"></div>
+    </div>
+
+    <header class="site-header" id="top">
+      <nav class="nav-shell" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="RynnValue home">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+          </span>
+          <span>RynnValue</span>
+        </a>
+
+        <div class="nav-actions">
+          <div class="nav-links">
+            <a href="#method">Method</a>
+            <a href="#results">Benchmark</a>
+            <a href="#rl">Real-world RL</a>
+          </div>
+          <button
+            class="theme-toggle"
+            id="themeToggle"
+            type="button"
+            aria-label="Switch color theme"
+          >
+            <span class="theme-icon" aria-hidden="true"></span>
+            <span id="themeLabel">Auto</span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="paper-title">
+        <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+
+        <div class="hero-shell">
+          <img
+            class="institution-logos"
+            src="assets/public/damo-hupan-logos.png"
+            alt="DAMO Academy and Hupan Laboratory"
+          />
+
+
+          <h1 id="paper-title">
+            <span>RynnValue:</span>
+            Scaling Robotic Value Foundation Models
+            <em>with Temporal Distance</em>
+          </h1>
+
+          <p class="hero-summary">
+            A preference-free value foundation model that learns goal-conditioned
+            temporal distance from 7,000+ hours of robot data, enabling progress
+            estimation, failure detection, real-world reinforcement learning, data
+            filtering, and inference-time action guidance.
+          </p>
+
+          <div class="authors" aria-label="Paper authors">
+            <span>Dongchi Huang<sup>*</sup></span>
+            <span>Hongyin Zhang<sup>*</sup></span>
+            <span>Bohan Hou<sup>*</sup></span>
+            <span>Siteng Huang<sup>†</sup></span>
+            <span>Zhian Su</span>
+            <span>Hang Guo</span>
+            <span>Tong Lu</span>
+            <span>Zhaofeng Xu</span>
+            <span>Jiahao Tang</span>
+            <span>Jianfei Yang</span>
+            <span>Donglin Wang</span>
+            <span>Peixi Peng<sup>†</sup></span>
+            <span>Mingxiu Chen</span>
+            <span>Deli Zhao</span>
+            <span>Xin Li</span>
+          </div>
+
+          <p class="affiliations">
+            <span>DAMO Academy, Alibaba Group</span>
+            <span>Hupan Lab</span>
+            <small>* Equal contribution · † Corresponding authors</small>
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://arxiv.org/pdf/2608.09853" target="_blank" rel="noopener">📄 Paper</a>
+            <a class="button button-primary" href="https://github.com/alibaba-damo-academy/RynnValue" target="_blank" rel="noopener">🐙 GitHub</a>
+            <a class="button button-primary" href="https://huggingface.co/collections/Alibaba-DAMO-Academy/rynnvalue" target="_blank" rel="noopener">🤗 HuggingFace</a>
+            <a class="button button-primary" href="https://www.modelscope.cn/collections/DAMO_Academy/RynnValue" target="_blank" rel="noopener">🪐 ModelScope</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="main-film section-shell" aria-label="RynnValue overview video">
+        <div class="film-frame">
+          <video
+            src="assets/main-video_compressed.mp4"
+            controls
+            muted
+            autoplay
+            loop
+            playsinline
+            preload="metadata"
+          >
+            Your browser does not support the RynnValue overview video.
+          </video>
+        </div>
+        <p class="film-caption">
+          RynnValue learns value through temporal distance across diverse robot
+          embodiments and viewpoints.
+        </p>
+      </section>
+
+      <section class="paper-section section-shell" id="method">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="section-index">01 · Method</p>
+            <h2>Value, grounded in time.</h2>
+          </div>
+          <p>
+            RynnValue predicts absolute remaining time and signed temporal
+            displacement with frozen 256-bin quantile supports, while a language
+            head verifies instruction-video alignment. Value-isolation attention
+            suppresses shortcuts during training; inference uses a standard causal mask.
+          </p>
+        </div>
+
+        <figure class="figure-panel figure-panel-wide">
+          <img
+            src="assets/main-arch.png"
+            alt="RynnValue architecture, heterogeneous training data, value heads, and downstream robot tasks"
+            loading="lazy"
+          />
+          <figcaption>
+            RynnValue scales timestamp-derived temporal-distance supervision from
+            roughly 3M instruction-conditioned clips to progress estimation, failure
+            detection, real-world reinforcement learning, and—demonstrated in the
+            paper—inference-time value guidance.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-panel figure-panel-wide">
+          <img
+            src="assets/training recipe.png"
+            alt="RynnValue temporal sampling, shuffling, instruction mismatch augmentation, and value-isolation attention"
+            loading="lazy"
+          />
+          <figcaption>
+            Training recipe: temporal sampling, order shuffling, instruction
+            mismatch augmentation, and value-isolation attention.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="paper-section section-shell" id="results">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="section-index">02 · Trajectory-ranking results</p>
+            <h2>Generalizes beyond the training distribution.</h2>
+          </div>
+          <p>
+            RynnValue is evaluated on six out-of-distribution robot datasets.
+            The 8B model achieves the strongest average trajectory-ranking
+            result, while the ablation isolates the contribution of each design
+            component.
+          </p>
+        </div>
+
+        <div class="results-grid">
+          <figure class="figure-panel result-main">
+            <div class="figure-label">
+              <span>Main result</span>
+              <strong>0.704</strong>
+              <small>average Kendall’s τₐ · 8B</small>
+            </div>
+            <img
+              src="assets/main_results.png"
+              alt="RynnValue trajectory-ranking results on RBM-EVAL-OOD"
+              loading="lazy"
+            />
+            <figcaption>
+              Trajectory ranking across six out-of-distribution robot datasets.
+            </figcaption>
+          </figure>
+
+          <figure class="figure-panel">
+            <div class="figure-label">
+              <span>Ablation</span>
+              <strong>Full model</strong>
+              <small>all components enabled</small>
+            </div>
+            <img
+              src="assets/ablation.png"
+              alt="RynnValue ablation results for shuffling, isolation, language supervision, and random sampling"
+              loading="lazy"
+            />
+            <figcaption>
+              Component study on temporal-order shuffling, isolation, language
+              supervision, random temporal sampling, and relative modeling.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="rl-section" id="rl" aria-labelledby="rl-title">
+        <div class="section-shell">
+          <div class="section-heading rl-heading">
+            <div>
+              <p class="section-index">03 · Reinforcement learning results</p>
+              <h2 id="rl-title">RynnValue as a real-world reward.</h2>
+            </div>
+            <div class="rl-copy">
+              <p>
+                Online and offline robot learning consistently benefit from the
+                richer value signal, with RynnValue highlighted in purple.
+              </p>
+              <button class="text-button" id="replayChart" type="button">
+                Replay chart
+              </button>
+            </div>
+          </div>
+
+          <div class="chart-frame">
+            <iframe
+              id="rlChart"
+              src="assets/rl-results-bars.html"
+              title="RynnValue real-world reinforcement learning success-rate chart"
+              loading="lazy"
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="section-shell footer-shell">
+        <div>
+          <span class="footer-brand">RynnValue</span>
+          <p>Scaling robotic value foundation models with temporal distance.</p>
+        </div>
+        <p>© <span id="year"></span> DAMO Academy, Alibaba Group · Hupan Lab</p>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

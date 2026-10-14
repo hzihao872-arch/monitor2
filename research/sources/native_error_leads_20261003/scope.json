@@ -1,0 +1,13 @@
+{
+  "purpose": "Find author-reported native errors first; exploratory teacher-discussion leads, not established new gaps",
+  "models_run": 0,
+  "new_weights": 0,
+  "max_additional_download_bytes": 524288,
+  "inclusion": "All native RoboMeter failure-detection task rows and both controlled retrieval task rows; all seven public pencil-case episodes, no selection by model output",
+  "holdout_eligible": false,
+  "excluded_as_new_gap": [
+    "known task-context problem",
+    "correct failure detections presented as errors",
+    "HD prescreen"
+  ]
+}

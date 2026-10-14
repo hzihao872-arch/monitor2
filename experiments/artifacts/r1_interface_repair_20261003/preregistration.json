@@ -1,0 +1,217 @@
+{
+  "id": "r1-interface-repair-20261003",
+  "created_utc": "2026-10-03T07:50:09.521226+00:00",
+  "protocol": "S6-draft-4",
+  "data_manifest_version": "S7-screening-4",
+  "purpose": "Interface repair and exploratory S0/S1 diagnostic only; no H1 efficacy comparison",
+  "candidate_order": [
+    "A",
+    "B"
+  ],
+  "candidate_A": "Original semantic prompt plus explicit start/end braces and no-fence/no-repetition output instruction",
+  "candidate_B": "Same as A; replace only S1 summary instruction with concise <=35-word generic chronological summary",
+  "probe": "ep618 frozen prefix q=0,1,2; S0 then S1; at most 6 calls per candidate; stop at first interface pass",
+  "gate": "All six outputs strictly valid, no budget failures or 256-token cap, nonempty S1 memory and exact q1/q2 handoff. No truth labels used for selection.",
+  "after_gate": "Exactly one full run: ep618 S0/S1 q0..15 then ep621 S0/S1 q0..14; reset memory at each track start",
+  "max_model_calls": 74,
+  "max_prompt_candidates": 2,
+  "max_full_iterations": 1,
+  "per_tick_limits": {
+    "calls": 1,
+    "frames": 4,
+    "input_tokens": 4096,
+    "output_tokens": 256,
+    "memory_tokens": 512
+  },
+  "model": {
+    "path": ".models/qwen3-vl-2b-instruct",
+    "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+    "precision": "BF16",
+    "generation": "deterministic greedy, existing backend unchanged",
+    "new_downloads": false
+  },
+  "stop_conditions": [
+    "runtime failure",
+    "both candidates fail interface",
+    "one full iteration completed"
+  ],
+  "reference_labels_excluded_from_model": true,
+  "frozen_reference_sha256": "94ae92c5aabe9c6581d987b25b807782d471324747737ddea95ea20a0ea60358",
+  "frozen_files": [
+    {
+      "path": "experiments/interface_repair_20261003.py",
+      "sha256": "73e45d4e5153bfec7b794b1e7d2eabb46ec302da0207943af3133b4ad92fe307"
+    },
+    {
+      "path": "experiments/tests/test_interface_repair.py",
+      "sha256": "28ca851204786bb5e670eb1c41117d261f72d05f87f66d65a0739e52a6689c7a"
+    },
+    {
+      "path": "experiments/trace_diagnostic_20261003.py",
+      "sha256": "fca2fbb60cf8dd6be514830daba133ef36c835231d95e7d16dcfbe12c7a9c21a"
+    },
+    {
+      "path": "experiments/monitor_eval.py",
+      "sha256": "a43370c42dd7ef34e87bc20bb9b39287fbbef7a2f2452e5bbe413a568da8651e"
+    },
+    {
+      "path": "experiments/qwen_backend.py",
+      "sha256": "a22b05cb60da132107a8e460422ae7e0d7f0aab99dc7d8179848380a6e12cb09"
+    },
+    {
+      "path": "experiments/run_online.py",
+      "sha256": "938890dffce7f428d54189ba42c55d5d0e1d84ec49cecc5bacbc9ee623fb4ed1"
+    },
+    {
+      "path": "experiments/config_stage7.json",
+      "sha256": "3508b9ba7e250a2d0a8e0895586ee1af5325021049074d987d7997c7d489efb7"
+    },
+    {
+      "path": "experiments/artifacts/r1_interface_repair_20261003/probe_track.json",
+      "sha256": "5b9f96f85212a7f73792177ecf959cb69cf87aa5a64f262c2ccb0bb1fecb65d4"
+    },
+    {
+      "path": "experiments/artifacts/r1_interface_repair_20261003/frozen_prompt_examples.json",
+      "sha256": "ad8731d7cb045d6d16c907878115637e27ae839559245f2e0b7827cc6eea5fa7"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/online_track.json",
+      "sha256": "96e71e706e039812205abfcc53c66a993ce40c5db04cd84c379abb41e513de87"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_00.png",
+      "sha256": "683aef2cc842dc64e3f2fdc8fa2c14d7653202908a97860448346419928d1eac"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_01.png",
+      "sha256": "7ea37d6d5a65986123865273c7feded45a9f531fa257dadb13bbfbb30102aae9"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_02.png",
+      "sha256": "4c3a345f8b3394ae809b5e6796cfc4a99195aa3556cd774c492f7859a52e7f01"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_03.png",
+      "sha256": "0220d375ffd6fc397279e338bf4d8a12f0efb19980708f72277ab41c545d6251"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_04.png",
+      "sha256": "e9b3e93c33d0451776a4e4c2749645b15ce8ea7e169c31a1c226cc078334ae7f"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_05.png",
+      "sha256": "4930ecbed37aa27d3faf936c6ad8c5ce25200204d9d1516f23ce1a3b04c1cef2"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_06.png",
+      "sha256": "75cb6ead3b8f103cd99b00eaa247dd4e370a56046fb5259e365494657d15e8dc"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_07.png",
+      "sha256": "3a7e60e39e906799e21b4afee98dbe50c7b4e4b6b3129c1b765af35631f66fad"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_08.png",
+      "sha256": "afdc074fb64bbec1fad9469bc14df2028069d0b1071dc02bf96ef80926ccc479"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_09.png",
+      "sha256": "8dc898d38417e96d1ceb973ebd4e13c3186561d8ff3f86a2edd747cc8368750b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_10.png",
+      "sha256": "8cd7f54f743fa686b2b233dc7b4fb60a308522c062b241238e3561f9f2be51d8"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_11.png",
+      "sha256": "33a9a2cc49d18cccafa495698c2f10d350d9e1ea7c1a0a6d534e38f2fc2e792f"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_12.png",
+      "sha256": "648a470e627f9bcc18443582e04a8e96985ee600b53b0dc9f78cb4c87346eb9b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_13.png",
+      "sha256": "d86cbfac0f8e6fba3f21113e6ab3f4fa97f4e87a54875c97861340fa89b73e97"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_14.png",
+      "sha256": "5df188fa2ebd0a2c8733e7f258bb2446e901d8036c35c7838d7535d7fc79ee4e"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep618/frame_15.png",
+      "sha256": "cd1d5e57e3ccffab7b3b13f5bda6da96a5a0fe1969f5783fa534f82f8970d03b"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/online_track.json",
+      "sha256": "70150f2c7c7433dddd946b50f7c15d78cccf1d8af95a90912bea7c1189778bd9"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_00.png",
+      "sha256": "59502c1bc7b9a21076c610fba19a2edddfd1db92f429a69d2f037c2acb5cbe42"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_01.png",
+      "sha256": "60063b9e5cc795d76a1da862342c572fe3230780f978f66da87780b92a6dec97"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_02.png",
+      "sha256": "7b47575bd9bc04d5e2a355dbae02674bfdabbd6ed468a70bcf5c243f98cd73f0"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_03.png",
+      "sha256": "aa993145d9b112ffb650a5d4d08a526b7e01203d5478dd009226ce0f1cfca1ce"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_04.png",
+      "sha256": "2752a3fb0faab3b44a539bd2a382e67cffdf728b83ea6ae73cfea31a8614e382"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_05.png",
+      "sha256": "7d5182ff2966e409567f4d33e00ae2fbc31f05c71b7b57efcb22436a69846133"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_06.png",
+      "sha256": "2e55559edd12e86d0802565152a7192d71464d65e8a5e57bba6959217eca4ae6"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_07.png",
+      "sha256": "f212432a902fe7704ca646dc84efa7cde35c095cb39ebc22a4d15b6ee0c48e91"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_08.png",
+      "sha256": "9ae69e0b72d969e9f2cc31cd95b2c5ad10ff7dcc1e70e4e74638ee2e18c47d9c"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_09.png",
+      "sha256": "4ab7cd32ed592637d2e42fad77109ba83a80939cce0f05498ccd9fff20c3deb4"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_10.png",
+      "sha256": "ad1173488f29cff6aed3f3fb39170a9e657c2879f86a8d355b86a1ee642a9882"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_11.png",
+      "sha256": "b8e447c507a2f7a95fb5ab4602b6e72844860b25d4ce613d38585c4f34e9c18c"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_12.png",
+      "sha256": "ac39c832aea7224f1509099e709afab51f03af19702d1252b677a1e500360839"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_13.png",
+      "sha256": "98038467e1c731591bea19c96c142d0dae1dbf011333b6e98b83d85b07d1bf0d"
+    },
+    {
+      "path": "research/sources/recovery_search_20261003/upstream_trace/p0/ep621/frame_14.png",
+      "sha256": "6d1df494cf7a55e93b2f3d238a2779100e0e1c4b6268919b444d0e7298cba975"
+    }
+  ],
+  "analysis_limits": [
+    "single reviewer development observations only",
+    "no mechanism/architecture selection",
+    "no H1/BCY/significance/formal sample size",
+    "no stage 8",
+    "no fence stripping or posthoc repair of old or new outputs"
+  ]
+}

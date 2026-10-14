@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-13",
+  "timezone": "Asia/Shanghai",
+  "target_paper_confirmed_by_user": "arxiv:2609.36054",
+  "scope": "literature, read-only inspection, new Chinese reports and design",
+  "prohibited_per_user": [
+    "model training",
+    "model evaluation",
+    "simulation",
+    "robot execution",
+    "model/dataset download",
+    "existing code/report changes"
+  ],
+  "new_primary_hypothesis": "query-scoped verification ranking improves next-round monitoring at equal total cost from a common student checkpoint",
+  "mainline": "evidence scope for local execution supervision",
+  "stage": "research and design only",
+  "experiments_run": false,
+  "preflight_observation": {
+    "gpu": "RTX 4060 Laptop approximately 8 GB",
+    "is_git_repository": false,
+    "torch_package_metadata_in_checked_python": null
+  }
+}

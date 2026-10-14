@@ -1,0 +1,174 @@
+{
+  "paper_url": "https://arxiv.org/html/2603.02115v2",
+  "cached_paper_sha256": "4ab249e8ce26fc3f30ba4b96663d53789f44cc6821883bf38f12cebec768ac54",
+  "tables": {
+    "A3.T14": [
+      [
+        "Dataset",
+        "RL-VLM-F (%)",
+        "Robometer (%)"
+      ],
+      [
+        "USC  Franka",
+        "52.1",
+        "75.0"
+      ],
+      [
+        "USC Koch",
+        "54.4",
+        "79.4"
+      ],
+      [
+        "USC  Trossen",
+        "66.7",
+        "76.2"
+      ],
+      [
+        "USC xArm",
+        "48.6",
+        "88.9"
+      ],
+      [
+        "MIT Franka",
+        "54.4",
+        "85.4"
+      ],
+      [
+        "UTD SO-101",
+        "56.7",
+        "90.0"
+      ],
+      [
+        "Average",
+        "55.5",
+        "82.5"
+      ]
+    ],
+    "A3.T15": [
+      [
+        "Dataset",
+        "RL-VLM-F (%)",
+        "Robometer (%)"
+      ],
+      [
+        "USC  Franka",
+        "70.7",
+        "100.0"
+      ],
+      [
+        "USC Koch",
+        "54.7",
+        "89.8"
+      ],
+      [
+        "USC  Trossen",
+        "64.0",
+        "99.0"
+      ],
+      [
+        "USC xArm",
+        "73.3",
+        "98.2"
+      ],
+      [
+        "MIT Franka",
+        "55.3",
+        "98.4"
+      ],
+      [
+        "UTD SO-101",
+        "72.7",
+        "100.0"
+      ],
+      [
+        "Average",
+        "65.1",
+        "97.6"
+      ]
+    ],
+    "A5.T26": [],
+    "A5.T27": []
+  },
+  "preference_comparison": [
+    {
+      "dataset": "USC  Franka",
+      "quality_accuracy_pct": 75.0,
+      "task_accuracy_pct": 100.0,
+      "gap_percentage_points": 25.0
+    },
+    {
+      "dataset": "USC Koch",
+      "quality_accuracy_pct": 79.4,
+      "task_accuracy_pct": 89.8,
+      "gap_percentage_points": 10.4
+    },
+    {
+      "dataset": "USC  Trossen",
+      "quality_accuracy_pct": 76.2,
+      "task_accuracy_pct": 99.0,
+      "gap_percentage_points": 22.8
+    },
+    {
+      "dataset": "USC xArm",
+      "quality_accuracy_pct": 88.9,
+      "task_accuracy_pct": 98.2,
+      "gap_percentage_points": 9.3
+    },
+    {
+      "dataset": "MIT Franka",
+      "quality_accuracy_pct": 85.4,
+      "task_accuracy_pct": 98.4,
+      "gap_percentage_points": 13.0
+    },
+    {
+      "dataset": "UTD SO-101",
+      "quality_accuracy_pct": 90.0,
+      "task_accuracy_pct": 100.0,
+      "gap_percentage_points": 10.0
+    }
+  ],
+  "figure14c": {
+    "figure": "https://arxiv.org/html/2603.02115v2#A5.F14",
+    "image_sha256": "a9e6a9c7cfa2d16262247cf97cedb36975d0eabfa3f1a353bd3cf3b4e90b5b5d",
+    "transcription_method": "manual visual inspection of original 469x349 PNG",
+    "matrix": [
+      [
+        31,
+        4
+      ],
+      [
+        23,
+        12
+      ],
+      [
+        9,
+        21
+      ]
+    ],
+    "row_labels": [
+      "failure",
+      "suboptimal",
+      "success"
+    ],
+    "column_labels": [
+      "predicted_failure",
+      "predicted_success"
+    ],
+    "suboptimal_false_success_rate": 0.34285714285714286,
+    "failure_false_success_rate": 0.11428571428571428,
+    "false_success_rate_ratio_descriptive": 3.0,
+    "false_success_rate_gap_pp": 22.857142857142858,
+    "suboptimal_share_of_missed_non_success": 0.75,
+    "success_false_alarm_rate": 0.3,
+    "pooled_failure_detection_tpr": 0.7714285714285715,
+    "pooled_success_identification_tnr": 0.7,
+    "total_episodes_in_figure": 100,
+    "limits": [
+      "Pooled over tasks; no per-task quality cross-tab or episode IDs.",
+      "Descriptive sample comparison, not a controlled causal effect or universal 3x law.",
+      "Suboptimal means partial progress without completion, not necessarily near-complete.",
+      "No model calls; counts are author results, not our reproduction."
+    ]
+  },
+  "model_runs_this_followup": 0
+}

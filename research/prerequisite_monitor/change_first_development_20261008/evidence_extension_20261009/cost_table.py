@@ -1,0 +1,5 @@
+import json,pathlib
+H=pathlib.Path(__file__).resolve().parent;a=json.loads((H/'AUDIT.json').read_text());lines=['# 实际调用与自然成本','账本issued/completed逐项复核；旧50和旧96分别保留，不将它们算作新方法测评。时间不含准备、SSH、空闲和论文阅读，不能换算账单金额。','','| 系列 | issued/completed | 输入token | 输出token | ledger秒 | adapter秒 | 峰值GiB | 触顶 |','|---|---:|---:|---:|---:|---:|---:|---:|']
+for s in a['series']:lines.append(f"| {s['series']} | {s['issued']}/{s['completed']} | {s['input_tokens']:,} | {s['output_tokens']:,} | {s['wall_seconds']:.3f} | {s['adapter_seconds']:.3f} | {s['peak_vram_gib']:.3f} | {s['hit_caps']} |")
+lines.extend(['',f"新增实际调用 {a['new_issued']}；旧50+新增 {a['previous50_plus_new']}；另加旧96，所有分账issued合计 {a['all_issued_separate_ledgers']}。",'',f"新增输入 {a['cost']['input_tokens']:,} token，输出 {a['cost']['output_tokens']:,} token；ledger {a['cost']['wall_seconds']:.3f}秒，adapter {a['cost']['adapter_seconds']:.3f}秒。",'',f"生成UTC {a['generated_utc']}；前21块远端归档完整验封；最后chroma块8个completed有完整下载账本/结果及32个匹配输入哈希的裁剪，单列local_recovered，远端整包未验封。"])
+(H/'COST_zh.md').write_text('\n'.join(lines),encoding='utf-8');print('cost table written')

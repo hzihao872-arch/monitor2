@@ -1,0 +1,383 @@
+{
+  "issued": 16,
+  "completed": 16,
+  "failed": 0,
+  "ambiguous": 0,
+  "prior": 388,
+  "cumulative": 404,
+  "counts": {
+    "chronological": {
+      "n": 8,
+      "valid": 8
+    },
+    "shuffled": {
+      "n": 8,
+      "valid": 8
+    }
+  },
+  "curves_strictly_valid_only": [
+    {
+      "query": "q07108c1875aa88b5",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 10,
+        "f0010": 10,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, transparent box with lid open, robot arm idle.",
+        "f0003": "Robot arm has moved slightly forward, still above the box, no cube interaction.",
+        "f0007": "Robot arm is lifting the lid of the transparent box.",
+        "f0010": "Robot arm is holding the lid of the transparent box, preparing to close it.",
+        "f0014": "Robot arm has returned to initial position, no cube interaction."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q07108c1875aa88b5",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 0,
+        "f0007": 0,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0003": "Blue cube remains outside transparent box; robot arm is idle above the box.",
+        "f0000": "Blue cube remains outside transparent box; robot arm is idle above the box.",
+        "f0010": "Robot arm is now grasping the brown cube on the box lid, preparing to move it.",
+        "f0007": "Robot arm has lifted the brown cube and is holding it above the transparent box.",
+        "f0014": "Robot arm is idle above the box, brown cube still on the box lid, blue cube outside."
+      },
+      "all_zero": true
+    },
+    {
+      "query": "q07e7773ad34d85f6",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 10,
+        "f0010": 20,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0000": "Robot arm is idle, blue cube on floor, yellow landing with pink cube and gray cube on it.",
+        "f0003": "Robot arm is idle, blue cube on floor, yellow landing with pink cube and gray cube on it.",
+        "f0007": "Robot arm is reaching down toward the yellow landing, gripper open.",
+        "f0010": "Robot arm is holding the gray cube, yellow landing is empty.",
+        "f0014": "Robot arm is idle, blue cube on floor, yellow landing with pink cube and gray cube on it."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q07e7773ad34d85f6",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 25,
+        "f0007": 50,
+        "f0014": 75
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is positioned above the blue cube, preparing to grasp it.",
+        "f0000": "Robot arm is positioned above the blue cube, preparing to grasp it.",
+        "f0010": "Robot arm is grasping the blue cube, lifting it off the table.",
+        "f0007": "Robot arm is holding the blue cube above the yellow platform, preparing to place it.",
+        "f0014": "Robot arm has released the blue cube onto the yellow platform, which is elevated."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q0d6f6ef3062d4d34",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 0,
+        "f0010": 0,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, transparent box empty, robot arm positioned nearby.",
+        "f0003": "Blue cube still on floor, robot arm has moved slightly forward.",
+        "f0007": "Robot arm is now positioned above the transparent box, reaching toward the orange lid.",
+        "f0010": "Robot arm is holding the orange lid, lifting it off the transparent box.",
+        "f0014": "Robot arm has released the orange lid, which now rests on top of the transparent box."
+      },
+      "all_zero": true
+    },
+    {
+      "query": "q0d6f6ef3062d4d34",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 0,
+        "f0007": 0,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0003": "Blue cube remains outside transparent box, robot arm is positioned above the box.",
+        "f0000": "Blue cube remains outside transparent box, robot arm is positioned above the box.",
+        "f0010": "Blue cube remains outside transparent box, robot arm is positioned above the box.",
+        "f0007": "Robot arm is positioned above the box, blue cube still outside.",
+        "f0014": "Blue cube remains outside transparent box, robot arm is positioned above the box."
+      },
+      "all_zero": true
+    },
+    {
+      "query": "q613a0d8ddf5acc68",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 0,
+        "f0010": 0,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, transparent box with lid, robot arm idle.",
+        "f0003": "Robot arm has moved slightly forward, still above the box, no cube interaction.",
+        "f0007": "Robot arm is now positioned over the box lid, appearing to interact with it.",
+        "f0010": "Robot arm has lifted the box lid, revealing the empty interior.",
+        "f0014": "Robot arm has returned to its original position, lid still open, cube untouched."
+      },
+      "all_zero": true
+    },
+    {
+      "query": "q613a0d8ddf5acc68",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 0,
+        "f0007": 0,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0003": "Blue cube remains outside transparent box; robot arm is positioned above the box.",
+        "f0000": "Blue cube remains outside transparent box; robot arm is positioned above the box.",
+        "f0010": "Blue cube remains outside transparent box; robot arm is positioned above the box.",
+        "f0007": "Blue cube remains outside transparent box; robot arm is positioned above the box.",
+        "f0014": "Blue cube remains outside transparent box; robot arm is positioned above the box."
+      },
+      "all_zero": true
+    },
+    {
+      "query": "q675f22bca6b91b54",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 30,
+        "f0010": 70,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Robot arm not touching blue cube; cube on floor, elevated landing empty.",
+        "f0003": "Robot arm retracted; blue cube still on floor, landing empty.",
+        "f0007": "Robot arm grasping blue cube; cube lifted off floor.",
+        "f0010": "Robot arm placing blue cube onto elevated yellow landing.",
+        "f0014": "Blue cube resting stably on elevated landing; robot arm retracted."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "q675f22bca6b91b54",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 50,
+        "f0007": 75,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is positioned above the blue cube, preparing to grasp it.",
+        "f0000": "Robot arm is positioned above the blue cube, preparing to grasp it.",
+        "f0010": "Robot arm holds the blue cube above the yellow landing, about to place it.",
+        "f0007": "Robot arm is in the process of releasing the blue cube onto the yellow landing.",
+        "f0014": "Blue cube is fully placed and stable on the yellow landing."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qbb0dbd57d63ce6a9",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 5,
+        "f0007": 25,
+        "f0010": 50,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, robot arm above, yellow platform with gray cube.",
+        "f0003": "Robot arm has moved closer to blue cube, gripper appears open.",
+        "f0007": "Robot arm is now grasping the blue cube, lifting it off the floor.",
+        "f0010": "Robot arm is holding the blue cube above the yellow platform, preparing to place it.",
+        "f0014": "Robot arm has released the blue cube onto the yellow platform, which is elevated."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qbb0dbd57d63ce6a9",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 25,
+        "f0007": 50,
+        "f0014": 0
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is positioned near the blue cube, preparing to interact with it.",
+        "f0000": "Initial scene: robot arm is stationary, blue cube is on the floor, elevated landing is empty.",
+        "f0010": "Robot arm is grasping the blue cube, lifting it off the floor.",
+        "f0007": "Robot arm is holding the blue cube above the elevated landing, preparing to place it.",
+        "f0014": "Robot arm is stationary, blue cube remains on the floor, task not yet started."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qcde827bb66b99fd4",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 5,
+        "f0007": 25,
+        "f0010": 75,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on floor, robot arm above, yellow platform with gray cube.",
+        "f0003": "Robot arm has moved closer to blue cube, gripper appears open.",
+        "f0007": "Robot arm is grasping the blue cube, lifting it off the floor.",
+        "f0010": "Robot arm has placed the blue cube on the yellow platform, which is elevated.",
+        "f0014": "Blue cube is on the yellow platform, robot arm has moved away, cube appears stable."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qcde827bb66b99fd4",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 0,
+        "f0007": 50,
+        "f0014": 75
+      },
+      "descriptions_by_ref": {
+        "f0003": "Robot arm is positioned near the blue cube, preparing to grasp it.",
+        "f0000": "Initial scene: robot arm is stationary, blue cube is on the floor, not yet picked up.",
+        "f0010": "Robot arm has moved toward the elevated yellow platform, but blue cube is still on the floor.",
+        "f0007": "Robot arm is holding the blue cube above the yellow platform, preparing to place it.",
+        "f0014": "Blue cube is placed on the yellow platform, but robot arm is still holding it."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qf2bed1caaecc37a0",
+      "order": "chronological",
+      "percent_by_ref": {
+        "f0000": 0,
+        "f0003": 0,
+        "f0007": 25,
+        "f0010": 75,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0000": "Initial scene: blue cube on table, transparent box empty, robot arm idle.",
+        "f0003": "Blue cube still on table, robot arm repositioned slightly, box unchanged.",
+        "f0007": "Robot arm grasps the blue cube, lifting it off the table.",
+        "f0010": "Blue cube is inside the transparent box, resting on the floor.",
+        "f0014": "Blue cube remains inside the transparent box, robot arm has released it and moved away."
+      },
+      "all_zero": false
+    },
+    {
+      "query": "qf2bed1caaecc37a0",
+      "order": "shuffled",
+      "percent_by_ref": {
+        "f0003": 0,
+        "f0000": 0,
+        "f0010": 100,
+        "f0007": 0,
+        "f0014": 100
+      },
+      "descriptions_by_ref": {
+        "f0003": "Blue cube on floor, robot arm not interacting with it, box empty inside.",
+        "f0000": "Blue cube on floor, robot arm not interacting with it, box empty inside.",
+        "f0010": "Blue cube inside transparent box, resting on floor, robot arm above box.",
+        "f0007": "Robot arm holding blue cube, cube not yet inside box, box empty.",
+        "f0014": "Blue cube inside transparent box, resting on floor, robot arm above box."
+      },
+      "all_zero": false
+    }
+  ],
+  "pair_contracts": [
+    {
+      "query_id": "q07108c1875aa88b5",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "q07e7773ad34d85f6",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "q0d6f6ef3062d4d34",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "q613a0d8ddf5acc68",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "q675f22bca6b91b54",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "qbb0dbd57d63ce6a9",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "qcde827bb66b99fd4",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    },
+    {
+      "query_id": "qf2bed1caaecc37a0",
+      "both_valid": true,
+      "errors_chrono": [],
+      "errors_shuffle": []
+    }
+  ],
+  "fence_raw_count": 0,
+  "audit_errors": [],
+  "wall_seconds": 82.35770630417392,
+  "adapter_seconds": 74.14031800674275,
+  "input_tokens": 22192,
+  "output_tokens": 2455,
+  "hit_caps": 0,
+  "peak_vram_gib": 16.746094226837158,
+  "status": "Qwen8B five-frame zero-shot adaptation of GVL; source baseline initial0 mathematically excludes negative net relative to initial; no VOC against chronological index used as utility accuracy"
+}

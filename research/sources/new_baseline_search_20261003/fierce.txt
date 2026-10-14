@@ -1,0 +1,2118 @@
+FIERCE: From Generalist Robot Policies to Fast Specialists via Progress–Failure Feedback
+// Restore the saved color scheme preference, or
+  // enact the browser preference if "automatic", 
+  // without expecting DOM load to have completed.
+  //
+  // Also restore any saved readingmode and ToC display preferences.
+  function initializeReadingPreferences() {
+    let saved_theme = localStorage.getItem("ar5iv_theme") || "automatic";
+    if (saved_theme === "automatic") {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        saved_theme = "dark";
+      }
+    }
+    if (saved_theme == "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+
+    const tocDisplay = localStorage.getItem('arxiv_html_paper_toc_display');
+    if (tocDisplay) {
+      document.documentElement.setAttribute("data-toc-display", tocDisplay);
+    }
+    const readingMode = localStorage.getItem('arxiv_html_paper_reading_mode');
+    if (readingMode) {
+      document.documentElement.setAttribute("data-reading-mode", readingMode);
+    }
+    // Pre-apply spinout-banner dismissal here, before the banner paints, so it
+    // never flashes in only to be hidden later by the deferred arxiv-header.js.
+    // Key matches arxiv-header.js: "arxiv-banner-dismissed:" + data-banner-name.
+    if (localStorage.getItem('arxiv-banner-dismissed:spinout-nonprofit')) {
+      document.documentElement.setAttribute("data-banner-dismissed", "");
+    }
+  }
+  // Run as soon as JS starts, to minimize repainting
+  initializeReadingPreferences();
+/* Banner pre-dismissal (set above before paint -> no flash-then-hide) and
+     reading-mode chrome hiding. */
+  html[data-banner-dismissed] .ds-announcement { display: none; }
+  html[data-reading-mode="enabled"] .ds-announcement,
+  html[data-reading-mode="enabled"] .ds-site-footer { display: none; }
+  /* Keep the announcement text dark on the Open-Blue band in both colour themes
+     (otherwise it inherits the paper's warm-wash text in dark mode and washes out). */
+  .ds-announcement-text { color: var(--arxiv-ink, #1c1a17); }
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+I
+Introduction
+II
+Related Work
+II-A
+Robot Policy Adaptation and Specialization
+II-B
+Reward and Failure Modeling for Policy Improvement
+III
+FIERCE
+III-A
+Setting and Feedback Semantics
+III-B
+Progress–Failure Evaluator Architecture
+III-C
+General-to-Task Evaluator Learning
+III-D
+Evaluator-Guided Specialist Refinement
+IV
+Experiments
+IV-A
+Experimental Setup
+IV-B
+Evaluator Generalization and Failure Prediction
+IV-C
+Specialist Learning and Deployment
+IV-D
+Component Ablations
+V
+Discussion and Conclusion
+References
+License: arXiv.org perpetual non-exclusive license
+arXiv:2609.18651v1 [cs.RO] 16 Sep 2026
+FIERCE: From Generalist Robot Policies to Fast Specialists via Progress–Failure Feedback
+Runjia Tan
+Affiliation:
+Nanyang Technological University.
+Yuang Tu
+Affiliation:
+Nanyang Technological University.
+Yujie Yan
+Affiliation:
+Nanyang Technological University.
+Lan Yu
+Affiliation:
+Guangzhou Cloudbutterfly Technology Co., Ltd.
+Xuesong Tian
+Affiliation:
+Guangzhou Cloudbutterfly Technology Co., Ltd.
+Chen Lv
+Affiliation:
+Nanyang Technological University.
+Abstract
+Generalist robot policies offer useful initialization, but refining compact
+specialists through limited physical interaction requires informative
+learning feedback. We present FIERCE, a generalist-initialized reinforcement
+learning framework centered on a unified, task-adaptive progress–failure
+evaluator. Its architecture shares an observation–language representation
+between an observed-progress head and an action-conditioned latent
+predictor whose past and current predictions feed a causal sequence head
+for task-failure estimation.
+Joint supervision from progress and preference labels, synchronized
+commands and observations, and terminal outcomes trains the evaluator;
+target-task rollouts support adaptation and calibration. Fixed evaluator
+snapshots provide progress shaping and failure-risk penalties alongside
+independently verified terminal rewards, while evaluator and policy updates
+alternate as new experience is collected. Refinement requires neither
+continued generalist action queries nor a dedicated target-task simulator
+or manually annotated dense rewards. Only the compact specialist is
+retained at deployment. The evaluation separates feedback quality,
+policy-learning efficiency, and deployment cost across simulation and two
+contact-rich real tasks. Code, model weights, and data-restoration tools are released at
+https://github.com/ar-mine/FIERCE
+.
+I
+Introduction
+Generalist robot policies, including vision–language–action models and
+action-producing world models, provide transferable behavioral priors for
+manipulation
+[
+1
+,
+2
+,
+3
+]
+. For repeated
+insertion, alignment, and placement, however, broad task coverage is only
+part of the deployment objective. A policy must respond to local variations
+while meeting task-specific latency and computational constraints;
+action chunking does not remove the importance of inference
+latency
+[
+4
+]
+. Compact, independently executable specialists
+provide a complementary deployment choice and can serve as individual
+reusable skills
+[
+5
+]
+. Generalist demonstrations can
+initialize such policies, but the central question is how they continue
+to improve from their own physical experience.
+Fig. 1:
+FIERCE learning framework.
+(1)
+Generalist demonstrations and rollouts initialize
+π
+θ
+0
+\pi_{\theta_{0}}
+.
+(2)
+Real trajectories and independently verified
+outcomes populate replay; the evaluator supplies progress shaping and
+action-conditioned failure penalties alongside terminal rewards.
+The dashed link denotes calibration, and scoring snapshots remain fixed
+during policy updates. Progress uses observed history; risk also depends
+on the action prefix, remaining time, and reference continuation in
+(
+1
+).
+(3)
+Only
+π
+θ
+K
+\pi_{\theta_{K}}
+is deployed; the
+generalist and evaluator are removed while independent safeguards remain.
+Prior work combines imitation and reinforcement learning (RL) to acquire
+compact experts from generalists
+[
+6
+]
+, while HIL-SERL
+demonstrates policy improvement through real-world
+interaction
+[
+7
+]
+. Our focus is therefore the learning
+feedback that enables refinement under a limited real-interaction budget,
+rather than reproducing the generalist more faithfully. Independently
+verified terminal outcomes establish whether an attempt succeeds, but do
+not directly annotate which intermediate decisions should change. RL can
+learn from these outcomes; the question is whether transferable progress
+and failure predictions can provide more effective feedback when
+only limited target-task experience is available.
+The difficulty is that local progress and eventual success need not
+agree. For example, pushing a misaligned connector toward a socket may
+appear to advance insertion while increasing the chance of jamming.
+Retracting to realign may temporarily reduce progress yet improve the
+chance of completing the task. Progress feedback describes how much an
+observed execution advances the task; prospective failure feedback
+estimates the risk associated with a proposed action and subsequent
+execution. A useful learning signal must distinguish these roles while
+remaining grounded in real transitions and independently verified
+outcomes.
+Robometer demonstrates that progress and trajectory-preference
+feedback can transfer across robot experience
+[
+8
+]
+,
+while Foresight shows that action-conditioned predictive latents can
+support terminally supervised failure detection
+[
+9
+]
+.
+Motivated by these findings, we study a unified, task-adaptive
+progress–failure evaluator as a feedback interface for specialist
+learning. The central empirical question is whether learned failure
+scores add value to progress shaping and terminal rewards during
+physical refinement. Comparisons with progress-based and terminal-reward
+learning assess the overall pipeline; a within-architecture ablation
+isolates the use of the failure penalty while retaining failure-head
+supervision.
+We introduce
+FIERCE
+(
+Failure-Informed Efficient Reinforcement
+Learning for Compact Experts
+), a generalist-initialized RL framework
+for refining compact robot specialists through real-world interaction
+(Fig.
+1
+). Initialization supplies a compact
+policy; subsequent improvement uses its own rollouts without requiring
+further generalist action queries. The framework centers on a task-adaptive,
+action-conditioned progress–failure evaluator. Its shared encoder
+feeds an observed-progress head and a latent-prediction pathway with a
+causal risk readout. Multi-task post-training uses diverse trajectories
+and audited action-synchronized data; target-task fitting and score
+calibration refresh this feedback using local successes and failures.
+Progress increments, a failure-risk penalty, and verified
+terminal rewards relabel real transitions for RL policy updates.
+Evaluator and policy updates alternate as new experience becomes available.
+Target-task learning requires no dedicated simulator, manually annotated
+dense rewards, or separate sim-to-real policy-transfer stage. At
+deployment, both the generalist and the large evaluator are removed,
+leaving a standalone specialist.
+Our contributions are twofold:
+•
+A unified progress–failure evaluator design with separate
+observed-progress and action-conditioned predictive pathways, trained
+as a refreshable feedback interface for specialist RL.
+•
+A physical-refinement framework for compact policies initialized
+from demonstrations, including generalist rollouts, with no continued
+generalist action queries or dedicated target-task simulator.
+Deployment retains only the policy; within-architecture comparisons
+assess failure feedback and evaluator-training stages.
+We assess progress and failure discrimination, feedback-guided policy
+learning, and the resulting specialists’ task-performance and inference-cost
+trade-offs. Alternative-action validity is distinct from these evaluations.
+II
+Related Work
+II-A
+Robot Policy Adaptation and Specialization
+Robot policy improvement can retain the generalist or learn a separate
+specialist. In the former route, RECAP improves a VLA using execution
+experience and expert corrections
+[
+10
+]
+, while RL Token
+trains a lightweight actor–critic on pretrained VLA representations,
+retaining the generalist during execution
+[
+11
+]
+.
+Generalists themselves also remain strong alternatives:
+π
+0.7
+\pi_{0.7}
+reports performance comparable to specialized RL policies on selected
+tasks
+[
+12
+]
+. Specialization therefore targets a
+performance–computation trade-off, rather than assuming that a
+smaller policy is inherently more capable.
+A complementary route uses generalist behavior to support a separate
+expert. RPD combines behavioral cloning with teacher-action guidance
+during RL exploration to refine compact task-specific
+policies
+[
+6
+]
+, establishing that specialization can
+extend beyond imitation. Real-world refinement is also supported by
+HIL-SERL, which combines demonstrations, human corrections, and
+sample-efficient RL for precise manipulation
+[
+7
+]
+.
+FIERCE
+uses generalist trajectories for initialization but improves
+an independently executable specialist without continued generalist
+action queries. Our focus is the learning feedback needed for this
+refinement under a limited real-interaction budget.
+Fig. 2:
+Progress–failure evaluator and general-to-task learning.
+(a)
+Shared history features feed a progress head and an
+action-conditioned predictor; its prediction history feeds the causal
+risk head. Dashed links denote training-only supervision, not future
+observations available at inference.
+(b)
+Multi-task post-training
+uses RBM progress/preference examples, audited action-synchronized data,
+and additional rollouts. Task adaptation and subsequent refreshes inherit
+the preceding parameters; fixed snapshots provide feedback for policy
+learning under the conditions in (
+1
+).
+II-B
+Reward and Failure Modeling for Policy Improvement
+Learned rewards provide a route from robot experience to transferable
+supervision. ReWiND and RoboReward study language-conditioned rewards
+for policy adaptation and evaluation
+[
+13
+,
+14
+]
+,
+while VLAC couples progress and completion feedback with real-world
+RL
+[
+15
+]
+. Closely related to our progress branch,
+Robometer combines intra-trajectory progress and inter-trajectory
+preferences across successful, suboptimal, and failed
+experience
+[
+8
+]
+. Its reward model evaluates
+observed execution without directly conditioning on a proposed action;
+using failed trajectories for reward learning is thus distinct from
+predicting candidate-action-conditioned failure risk.
+Predictive representations extend supervision to future value and
+action consequences. V-JEPA 2 learns action-conditioned latent dynamics
+for robot planning from video and interaction data
+[
+16
+]
+.
+ViVa uses video-generative representations for
+value estimation
+[
+17
+]
+. BORA explicitly conditions its
+critic on VLM features and action chunks for offline value guidance,
+then refines a frozen VLA through online residual
+adaptation
+[
+18
+]
+. These methods establish that
+forward-looking or action-conditioned guidance is not unique to
+failure prediction.
+Failure models address a related but different objective: identifying
+executions likely to fail. FAIL-Detect learns uncertainty-based signals
+from successful demonstrations
+[
+19
+]
+, while Gauge uses
+video-world-model features for failure and anomaly
+classification
+[
+20
+]
+. SAFE uses VLA internal features for
+multitask detection
+[
+21
+]
+, whereas Foresight combines
+action-conditioned predictive latents with a causal detector trained
+from terminal success/failure labels
+[
+9
+]
+.
+We instead use such predictions as training penalties. Whether a
+failure score ranks alternative actions or remains calibrated after a
+policy update is a separate empirical question. Risk-aware refinement is itself an established
+setting: FARL couples a world-model-based safety critic with a
+recovery policy to reduce intervention-requiring failures during
+online learning
+[
+22
+]
+.
+FIERCE
+jointly trains observed-progress and action-conditioned
+failure pathways as a training-time evaluator, with local adaptation
+and score-calibration steps. It is not a runtime alarm or recovery
+controller. The experiments assess progress/failure feedback within
+this architecture and its use in compact-policy learning.
+III
+FIERCE
+III-A
+Setting and Feedback Semantics
+For manipulation task
+g
+g
+, let
+h
+t
+=
+(
+o
+≤
+t
+,
+q
+≤
+t
+,
+a
+<
+t
+)
+h_{t}=(o_{\leq t},q_{\leq t},a_{<t})
+contain visual observations,
+proprioception, and executed commands. The decision context is
+x
+t
+=
+(
+h
+t
+,
+g
+,
+b
+t
+)
+x_{t}=(h_{t},g,b_{t})
+, where
+b
+t
+=
+T
+max
+−
+t
+b_{t}=T_{\max}-t
+is the remaining task time.
+Modules use declared observation windows and retain time information.
+The command prefix
+A
+t
+=
+(
+a
+t
+|
+t
+,
+…
+,
+a
+t
++
+H
+−
+1
+|
+t
+)
+A_{t}=(a_{t|t},\ldots,a_{t+H-1|t})
+is selected before
+execution for the next replan interval; its realized length
+ℓ
+≤
+H
+\ell\leq H
+is logged. Independently verified terminal outcomes
+y
+τ
+∈
+{
+0
+,
+1
+}
+y_{\tau}\in\{0,1\}
+indicate success; unknown outcomes are masked.
+Action demonstrations
+𝒟
+0
+\mathcal{D}_{0}
+initialize the compact specialist
+π
+θ
+​
+(
+A
+∣
+x
+)
+\pi_{\theta}(A\mid x)
+; in the generalist-initialized setting, these are
+rollouts of
+π
+G
+\pi_{G}
+. The training-time progress–failure
+evaluator
+M
+ϕ
+M_{\phi}
+supplies feedback for reward construction; a separate
+RL critic
+Q
+ω
+Q_{\omega}
+learns action values from the resulting rewards.
+Refinement uses interaction budget
+B
+int
+B_{\mathrm{int}}
+, with units
+specified per experiment.
+Observed progress
+p
+^
+t
+\hat{p}_{t}
+estimates task advancement from history,
+not success probability or unexecuted candidate actions. For collection
+round
+k
+k
+, risk is defined relative to continuation policy
+π
+k
+=
+π
+θ
+k
+\pi_{k}=\pi_{\theta_{k}}
+:
+f
+k
+​
+(
+h
+t
+,
+A
+t
+,
+g
+,
+b
+t
+)
+=
+Pr
+⁡
+(
+y
+τ
+=
+0
+∣
+h
+t
+,
+A
+t
+,
+g
+,
+b
+t
+;
+π
+k
+)
+.
+f_{k}(h_{t},A_{t},g,b_{t})=\Pr(y_{\tau}=0\mid h_{t},A_{t},g,b_{t};\pi_{k}).
+(1)
+The estimate
+f
+^
+t
+\hat{f}_{t}
+concerns eventual failure after executing
+A
+t
+A_{t}
+and continuing with
+π
+k
+\pi_{k}
+within the remaining task time, not only the
+next
+H
+H
+steps; it is not
+1
+−
+p
+^
+t
+1-\hat{p}_{t}
+. Equation (
+1
+) defines the estimation target. In the reported
+learning experiments,
+f
+^
+t
+\hat{f}_{t}
+is used as a risk score, not as an
+independently verified calibrated probability or causal action effect.
+FIERCE
+alternates evaluator adaptation and specialist improvement on
+real experience, exporting only the compact policy
+(Fig.
+1
+).
+III-B
+Progress–Failure Evaluator Architecture
+Our evaluator requires a shared representation for both task-progress estimation and action-conditioned predictive learning. We instantiate this representation with Cosmos 3 Edge, motivated by its development for physical-world understanding and prediction
+[
+23
+]
+. In our implementation, action conditioning is learned through an external latent predictor, while the progress branch follows
+Robometer’s progress and preference supervision
+[
+8
+]
+. Thus, we reuse the supervision principle rather than transferring Robometer’s Qwen-specific prediction heads.
+We instantiate the encoder with Cosmos 3 Edge observation–language
+representations
+[
+23
+]
+and attach an external
+action-conditioned latent predictor (Fig.
+2
+). Robometer
+provides a supervision formulation, not transferred backbone-specific
+head weights. With
+z
+t
+=
+E
+ϕ
+​
+(
+h
+t
+,
+g
+)
+z_{t}=E_{\phi}(h_{t},g)
+,
+p
+^
+t
+\displaystyle\hat{p}_{t}
+=
+P
+ϕ
+​
+(
+z
+t
+)
+,
+\displaystyle=P_{\phi}(z_{t}),
+z
+^
+t
++
+H
+\displaystyle\hat{z}_{t+H}
+=
+F
+ϕ
+​
+(
+z
+t
+,
+Enc
+a
+⁡
+(
+A
+t
+)
+)
+,
+\displaystyle=F_{\phi}(z_{t},\operatorname{Enc}_{a}(A_{t})),
+f
+^
+t
+\displaystyle\hat{f}_{t}
+=
+D
+ϕ
+​
+(
+z
+^
+≤
+t
++
+H
+,
+b
+t
+)
+.
+\displaystyle=D_{\phi}(\hat{z}_{\leq t+H},b_{t}).
+(2)
+The progress branch evaluates observed state; the risk branch evaluates
+predicted action consequences. Prediction history contains only
+predictions formed at decisions no later than
+t
+t
+, not subsequently
+observed frames. The reference
+π
+k
+\pi_{k}
+defines the continuation distribution,
+not a policy-weight input. Future observations and outcomes provide training supervision only:
+no future RGB is rendered at inference and ground-truth future frames
+are never prediction inputs.
+III-C
+General-to-Task Evaluator Learning
+Data and action restoration.
+RBM-1M is a multi-source robot-trajectory corpus for progress and
+preference learning
+[
+8
+]
+. Its processed video–language
+examples omit robot actions. We recover logged
+commands from audited source episodes, including heterogeneous
+Open X-Embodiment transitions
+[
+24
+]
+, and supplement them with
+branching/policy rollouts. Restoration aligns parent timestamps, command
+frames, units, controllers, and gripper conventions. Measured displacement
+is not a command, and later feedback-dependent actions cannot form a chunk
+known at
+t
+t
+. Unknown action semantics mask action-dependent losses.
+Rewound or instruction-mismatched videos are preference examples, not
+verified physical failures. Views, subskills, and windows from one parent
+episode share a split.
+General training.
+Available fields enable the masked objective
+ℒ
+G
+=
+λ
+p
+​
+ℒ
+p
++
+λ
+v
+​
+ℒ
+pref
++
+λ
+d
+​
+ℒ
+dyn
++
+λ
+f
+​
+ℒ
+f
++
+λ
+a
+​
+ℒ
+rank
+.
+\mathcal{L}_{G}=\lambda_{p}\mathcal{L}_{p}+\lambda_{v}\mathcal{L}_{\rm pref}+\lambda_{d}\mathcal{L}_{\rm dyn}+\lambda_{f}\mathcal{L}_{f}+\lambda_{a}\mathcal{L}_{\rm rank}.
+(3)
+Progress/preference retain RBM supervision. Dynamics uses
+ℒ
+dyn
+=
+‖
+z
+^
+t
++
+H
+−
+sg
+⁡
+(
+E
+target
+​
+(
+o
+t
++
+H
+)
+)
+‖
+1
+\mathcal{L}_{\rm dyn}=\|\hat{z}_{t+H}-\operatorname{sg}(E_{\rm target}(o_{t+H}))\|_{1}
+with a stop-gradient target encoder. This target requires a fully
+executed prefix and its future observation. Failure labels separately
+require that the logged execution and continuation match
+(
+1
+); masking the dynamics loss does not by itself establish
+that correspondence. For valid queries
+𝒯
+τ
+\mathcal{T}_{\tau}
+, terminal labels
+train prefix risk:
+ℒ
+f
+=
+𝔼
+τ
+​
+[
+1
+|
+𝒯
+τ
+|
+​
+∑
+t
+∈
+𝒯
+τ
+BCE
+⁡
+(
+f
+^
+t
+,
+1
+−
+y
+τ
+)
+]
+.
+\mathcal{L}_{f}=\mathbb{E}_{\tau}\left[\frac{1}{|\mathcal{T}_{\tau}|}\sum_{t\in\mathcal{T}_{\tau}}\operatorname{BCE}(\hat{f}_{t},1-y_{\tau})\right].
+(4)
+Episode normalization limits length bias. These labels identify
+neither failure onset nor causal actions. Same-state simulator branches, with matched continuation
+policy and remaining time, supply repeated success estimates
+y
+¯
+i
+\bar{y}_{i}
+.
+Clearly ordered pairs add
+ℒ
+rank
+=
+−
+log
+⁡
+σ
+⁡
+(
+ℓ
+f
+​
+(
+A
+−
+)
+−
+ℓ
+f
+​
+(
+A
++
+)
+)
+,
+y
+¯
++
+>
+y
+¯
+−
+,
+\mathcal{L}_{\rm rank}=-\log\sigma\bigl(\ell_{f}(A^{-})-\ell_{f}(A^{+})\bigr),\quad\bar{y}_{+}>\bar{y}_{-},
+(5)
+where
+ℓ
+f
+\ell_{f}
+is the failure logit. Unrelated states with similar progress
+are not counterfactual pairs.
+Task adaptation.
+Low-rank adapters
+[
+25
+]
+and heads fit local successful/failed
+rollouts; disjoint data fit failure-logit temperature and
+bias
+[
+26
+]
+. Insufficient-data settings retain the
+general calibrator. This is a score-calibration procedure; persistence of probability
+calibration across policy updates is not established by the reported tests.
+TABLE I:
+Progress and failure prediction.
+A:
+Action-free OOD progress and trajectory-quality ordering
+(VOC and Kendall’s
+τ
+a
+\tau_{a}
+).
+B:
+VLABench failure discrimination over three held-out task splits;
+50%-prefix AUROC uses the last complete query block by the midpoint.
+Higher is better; these metrics do not measure probability calibration.
+†
+\dagger
+: reported by Robometer
+[
+8
+]
+.
+‡
+\ddagger
+: evaluation under this work’s VLABench protocol, not scores
+quoted from the original benchmarks.
+§
+\lx@sectionsign
+: archived scores not reproduced
+in a CPU rerun; see Sec.
+IV-B
+.
+A. OOD progress / quality ordering
+B. Held-out-task failure prediction
+Model
+VOC
+↑
+\uparrow
+τ
+a
+\tau_{a}
+↑
+\uparrow
+Model
+Rollout AUROC
+↑
+\uparrow
+Prefix AUROC
+@50%
+↑
+\uparrow
+BalAcc
+↑
+\uparrow
+ReWiND
+†
+0.51
+0.01
+FAIL-Detect/logpZO
+‡
+0.577
+0.654
+0.557
+RoboReward-4B
+0.84
+0.51
+RND (two-head)
+‡
+0.763
+0.652
+0.616
+Robometer-4B
+0.94
+0.64
+SAFE-LSTM
+‡,§
+0.733
+0.577
+0.571
+Cosmos-Reward (V+L)
+0.95
+0.47
+Gauge
+‡
+0.799
+0.612
+0.603
+Cosmos-Reward-Cont.
+0.94
+0.38
+Foresight-Transformer
+‡
+0.807
+0.645
+0.637
+FIERCE
+0.96
+0.66
+FIERCE
+(full)
+0.822
+0.693
+0.648
+III-D
+Evaluator-Guided Specialist Refinement
+The specialist has its own visual encoder and action head. Successful
+generalist trajectories or demonstrations initialize it by BC; failures
+inform the evaluator. Stored demonstrations may regularize later learning,
+without further generalist action queries.
+For a real transition of length
+ℓ
+\ell
+, let
+d
+t
+d_{t}
+denote true task
+termination and
+Φ
+ϕ
+​
+(
+h
+t
+,
+g
+)
+=
+p
+^
+t
+\Phi_{\phi}(h_{t},g)=\hat{p}_{t}
+. A fixed evaluator snapshot gives
+r
+~
+t
+=
+\displaystyle\tilde{r}_{t}={}
+η
+​
+d
+t
+​
+(
+2
+​
+y
+τ
+−
+1
+)
+−
+ρ
+​
+ℓ
+​
+Δ
+​
+t
+−
+β
+​
+f
+^
+t
+\displaystyle\eta\,d_{t}(2y_{\tau}-1)-\rho\ell\Delta t-\beta\hat{f}_{t}
++
+α
+⁡
+[
+(
+1
+−
+d
+t
+)
+​
+γ
+ℓ
+​
+Φ
+ϕ
+​
+(
+h
+t
++
+ℓ
+,
+g
+)
+−
+Φ
+ϕ
+​
+(
+h
+t
+,
+g
+)
+]
+.
+\displaystyle+\alpha\bigl[(1-d_{t})\gamma^{\ell}\Phi_{\phi}(h_{t+\ell},g)-\Phi_{\phi}(h_{t},g)\bigr].
+(6)
+The outcome term is zero at nonterminal transitions. The progress
+term has discounted potential-difference form with zero terminal
+potential
+[
+27
+]
+. Risk and time penalties intentionally
+change the objective; no policy-invariance claim is made for the full
+objective. Summed risks are a regularizer, not an episode failure
+probability or safety guarantee. The coefficient
+β
+\beta
+controls the
+strength of this penalty, including possible over-conservatism.
+Iterative refinement.
+Each round collects real rollouts, updates/calibrates
+M
+ϕ
+M_{\phi}
+, freezes a
+versioned snapshot, consistently relabels replay, and updates
+π
+θ
+\pi_{\theta}
+.
+Recent-policy outcomes refresh risk; older data preserve progress/dynamics
+knowledge rather than becoming labels for a new continuation policy.
+After policy changes, risk remains provisional feedback until refreshed.
+A SAC-style learner
+[
+28
+]
+mixes demonstration and online
+replay following RLPD
+[
+29
+]
+(Sec.
+IV-A
+).
+M
+ϕ
+M_{\phi}
+supplies
+progress and risk scores for reward construction; the RL critic
+Q
+ω
+Q_{\omega}
+learns return through Bellman updates with discount
+γ
+ℓ
+\gamma^{\ell}
+and mask
+d
+t
+d_{t}
+. Evaluator scoring can run asynchronously outside the
+control path.
+Success, the declared deadline, or predefined failure terminates a task.
+Task termination is distinguished from external time-limit
+truncation
+[
+30
+]
+. External stops/interventions do not automatically imply failure or
+termination; unknown outcomes are masked. Bootstrap only from valid
+pre-reset context when continuation is defined; otherwise exclude the
+Bellman transition. Independent hardware safeguards remain.
+IV
+Experiments
+We evaluate feedback quality (Table
+I
+), specialist performance
+and deployment efficiency (Table
+II
+), and component contributions
+to learning (Table
+III
+).
+Fig. 3:
+Progress and failure feedback during peg-in-hole execution.
+(a)
+Successful and
+(b)
+failed runs show selected frames
+with their timestamps, progress estimates (
+FIERCE
+, Robometer), and
+failure scores (
+FIERCE
+, Foresight). Later frames document outcomes,
+not prediction inputs. The 0.8 line is a displayed score reference;
+marked threshold crossings are offline diagnostics, not independently
+verified terminal failures or online recovery commands. Shared-threshold
+crossings alone do not establish matched false-alarm rates or calibrated
+detection lead times.
+IV-A
+Experimental Setup
+The evaluation spans LIBERO-90 Tasks 6, 28, 33, and 73
+[
+31
+]
+;
+ManiSkill3 StackCube and PegInsertionSide
+[
+32
+]
+; and
+real-world
+peg-in-hole
+and
+cup stack
+on Franka. Real specialists
+learn through physical interaction; terminal success is verified
+independently. Reward comparisons use the compact-policy setup below. The primary
+within-architecture control retains evaluator supervision and sets the
+failure-penalty coefficient to zero; external baselines compare complete
+training pipelines rather than isolate a single architectural factor.
+Action-free evaluator tests use only images and task text; action-aware tests
+match command semantics and horizons. OOD refers to documented
+evaluator-training exclusions, not verified exclusion from foundation pretraining.
+Simulation policies initialize from 50 successful demonstrations.
+The horizons shown in Fig.
+4
+are 100k steps for Tasks 6
+and 28, 300k for Task 33, and 120k for Task 73. StackCube and
+PegInsertionSide use displayed horizons of 250k and 300k steps. The BC-initialized RLPD-SAC actor uses a
+frozen DINOv2-small encoder
+[
+33
+]
+, proprioception,
+and three 512-unit hidden
+layers with LayerNorm; the proposed horizon is four seven-dimensional
+actions. Robometer is frozen, with isotonic calibration on a fixed
+10-demonstration subset. All task-training conditions use seed 7, giving one training run per
+task and condition. The two-task LIBERO protocol uses 200 final trials
+per run (10 initial states, 20 repeats); this does not specify test
+counts for the remaining tasks or measure variation across training
+runs. The plotted bands have no documented aggregation unit and are
+not used as inferential uncertainty. Results are descriptive single-run
+comparisons; no training-seed significance claim is made.
+The real-task protocol uses 300 refinement rollouts per
+condition and evaluation every 30 rollouts. Tables
+II
+and
+III
+share final-success values where conditions overlap.
+The 300-rollout figure specifies refinement, not the complete cost of
+initialization, adaptation, calibration, evaluation, resets, or
+interventions. It does not establish equal total target-task data use
+or robot operating time across methods.
+Fig. 4:
+Evaluator-guided policy learning.
+(a–d)
+LIBERO Tasks 6, 28, 33, and 73;
+(e,f)
+ManiSkill3 StackCube and PegInsertionSide;
+(g,h)
+real peg-in-hole and cup stack.
+Success fractions are plotted against environment steps for simulation
+and refinement rollouts for the real tasks; horizons are task-specific.
+The four conditions are full
+FIERCE
+, Robometer-guided RL,
+FIERCE
+without its failure penalty (
+β
+=
+0
+\beta=0
+, retaining failure supervision),
+and sparse terminal reward. Training uses seed 7; bands are not
+across-training-seed uncertainty estimates (see Sec.
+IV-A
+).
+IV-B
+Evaluator Generalization and Failure Prediction
+Protocol.
+Table
+I
+A compares action-free progress and quality ordering
+using VOC on successful trajectories and Kendall’s
+τ
+a
+\tau_{a}
+. ReWiND values
+are reproduced from Robometer
+[
+8
+]
+; other entries
+come from archived evaluation artifacts. The
+FIERCE
+checkpoint is
+selected on development-set failure BCE subject to reward retention.
+Table
+I
+B uses three fixed VLABench
+[
+34
+]
+task splits held out from detector training. Baselines include an adapted
+random-network-distillation detector
+[
+35
+]
+; its two-head
+implementation is distinct from the original exploration objective. Rollout AUROC uses each execution’s maximum score;
+50%-prefix AUROC uses the last complete query block by half of its actual
+steps. Balanced accuracy averages conformal levels
+α
+∈
+{
+0.15
+,
+0.20
+,
+0.25
+}
+\alpha\in\{0.15,0.20,0.25\}
+within each split, then across splits.
+This follows a Foresight-style protocol
+[
+9
+]
+, not
+an exact reproduction of its datasets or calibration selection.
+Prediction quality.
+FIERCE
+reaches VOC/
+τ
+a
+\tau_{a}
+of 0.96/0.66 versus Robometer’s 0.94/0.64.
+Rollout AUROC is 0.822 versus 0.807 for Foresight-Transformer.
+Prefix AUROC is 0.693 versus the strongest baseline value of 0.654
+(FAIL-Detect/logpZO), a difference of 0.039; the difference from
+Foresight-Transformer (0.645) is 0.048. Balanced accuracy is 0.648
+versus 0.637 for Foresight-Transformer. These scores measure
+outcome discrimination, not probability calibration or alternative-action
+ranking. Archived scores and differing inference backends limit
+cross-method attribution; the flagged SAFE-LSTM entry was not reproduced
+by a CPU rerun. The gaps are not significance estimates.
+Fig.
+3
+illustrates the intended distinction between observed
+progress and prospective risk.
+TABLE II:
+Policy success and end-to-end latency.
+A:
+Peg-in-hole/cup stack success rates and their equal-task mean.
+B:
+Mean of task-level P95 observation-to-action latencies (ms)
+across four LIBERO, two ManiSkill3, or two real tasks, measured on an
+Intel Core i9-12900K CPU and NVIDIA RTX 5090 GPU.
+†
+\dagger
+denotes the original/adapted model-pair mean, not an
+individual model’s latency.
+A. Real-task performance
+Policy / training signal
+Success (%)
+↑
+\uparrow
+Peg-in-
+hole
+Cup
+stack
+Mean
+Generalist policies
+Original
+π
+0.5
+\pi_{0.5}
+40
+50
+45.0
+Task-adapted
+π
+0.5
+\pi_{0.5}
+78
+82
+80.0
+Standalone compact policies
+BC initialization only
+30
+38
+34.0
+Robometer-guided RL
+80
+86
+83.0
+FIERCE
+w/o failure penalty
+82
+88
+85.0
+FIERCE
+(full)
+91
+93
+92.0
+B. Task-averaged end-to-end P95 (ms)
+↓
+\downarrow
+Policy / timing condition
+LIBERO
+ManiSkill3
+Real
+Original
+π
+0.5
+\pi_{0.5}
+88.684
+88.023
+Original/adapted mean
+†
+94.315
+BC initialization only
+11.678
+11.855
+21.743
+Robometer-guided RL
+11.715
+11.232
+21.343
+FIERCE
+(full)
+11.333
+11.234
+21.923
+IV-C
+Specialist Learning and Deployment
+The four reward conditions are sparse terminal reward, Robometer-guided
+RL,
+FIERCE
+without its failure penalty, and full
+FIERCE
+.
+The full and no-penalty conditions share the compact actor, evaluator
+supervision, terminal/time terms, and nominal refinement budget;
+the latter sets only
+β
+=
+0
+\beta=0
+. This tests using the learned risk penalty
+within the same architecture, not the value of joint representation
+learning. Robometer is frozen in the specified simulation setup, so that comparison
+also changes evaluator adaptation and measures a pipeline-level difference.
+Progress versus sparse rewards is a sanity check; it is not a new claim
+that dense rewards can help RL.
+Fig. 5:
+Real-task success–latency comparison.
+Success equally averages peg-in-hole and cup stack (Table
+II
+A);
+latency averages their end-to-end P95 values on the stated hardware
+(Table
+II
+B). Original and task-adapted
+π
+0.5
+\pi_{0.5}
+share the
+reported 94.315 ms model-pair mean on the horizontal axis; their
+individual latencies are not supplied. This plot does not measure
+task throughput.
+TABLE III:
+Component contributions to specialist learning.
+Peg-in-hole and cup stack use the same compact actor architecture and a
+300-rollout refinement budget per task.
+A:
+Feedback-design ablations.
+B:
+Evaluator-training ablations.
+Higher final success and learning-curve AUC, and lower
+N
+80
+N_{80}
+, are preferred.
+Variant
+Peg-in-hole
+Cup stack
+Final success
+(%)
+↑
+\uparrow
+Norm. AUC
+[
+0
+,
+1
+]
+[0,1]
+↑
+\uparrow
+N
+80
+N_{80}
+(rollouts)
+↓
+\downarrow
+Final success
+(%)
+↑
+\uparrow
+Norm. AUC
+[
+0
+,
+1
+]
+[0,1]
+↑
+\uparrow
+N
+80
+N_{80}
+(rollouts)
+↓
+\downarrow
+FIERCE
+(full)
+91
+0.733
+185
+93
+0.786
+147
+A. Feedback design
+w/o failure penalty (
+β
+=
+0
+\beta=0
+)
+82
+0.634
+270
+88
+0.705
+206
+w/o candidate-action conditioning
+78
+0.598
+NR
+84
+0.674
+NR
+w/o action-ranking loss (
+λ
+a
+=
+0
+\lambda_{a}=0
+)
+88
+0.706
+186
+91
+0.762
+152
+B. Evaluator training procedure
+w/o general evaluator post-training (G)
+74
+0.550
+NR
+81
+0.632
+NR
+w/o initial task adaptation (T)
+77
+0.581
+NR
+85
+0.691
+NR
+Frozen task evaluator (no P refresh)
+83
+0.684
+213
+89
+0.754
+154
+Notes.
+AUC is trapezoidal area under the success-fraction
+learning curve divided by 300, not detection AUROC.
+N
+80
+N_{80}
+is the first
+30-rollout evaluation checkpoint reaching 80% success, without
+interpolation;
+NR
+means unreached within budget. Shared final successes
+match Table
+II
+A. Ablation definitions are in the text.
+Table
+II
+A reports success on the two real tasks.
+The task-adapted generalist uses successful-rollout SFT, not VLA RL.
+In the reported seed-7 runs, full
+FIERCE
+averages 92% success,
+versus 83% for Robometer-guided RL and 85% without the failure penalty.
+Per-checkpoint test counts and the alignment of Fig.
+4
+with the table summaries are not fully documented; the reported
+AUC and threshold costs are therefore descriptive, not independently
+reconstructed from the displayed traces.
+Table
+II
+B reports task-averaged end-to-end P95 latency:
+four LIBERO tasks, two ManiSkill3 tasks, and peg-in-hole/cup stack.
+Each entry averages per-task P95 values, rather than pooling queries
+before taking a percentile. All timings use the i9-12900K/RTX 5090.
+The 94.315 ms Real entry is the original/adapted
+π
+0.5
+\pi_{0.5}
+model-pair average; Fig.
+5
+assigns that aggregate
+coordinate to both markers, not individual model measurements.
+FIERCE’s 21.923 ms is close to BC-only’s 21.743 ms and
+Robometer-guided RL’s 21.343 ms. Low inference cost primarily follows
+from the shared compact actor and removal of the evaluator at deployment;
+it is not evidence that failure feedback accelerates inference, evaluator
+training, or task throughput.
+IV-D
+Component Ablations
+Table
+III
+separates feedback design from evaluator training,
+using the same actor and per-task budget. Final success is evaluated at
+300 rollouts; normalized AUC is the trapezoidal area under the
+success-fraction curve divided by 300, not a detection AUROC.
+N
+80
+N_{80}
+is the first evaluated checkpoint reaching 80% success, without
+interpolation;
+NR
+denotes censoring, not a cost of 300. Real-task
+N
+80
+N_{80}
+counts rollout checkpoints and is not pooled with
+simulation environment-step budgets.
+Definitions.
+Setting
+β
+=
+0
+\beta=0
+removes only the risk penalty, retaining failure-head
+training and terminal reward. The no-action variant retrains the evaluator without candidate commands;
+actor actions remain unchanged. This is an evaluator-configuration
+ablation: retraining can change shared features and auxiliary objectives,
+so its effect cannot be attributed solely to removing one risk-head input. Setting
+λ
+a
+=
+0
+\lambda_{a}=0
+removes ranking supervision while retaining branch data for
+other valid losses. Skipping G retains the foundation checkpoint and T/P;
+skipping initial T retains the general calibrator, local replay, and later
+P refreshes. The frozen variant completes T, then fixes
+M
+ϕ
+M_{\phi}
+and its
+calibrator while the actor and RL critic
+Q
+ω
+Q_{\omega}
+continue learning. These ablations compare configurations within the same nominal refinement
+budget, not an equalized end-to-end data or computation budget.
+For full versus
+β
+=
+0
+\beta=0
+, final success is 91%/93% versus
+82%/88%, and
+N
+80
+N_{80}
+is 180/150 versus 270/210 on peg/cup.
+These observations support using risk feedback in the reported runs.
+The no-action configuration performs worse than
+β
+=
+0
+\beta=0
+, but the
+present experiments do not identify the cause of that difference.
+V
+Discussion and Conclusion
+FIERCE
+uses a unified progress–failure evaluator as a training-time
+interface for compact-policy refinement. Observed-progress estimation and
+action-conditioned latent prediction provide different learning signals;
+local adaptation and refreshes fit them to new execution data. The
+reported within-architecture ablation favors using the failure penalty
+on both real tasks, while deployment retains only the compact actor.
+These are single-seed observations, not evidence of robustness to retraining
+or reduced total robot operating cost.
+The study does not isolate parameter sharing from independently trained
+progress and failure models, and its discrimination and RL metrics do not
+establish policy-wise probability calibration or same-state alternative-action
+ranking. Risk penalties can discourage useful corrective actions; policy shift
+and hidden contact states remain limitations. We claim no formal safety,
+optimal-policy invariance, or early-recovery guarantee. The latency
+measurement concerns the deployed actor, not evaluator compute or
+successful task throughput. Data, weights, restoration tools, split manifests, and evaluation
+scripts will be released subject to source licenses.
+Acknowledgments
+Generative-AI assistance.
+ChatGPT (OpenAI) supported drafting
+and editing (Abstract, Sections I–V and captions); code development,
+debugging, experiment planning and analysis scripts (Sections III–IV);
+and initial figure/layout and illustrative-asset prototyping. The authors
+retain responsibility for the code, measurements and conclusions.
+References
+[1]
+D. Ghosh, H. R. Walke, K. Pertsch
+et al.
+, “Octo: An open-source
+generalist robot policy,” in
+Proceedings of Robotics: Science and
+Systems
+, Delft, Netherlands, 2024.
+[2]
+Physical Intelligence, K. Black, N. Brown
+et al.
+, “
+π
+0.5
+\pi_{0.5}
+: A
+vision-language-action model with open-world generalization,”
+arXiv
+preprint arXiv:2504.16054
+, 2025.
+[3]
+S. Ye, Y. Ge, K. Zheng
+et al.
+, “World action models are zero-shot
+policies,”
+arXiv preprint arXiv:2602.15922
+, 2026.
+[4]
+K. Black, M. Y. Galliker, and S. Levine, “Real-time execution of action
+chunking flow policies,”
+arXiv preprint arXiv:2506.07339
+, 2025.
+[5]
+R. Tan, S. Lou, Y. Zhou, and C. Lv, “Multi-modal LLM-enabled long-horizon
+skill learning for robotic manipulation,” in
+2024 IEEE International
+Conference on Cybernetics and Intelligent Systems (CIS) and IEEE
+International Conference on Robotics, Automation and Mechatronics
+(RAM)
+. IEEE, 2024, pp. 14–19.
+[6]
+T. Jülg, W. Burgard, and F. Walter, “Refined policy distillation: From
+VLA generalists to RL experts,”
+arXiv preprint arXiv:2503.05833
+,
+2025.
+[7]
+J. Luo, C. Xu, J. Wu, and S. Levine, “Precise and dexterous robotic
+manipulation via human-in-the-loop reinforcement learning,”
+arXiv
+preprint arXiv:2410.21845
+, 2024.
+[8]
+A. Liang, Y. Korkmaz, J. Zhang
+et al.
+, “Robometer: Scaling
+general-purpose robotic reward models via trajectory comparisons,”
+arXiv preprint arXiv:2603.02115
+, 2026.
+[9]
+H. Zhang, Y. Lu, B. Wang
+et al.
+, “Foresight: Failure detection for
+long-horizon robotic manipulation with action-conditioned world model
+latents,”
+arXiv preprint arXiv:2606.23085
+, 2026.
+[10]
+Physical Intelligence, “
+π
+0.6
+∗
+\pi^{*}_{0.6}
+: A VLA that learns from
+experience,”
+arXiv preprint arXiv:2511.14759
+, 2025.
+[11]
+C. Xu, J. T. Springenberg, M. Equi
+et al.
+, “RL Token: Bootstrapping
+online RL with vision-language-action models,”
+arXiv preprint
+arXiv:2604.23073
+, 2026.
+[12]
+Physical Intelligence, “
+π
+0.7
+\pi_{0.7}
+: A steerable generalist robotic
+foundation model with emergent capabilities,”
+arXiv preprint
+arXiv:2604.15483
+, 2026.
+[13]
+J. Zhang, Y. Luo, A. Anwar
+et al.
+, “ReWiND: Language-guided rewards
+teach robot policies without new demonstrations,” in
+Proceedings of
+the 9th Conference on Robot Learning
+, ser. Proceedings of Machine Learning
+Research, vol. 305. PMLR, 2025, pp.
+460–488.
+[14]
+T. Lee, A. Wagenmaker, K. Pertsch, P. Liang, S. Levine, and C. Finn,
+“RoboReward: General-purpose vision-language reward models for robotics,”
+arXiv preprint arXiv:2601.00675
+, 2026.
+[15]
+S. Zhai, Q. Zhang, T. Zhang
+et al.
+, “A vision-language-action-critic
+model for robotic real-world reinforcement learning,”
+arXiv preprint
+arXiv:2509.15937
+, 2025.
+[16]
+M. Assran, A. Bardes, D. Fan
+et al.
+, “V-JEPA 2: Self-supervised video
+models enable understanding, prediction and planning,”
+arXiv preprint
+arXiv:2506.09985
+, 2025.
+[17]
+J. Lv, H. Li, J. Li
+et al.
+, “ViVa: A video-generative value model for
+robot reinforcement learning,”
+arXiv preprint arXiv:2604.08168
+, 2026.
+[18]
+Z. Chen, Y. Han, Y. Shao
+et al.
+, “BORA: Bridging offline
+reinforcement learning and online residual adaptation for real-world
+dexterous VLA models,”
+arXiv preprint arXiv:2605.30226
+, 2026.
+[19]
+C. Xu, T. K. Nguyen, E. Dixon
+et al.
+, “Can we detect failures without
+failure data? uncertainty-aware runtime failure detection for imitation
+learning policies,” in
+Proceedings of Robotics: Science and Systems
+,
+2025.
+[20]
+M. Ho, M. F. Ginting, I. R. Ward
+et al.
+, “World model failure
+classification and anomaly detection for autonomous inspection,”
+arXiv
+preprint arXiv:2602.16182
+, 2026.
+[21]
+Q. Gu, Y. Ju, S. Sun
+et al.
+, “SAFE: Multitask failure detection for
+vision-language-action models,” in
+Advances in Neural Information
+Processing Systems
+, vol. 38, 2025.
+[22]
+H. Li, K. Lei, S. Zang
+et al.
+, “Failure-aware RL: Reliable
+offline-to-online reinforcement learning with self-recovery for real-world
+manipulation,”
+arXiv preprint arXiv:2601.07821
+, 2026.
+[23]
+NVIDIA, “Cosmos 3: Omnimodal world models for physical AI,”
+arXiv
+preprint arXiv:2606.02800
+, 2026.
+[24]
+Open X-Embodiment Collaboration, “Open X-embodiment: Robotic learning
+datasets and RT-X models,”
+arXiv preprint arXiv:2310.08864
+, 2023.
+[25]
+E. J. Hu, Y. Shen, P. Wallis
+et al.
+, “LoRA: Low-rank adaptation of
+large language models,”
+arXiv preprint arXiv:2106.09685
+, 2021.
+[26]
+C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, “On calibration of modern
+neural networks,” in
+Proceedings of the 34th International Conference
+on Machine Learning
+, ser. Proceedings of Machine Learning Research,
+vol. 70. PMLR, 2017, pp. 1321–1330.
+[27]
+A. Y. Ng, D. Harada, and S. J. Russell, “Policy invariance under reward
+transformations: Theory and application to reward shaping,” in
+Proceedings of the Sixteenth International Conference on Machine
+Learning
+. Morgan Kaufmann, 1999, pp.
+278–287.
+[28]
+T. Haarnoja, A. Zhou, P. Abbeel, and S. Levine, “Soft actor-critic: Off-policy
+maximum entropy deep reinforcement learning with a stochastic actor,” in
+Proceedings of the 35th International Conference on Machine Learning
+,
+ser. Proceedings of Machine Learning Research, vol. 80. PMLR, 2018, pp. 1861–1870.
+[29]
+P. J. Ball, L. Smith, I. Kostrikov, and S. Levine, “Efficient online
+reinforcement learning with offline data,” in
+Proceedings of the 40th
+International Conference on Machine Learning
+, ser. Proceedings of Machine
+Learning Research, vol. 202, 2023, pp. 1577–1594.
+[30]
+F. Pardo, A. Tavakoli, V. Levdik, and P. Kormushev, “Time limits in
+reinforcement learning,” in
+Proceedings of the 35th International
+Conference on Machine Learning
+, ser. Proceedings of Machine Learning
+Research, vol. 80, 2018, pp. 4045–4054.
+[31]
+B. Liu, Y. Zhu, C. Gao
+et al.
+, “LIBERO: Benchmarking knowledge
+transfer for lifelong robot learning,”
+arXiv preprint
+arXiv:2306.03310
+, 2023.
+[32]
+S. Tao, F. Xiang, A. Shukla
+et al.
+, “ManiSkill3: GPU parallelized
+robotics simulation and rendering for generalizable embodied AI,” in
+Robotics: Science and Systems
+, 2025.
+[33]
+M. Oquab, T. Darcet, T. Moutakanni
+et al.
+, “DINOv2: Learning robust
+visual features without supervision,”
+arXiv preprint
+arXiv:2304.07193
+, 2023.
+[34]
+S. Zhang, Z. Xu, P. Liu
+et al.
+, “VLABench: A large-scale benchmark
+for language-conditioned robotics manipulation with long-horizon reasoning
+tasks,”
+arXiv preprint arXiv:2412.18194
+, 2024.
+[35]
+Y. Burda, H. Edwards, A. Storkey, and O. Klimov, “Exploration by random
+network distillation,”
+arXiv preprint arXiv:1810.12894
+, 2018.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

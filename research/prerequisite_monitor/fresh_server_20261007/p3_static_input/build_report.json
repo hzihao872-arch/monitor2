@@ -1,0 +1,34 @@
+{
+  "scope": "P3_out_of_distribution_static_end_state",
+  "repeat_source_seconds": [
+    12,
+    12,
+    12,
+    12,
+    12,
+    13,
+    13,
+    13,
+    13,
+    13,
+    14,
+    14,
+    14,
+    14,
+    14
+  ],
+  "encoding": "libx264rgb crf=0 rgb24 1fps",
+  "clip_count": 8,
+  "arms": {
+    "access_gate": {
+      "zip_sha256": "8aea344bb497e5ce6a81d9d3e6b9815218bb5369fa6f0de692870edb5797ebf2",
+      "video_count": 4,
+      "mapping_sha256_local_only": "04a5d5121ac4ba6e81de9ab14d944a94219e5ede57f3128ac0fd9fd172f12e2e"
+    },
+    "support_surface": {
+      "zip_sha256": "41320aa3abafbbe42aa459f3a8013eddbfa9b4131c5cc411affcc9cba0411e0a",
+      "video_count": 4,
+      "mapping_sha256_local_only": "4510f01168fe53f25246dfe105cd59f3d4008192d2cb1044961dc4ba98eb4323"
+    }
+  }
+}

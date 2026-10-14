@@ -1,0 +1,34 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 96.25it/s]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+0001 0 full {
+  "overlap": "false",
+  "evidence": "The red bar is positioned above the blue cube but does not visually span over it; there is a gap between them."
+}
+0001 0 source_crop {
+  "overlap": "true",
+  "evidence": "The red bar is positioned directly above the blue cube, with visible contact or proximity indicating overlap."
+}
+0001 14 full {
+  "overlap": "false",
+  "evidence": "The red bar is separate from the blue cube and not positioned to span over it."
+}
+0001 14 source_crop {
+  "overlap": "false",
+  "evidence": "No red horizontal bar is visible in the image."
+}
+0004 0 full {
+  "overlap": "false",
+  "evidence": "The red bar is separate from the blue cube and not positioned to span over it."
+}
+0004 0 source_crop {
+  "overlap": "false",
+  "evidence": "No red horizontal bar is visible in the image."
+}
+0004 14 full {
+  "overlap": "true",
+  "evidence": "The red horizontal bar is positioned directly above the blue cube, visually spanning over it between the two gray supports."
+}
+0004 14 source_crop {
+  "overlap": "true",
+  "evidence": "The red bar is positioned directly above the blue cube, with visible contact or close proximity between them."
+}

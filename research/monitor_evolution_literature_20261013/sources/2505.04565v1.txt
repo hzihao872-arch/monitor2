@@ -1,0 +1,6131 @@
+Hierarchical Task Decomposition for Execution Monitoring and Error Recovery: Understanding the Rationale Behind Task Demonstrations
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1
+Introduction
+2
+Related Work
+2.1
+Task Segmentation
+2.1.1
+Supervised Approaches
+2.1.2
+Unsupervised Approaches
+2.2
+Hierarchical Inverse Reinforcement Learning
+2.3
+High-Level Task Structuring and Decision Making
+2.4
+Multimodal Anomaly Detection
+3
+Incremental Task Learning Framework
+3.1
+Initial Teaching Sequence
+3.2
+Skill Refinement Teaching Sequence
+3.3
+Task Decision Teaching Sequence
+4
+Demonstration
+4.1
+User Demonstration
+4.2
+User Refinement
+5
+Hierarchical Task Learning
+5.1
+Unsupervised Task Segmentation BNG-IRL
+5.1.1
+Subgoal-Driven Intention Recognition
+5.1.2
+Probabilistc Feature Clustering
+5.1.3
+Probabilistic Model
+5.1.4
+Parameter Inference
+5.2
+Task Model Learning
+6
+Autonomous Task Execution
+6.1
+Motion Generation and Unsupervised Anomaly Detection
+6.2
+Subgoal Monitoring
+6.3
+Skill Selection
+7
+Experiments
+7.1
+Box Pushing in Simulation
+7.1.1
+Setup and Task Description
+7.1.2
+Unsupervised Task Segmentation Baselines
+7.1.3
+Metrics
+7.1.4
+Results and Discussion
+7.2
+Manipulation Task with DLR LWR IV
+7.2.1
+Experimental Setup
+7.2.2
+Incremental Task Learning Procedure
+7.3
+Box Grasping and Locking with DLR SARA
+7.3.1
+Experimental Setup
+7.3.2
+Recorded Data
+7.3.3
+Task Description
+Gripper Design
+Kinematic Sequence to Grasp and Lock the Box
+Difficulties
+7.3.4
+Initial Teaching Sequence
+Quantitative Evaluation of Unsupervised Segmentation
+Results
+7.3.5
+Skill Refinement Teaching Sequence
+7.3.6
+Unsupervised Anomaly Detection
+Quantitative Evaluation
+Dataset and Metrics
+Results
+7.3.7
+Task Decision Teaching Sequence
+7.4
+Discussion and Limitations
+8
+Conclusion
+Acknowledgements
+dci
+funding
+References
+License: arXiv.org perpetual non-exclusive license
+arXiv:2505.04565v1 [cs.RO] 07 May 2025
+Hierarchical Task Decomposition for Execution Monitoring and Error Recovery: Understanding the Rationale Behind Task Demonstrations
+Christoph Willibald
+\affilnum
+1 and Dongheui Lee
+\affilnum
+1
+\affilnum
+2
+Email:
+Christoph.Willibald@dlr.de
+Abstract
+Multi-step manipulation tasks where robots interact with their environment and must apply process forces based on the perceived situation remain challenging to learn and prone to execution errors. Accurately simulating these tasks is also difficult. Hence, it is crucial for robust task performance to learn how to coordinate end-effector pose and applied force, monitor execution, and react to deviations. To address these challenges, we propose a learning approach that directly
+infers
+both
+low- and high-level task representations
+from user demonstrations on the real system. We developed an
+unsupervised task segmentation
+algorithm that combines
+intention recognition
+and
+feature clustering
+to infer the skills of a task. We leverage the inferred characteristic features of each skill in a novel
+unsupervised anomaly detection
+approach to identify deviations from the intended task execution. Together, these components form a comprehensive framework capable of incrementally learning task decisions and new behaviors as new situations arise. Compared to state-of-the-art learning techniques, our approach significantly reduces the required amount of training data and computational complexity while efficiently learning complex in-contact behaviors and recovery strategies. Our proposed task segmentation and anomaly detection approaches outperform state-of-the-art methods on force-based tasks evaluated on two different robotic systems.
+keywords
+Learning from demonstration, unsupervised segmentation, anomaly detection, incremental learning, contact-based manipulation
+†
+†
+runninghead:
+Willibald and Lee
+†
+†
+affiliation:
+\affilnum
+1Institute of Robotics and Mechatronics, German Aerospace Center (DLR), Germany
+\affilnum
+2Technische Universität Wien (TU Wien), Chair of Autonomous Systems, Vienna, Austria
+†
+†
+corresponding:
+Christoph Willibald, Institute of Robotics and Mechatronics, German Aerospace Center (DLR), 82234 Wessling, Germany.
+1
+Introduction
+Recent advancements in robot learning leverage large-scale general-purpose models trained on diverse datasets to learn policies capable of handling a broad range of different tasks
+(
+Padalkar and OXEC, 2023
+;
+Reed et al., 2022
+)
+. Other works learn end-to-end policies for motion planning
+(
+Fishman et al., 2023
+)
+, or employ pre-trained vision-language models to detect anomalies during task execution
+(
+Du et al., 2023
+;
+Zhang et al., 2023
+;
+Driess et al., 2023
+)
+. While these deep-learning models perform well for common tasks with many available training examples, such as pick-and-place or free-space motions, they struggle with specialized contact tasks where precise coordination of end-effector pose and applied force is important (see Fig.
+1
+). Generating training data for such tasks is expensive as it involves sensing contact forces and torques in the real world, which requires a significantly higher effort compared to obtaining natural language and image datasets and thus leads to less availability of such data. Reinforcement Learning in simulation with sim-to-real transfer attempts to address this challenge and has shown impressive results for learning e.g. legged locomotion policies
+(
+Gangapurwala et al., 2022
+)
+or dexterous in-hand manipulation
+(
+Pitz et al., 2023
+)
+. However, to focus policy learning on physically accurate environment configurations, it is still necessary to precisely identify and simulate the system. Especially for complex multi-point contact simulations, physics engines are still limited when calculating friction and contact forces
+(
+Yoon et al., 2023
+;
+Liao et al., 2023
+)
+. To avoid the required modeling effort for every new setup and to enable learning of specialized skills, we propose a framework capable of learning contact tasks from only a few demonstrations on the real system.
+Figure 1
+:
+The different phases and challenges of the box grasping and locking task. The upper row shows EEF configurations in the subgoal region of the respective skills during the execution which trigger a transition to the successor skills. The bottom row highlights the difficulties during each skill. In the first skill, the lower part of the gripper must not collide with the box, while the movable slides are positioned above the box. In the next phases, the robot must apply force via the front part of the slides, without pushing the locking pin inside the slides, and maintain contact with the side wall of the box until the third subgoal configuration is reached. After that, the locking pin must be pushed to compress the springs in the slides while rotating the gripper into the vertical configuration. If there is not enough force exerted to push the gripper down, the tight clearance between the box and the box locks on the lower part of the gripper causes a collision. A video of the task learning and execution can be seen in Extension 3.
+Learning from Demonstration (LfD) is a popular method for transferring task knowledge from humans to robots. A user provides task examples, e.g. via remote control of the robot or by kinesthetic teaching, from which the robot learns how to perform a given task, even if the environment conditions change. Modern lightweight robots, like the DLR SARA
+(
+Iskandar et al., 2021
+)
+, can sense the contact forces during demonstrations and reproduce them during execution. To accommodate different environment conditions and to make task decisions online, it is insufficient to simply replay a demonstration. Movement Primitives
+(
+Ijspeert et al., 2002
+;
+Pervez and Lee, 2018
+;
+Calinon, 2016
+;
+Huang et al., 2019
+)
+or Dynamical Systems
+(
+Hersch et al., 2008
+;
+Khansari-Zadeh and Billard, 2011
+;
+Calinon, 2016
+)
+are established approaches to react to low-level perturbations and allow to generalize trajectories to varying start and end points while preserving the nature of the movement. However, they can not capture the high-level structure of a task, which prohibits adaptive behavior required for making task decisions or recovering from anomalies. Therefore, we propose to learn a hierarchical task representation from demonstrations. Our approach decomposes the task into more manageable sub-problems by first inferring the individual skills that comprise the task before structuring them in a task graph that can be incrementally extended if required.
+Our framework is designed to learn complex multi-step contact tasks requiring specialized skills, such as the box grasping task illustrated in Fig.
+1
+. In such tasks, precise coordination of end-effector pose and commanded force is essential for successful execution. Since the observed motion and applied force during the grasping sequence are unique for this task, we can not use prior knowledge about commonly used skills to identify the sub-problems of the task. To address this, we developed an unsupervised task segmentation algorithm, combining inverse reinforcement learning with probabilistic clustering to identify a sequence of unique skills based on their individual subgoals and feature constraints. We assume that each skill intends to reach a specific subgoal, represented by a region of end-effector (EEF) configurations relative to important objects. Reaching the subgoal is considered the intention of a skill and is a postcondition for its successful termination. Further, a skill is governed by constraints that must be satisfied during its execution. The constraints can be described by multimodal features, such as applied force or the relative distances of the end-effector to objects. After segmentation, our framework uses the inferred feature constraints for unsupervised anomaly detection during autonomous skill execution. The anomaly detection approach determines the confidence for its predictions based on the availability of the training data and reacts accordingly. If a deviation from the intended skill execution is detected, a higher-level decision-making mechanism takes over. This mechanism, guided by the task graph and the nature of the anomaly, determines the appropriate recovery action. We make the following contributions:
+•
+Unsupervised task segmentation approach
+integrating inverse reinforcement learning-based intention recognition and probabilistic feature clustering
+.
+•
+Unsupervised anomaly detection method leveraging each skill’s
+probabilistic representation of expected features to make decisions based on epistemic and aleatoric uncertainty
+.
+•
+Framework for incremental learning of hierarchical task representations
+.
+Throughout this article, we repeatedly mention incremental hierarchical task learning. With hierarchical learning, we refer to the simultaneous process of learning both the low-level data-driven models for motion generation and anomaly detection for each skill, and a more abstract model of the entire task. The abstract model is represented as a Task Graph, which organizes skills at a higher level. Incremental learning, also referred to as continual learning
+(
+Lesort et al., 2020
+)
+, describes the strategy of learning an initial model that can later be refined
+(
+Simonič et al., 2021
+)
+or extended for novel conditions or situations that were not anticipated in the beginning. The incremental approach applies both to high- and low-level learning.
+2
+Related Work
+2.1
+Task Segmentation
+Task segmentation is often a necessary step in robotic task learning approaches to break down the complexity into more manageable sub-problems.
+2.1.1
+Supervised Approaches
+Probabilistic models are employed in
+Eiband et al. (2023a)
+,
+Wang et al. (2018)
+,
+Kulić et al. (2012)
+, and
+Meier et al. (2011)
+to detect known skills in a task demonstration.
+Kulić et al. (2012)
+incrementally learn probabilistic models of motion primitives, whereas
+Meier et al. (2011)
+assume a known DMP library for online movement recognition and segmentation. Support Vector Machines (SVM) with a sliding time window are used to predict the most likely skill at each time step from video data in
+Wang et al. (2018)
+or using the robot’s proprioceptive sensor measurements in
+Eiband et al. (2023a)
+.
+Semantic skill recognition is used in
+Eiband et al. (2023a)
+,
+Wächter and Asfour (2015)
+,
+Ramirez-Amaro et al. (2017)
+and
+Steinmetz et al. (2019)
+. In
+Eiband et al. (2023a)
+and
+Steinmetz et al. (2019)
+, a world model is queried to compare the current semantic object relations to pre- and post-conditions of skills formulated with the PDDL convention
+(
+Ghallab et al., 1998
+)
+.
+Eiband et al. (2023a)
+and
+Wächter and Asfour (2015)
+use multi-step segmentation processes to refine the first rough result in a downstream step. In
+Wächter and Asfour (2015)
+, semantic segmentation is followed by a sub-segmentation based on the acceleration of the demonstrated trajectory, while
+Eiband et al. (2023a)
+utilize an SVM-based segmentation to further refine identified contact skills.
+2.1.2
+Unsupervised Approaches
+Unsupervised methods aim to find characteristic points, similarities between demonstrations, or apply generative models to data to perform segmentation, all without requiring explicit knowledge of the observed skills. A Gaussian Mixture Model (GMM) expresses the joint probability distribution of high-dimensional training data as a weighted sum of independent Gaussian components.
+Krishnan et al. (2017)
+utilize hierarchical clustering based on several GMMs to identify similar skill transition states across repeated task demonstrations.
+Lee et al. (2015)
+apply Principal Component Analysis to one single task demonstration prior to fitting a GMM on the training data. Segmentation points are determined at the intersection of adjacent Gaussian components.
+Karlsson et al. (2019)
+extend this approach by incorporating force measurements, where sudden changes in the interaction force are leveraged to verify or extend existing segmentations. In
+Krüger et al. (2012)
+and
+Figueroa and Billard (2018)
+a Bayesian nonparametric approach is used to fit a GMM onto demonstrations. In
+Krüger et al. (2012)
+, every mixture ensures global asymptotic stability for point-to-point motions. In
+Figueroa and Billard (2018)
+, only physically consistent clusters are generated by considering a similarity metric based on the distance of samples and direction of the velocity. In our approach, we employ a Bayesian nonparametric GMM (BN-GMM) to cluster demonstrated states but quantify action similarity in terms of reaching a common state subgoal using Q-values. In contrast to
+Figueroa and Billard (2018)
+, this allows us to infer the underlying intentions of actions by comparing the demonstrated actions with the optimal actions to reach a subgoal and thus can identify more complex behavior.
+A Hidden Markov Model (HMM) can describe a process that evolves over time and has underlying unobservable modes. The modes can be interpreted as skills in the context of task segmentation. Bayesian nonparametric extensions of the HMM are used in
+Niekum et al. (2012)
+;
+Grigore and Scassellati (2017)
+;
+Chi et al. (2017)
+where a beta process (BP) prior is leveraged to infer the number of active modes per demonstration.
+Grigore and Scassellati (2017)
+combine a BP-HMM with a clustering approach to determine the appropriate level of granularity for identified motion primitives based on clustering performance. The Beta Process Autoregressive HMM relaxes the conditional independence of observations by describing time dependencies between observations as a Vector Autoregressive process
+(
+Niekum et al., 2012
+;
+Chi et al., 2017
+)
+.
+Kroemer et al. (2015)
+incorporate state dependency in the HMM’s phase transition probability, which allows the model to learn regions, where phase transitions are more likely. In
+Hagos et al. (2018)
+, the phase transition probability depends on the measured interaction force, to account for contact changes between the robot and the environment that indicate a phase transition.
+In
+Sugawara et al. (2023)
+, segmentation points of contact-rich tasks are detected based on the time derivatives of force and torque measurements. To reduce over-segmentation due to sensor noise, Bayesian online change point detection
+(
+Adams and MacKay, 2007
+)
+is used to identify true positive segmentation lines. If a robot’s end-effector enters or leaves the proximity area of an object
+(
+Caccavale et al., 2019
+)
+, or the distance relations between objects change
+(
+Wächter et al., 2013
+)
+, new segmentation lines are detected. Using pre-and post-conditions, the segments are then associated with semantic skills.
+Shi et al. (2023)
+propose an algorithm to automatically extract a demonstration’s minimal set of waypoints for which the trajectory reconstruction error lies below a specified threshold when linearly interpolating between the waypoints. In contrast to the approaches mentioned in this paragraph, our proposed approach does not segment each task demonstration individually but finds a combined segmentation result over all demonstrations. It leverages the similarities across different demonstrations, leading to a more consistent result compared to segmenting each demonstration individually. In
+Ureche et al. (2015)
+the variance of task variables within one, and across several demonstrations is analyzed to determine task constraints. Segmentation lines are drawn when the relevant task constraints change.
+Manschitz et al. (2020)
+focus on segmentation for point-to-point motions, where the demonstrations are first intentionally over-segmented using Zero Velocity Crossing
+(
+Fod et al., 2002
+)
+before again combining segments converging to the same attractor. Similarly,
+Lioutikov et al. (2017)
+iteratively eliminate false positive segmentation lines using a probabilistic segmentation approach with motion primitives as the generative skill models.
+In our approach, the observed skill sequence can be inferred from a single or several task demonstrations, where each skill’s intention and feature constraints are used as grouping mechanisms in the data for segmentation. Our method combines a GMM in feature space with Inverse Reinforcement Learning to capture the intention and feature similarities of every state-action observation in a joint mixture model, where every mixture component represents a skill.
+2.2
+Hierarchical Inverse Reinforcement Learning
+Another approach to breaking down the complexity of a task into smaller sub-problems is Hierarchical Inverse Reinforcement Learning (HIRL). IRL as proposed by
+Ng et al. (2000)
+avoids the cumbersome process of manually designing a reward function for a given task by representing the problem as a Markov Decision Process (MDP) with unknown reward function and learning the reward function from expert demonstrations. It may be difficult, however, or even impossible to represent a complex task with a single reward function. That is why HIRL finds segments of corresponding data points in the demonstration and solves the IRL problem per segment. To that end,
+Michini and How (2012)
+,
+Michini et al. (2015)
+propose Bayesian nonparametric IRL (BN-IRL). Using a Dirichlet Process mixture model as the prior over segments, BN-IRL divides an observed task demonstration into a set of smaller subtasks, so that each subtask can be described by a simple subgoal-based reward function. This approach was extended to Constraint-based BN-IRL (CBN-IRL)
+(
+Park et al., 2020
+)
+to also infer parts of the demonstration where local feature constraints are active. This allows the model to represent complex behavior with a fewer number of segments as in BN-IRL, but requires predefined constraint boundaries for every feature and significantly increases the computational complexity. Since active feature constraints are indirectly determined by changing the restriction of the state transition function in CBN-IRL, only constraints with respect to the end-effector position and orientation can be considered. This approach does not allow to constrain contact forces or torques. Furthermore, changing the constraint boundary of one feature requires expensive recomputation of Q-values. The number of Q-value recomputations grows exponentially with the number of features when altering the boundaries independently. That is why CBN-IRL only distinguishes between constrained segments, where all features lie within the boundaries, and unconstrained segments. Our approach solves the problem of computational complexity by separating the constraint inference from the Q-value-based intention recognition. As a result, the number of required Q-value calculations is independent of the number of considered features. We infer individual feature constraint regions for each segment by modeling them as multivariate Gaussian distributions. This not only reduces the computational complexity but also allows our model to detect correlations between multimodal features across several task demonstrations.
+Leveraging the option framework for describing temporally extended actions, the HIRL approaches in
+Surana and Srivastava (2014)
+,
+Ranchod et al. (2015)
+, and
+Fox et al. (2017)
+can recover complex reward functions or policies from the demonstrations. On the higher level,
+Surana and Srivastava (2014)
+model the task as a switched MDP, and
+Ranchod et al. (2015)
+as a BP-HMM with emissions from different MDPs.
+Fox et al. (2017)
+infer high-level meta policies and low-level options based on Deep Q-networks, which requires many training examples of the task.
+Krishnan et al. (2016)
+;
+Krishnan et al. (2019)
+suggest a multi-step learning process consisting of sequence-, reward- and policy learning. The task segmentation is performed using transition state clustering similar to
+Krishnan et al. (2017)
+. The transition states are then used to infer simpler rewards per segment via Maximum Entropy IRL
+(
+Ziebart et al., 2008
+)
+to finally learn a policy via forward RL. In contrast to
+Krishnan et al. (2016)
+;
+Krishnan et al. (2019)
+, our approach solves the segmentation problem with IRL. We identify subgoals by analyzing the actions observed within segments, which are directed toward reaching these subgoals.
+2.3
+High-Level Task Structuring and Decision Making
+As discussed in the previous sections, robotic tasks often consist of modular skills designed to address specific sub-problems of the task. Task-level decision-making determines how to apply those skills, taking into account the current context or the outcomes of prior skills. In current robotic approaches, the organization of low-level skills and the handling of high-level decisions are often achieved through the use of Behavior Trees (BT), or Task Graphs (TG), which are variants of Finite State Machines. Originally developed for decision-making in computer games, Behavior Trees have gained attention in robotics and have proven their effectiveness in various applications including machine tending
+(
+Guerin et al., 2015
+)
+, polishing and assembly
+(
+Paxton et al., 2017
+;
+Rovida et al., 2018
+;
+Mayr et al., 2021
+)
+, and autonomous navigation
+(
+De Luca et al., 2023
+)
+. BTs and TGs share close relationships, and the high-level structure of a task can often be effectively represented using either. However, due to their design, BTs can transition more flexibly between skills, which in turn makes it more difficult to infer their structure from demonstrations.
+The Learning from Demonstration (LfD) approaches in
+Manschitz et al. (2020)
+,
+Caccavale et al. (2019)
+,
+Willibald and Lee (2022)
+,
+Willibald et al. (2020)
+,
+Kappler et al. (2015)
+,
+Niekum et al. (2015)
+,
+Konidaris et al. (2012)
+,
+Su et al. (2018)
+propose the use of Task Graphs to organize skills at a higher level of abstraction. This structure can be defined manually by an operator
+(
+Kappler et al., 2015
+)
+or learned from demonstration. For the latter case, multiple task demonstrations are segmented individually and transformed into a TG with
+Konidaris et al. (2012)
+,
+Niekum et al. (2015)
+,
+Su et al. (2018)
+.
+Konidaris et al. (2012)
+employ an iterative merging approach starting from the final segment, while
+Su et al. (2018)
+cluster segments based on their final configuration and connect them based on transition frequencies.
+Niekum et al. (2015)
+additionally split up nodes in the TG based on groupings of the node’s parents.
+Willibald et al. (2020)
+follow a different approach and add decision states with recovery behaviors at fixed time steps when anomalies are detected. The approach presented in this paper involves learning a common skill sequence from multiple task demonstrations, which can be incrementally extended with new skills to flexibly address task decisions or recovery behaviors.
+Unlike approaches that do not incorporate higher-level organization
+(
+Pastor et al., 2012
+;
+Eiband et al., 2019
+)
+, TG-based methods restrict the number of candidate skills for transitions based on the currently executed skill. This restriction addresses the perceptual aliasing problem, where a task decision can not be determined solely based on current sensor readings but might require that the robot has already reached certain high-level goals. While
+Caccavale et al. (2019)
+,
+Willibald et al. (2020)
+,
+Niekum et al. (2015)
+,
+Konidaris et al. (2012)
+and
+Su et al. (2018)
+allow transitions only at the end of a skill,
+Kappler et al. (2015)
+introduce an online decision-making system employing supervised classification to determine when and to which successive skill to switch, however their approach does not autonomously detect and resolve new anomalies but requires human supervision for that.
+Deniša and Ude (2015)
+cluster segments of task demonstrations and store them in a hierarchical skill database that can be queried at runtime to generate new movements by recombining partial paths that were not demonstrated together. While this approach reduces the number of required task demonstrations it does not explicitly encode the temporal sequence of partial paths. In
+Manschitz et al. (2020)
+, a sequence graph synchronizes independent motion primitives for the end-effector pose, force, and finger configuration, where each node has at most one successor and a classifier determines when to transition to the next node. We employ an unsupervised approach to identify deviations in the current execution. When such deviations are detected, we transition to a suitable recovery behavior within the TG, based on the identified failure mode, after which the robot can continue with the intended task execution. Additionally, when the skill’s subgoal is reached, we seamlessly transition to the next task-flow node in the TG. This approach offers the combined advantages of skill transitioning flexibility found in BTs and the candidate skill restriction of TGs.
+2.4
+Multimodal Anomaly Detection
+Robust anomaly detection and recovery are vital for autonomous robotic systems. To detect anomalies, we employed time-based Gaussian Mixture Regression (GMR) in previous works
+(
+Willibald et al., 2020
+;
+Eiband et al., 2019
+;
+Eiband et al., 2023b
+)
+to compute the Mahalanobis distance between the robot’s measured and expected proprioceptive sensor values. The probabilistic modeling allows the approach to scale the anomaly detection sensitivity depending on the current timestep.
+Romeres et al. (2019)
+use Gaussian Process Regression to learn the expected force profile and epistemic uncertainty during insertion tasks in combination with a predefined anomaly threshold for anomaly detection. A Hidden Markov Model is used to detect multimodal anomalies, either with predefined anomaly thresholds and a sliding time window
+(
+Azzalini et al., 2020
+)
+or with probabilistic threshold estimation based on execution progress
+(
+Park et al., 2019
+)
+.
+Chernova and Veloso (2007)
+encode a simple policy using basic symbolic actions via a GMM, where the observation likelihood of unseen states is used to detect outliers. Stereotypical sensor traces along with movement primitives are used in
+Kappler et al. (2015)
+and
+Pastor et al. (2011)
+for supervised anomaly detection.
+We employ GMR where expected feature values and allowed deviations are predicted by conditioning on the measured end-effector pose relative to the relevant coordinate system for the current skill. Conditioning anomaly detection on time or task progress would require consistent feature profiles across demonstrations, i.e. an exact replication of the situation in all runs. We argue that important features, such as contact forces, are influenced by interaction dynamics between the robot and the environment rather than time. Additionally, conditioning on the relative end-effector pose allows our anomaly detection approach to distinguish between epistemic and aleatoric uncertainty and to handle both cases individually. Notably, this makes our approach unique with respect to the state of the art. Epistemic uncertainty arises from incomplete model information and can be reduced by collecting additional data, while aleatoric uncertainty represents the variability in the underlying distribution. While the approach in
+Silvério et al. (2019)
+acknowledges the two interpretations of variance, it equally modulates the robot’s control gains to obtain a compliant robot in cases of high uncertainty and variability.
+Maeda et al. (2017)
+utilize the epistemic uncertainty of a Gaussian Process in the context of trajectory generation to quantify the generalization capability of the model to unseen goal positions. Our approach, however, leverages the epistemic uncertainty to determine the confidence in the anomaly detection, while the aleatoric uncertainty is used to scale the anomaly detection sensitivity.
+Park et al. (2018)
+,
+Pol et al. (2019)
+,
+Azzalini et al. (2021)
+employ Variational Autoencoders (VAEs) for anomaly detection. VAEs use a decoder network to reconstruct the original input from a compressed latent space representation, learned from normal data instances. Anomalous data leads to a higher reconstruction error, which can be used to identify anomalies. Other works based on deep neural networks use sensor streams including RGB-D images to detect anomalies during robotic manipulation
+(
+Inceoglu et al., 2024
+;
+Altan and Sariel, 2022
+;
+Yoo et al., 2021
+)
+. Recent works apply pre-trained vision-language models (VLMs) or large vision-language models (LVLMs) to robotics by treating anomaly detection as a visual question-answering problem
+(
+Du et al., 2023
+;
+Zhang et al., 2023
+;
+Driess et al., 2023
+;
+Agia et al., 2024
+)
+. ConditionNET
+(
+Sliwowski and Lee, 2024
+)
+is a VLM designed to predict preconditions and effects of skills. It frames anomaly detection as a state prediction problem, where an anomaly is detected if the predicted and expected state do not match. While deep-learning-based approaches have shown improved performance over comparable state-of-the-art techniques, they need large annotated training datasets. Our anomaly detection approach is focused on challenging in-contact manipulation tasks where the force between the robot and the environment plays a crucial role for the task’s success (see Fig.
+1
+). The vast amount of required training data for deep-learning-based approaches is not available and even hard to obtain in simulation for such scenarios. That is why we propose a Learning from Demonstration setup, using data-efficient methods, that are capable of identifying anomalies with just a few task demonstrations. We demonstrate robust anomaly detection capabilities with only up to three user demonstrations.
+3
+Incremental Task Learning Framework
+Figure 2
+:
+Our proposed incremental high- and low-level task learning framework. The process of learning a new task starts with an initial teaching sequence
+\raisebox{-.9pt} {1}⃝
+(Sec.
+3.1
+), where the user provides several demonstrations of the intended task that are segmented using BNG-IRL to learn an initial task model. The low-level skills of this initial model can then be further refined during the skill refinement teaching sequence
+\raisebox{-.9pt} {2}⃝
+(Sec.
+3.2
+), depicted at the bottom. During this phase, the robot performs the initial task, while the user supervises and assists in phases, where the skills need refinement. The recorded training data is used to update the skills. The last teaching sequence
+\raisebox{-.9pt} {3}⃝
+(Sec.
+3.3
+) is triggered if the execution module identifies a new anomaly (see Sec.
+6.1
+and
+6.3
+). Similar to the initial teaching sequence, the user provides a demonstration that shows how to recover from the anomaly, which is segmented and appended to the skill during which the anomaly occurred.
+In this section, we introduce the overall framework of our incremental task learning approach before describing the individual components in more detail in Sec.
+5
+and Sec.
+6
+. The framework, as depicted in Fig.
+2
+, consists of three sequential phases:
+Demonstration
+,
+Learning
+, and
+Execution
+. These phases form a teaching sequence, which can be triggered multiple times throughout the incremental task-learning process. However, the teaching sequences differ depending on the event that triggered them.
+3.1
+Initial Teaching Sequence
+The task learning process begins with the first teaching sequence, aimed at learning the intended task flow model. The task model comprises both low-level skill representations and a high-level Task Graph that organizes the skills on a higher level of abstraction. To start the process, a user demonstrates the strategy to solve the task with the robot multiple times. Our experiments demonstrate a good learning performance for a contact-rich task with as few as three initial user demonstrations. The recorded data from these user demonstrations is passed to the learning component, which segments the demonstrations into a skill sequence using our proposed Bayesian Nonparametric Gaussian Inverse RL (BNG-IRL) segmentation approach detailed in Sec.
+5.1
+. The Task Graph is initially based on the inferred skill sequence from the first user demonstrations. The learned task model can already be executed, however the anomaly detection component is not activated during the first few executions on the robot to allow the user to refine the learned low-level skill representations.
+3.2
+Skill Refinement Teaching Sequence
+In this teaching sequence, the user monitors the robot collecting additional training data while performing the task autonomously. Since the robot is impedance controlled, the user can help the robot during parts where the learned task model is not yet optimal, providing additional training input. The corrective support data, combined with the data collected by the robot during autonomous execution is used to refine each skill’s low-level motion generation and anomaly detection model. Depending on the application and learning setup, our approach can be combined with various motion generation methods capable of learning policies from sparse training data, based on Movement Primitives, or Dynamical Systems. Once the initial task model achieves sufficient robustness, anomaly detection is activated, and high-level task learning can be initiated.
+3.3
+Task Decision Teaching Sequence
+In the final teaching sequence, high-level decisions are learned that can not be resolved by the low-level motion generation approach but require to change the strategy. These decisions include normal task decisions and recovery behaviors, which may arise due to diverse environment conditions or unintended task interferences. As illustrated in Fig.
+2
+, the execution monitoring module of our framework has access to the task model and consists of submodules for skill selection, anomaly detection, motion generation, and subgoal monitoring. Detailed descriptions of these modules are provided in Sec.
+6
+. The skill selection module handles high-level task decisions and communicates the selected skill to the other execution modules. Task decisions can be triggered by either the anomaly detection or subgoal monitoring module. When a skill’s subgoal is reached, the selection module transitions to the intended subsequent skill in the Task Graph, learned from the initial teaching sequence. In contrast, if an anomaly or a different environment condition is detected, the skill selection module must determine the appropriate skill for that situation. As the initial task model only comprises the skill sequence for the intended task flow, recovery skills must be acquired from user demonstrations. To facilitate this, our framework employs an incremental learning approach. When an anomaly is detected and the skill selection module cannot find a suitable skill for recovery in the Task Graph, a new teaching sequence is initiated. During this sequence, the user demonstrates how to resolve the situation with the robot. The recorded data is segmented into a skill sequence, as described for the first teaching sequence. However, this skill sequence is appended to the skill in the Task Graph where the anomaly was detected. In subsequent executions, the robot can autonomously apply the newly learned recovery behavior to address similar anomalies. Thanks to our subgoal and feature-based skill inference, the robot can flexibly reuse the newly acquired recovery behavior throughout a skill, without being limited to the specific time step where the anomaly occurred or needing an exact replication of the anomaly.
+4
+Demonstration
+Each teaching sequence begins with a demonstration phase to gather new training data. As shown in Fig.
+2
+, the mode of demonstration depends on whether the goal is to learn a new skill sequence (Sec.
+3.1
+and
+3.3
+) or to refine existing low-level skills (Sec.
+3.2
+). We distinguish between two modes:
+User Demonstration
+and
+User Refinement
+.
+4.1
+User Demonstration
+In the User Demonstration mode, we adopt a conventional kinesthetic teaching setup for high- and low-level skill learning as described for the initial task model- and the task decision teaching sequence. During this mode, the robot compensates for its own weight, while the user hand-guides the robot to perform the task. The task can be demonstrated either once or repeatedly to increase the variation of the training data across varying environmental conditions. Throughout the demonstration, the robot captures proprioceptive sensor measurements, and we also track the poses of objects within the robot’s workspace using an external camera setup. The recorded data includes the 6D object and end-effector (EEF) poses, the 6D vector of contact forces and torques at the EEF, and, if applicable, data related to an active tool, such as gripper finger distance and grasp status.
+We record the robot’s EEF trajectories from
+D
+D
+task demonstrations and construct a state-action sequence
+𝐓
+d
+\bm{\mathrm{T}}_{d}
+for each demonstration. Each sequence
+𝐓
+d
+=
+[
+(
+𝒔
+1
+,
+𝒂
+1
+)
+,
+…
+,
+(
+𝒔
+N
+d
+,
+𝒂
+N
+d
+)
+]
+\displaystyle\bm{\mathrm{T}}_{d}=[(\bm{s}_{1},\bm{a}_{1}),...,(\bm{s}_{N_{d}},\bm{a}_{N_{d}})]
+comprises a variable number of
+N
+d
+N_{d}
+state-action pairs, where
+d
+∈
+[
+1
+,
+…
+,
+D
+]
+d\in[1,...,D]
+,
+𝒔
+i
+∈
+𝑺
+\bm{s}_{i}\in\bm{S}
+and
+𝒂
+i
+∈
+𝑨
+\bm{a}_{i}\in\bm{A}
+. The state space
+𝑺
+\bm{S}
+includes all reachable robot EEF poses, while actions
+𝒂
+i
+\bm{a}_{i}
+are defined as the EEF velocities. For every state-action pair, we compute a feature vector
+𝒇
+i
+∈
+𝓕
+\bm{f}_{i}\in\bm{\mathcal{F}}
+. The feature space
+𝓕
+\bm{\mathcal{F}}
+consists of a set of generic multimodal features, including but not limited to contact forces and torques, relative distances and orientations between the robot and objects, audio signals, and tool information. This results in a total number of
+N
+=
+∑
+d
+=
+1
+D
+N
+d
+N=\sum_{d=1}^{D}N_{d}
+data points across all demonstrations, termed observation set
+𝑶
+=
+{
+(
+𝒇
+i
+,
+𝒔
+i
+,
+𝒂
+i
+)
+}
+i
+=
+1
+N
+.
+\displaystyle\bm{O}=\{(\bm{f}_{i},\bm{s}_{i},\bm{a}_{i}){\}}_{i=1}^{N}.
+4.2
+User Refinement
+The second demonstration mode is designed to refine low-level models of previously learned skills by gathering additional training data with the robot. In this phase, the robot employs the initial motion generation policy of each skill from the previous teaching sequence and generalizes it to varying environment configurations. While the robot performs the task, the user supervises and provides manual support if the initial model fails to achieve specific task subgoals.
+To prevent false positive anomaly detections, caused by external forces applied by the user during corrective support, the anomaly detection mechanism is deactivated during this phase. However, contact forces between the robot’s EEF and the environment, as well as the sensor measurements described in Sec.
+4.1
+, are recorded and used to update the low-level skill models.
+For this purpose, we compile an observation set
+𝑶
+ref
+\bm{O}_{\mathrm{ref}}
+containing
+N
+ref
+N_{\mathrm{ref}}
+data points from the user refinement phase. Each data point contains a skill assignment parameter
+z
+i
+∈
+[
+1
+,
+…
+,
+K
+]
+z_{i}\in[1,...,K]
+, which maps each observation
+𝒐
+i
+,
+ref
+\bm{o}_{i,\mathrm{ref}}
+to its respective skill
+k
+k
+out of
+K
+K
+skills:
+𝑶
+ref
+=
+{
+(
+z
+i
+,
+𝒐
+i
+,
+ref
+)
+}
+i
+=
+1
+N
+ref
+=
+{
+(
+z
+i
+,
+𝒇
+i
+,
+𝒔
+i
+,
+𝒂
+i
+)
+}
+i
+=
+1
+N
+ref
+\displaystyle\bm{O}_{\mathrm{ref}}=\{(z_{i},\bm{o}_{i,\mathrm{ref}}){\}}_{i=1}^{N_{\mathrm{ref}}}=\{(z_{i},\bm{f}_{i},\bm{s}_{i},\bm{a}_{i}){\}}_{i=1}^{N_{\mathrm{ref}}}
+Each observation set
+𝑶
+k
+\bm{O}_{k}
+used to model the low-level behavior for motion generation and anomaly detection of the associated skill is updated with the observations
+{
+𝒐
+i
+,
+ref
+|
+z
+i
+=
+k
+}
+\{\bm{o}_{i,\mathrm{ref}}|z_{i}=k\}
+. After that, the robot can fully autonomously execute the refined skills and robustly detect deviations from the intended behavior.
+5
+Hierarchical Task Learning
+Each demonstration phase is followed by a learning phase to incorporate the newly collected training data into the task model. As different demonstration modes serve to learn different aspects of the model, the learning phases vary accordingly:
+1.
+After new
+User Demonstrations
+, the observation sets need to be segmented into skills before they can be added to the task graph (see upper rows in Fig.
+2
+).
+2.
+In the case of
+User Refinements
+, observations are already assigned to skills and can be directly used as new training data for low-level skill refinement (bottom row in Fig.
+2
+).
+In our task learning approach, we represent demonstrations as sequences of skills, where each skill comprises a motion primitive, a subgoal, and a feature constraint region. To infer these properties along with the skills themselves, we introduce a novel task segmentation algorithm called Bayesian Nonparametric Gaussian Inverse Reinforcement Learning (BNG-IRL) (see Fig.
+3
+). This algorithm combines probabilistic clustering of observed demonstration states in feature space with intention recognition based on inverse reinforcement learning.
+5.1
+Unsupervised Task Segmentation BNG-IRL
+In this section, we first introduce the components of the task segmentation approach that are integrated in the probabilistic model. After that, the model parameter inference is explained.
+5.1.1
+Subgoal-Driven Intention Recognition
+(a)
+Three demonstrations of a task consisting of two different skills. Every demonstration
+𝑻
+d
+\bm{T}_{d}
+reaches each skill’s subgoal region
+𝑮
+k
+\bm{G}_{k}
+(upper image and Sec.
+3
+), while the recorded features of the demonstrations lie within the characteristic constraint regions
+𝑪
+k
+\bm{C}_{k}
+of the skills (lower image and Sec.
+5.1.2
+). The observation likelihood (
+4
+) incorporates both influences.
+(b)
+BNG-IRL uses Gibbs Sampling to infer the latent variables and parameters of the probabilistic model: the number of skills
+K
+K
+, the skill assignment
+z
+z
+for every observation represented by the color of the samples, the optimal state subgoal
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+per skill and demonstration as well as the subgoal region
+𝑮
+k
+=
+𝒩
+⁡
+(
+𝝁
+G
+,
+k
+,
+𝚺
+G
+,
+k
+)
+\bm{G}_{k}=\mathcal{N}(\bm{\mu}_{G,k},\bm{\Sigma}_{G,k})
+per skill across all demonstrations, and the constraint region
+𝑪
+k
+=
+𝒩
+⁡
+(
+𝝁
+C
+,
+k
+,
+𝚺
+C
+,
+k
+)
+\bm{C}_{k}=\mathcal{N}(\bm{\mu}_{C,k},\bm{\Sigma}_{C,k})
+of every skill in feature space.
+Figure 3
+:
+Model and parameter inference of our proposed unsupervised task segmentation approach BNG-IRL.
+The subgoal of a skill serves as a post-condition that must be met at the end of a skill for successful completion. Across all task demonstrations
+𝐓
+d
+\bm{\mathrm{T}}_{d}
+shown in the upper row of Fig.
+3(a)
+, each skill
+k
+k
+intends to reach a subgoal region
+𝑮
+k
+\bm{G}_{k}
+. This concept is closely related to low-level motor intentions of cognitive science defined in
+Pacherie (2008)
+. For the
+k
+k
+-th skill of the
+d
+d
+-th demonstration, there exists one specific state subgoal
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+that the user reaches with the robot. Given the assumption that the demonstrator reaches each skill’s subgoal during every demonstration, we can limit the subgoal candidates for one demonstration to the observed states during that demonstration
+𝒔
+i
+∈
+𝐓
+d
+\bm{s}_{i}\in\bm{\mathrm{T}}_{d}
+.
+To determine how good an action is in terms of reaching a demonstration’s state subgoal, we utilize the Q-function. The Q-function is also referred to as the state-action value function and is the expected accumulated reward for taking action
+𝒂
+\bm{a}
+in state
+𝒔
+\bm{s}
+and then following policy
+π
+\pi
+. More specifically, we evaluate the state-action value function
+Q
+π
+𝑻
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+k
+d
+)
+Q^{\pi^{\bm{T}_{d}}}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{k}^{d})
+for taking the observed action
+𝒂
+i
+\bm{a}_{i}
+in state
+𝒔
+i
+\bm{s}_{i}
+and then following the demonstrated policy from
+𝐓
+d
+\bm{\mathrm{T}}_{d}
+until reaching subgoal
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+. To compare this result with the optimal policy
+π
+∗
+\pi^{*}
+for reaching
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+from
+𝒔
+i
+\bm{s}_{i}
+we also compute the result for the optimal value function
+V
+π
+∗
+​
+(
+𝒔
+i
+,
+𝒈
+k
+d
+)
+V^{\pi^{*}}(\bm{s}_{i},\bm{g}_{k}^{d})
+. For simplicity, we will refer to the above-mentioned functions as
+Q
+𝑻
+d
+Q^{\bm{T}_{d}}
+and
+V
+∗
+V^{*}
+. Dividing
+Q
+𝑻
+d
+Q^{\bm{T}_{d}}
+by
+V
+∗
+V^{*}
+provides a measure of optimality
+ε
+d
+\varepsilon^{d}
+for the observed policy, action
+𝒂
+i
+\bm{a}_{i}
+and subgoal candidate
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+, where
+0
+≤
+ε
+d
+=
+Q
+𝑻
+d
+V
+∗
+≤
+1
+0\leq\varepsilon^{d}=\frac{Q^{\bm{T}_{d}}}{V^{*}}\leq 1
+.
+Q
+𝑻
+d
+Q^{\bm{T}_{d}}
+and
+V
+∗
+V^{*}
+are computed through the Bellman Equation (
+1
+) and the Bellman Optimality Equation (
+2
+), respectively.
+Q
+𝑻
+d
+​
+(
+s
+,
+a
+,
+g
+)
+=
+∑
+s
+′
+∈
+S
+P
+⁡
+(
+s
+′
+|
+s
+,
+a
+)
+​
+(
+R
+g
+​
+(
+s
+,
+a
+,
+s
+′
+)
++
+γ
+​
+V
+𝑻
+d
+​
+(
+s
+′
+,
+g
+)
+)
+=
+R
+g
+​
+(
+s
+,
+a
+)
++
+γ
+​
+V
+𝑻
+d
+​
+(
+s
+′
+,
+g
+)
+\begin{split}\ &\ Q^{\bm{T}_{d}}(s,a,g)\\
+\ =&\sum_{s^{\prime}\in S}P(s^{\prime}|s,a)(R_{g}(s,a,s^{\prime})+\gamma V^{\bm{T}_{d}}(s^{\prime},g))\\
+\ =&\ R_{g}(s,a)+\gamma V^{\bm{T}_{d}}(s^{\prime},g)\end{split}
+(1)
+In both Equations (
+1
+) and (
+2
+), we assume the same discount factor
+γ
+\gamma
+and a deterministic transition from state
+𝒔
+\bm{s}
+to
+𝒔
+′
+\bm{s^{\prime}}
+when taking action
+𝒂
+\bm{a}
+, hence we can simplify the equations according to the last line.
+V
+∗
+​
+(
+s
+,
+g
+)
+=
+max
+a
+∈
+A
+⁡
+(
+s
+)
+⁡
+Q
+∗
+​
+(
+a
+,
+s
+,
+g
+)
+=
+max
+⁡
+∑
+s
+′
+∈
+S
+a
+∈
+A
+⁡
+(
+s
+)
+⁡
+P
+⁡
+(
+s
+′
+|
+s
+,
+a
+)
+​
+(
+R
+g
+​
+(
+s
+,
+a
+,
+s
+′
+)
++
+γ
+​
+V
+∗
+​
+(
+s
+′
+,
+g
+)
+)
+=
+max
+a
+∈
+A
+⁡
+(
+s
+)
+⁡
+(
+R
+g
+​
+(
+s
+,
+a
+)
++
+γ
+​
+V
+∗
+​
+(
+s
+′
+,
+g
+)
+)
+\begin{split}\ &V^{*}(s,g)=\max_{a\in A(s)}Q^{*}(a,s,g)\\
+=&\max_{a\in A(s)}\sum_{s^{\prime}\in S}P(s^{\prime}|s,a)(R_{g}(s,a,s^{\prime})+\gamma V^{*}(s^{\prime},g))\\
+=&\max_{a\in A(s)}(R_{g}(s,a)+\gamma V^{*}(s^{\prime},g))\end{split}
+(2)
+Similar to
+Michini et al. (2015)
+and
+Park et al. (2020)
+, we use a sparse reward function
+R
+g
+​
+(
+𝒔
+,
+𝒂
+,
+𝒔
+′
+)
+=
+𝟙
+​
+(
+𝒔
+′
+=
+𝒈
+)
+R_{g}(\bm{s},\bm{a},\bm{s}^{\prime})=\mathds{1}(\bm{s}^{\prime}=\bm{g})
+that returns the complete reward when transitioning to subgoal state
+𝒈
+\bm{g}
+. This reflects our initial assumption that all actions of a skill are targeted toward reaching the skill’s subgoal
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+. However,
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+is unknown and has to be inferred from the demonstrations.
+(a)
+Demonstrated trajectory (blue) and random subgoals
+g
+1
+,
+g
+2
+,
+g
+3
+g_{1},g_{2},g_{3}
+with respective trajectories following the optimal policy to reach them from state
+𝒔
+i
+\bm{s}_{i}
+.
+(b)
+Same setup as in (a), but an introduced obstacle changes the optimal trajectories to reach the subgoals. The demonstrated trajectory becomes now the optimal trajectory to reach the subgoals.
+Figure 4
+:
+Simplified 2D example of subgoal-driven intention recognition based on IRL for a single demonstration.
+We illustrate the advantages of our optimality score
+ε
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+k
+d
+)
+=
+Q
+𝑻
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+k
+d
+)
+V
+∗
+​
+(
+𝒔
+i
+,
+𝒈
+k
+d
+)
+\varepsilon^{d}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{k}^{d})=\frac{Q^{\bm{T}_{d}}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{k}^{d})}{V^{*}(\bm{s}_{i},\bm{g}_{k}^{d})}
+with the help of a simplified 2D example in Fig.
+4
+. From the setup in Fig.
+4(a)
+it becomes clear that the demonstrated action
+𝒂
+i
+\bm{a}_{i}
+in state
+𝒔
+i
+\bm{s}_{i}
+is not optimal to reach
+𝒈
+3
+\bm{g}_{3}
+, which leads to a low optimality score. However, for subgoal
+𝒈
+1
+\bm{g}_{1}
+,
+𝒂
+i
+\bm{a}_{i}
+and the subsequent demonstration follows the optimal policy, resulting in an optimality score tending towards 1. Now, we look at subgoal
+𝒈
+2
+\bm{g}_{2}
+in Figure
+4(a)
+. Compared to the optimal action
+𝒂
+∈
+A
+⁡
+(
+𝒔
+i
+)
+\bm{a}\in A(\bm{s}_{i})
+, that maximizes Eq. (
+2
+), the observed action
+𝒂
+i
+\bm{a}_{i}
+in
+𝒔
+i
+\bm{s}_{i}
+appears to be targeted to reaching this subgoal. However, the demonstrated trajectory after that action until reaching
+𝒈
+2
+\bm{g}_{2}
+is not optimal with regard to that subgoal, which reduces
+Q
+𝑻
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+2
+)
+Q^{\bm{T}_{d}}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{2})
+, and hence the optimality score. Different from
+Michini et al. (2015)
+and
+Park et al. (2020)
+, the observed policy from the demonstration after
+𝒂
+i
+\bm{a}_{i}
+is also taken into account when computing the optimality score with our approach. With this, we extend the time horizon for judging the intention of the demonstration from only one timestep to the duration until reaching the subgoal. This is advantageous for our approach since we aim to find a sequence of concise skills, where the intention changes with every skill, but not with every timestep (see Fig.
+6
+). Another advantage can be seen from Fig.
+4(b)
+, where an obstacle blocks the direct way to reach subgoals
+𝒈
+2
+\bm{g}_{2}
+and
+𝒈
+3
+\bm{g}_{3}
+from
+𝒔
+i
+\bm{s}_{i}
+. Compared to using the velocity vector as an indicator for clustering similar observations, as proposed in
+Figueroa and Billard (2018)
+, the formulation based on the Q-function allows us to infer more complicated behaviors between the robot and the environment. Even though
+𝒂
+i
+\bm{a}_{i}
+is moving away from
+𝒈
+3
+\bm{g}_{3}
+, we can infer that the action is targeted toward reaching that subgoal by comparing it to the optimal policy for reaching
+𝒈
+3
+\bm{g}_{3}
+in this scenario, resulting in a high optimality score. We obtain the probability distribution
+p
+⁡
+(
+𝒔
+i
+,
+𝒂
+i
+|
+𝒈
+)
+=
+e
+α
+​
+ε
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+)
+∑
+j
+=
+1
+N
+d
+e
+α
+​
+ε
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+j
+)
+,
+p(\bm{s}_{i},\bm{a}_{i}|\bm{g})=\frac{e^{\alpha\varepsilon^{d}(\bm{s}_{i},\bm{a}_{i},\bm{g})}}{\sum_{j=1}^{N_{d}}e^{\alpha\varepsilon^{d}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{j})}},
+(3)
+by computing the softmax function of the optimality score
+ε
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+)
+\varepsilon^{d}(\bm{s}_{i},\bm{a}_{i},\bm{g})
+for all subgoal candidates
+𝒈
+j
+\bm{g}_{j}
+of demo
+d
+d
+. The parameter
+α
+\alpha
+describes the degree of confidence in the user to provide an optimal demonstration.
+5.1.2
+Probabilistc Feature Clustering
+Another source of information that we consider to cluster the different skills that comprise a task are the recorded feature values
+𝒇
+i
+∈
+𝓕
+\bm{f}_{i}\in\bm{\mathcal{F}}
+of the demonstrations, which complete the observation set
+𝑶
+\bm{O}
+used as training data for our segmentation algorithm. We model the expected feature region of a skill and correlations among the features as a multivariate Gaussian distribution in feature space
+𝓕
+\bm{\mathcal{F}}
+, where
+𝒇
+i
+∼
+𝒩
+⁡
+(
+𝝁
+C
+,
+k
+,
+𝚺
+C
+,
+k
+)
+|
+z
+i
+=
+k
+\bm{f}_{i}\sim\mathcal{N}(\bm{\mu}_{C,k},\bm{\Sigma}_{C,k})|z_{i}=k
+, with mean
+𝝁
+C
+,
+k
+\bm{\mu}_{C,k}
+and covariance matrix
+𝚺
+C
+,
+k
+\bm{\Sigma}_{C,k}
+for every skill
+k
+k
+(see bottom row of Fig.
+3(a)
+). With this, we can account for multi-modal and task-relevant information such as force readings, relative distances, and tool information to cluster different skills. That allows the algorithm to distinguish between in-contact and free-space motions or skills with different interaction force profiles. When loading or tensioning a spring, for example, the interaction force increases linearly with distance, whereas other tasks, such as opening a drawer, might require a constant force profile. By considering the observation set
+𝑶
+\bm{O}
+, containing the samples from all task demonstrations, we formulate the problem of segmentation as fitting a Gaussian Mixture Model to the data, where each mixture component corresponds to one skill. In the next section, we present a method to unify probabilistic feature clustering with subgoal-driven intention recognition in one probabilistic model.
+5.1.3
+Probabilistic Model
+Combining the aspects of feature clustering and subgoal-driven action generation, we define the following observation likelihood for every
+𝒐
+i
+∈
+𝑶
+\bm{o}_{i}\in\bm{O}
+p
+⁡
+(
+𝒐
+i
+|
+z
+,
+𝒈
+,
+𝝁
+C
+,
+𝚺
+C
+)
+=
+p
+⁡
+(
+𝒔
+i
+,
+𝒂
+i
+|
+𝒈
+k
+d
+)
+​
+p
+​
+(
+𝒇
+i
+|
+𝝁
+C
+,
+k
+,
+𝚺
+C
+,
+k
+)
+=
+e
+α
+​
+ε
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+k
+d
+)
+∑
+j
+=
+1
+N
+d
+e
+α
+​
+ε
+d
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+j
+)
+​
+𝒩
+​
+(
+𝒇
+i
+|
+𝝁
+C
+,
+k
+,
+𝚺
+C
+,
+k
+)
+,
+\begin{split}&\ p(\bm{o}_{i}|z,\bm{g},\bm{\mu}_{C},\bm{\Sigma}_{C})=p(\bm{s}_{i},\bm{a}_{i}|\bm{g}_{k}^{d})\ p(\bm{f}_{i}|\bm{\mu}_{C,k},\bm{\Sigma}_{C,k})\\
+=&\ \frac{e^{\alpha\varepsilon^{d}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{k}^{d})}}{\sum_{j=1}^{N_{d}}e^{\alpha\varepsilon^{d}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{j})}}\mathcal{N}(\bm{f}_{i}|\bm{\mu}_{C,k},\bm{\Sigma}_{C,k}),\end{split}
+(4)
+where the first term represents the subgoal-driven policy under the skill-specific reward function
+R
+g
+k
+R_{g_{k}}
+, and the second term represents the feature clustering of skill
+k
+k
+as described in
+3
+and
+5.1.2
+, and depicted in Fig
+3(a)
+.
+Due to the described underlying grouping mechanism of the task demonstrations into skills with an a priori unknown number of skills, a Bayesian nonparametric Mixture Model with observation likelihood (
+4
+) is used as the generative model to explain the observation set
+𝑶
+\bm{O}
+. Every mixture component corresponds to a skill with its own subgoal-based reward function and feature constraints. This leads to the following latent variables and model parameters, which have to be inferred from data:
+•
+The optimal
+number of observed skills
+K
+K
+.
+•
+An optimal
+state subgoal
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+per demonstration and skill, as well as the
+subgoal region
+𝑮
+k
+\bm{G}_{k}
+per skill across all demonstrations represented as a multivariate Gaussian distribution
+𝒩
+⁡
+(
+𝜽
+G
+,
+k
+)
+\mathcal{N}(\bm{\theta}_{G,k})
+in state space
+𝑺
+\bm{S}
+with parameters
+𝜽
+G
+,
+k
+=
+(
+𝝁
+G
+,
+k
+,
+𝚺
+G
+,
+k
+)
+\bm{\theta}_{G,k}=(\bm{\mu}_{G,k},\bm{\Sigma}_{G,k})
+.
+•
+An optimal
+constraint region
+𝑪
+k
+\bm{C}_{k}
+for every skill represented as a multivariate Gaussian distribution
+𝒩
+⁡
+(
+𝜽
+C
+,
+k
+)
+\mathcal{N}(\bm{\theta}_{C,k})
+in feature space
+𝓕
+\bm{\mathcal{F}}
+with parameters
+𝜽
+C
+,
+k
+=
+(
+𝝁
+C
+,
+k
+,
+𝚺
+C
+,
+k
+)
+\bm{\theta}_{C,k}=(\bm{\mu}_{C,k},\bm{\Sigma}_{C,k})
+.
+•
+The
+skill assignment
+z
+i
+=
+k
+z_{i}=k
+for every observation
+𝒐
+i
+\bm{o}_{i}
+of the demonstrations, which determines the skill membership.
+The joint probability distribution over
+𝐎
+\mathbf{O}
+,
+𝐳
+\mathbf{z}
+,
+𝒈
+\bm{g}
+and
+𝜽
+C
+\bm{\theta}_{C}
+is thus given by
+p
+⁡
+(
+𝑶
+,
+𝒛
+,
+𝒈
+,
+𝜽
+C
+)
+=
+∏
+i
+=
+1
+N
+p
+⁡
+(
+𝒐
+i
+|
+z
+i
+,
+𝒈
+,
+𝜽
+C
+)
+⏟
+observation llh.
+​
+p
+⁡
+(
+z
+i
+|
+𝒛
+∖
+i
+)
+⏟
+z prior (CRP)
+​
+∏
+k
+=
+1
+K
+p
+⁡
+(
+𝒈
+k
+)
+⏟
+g
+prior
+​
+p
+⁡
+(
+𝜽
+C
+,
+k
+)
+⏟
+θ
+C
+prior
+\begin{split}&\ p(\bm{O},\bm{z},\bm{g},\bm{\theta}_{C})\\
+=&\prod_{i=1}^{N}\underbrace{p(\bm{o}_{i}|z_{i},\bm{g},\bm{\theta}_{C})}_{\text{observation llh.}}\underbrace{p(z_{i}|\bm{z}_{\setminus i})}_{\text{z prior (CRP)}}\prod_{k=1}^{K}\underbrace{p(\bm{g}_{k})}_{\text{$g$ prior}}\underbrace{p(\bm{\theta}_{C,k})}_{\text{$\theta_{C}$ prior}}\end{split}
+(5)
+A Chinese Restaurant Process (CRP) with concentration parameter
+η
+\eta
+is used as a prior for the component assignment
+z
+i
+z_{i}
+, which allows to scale the number of mixture components with a growing number of observations up to a potentially infinite number.
+p
+⁡
+(
+z
+i
+=
+k
+|
+𝒛
+∖
+i
+,
+η
+)
+=
+{
+N
+k
+N
+−
+1
++
+η
+,
+if
+​
+k
+≤
+K
+η
+N
+−
+1
++
+η
+,
+if
+​
+k
+=
+K
++
+1
+,
+p(z_{i}=k|\bm{z}_{\setminus i},\eta)=\begin{cases}\frac{N_{k}}{N-1+\eta},&\text{if}\ k\leq K\\
+\frac{\eta}{N-1+\eta},&\text{if}\ k=K+1,\end{cases}
+(6)
+N
+N
+is the number of observations,
+N
+k
+N_{k}
+the number of observations assigned to mixture component
+k
+k
+,
+K
+K
+the number of current mixture components and
+𝒛
+∖
+i
+\bm{z}_{\setminus i}
+all assignment parameters excluding
+z
+i
+z_{i}
+. A Normal Inverse Wishart (NIW) distribution with hyperparameters
+𝜷
+=
+{
+𝒎
+0
+,
+κ
+0
+,
+𝑺
+0
+,
+ν
+0
+}
+\bm{\beta}=\{\bm{m}_{0},\kappa_{0},\bm{S}_{0},\nu_{0}\}
+is chosen as the prior for the parameters
+𝜽
+G
+,
+k
+\bm{\theta}_{G,k}
+and
+𝜽
+C
+,
+k
+\bm{\theta}_{C,k}
+of subgoal and constraint region for every mixture component. State subgoals are drawn from the subgoal region’s posterior according to the following process
+𝜷
+G
+=
+{
+𝒎
+0
+,
+G
+,
+κ
+0
+,
+G
+,
+𝑺
+0
+,
+G
+,
+ν
+0
+,
+G
+}
+𝝁
+𝑮
+,
+𝚺
+𝑮
+∼
+N
+​
+I
+​
+W
+​
+(
+𝜷
+G
+)
+𝒈
+k
+d
+∼
+p
+⁡
+(
+𝒈
+k
+∖
+d
+,
+𝝁
+𝑮
+,
+𝚺
+𝑮
+)
+.
+\begin{split}\bm{\beta}_{G}&=\{\bm{m}_{0,G},\kappa_{0,G},\bm{S}_{0,G},\nu_{0,G}\}\\
+{\bm{\mu_{G}},\bm{\Sigma_{G}}}&\sim NIW(\bm{\beta}_{G})\\
+\bm{g}_{k}^{d}&\sim p(\bm{g}_{k\setminus d},\bm{\mu_{G}},\bm{\Sigma_{G}}).\\
+\end{split}
+(7)
+The posterior predictive distribution
+p
+⁡
+(
+𝒈
+k
+d
+=
+𝒔
+n
+|
+𝒈
+k
+∖
+d
+,
+𝜷
+G
+)
+=
+p
+⁡
+(
+𝒈
+k
+d
+,
+𝒈
+k
+∖
+d
+,
+𝜷
+G
+)
+p
+⁡
+(
+𝒈
+k
+∖
+d
+,
+𝜷
+G
+)
+p(\bm{g}_{k}^{d}=\bm{s}_{n}|\bm{g}_{k\setminus d},\bm{\beta}_{G})=\frac{p(\bm{g}_{k}^{d},\bm{g}_{k\setminus d},\bm{\beta}_{G})}{p(\bm{g}_{k\setminus d},\bm{\beta}_{G})}
+(8)
+has the form of a multivariate Student-T distribution and is chosen as the state subgoal prior, where
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+is the state subgoal of skill
+k
+k
+and demonstration
+d
+d
+and
+𝒈
+k
+∖
+d
+\bm{g}_{k\setminus d}
+are all other state subgoals of skill
+k
+k
+excluding
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+. This prior favors state subgoals that are similar to the other subgoals
+𝒈
+k
+∖
+d
+\bm{g}_{k\setminus d}
+of the same skill from the other demonstrations and reflects our assumption that state subgoals are similar across demonstrations.
+5.1.4
+Parameter Inference
+The optimal model parameters, conditioned on the observation, are obtained by MAP estimation
+(
+𝒛
+∗
+,
+𝒈
+∗
+,
+𝜽
+C
+∗
+)
+=
+arg
+⁡
+max
+𝒛
+,
+𝒈
+,
+𝜽
+C
+⁡
+p
+⁡
+(
+𝒛
+,
+𝒈
+,
+𝜽
+C
+|
+𝑶
+)
+(\bm{z}^{*},\bm{g}^{*},\bm{\theta}_{C}^{*})=\arg\!\max_{\bm{z},\bm{g},\bm{\theta}_{C}}p(\bm{z},\bm{g},\bm{\theta}_{C}|\bm{O})
+. Since direct inference from the joint posterior is intractable, but sampling from the conditional distributions (
+9
+) and (
+10
+) is possible, we use collapsed Gibbs sampling
+(
+Geman and Geman, 1984
+)
+to approximate the joint posterior. As depicted in Fig.
+3(b)
+, the samples
+𝒛
+(
+1
+:
+T
+)
+\bm{z}^{(1:T)}
+and
+𝒈
+(
+1
+:
+T
+)
+\bm{g}^{(1:T)}
+drawn from the conditional distributions will converge to the samples from the true posterior (see Algorithm
+1
+).
+Due to the conjugacy of its prior, we can marginalize the parameter
+𝜽
+C
+\bm{\theta}_{C}
+and the full conditional of
+z
+i
+z_{i}
+simplifies to
+p
+⁡
+(
+z
+i
+=
+k
+|
+𝐎
+,
+𝐳
+∖
+i
+,
+𝒈
+,
+𝜷
+C
+,
+η
+)
+∝
+p
+⁡
+(
+z
+i
+=
+k
+|
+𝐳
+∖
+i
+,
+η
+)
+​
+p
+​
+(
+𝐨
+i
+|
+𝐎
+k
+∖
+i
+,
+𝒈
+k
+d
+,
+𝜷
+C
+)
+=
+p
+⁡
+(
+z
+i
+=
+k
+|
+𝐳
+∖
+i
+,
+η
+)
+​
+p
+​
+(
+𝒔
+i
+,
+𝒂
+i
+|
+𝒈
+k
+d
+)
+​
+p
+​
+(
+𝒇
+i
+|
+𝐎
+k
+∖
+i
+,
+𝜷
+C
+)
+\begin{split}&\ p(z_{i}=k|\mathbf{O},\mathbf{z}_{\setminus i},\bm{g},\bm{\beta}_{C},\eta)\\
+\propto&\ p(z_{i}=k|\mathbf{z}_{\setminus i},\eta)\ p(\mathbf{o}_{i}|\mathbf{O}_{k\setminus i},\bm{g}_{k}^{d},\bm{\beta}_{C})\\
+=&\ p(z_{i}=k|\mathbf{z}_{\setminus i},\eta)\ p(\bm{s}_{i},\bm{a}_{i}|\bm{g}_{k}^{d})\ p(\bm{f}_{i}|\mathbf{O}_{k\setminus i},\bm{\beta}_{C})\end{split}
+(9)
+where
+𝐎
+k
+∖
+i
+\mathbf{O}_{k\setminus i}
+=
+{
+𝐨
+j
+|
+z
+j
+=
+k
+,
+j
+≠
+i
+}
+\{\mathbf{o}_{j}|z_{j}\!=\!k,j\!\neq\!i\}
+are all observations assigned to cluster
+k
+k
+, except
+𝐨
+i
+\mathbf{o}_{i}
+. The term
+p
+⁡
+(
+𝒇
+i
+|
+𝐎
+k
+∖
+i
+,
+𝜷
+C
+)
+p(\bm{f}_{i}|\mathbf{O}_{k\setminus i},\bm{\beta}_{C})
+is the feature clustering’s posterior predictive for
+𝐨
+i
+\mathbf{o}_{i}
+of mixture component
+k
+k
+. The full conditional for
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+can be expressed by
+p
+⁡
+(
+𝒈
+k
+d
+=
+𝐬
+n
+|
+𝐎
+,
+𝐳
+,
+𝜽
+C
+)
+∝
+p
+⁡
+(
+𝒈
+k
+d
+=
+𝒔
+n
+|
+𝒈
+k
+∖
+d
+,
+𝜷
+G
+)
+​
+p
+​
+(
+𝐎
+k
+d
+|
+𝒈
+k
+d
+=
+𝐬
+n
+,
+𝐳
+,
+𝜽
+C
+)
+∝
+p
+⁡
+(
+𝒈
+k
+d
+=
+𝒔
+n
+|
+𝒈
+k
+∖
+d
+,
+𝜷
+G
+)
+​
+∑
+i
+∈
+I
+k
+d
+p
+⁡
+(
+𝒐
+i
+|
+𝒈
+k
+d
+=
+𝐬
+n
+,
+𝜽
+C
+,
+k
+)
+,
+\begin{split}&\ p(\bm{g}_{k}^{d}=\mathbf{s}_{n}|\mathbf{O},\mathbf{z},\bm{\theta}_{C})\\
+\propto&\ p(\bm{g}_{k}^{d}=\bm{s}_{n}|\bm{g}_{k\setminus d},\bm{\beta}_{G})\ p(\mathbf{O}_{k}^{d}|\bm{g}_{k}^{d}=\mathbf{s}_{n},\mathbf{z},\bm{\theta}_{C})\\
+\propto&\ p(\bm{g}_{k}^{d}=\bm{s}_{n}|\bm{g}_{k\setminus d},\bm{\beta}_{G})\sum_{i\in I_{k}^{d}}p(\bm{o}_{i}|\bm{g}_{k}^{d}=\mathbf{s}_{n},\bm{\theta}_{C,k}),\end{split}
+(10)
+with the index set
+I
+k
+d
+=
+{
+i
+|
+𝒔
+i
+∈
+𝐓
+d
+∧
+z
+i
+=
+k
+}
+I_{k}^{d}=\{i|\bm{s}_{i}\in\bm{\mathrm{T}}_{d}\wedge z_{i}=k\}
+. Every
+𝒐
+i
+\bm{o}_{i}
+from the
+k
+k
+-th skill of the
+d
+d
+-th demonstration is independent of other skills’ subgoals and feature constraints. For a more complete derivation of the above equations, please refer to
+Murphy (2012)
+and
+Michini et al. (2015)
+.
+Algorithm 1
+Inference using collapsed Gibbs sampling
+​
+Input:
+𝐎
+\mathbf{O}
+,
+𝐳
+0
+\mathbf{z}^{0}
+​
+Output:
+samples
+𝐳
+(
+1
+:
+T
+)
+\mathbf{z}^{(1:T)}
+,
+𝒈
+(
+1
+:
+T
+)
+\bm{g}^{(1:T)}
+1:
+𝐳
+←
+𝐳
+0
+\mathbf{z}\leftarrow\mathbf{z}^{0}
+2:
+for
+i
+=
+1
+i=1
+to
+N
+N
+do
+3:
+𝒈
+←
+𝐬
+i
+\bm{g}\leftarrow\mathbf{s}_{i}
+4:
+Precompute
+Q
+⁡
+(
+⋅
+,
+⋅
+,
+R
+g
+)
+Q(\cdot,\cdot,R_{g})
+, where
+R
+g
+​
+(
+𝐬
+n
+)
+=
+𝟙
+​
+(
+𝐬
+n
+=
+𝒈
+)
+R_{g}(\mathbf{s}_{n})=\mathds{1}(\mathbf{s}_{n}=\bm{g})
+5:
+for
+t
+=
+1
+t=1
+to
+T
+T
+do
+6:
+for
+d
+=
+1
+d=1
+to
+D
+D
+in random order
+do
+7:
+for
+k
+=
+1
+k=1
+to
+K
+K
+do
+8:
+for
+all
+𝒔
+n
+∈
+𝐓
+d
+\bm{s}_{n}\in\bm{\mathrm{T}}_{d}
+do
+9:
+Compute
+p
+⁡
+(
+𝒈
+k
+d
+=
+𝐬
+n
+|
+𝐎
+,
+𝐳
+,
+𝜽
+C
+)
+p(\bm{g}_{k}^{d}=\mathbf{s}_{n}|\mathbf{O},\mathbf{z},\bm{\theta}_{C})
+⊳
+\triangleright
+(
+10
+)
+10:
+Normalize
+p
+⁡
+(
+𝒈
+k
+d
+|
+𝐎
+,
+𝐳
+,
+𝜽
+C
+)
+p(\bm{g}_{k}^{d}|\mathbf{O},\mathbf{z},\bm{\theta}_{C})
+11:
+Sample
+𝒈
+k
+d
+∼
+p
+⁡
+(
+𝒈
+k
+d
+|
+𝐎
+,
+𝐳
+,
+𝜽
+C
+)
+\bm{g}_{k}^{d}\sim p(\bm{g}_{k}^{d}|\mathbf{O},\mathbf{z},\bm{\theta}_{C})
+12:
+for
+i
+=
+1
+i=1
+to
+N
+N
+in random order
+do
+13:
+Remove
+𝐨
+i
+\mathbf{o}_{i}
+’s statistics from old cluster
+z
+i
+z_{i}
+14:
+for
+k
+=
+1
+k=1
+to
+K
+K
+do
+15:
+Compute
+p
+⁡
+(
+z
+i
+=
+k
+|
+𝐎
+,
+𝐳
+∖
+i
+,
+𝒈
+,
+𝜷
+,
+η
+)
+p(z_{i}=k|\mathbf{O},\mathbf{z}_{\setminus i},\bm{g},\bm{\beta},\eta)
+⊳
+\triangleright
+(
+9
+)
+16:
+Compute
+p
+⁡
+(
+z
+i
+=
+K
++
+1
+|
+𝐎
+,
+𝐳
+∖
+i
+,
+𝒈
+,
+𝜷
+,
+η
+)
+p(z_{i}=K+1|\mathbf{O},\mathbf{z}_{\setminus i},\bm{g},\bm{\beta},\eta)
+17:
+Normalize
+p
+⁡
+(
+z
+i
+|
+𝐎
+,
+𝐳
+∖
+i
+,
+𝒈
+,
+𝜷
+,
+η
+)
+p(z_{i}|\mathbf{O},\mathbf{z}_{\setminus i},\bm{g},\bm{\beta},\eta)
+18:
+Sample
+z
+i
+∼
+p
+⁡
+(
+z
+i
+|
+𝐎
+,
+𝐳
+∖
+i
+,
+𝒈
+,
+𝜷
+,
+η
+)
+z_{i}\sim p(z_{i}|\mathbf{O},\mathbf{z}_{\setminus i},\bm{g},\bm{\beta},\eta)
+19:
+Add
+𝐨
+i
+\mathbf{o}_{i}
+’s statistics to new cluster
+z
+i
+z_{i}
+20:
+If any cluster is empty, remove it & decrease
+K
+K
+21:
+return
+samples
+𝐳
+(
+1
+:
+T
+)
+\mathbf{z}^{(1:T)}
+,
+𝒈
+(
+1
+:
+T
+)
+\bm{g}^{(1:T)}
+Algorithm
+1
+starts with initializing
+𝒛
+0
+\bm{z}^{0}
+by assigning every observation to a random mixture component of an initial number of mixture components and precomputing the Q-values for all
+N
+N
+subgoal candidates to speed up the subsequent Gibbs sampling process. After that, the inference algorithm iteratively samples state subgoals for the current mixture components and then the component assignment for every observation, conditioned on the latest values of the other parameter. Algorithm
+1
+iterates over all demonstrations
+D
+D
+and mixture components
+K
+K
+in line
+6
+-
+11
+to evaluate equation (
+10
+) for all potential subgoal candidates. For every combination of demonstration
+d
+d
+and mixture component
+k
+k
+, a state subgoal is sampled from the normalized conditional with support over all states in
+𝐓
+d
+\bm{\mathrm{T}}_{d}
+. In line
+12
+-
+18
+, the component assignment for every observation
+𝒐
+i
+∈
+𝑶
+\bm{o}_{i}\in\bm{O}
+is sampled from the normalized conditional of
+z
+i
+z_{i}
+with support over all mixture components
+K
+K
+and a new mixture component
+K
++
+1
+K+1
+. In each sampling iteration, every
+𝒐
+i
+\bm{o}_{i}
+can thus be assigned to a new mixture
+K
++
+1
+K+1
+with a random subgoal with a probability determined by line
+16
+. If a mixture has no observation from one of the demonstrations assigned to it, this mixture component is removed. After each iteration, a post-processing step is performed if the number of mixture components changed.
+5.2
+Task Model Learning
+As described in the previous sections, we propose to learn both the low- and high-level models of a task. Decomposing the task into its individual skills and structuring them in a task graph has several advantages.
+Especially when learning low-level policies from demonstration, segmenting the task into skills reduces the problem of accumulating errors caused by training data that are irrelevant for the current part of a task
+Shi et al. (2023)
+. For dynamical system-based motion generation and reinforcement learning policies, the decomposition additionally has the advantage that the same state input can be mapped to different actions if different skills are active. Without the decomposition, more complicated policies would be required to achieve that behavior. The BNG-IRL segmentation algorithm provides us with a subgoal region
+𝒩
+⁡
+(
+𝜽
+G
+,
+k
+)
+\mathcal{N}(\bm{\theta}_{G,k})
+and a constraint region
+𝒩
+⁡
+(
+𝜽
+C
+,
+k
+)
+\mathcal{N}(\bm{\theta}_{C,k})
+for every skill
+k
+k
+. Together with the observation set
+𝑶
+k
+=
+{
+𝒐
+i
+|
+z
+i
+=
+k
+}
+\bm{O}_{k}=\{\bm{o}_{i}|z_{i}=k\}
+, which is used to learn the motion primitive for a skill, this is all the information needed to execute the low-level skills on a robot. The mechanism for the monitored execution will be explained in Sec.
+6
+. As described in Sec.
+3.2
+and Sec.
+4.2
+, the parameters
+𝜽
+C
+,
+k
+\bm{\theta}_{C,k}
+and the motion primitives of every skill can be further refined with new training data collected during the refinement phase.
+At the higher level, combining the task graph structure with a subgoal for every skill enables the system to monitor task progress. The next skill in the task graph is only scheduled once the subgoal of the current skill is reached. If an anomaly is detected, the system can trace it back to the specific skill where the error occurred, enhancing the explainability of the issue and allowing the robot to respond automatically. The task graph also narrows the margin for error in high-level decision-making by limiting choices to those relevant for the current skill. After new user demonstrations were segmented with BNG-IRL, the skill sequence is used to update the task graph. The skills inferred from the initial teaching sequence are used to create an initial task graph. This skill sequence can be incrementally extended with task decisions and recovery behaviors as described in Sec.
+3.3
+. If the unsupervised anomaly detection approach recognizes deviations from the skill’s intended execution, the skill selection module needs to determine if an appropriate recovery behavior has already been demonstrated to automatically resolve the situation, or if a new task decision teaching sequence needs to be triggered. The different components of the execution module for this functionality are explained in the following section.
+6
+Autonomous Task Execution
+As depicted on the right in Fig.
+2
+, the execution monitoring module combines several submodules for motion generation, unsupervised anomaly detection, subgoal monitoring, and skill selection. The skill selection module acts as an interface between the task model and the execution modules. We present the individual modules and their interplay in this section.
+6.1
+Motion Generation and Unsupervised Anomaly Detection
+In principle, all classical approaches for learning motion primitives, learning policies via Reinforcement Learning, motion planners or even a combination of them are suited to be used in the motion generation module. We present a data-efficient dynamical systems-based approach using Gaussian Mixture Models (GMM) and Gaussian Mixture Regression (GMR) to learn motion primitives and feature constraints for every contact skill from a few demonstrations. We argue that the behavior of a skill depends on the configuration of the robot relative to important objects to interact with and not on time. The aspect of time or sequentiality plays rather a role in the higher-level representation of the task, where subgoals have to be reached one after another in order to continue with the next skill. That is why we propose to generate a velocity and force command based on the robot’s measured end-effector pose.
+For every skill, we thus construct a training data set
+{
+𝒔
+i
+,
+𝝃
+i
+}
+i
+=
+1
+N
+k
+\{\bm{s}_{i},\bm{\xi}_{i}{\}}_{i=1}^{N_{k}}
+from all
+𝒐
+i
+∈
+𝑶
+k
+\bm{o}_{i}\in\bm{O}_{k}
+.
+𝒔
+i
+\bm{s}_{i}
+is the end-effector pose and
+𝝃
+i
+=
+[
+𝒂
+i
+,
+𝒇
+i
+]
+\bm{\xi}_{i}=[\bm{a}_{i},\bm{f}_{i}]
+the corresponding vector of translational and rotational end-effector velocity and contact force. The training data set is encoded as a GMM, estimating the joint probability distribution of the data as a weighted sum of
+E
+E
+independent Gaussian components
+[
+𝒔
+𝝃
+]
+∼
+∑
+e
+=
+1
+E
+π
+e
+​
+𝒩
+​
+(
+𝝁
+e
+,
+𝚺
+e
+)
+,
+\begin{bmatrix}\bm{s}\\
+\bm{\xi}\end{bmatrix}\sim\sum_{e=1}^{E}\pi_{e}\mathcal{N}(\bm{\mu}_{e},\bm{\Sigma}_{e}),
+(11)
+where
+π
+e
+,
+𝝁
+e
+,
+𝚺
+e
+\pi_{e},\bm{\mu}_{e},\bm{\Sigma}_{e}
+are the prior probability, mean, and covariance matrix of the
+e
+e
+-th Gaussian component. We can decompose the
+e
+e
+-th mean vector and covariance matrix
+𝝁
+e
+=
+[
+𝝁
+e
+s
+𝝁
+e
+ξ
+]
+,
+𝚺
+e
+=
+[
+𝚺
+e
+s
+​
+s
+𝚺
+e
+s
+​
+ξ
+𝚺
+e
+ξ
+​
+s
+𝚺
+e
+ξ
+​
+ξ
+]
+\bm{\mu}_{e}=\begin{bmatrix}\bm{\mu}_{e}^{s}\\
+\bm{\mu}_{e}^{\xi}\end{bmatrix},\bm{\Sigma}_{e}=\begin{bmatrix}\bm{\Sigma}_{e}^{ss}&\bm{\Sigma}_{e}^{s\xi}\\
+\bm{\Sigma}_{e}^{\xi s}&\bm{\Sigma}_{e}^{\xi\xi}\end{bmatrix}
+(12)
+into input and output components corresponding to
+𝒔
+\bm{s}
+and
+𝝃
+\bm{\xi}
+, respectively. GMR predicts the most likely output vector for a given input by computing the posterior probability distribution
+P
+⁡
+(
+𝝃
+^
+n
+|
+𝒔
+n
+)
+=
+𝒩
+⁡
+(
+𝝃
+^
+n
+|
+𝝁
+^
+ξ
+​
+(
+𝒔
+n
+)
+,
+𝚺
+^
+ξ
+​
+ξ
+​
+(
+𝒔
+n
+)
+)
+P(\hat{\bm{\xi}}_{n}|\bm{s}_{n})=\mathcal{N}(\hat{\bm{\xi}}_{n}|\hat{\bm{\mu}}^{\xi}(\bm{s}_{n}),\hat{\bm{\Sigma}}^{\xi\xi}(\bm{s}_{n}))
+conditioned on the input. Using the measured end-effector pose
+𝒔
+n
+\bm{s}_{n}
+as input during execution, GMR determines the expected output end-effector velocity and force
+𝔼
+⁡
+(
+𝝃
+^
+n
+|
+𝒔
+n
+)
+=
+𝝁
+^
+ξ
+​
+(
+𝒔
+n
+)
+\mathbb{E}(\hat{\bm{\xi}}_{n}|\bm{s}_{n})=\hat{\bm{\mu}}^{\xi}(\bm{s}_{n})
+along with a covariance matrix
+𝚺
+^
+ξ
+​
+ξ
+​
+(
+𝒔
+n
+)
+\hat{\bm{\Sigma}}^{\xi\xi}(\bm{s}_{n})
+. For simplicity, we will refer to the predicted mean and covariance matrix as
+𝝁
+^
+n
+ξ
+\hat{\bm{\mu}}_{n}^{\xi}
+and
+𝚺
+^
+n
+ξ
+​
+ξ
+\hat{\bm{\Sigma}}_{n}^{\xi\xi}
+, respectively. The hat symbol indicates variables that are dynamically computed at each cycle. The expected output vector can be computed with
+𝝁
+^
+n
+ξ
+=
+∑
+e
+=
+1
+E
+h
+^
+e
+​
+(
+𝒔
+n
+)
+​
+(
+𝝁
+e
+ξ
++
+𝚺
+e
+ξ
+​
+s
+​
+(
+𝚺
+e
+s
+​
+s
+)
+−
+1
+​
+(
+𝒔
+n
+−
+𝝁
+e
+s
+)
+)
+⏟
+𝝁
+^
+e
+ξ
+​
+(
+𝒔
+n
+)
+,
+\hat{\bm{\mu}}_{n}^{\xi}=\sum_{e=1}^{E}\hat{h}_{e}(\bm{s}_{n})\underbrace{\left(\bm{\mu}_{e}^{\xi}+\bm{\Sigma}_{e}^{\xi s}(\bm{\Sigma}_{e}^{ss})^{-1}(\bm{s}_{n}-\bm{\mu}_{e}^{s})\right)}_{\hat{\bm{\mu}}_{e}^{\xi}(\bm{s}_{n})},
+(13)
+where
+h
+^
+e
+​
+(
+𝒔
+n
+)
+=
+π
+e
+​
+𝒩
+​
+(
+𝒔
+n
+|
+𝝁
+e
+s
+,
+𝚺
+e
+s
+​
+s
+)
+∑
+j
+=
+1
+E
+π
+j
+​
+𝒩
+​
+(
+𝒔
+n
+|
+𝝁
+j
+s
+,
+𝚺
+j
+s
+​
+s
+)
+.
+\hat{h}_{e}(\bm{s}_{n})=\frac{\pi_{e}\mathcal{N}(\bm{s}_{n}|\bm{\mu}_{e}^{s},\bm{\Sigma}_{e}^{ss})}{\sum_{j=1}^{E}\pi_{j}\mathcal{N}(\bm{s}_{n}|\bm{\mu}_{j}^{s},\bm{\Sigma}_{j}^{ss})}.
+(14)
+Starting with an initial end-effector pose
+𝒔
+0
+\bm{s}_{0}
+, we can thus predict an initial velocity and force command
+𝝁
+^
+0
+ξ
+\hat{\bm{\mu}}_{0}^{\xi}
+and send it to the robot for execution. In the next cycle
+n
++
+1
+n+1
+, we measure the end-effector pose again and repeat the process. This results in a dynamical system with state-based force overlay.
+We leverage the conditional covariance matrix
+𝚺
+^
+n
+ξ
+​
+ξ
+\hat{\bm{\Sigma}}_{n}^{\mathrm{\xi\xi}}
+for unsupervised anomaly detection. The covariance matrix is computed with
+𝚺
+^
+n
+ξ
+​
+ξ
+=
+∑
+e
+=
+1
+E
+h
+^
+e
+​
+(
+𝒔
+n
+)
+​
+(
+𝚺
+~
+e
+ξ
+​
+ξ
++
+𝝁
+^
+e
+ξ
+​
+(
+𝒔
+n
+)
+​
+𝝁
+^
+e
+ξ
+​
+(
+𝒔
+n
+)
+T
+)
+−
+𝝁
+^
+n
+ξ
+​
+(
+𝝁
+^
+n
+ξ
+)
+T
+,
+\displaystyle\hat{\bm{\Sigma}}_{n}^{\xi\xi}=\sum_{e=1}^{E}\hat{h}_{e}(\bm{s}_{n})\left(\tilde{\bm{\Sigma}}_{e}^{\xi\xi}+\hat{\bm{\mu}}_{e}^{\xi}(\bm{s}_{n})\hat{\bm{\mu}}_{e}^{\xi}(\bm{s}_{n})^{T}\right)-\hat{\bm{\mu}}_{n}^{\xi}(\hat{\bm{\mu}}_{n}^{\xi})^{T},
+where
+𝚺
+~
+e
+ξ
+​
+ξ
+=
+𝚺
+e
+ξ
+​
+s
+​
+(
+𝚺
+e
+s
+​
+s
+)
+−
+1
+​
+𝚺
+e
+s
+​
+ξ
+\tilde{\bm{\Sigma}}_{e}^{\xi\xi}=\bm{\Sigma}_{e}^{\xi s}(\bm{\Sigma}_{e}^{ss})^{-1}\bm{\Sigma}_{e}^{s\xi}
+. Using the measured end-effector velocity and force vector
+𝝃
+n
+\bm{\xi}_{n}
+in cycle
+n
+n
+, we compute the Mahalanobis distance to quantify its deviation towards the commanded output vector (
+13
+) with
+D
+^
+M
+​
+(
+𝝃
+n
+)
+=
+(
+𝝃
+n
+−
+𝝁
+^
+n
+ξ
+)
+T
+​
+(
+𝚺
+^
+n
+ξ
+​
+ξ
+)
+−
+1
+​
+(
+𝝃
+n
+−
+𝝁
+^
+n
+ξ
+)
+.
+\hat{D}_{\mathrm{M}}(\bm{\xi}_{n})=\sqrt{(\bm{\xi}_{n}-\hat{\bm{\mu}}_{n}^{\xi})^{\mathrm{T}}(\hat{\bm{\Sigma}}_{n}^{\xi\xi})^{-1}(\bm{\xi}_{n}-\hat{\bm{\mu}}_{n}^{\xi})}.
+(15)
+To determine if the deviation is within the expected constraint region for the skill or if it constitutes an anomaly, we set
+P
+^
+n
+A
+=
+{
+anomaly
+,
+if
+​
+D
+^
+M
+​
+(
+𝝃
+n
+)
+>
+D
+M
+,
+max
+no anomaly
+,
+if
+​
+D
+^
+M
+​
+(
+𝝃
+n
+)
+≤
+D
+M
+,
+max
+\hat{P}_{n}^{\mathrm{A}}=\left\{\begin{array}[]{cl}\text{anomaly},&\text{if }\hat{D}_{\mathrm{M}}(\bm{\xi}_{n})>D_{\mathrm{M,max}}\\
+\text{no anomaly},&\text{if }\hat{D}_{\mathrm{M}}(\bm{\xi}_{n})\leq D_{\mathrm{M,max}}\\
+\end{array}\right.
+(16)
+where
+D
+M
+,
+max
+=
+max
+𝝃
+i
+∈
+𝑶
+k
+⁡
+D
+M
+​
+(
+𝝃
+i
+)
+D_{\mathrm{M,max}}=\max_{\bm{\xi}_{i}\in\bm{O}_{k}}D_{\mathrm{M}}(\bm{\xi}_{i})
+is the maximum Mahalanobis distance observed in the non-anomalous training data set
+𝑶
+k
+\bm{O}_{k}
+. However, this model is not suited to produce anomaly predictions for end-effector poses
+𝒔
+\bm{s}
+far away from the training data. To quantify the confidence in the anomaly prediction, we therefore use
+P
+^
+​
+(
+𝒔
+n
+)
+=
+∑
+e
+=
+1
+E
+π
+e
+​
+𝒩
+​
+(
+𝒔
+n
+|
+𝝁
+e
+s
+,
+𝚺
+e
+s
+​
+s
+)
+\hat{P}(\bm{s}_{n})=\sum_{e=1}^{E}\pi_{e}\mathcal{N}(\bm{s}_{n}|\bm{\mu}_{e}^{s},\bm{\Sigma}_{e}^{ss})
+, which decreases as the model is queried for inputs
+𝒔
+n
+\bm{s}_{n}
+further away from the training data and is already computed in (
+14
+) as part of GMR in cycle
+n
+n
+. Similar to determining an anomaly, we set
+P
+^
+n
+C
+=
+{
+confident
+,
+if
+​
+P
+^
+​
+(
+𝒔
+n
+)
+≥
+P
+min
+​
+(
+𝒔
+)
+not confident
+,
+if
+​
+P
+^
+​
+(
+𝒔
+n
+)
+<
+P
+min
+​
+(
+𝒔
+)
+,
+\hat{P}_{n}^{\mathrm{C}}=\left\{\begin{array}[]{cl}\text{confident},&\text{if }\hat{P}(\bm{s}_{n})\geq P_{\mathrm{min}}(\bm{s})\\
+\text{not confident},&\text{if }\hat{P}(\bm{s}_{n})<P_{\mathrm{min}}(\bm{s})\\
+\end{array}\right.,
+(17)
+where
+P
+min
+​
+(
+𝒔
+)
+=
+min
+𝒔
+i
+∈
+𝑶
+k
+⁡
+P
+⁡
+(
+𝒔
+i
+)
+P_{\mathrm{min}}(\bm{s})=\min_{\bm{s}_{i}\in\bm{O}_{k}}P(\bm{s}_{i})
+.
+This results in a two-step process for detecting anomalies. Only if the algorithm determines with
+P
+^
+n
+C
+\hat{P}_{n}^{\mathrm{C}}
+that the robot is within the known region where an anomaly can be identified confidently, the prediction of
+P
+^
+n
+A
+\hat{P}_{n}^{\mathrm{A}}
+is considered. If
+P
+^
+n
+A
+\hat{P}_{n}^{\mathrm{A}}
+is confidently classified as
+anomaly
+for
+ε
+\varepsilon
+consecutive cycles, an anomaly is detected. Otherwise, if
+P
+^
+n
+C
+\hat{P}_{n}^{\mathrm{C}}
+reports
+not confident
+for
+ε
+\varepsilon
+consecutive cycles, the robot switches to the refinement phase as described in Sec.
+3.2
+, where it continues with the task execution under the supervision of the user who can assist or stop the robot at any time. The collected training data is then used to refine the skill model. It is worth noting that this approach distinguishes between two different sources of uncertainty in the two-step process. The first step considers the uncertainty caused by the lack of knowledge due to missing training data, also referred to as epistemic uncertainty. This uncertainty can be reduced by collecting additional training data during the refinement phase. The second step considers the aleatoric uncertainty, which refers to the uncertainty caused by variation in the training data.
+𝚺
+^
+n
+ξ
+​
+ξ
+\hat{\bm{\Sigma}}_{n}^{\mathrm{\xi\xi}}
+encodes the variability between the demonstrations and correlations among the elements of the output vector
+𝝃
+\bm{\xi}
+at
+𝒔
+n
+\bm{s}_{n}
+. Using the Mahalanobis distance together with the fixed decision threshold
+D
+M
+,
+max
+D_{\mathrm{M,max}}
+causes the anomaly detection algorithm to be more sensitive in areas with a low variance of
+𝝃
+\bm{\xi}
+in the training data set, expressed by small values on the diagonal of
+𝚺
+^
+n
+ξ
+​
+ξ
+\hat{\bm{\Sigma}}_{n}^{\mathrm{\xi\xi}}
+. Differentiating between the epistemic and aleatoric uncertainty during the anomaly detection and reacting according to the source of the uncertainty makes our approach unique compared to state-of-the-art anomaly detection methods that fail to distinguish between the two sources
+(
+Der Kiureghian and Ditlevsen, 2009
+)
+.
+6.2
+Subgoal Monitoring
+The last low-level execution module takes care of the subgoal monitoring. It runs in parallel to the other modules and constantly checks if the skill has reached its subgoal region
+𝑮
+k
+=
+𝒩
+⁡
+(
+𝝁
+G
+,
+k
+,
+𝚺
+G
+,
+k
+)
+\bm{G}_{k}=\mathcal{N}(\bm{\mu}_{G,k},\bm{\Sigma}_{G,k})
+, as defined in Sec.
+5.1.3
+. We use a similar idea as in the anomaly detection approach to check if the end-effector pose
+𝒔
+n
+\bm{s}_{n}
+is within the expected goal region. We compute the Mahalanobis distance
+D
+^
+M
+G
+k
+​
+(
+𝒔
+n
+)
+=
+(
+𝒔
+n
+−
+𝝁
+G
+,
+k
+)
+T
+​
+(
+𝚺
+G
+,
+k
+)
+−
+1
+​
+(
+𝒔
+n
+−
+𝝁
+G
+,
+k
+)
+\hat{D}_{\mathrm{M}}^{G_{k}}(\bm{s}_{n})=\sqrt{(\bm{s}_{n}-\bm{\mu}_{G,k})^{\mathrm{T}}(\bm{\Sigma}_{G,k})^{-1}(\bm{s}_{n}-\bm{\mu}_{G,k})}
+(18)
+and set
+P
+^
+n
+G
+k
+=
+{
+subgoal reached
+,
+if
+​
+D
+^
+M
+G
+k
+​
+(
+𝒔
+n
+)
+≤
+D
+M
+,
+max
+G
+k
+subgoal not reached
+,
+if
+​
+D
+^
+M
+G
+k
+​
+(
+𝒔
+n
+)
+>
+D
+M
+,
+max
+G
+k
+\hat{P}_{n}^{G_{k}}=\left\{\begin{array}[]{cl}\text{subgoal reached},&\text{if }\hat{D}_{\mathrm{M}}^{G_{k}}(\bm{s}_{n})\leq D_{\mathrm{M,max}}^{G_{k}}\\
+\text{subgoal not reached},&\text{if }\hat{D}_{\mathrm{M}}^{G_{k}}(\bm{s}_{n})>D_{\mathrm{M,max}}^{G_{k}}\\
+\end{array}\right.
+(19)
+where
+D
+M
+,
+max
+G
+k
+=
+max
+d
+∈
+D
+⁡
+D
+M
+G
+k
+​
+(
+𝒈
+k
+d
+)
+D_{\mathrm{M,max}}^{G_{k}}=\max_{d\in D}D_{\mathrm{M}}^{G_{k}}(\bm{g}_{k}^{d})
+is the maximum Mahalanobis distance of the state subgoals
+𝒈
+k
+d
+\bm{g}_{k}^{d}
+inferred for the skill. If the subgoal region is reached, the skill selection component takes care of transitioning to the subsequent skill in the task graph.
+6.3
+Skill Selection
+The skill selection module is triggered by events from either the anomaly detection or subgoal monitoring module and determines how to react to the incoming events based on the task model. If the subgoal of a skill
+k
+k
+is reached, the skill selection module forwards the corresponding low-level skill parameters of the next skill
+k
++
+1
+k+1
+of the intended task flow from the task graph to the execution components or terminates the execution successfully if skill
+k
+k
+is a termination state in the task graph.
+Algorithm 2
+Determine type of anomaly sequence
+{
+𝝃
+n
+}
+n
+=
+1
+ε
+{\{}\bm{\xi}_{n}{\}}_{n=1}^{\varepsilon}
+​
+Input:
+{
+𝝃
+n
+}
+n
+=
+1
+ε
+{\{}\bm{\xi}_{n}{\}}_{n=1}^{\varepsilon}
+,
+𝚵
+k
+A
+\bm{\Xi}_{k}^{\mathrm{A}}
+,
+L
+k
+L_{k}
+​
+Output:
+anomaly label
+l
+∈
+L
+k
+l\in L_{k}
+1:
+if
+𝚵
+k
+A
+=
+=
+∅
+\bm{\Xi}_{k}^{\mathrm{A}}==\emptyset
+then
+2:
+set
+𝚵
+k
+A
+=
+{
+𝝃
+n
+}
+n
+=
+1
+ε
+\bm{\Xi}_{k}^{\mathrm{A}}={\{}\bm{\xi}_{n}{\}}_{n=1}^{\varepsilon}
+3:
+set
+l
+=
+1
+l=1
+,
+L
+k
+=
+{
+l
+}
+L_{k}=\{l\}
+4:
+return
+l
+l
+5:
+c
+=
+0
+c=0
+6:
+for
+n
+=
+1
+n=1
+to
+ε
+\varepsilon
+do
+7:
+compute
+P
+⁡
+(
+𝝃
+n
+)
+=
+∑
+m
+=
+1
+M
+π
+m
+​
+𝒩
+​
+(
+𝝃
+n
+|
+𝝁
+m
+A
+,
+𝚺
+m
+A
+)
+P(\bm{\xi}_{n})=\sum_{m=1}^{M}\pi_{m}\mathcal{N}(\bm{\xi}_{n}|\bm{\mu}_{m}^{\mathrm{A}},\bm{\Sigma}_{m}^{\mathrm{A}})
+8:
+if
+P
+⁡
+(
+𝝃
+n
+)
+<
+P
+min
+​
+(
+𝝃
+)
+P(\bm{\xi}_{n})<P_{\mathrm{min}}(\bm{\xi})
+then
+9:
+set
+c
+=
+c
++
+1
+c=c+1
+10:
+if
+c
+>
+ε
+/
+2
+c>\varepsilon/2
+then
+11:
+query user to confirm new anomaly
+12:
+if
+new anomaly
+then
+13:
+initiate new
+Task Decision
+teaching sequence
+14:
+set
+l
+=
+max
+l
+∈
+L
+k
+⁡
+l
++
+1
+l=\max_{l\in L_{k}}l+1
+,
+L
+k
+=
+L
+k
+∪
+l
+L_{k}=L_{k}\cup l
+15:
+else
+16:
+for
+n
+=
+1
+n=1
+to
+ε
+\varepsilon
+do
+17:
+predict
+l
+=
+f
+⁡
+(
+𝝃
+n
+)
+l=f(\bm{\xi}_{n})
+and increase count of
+l
+l
+18:
+set
+l
+=
+l
+l=l
+with max count
+19:
+set
+𝚵
+k
+A
+=
+𝚵
+k
+A
+∪
+{
+𝝃
+n
+}
+n
+=
+1
+ε
+\bm{\Xi}_{k}^{\mathrm{A}}=\bm{\Xi}_{k}^{\mathrm{A}}\cup{\{}\bm{\xi}_{n}{\}}_{n=1}^{\varepsilon}
+20:
+update GMM with
+𝚵
+k
+A
+\bm{\Xi}_{k}^{\mathrm{A}}
+and classifier with
+{
+𝝃
+n
+}
+n
+=
+1
+ε
+{\{}\bm{\xi}_{n}{\}}_{n=1}^{\varepsilon}
+,
+l
+l
+21:
+return
+l
+l
+In case an anomaly is detected during skill
+k
+k
+, the skill selection module stops the current execution and needs to determine if an appropriate recovery behavior has already been learned for that skill and anomaly case or if a new recovery behavior for a new type of anomaly needs to be learned from demonstration (see Algorithm
+2
+). To check if the detected anomaly is not within the region of known anomalies for skill
+k
+k
+, we train a GMM:
+𝝃
+∼
+∑
+m
+=
+1
+M
+π
+m
+​
+𝒩
+​
+(
+𝝁
+m
+A
+,
+𝚺
+m
+A
+)
+\bm{\xi}\sim\sum_{m=1}^{M}\pi_{m}\mathcal{N}(\bm{\mu}_{m}^{\mathrm{A}},\bm{\Sigma}_{m}^{\mathrm{A}})
+on the set
+𝚵
+k
+A
+=
+{
+{
+𝝃
+i
+,
+j
+}
+i
+=
+1
+ε
+}
+j
+=
+1
+J
+\bm{\Xi}_{k}^{\mathrm{A}}={\{}{\{}\bm{\xi}_{i,j}{\}}_{i=1}^{\varepsilon}{\}}_{j=1}^{J}
+of samples recorded during the last
+ε
+\varepsilon
+cycles before an anomaly was triggered from all previous anomaly occurrences
+J
+J
+. To incrementally refine and extend the knowledge about possible anomalies, the set
+𝚵
+k
+A
+\bm{\Xi}_{k}^{\mathrm{A}}
+is extended when new anomalies are detected during skill
+k
+k
+. We adopt step one of the anomaly detection strategy (
+17
+) based on the notion of epistemic uncertainty to detect new anomaly cases. We compute
+P
+⁡
+(
+𝝃
+n
+)
+=
+∑
+m
+=
+1
+M
+π
+m
+​
+𝒩
+​
+(
+𝝃
+n
+|
+𝝁
+m
+A
+,
+𝚺
+m
+A
+)
+P(\bm{\xi}_{n})=\sum_{m=1}^{M}\pi_{m}\mathcal{N}(\bm{\xi}_{n}|\bm{\mu}_{m}^{\mathrm{A}},\bm{\Sigma}_{m}^{\mathrm{A}})
+for all
+𝝃
+n
+,
+n
+∈
+{
+1
+,
+…
+,
+ε
+}
+\bm{\xi}_{n},n\in\{1,\ldots,\varepsilon\}
+that were confidently classified as anomalies with (
+16
+). If an anomaly is not within the region of known anomalies, hence
+P
+⁡
+(
+𝝃
+n
+)
+<
+P
+min
+​
+(
+𝝃
+)
+P(\bm{\xi}_{n})<P_{\mathrm{min}}(\bm{\xi})
+for the majority of samples
+𝝃
+n
+\bm{\xi}_{n}
+with
+P
+min
+​
+(
+𝝃
+)
+=
+min
+𝝃
+i
+∈
+𝚵
+k
+A
+⁡
+P
+⁡
+(
+𝝃
+i
+)
+P_{\mathrm{min}}(\bm{\xi})=\min_{\bm{\xi}_{i}\in\bm{\Xi}_{k}^{A}}P(\bm{\xi}_{i})
+, the user is queried to confirm whether it is a new anomaly. In that case, a new recovery behavior is demonstrated and appended to skill
+k
+k
+. In future occurrences of the same type of anomaly, the recovery behavior can be leveraged to autonomously recover. To distinguish the known anomaly cases, the observations
+𝝃
+n
+\bm{\xi}_{n}
+during the last
+ε
+\varepsilon
+cycles before the anomaly is triggered, are used to learn a classifier
+f
+⁡
+(
+𝝃
+)
+=
+l
+f(\bm{\xi})=l
+. The classifier assigns a sample
+𝝃
+n
+\bm{\xi}_{n}
+to a class
+l
+∈
+L
+k
+l\in L_{k}
+of the known anomaly types
+L
+k
+L_{k}
+of skill
+k
+k
+. We use a Support Vector Machine with a sliding time window for that purpose in our experiments.
+7
+Experiments
+We conducted experiments in simulation and on two different robots to evaluate the individual aspects of our proposed approach. First, we implemented a simple box-pushing task in simulation to compare our segmentation approach to other state-of-the-art methods. The other experiments are contact-based manipulation tasks conducted on real robots, where we increase the complexity of the task to show the applicability of the entire framework, including autonomous detection and recovery from anomalies in a real-world scenario. Supplementary videos for the experiments are provided in Extensions 1-3.
+7.1
+Box Pushing in Simulation
+In this experiment, we conduct an ablation study to examine in detail the influences of the IRL-based intention recognition and GMM-based feature clustering on our BNG-IRL segmentation approach.
+7.1.1
+Setup and Task Description
+The setup is shown in Fig.
+5
+, where we simulate a user demonstration of a pushing task.
+Figure 5
+:
+Steps of the box pushing task demonstration.
+The robot starts from an arbitrary start configuration and moves toward the box on the table. The box is then pushed towards the edge of the table with the robot until it falls on the floor. After the box has fallen from the table, the robot moves until a turning point and retracts back towards the table. The demonstrated end-effector (EEF) trajectory can be seen in the upper row of Fig.
+6
+. The state space
+𝑺
+\bm{S}
+of this task is the Cartesian space
+[
+x
+,
+y
+,
+z
+]
+∈
+ℝ
+3
+[x,y,z]\in\mathbb{R}^{3}
+and the feature space
+𝓕
+∈
+ℝ
+3
+\bm{\mathcal{F}}\in\mathbb{R}^{3}
+is defined by the Euclidean distances of the robot’s EEF to the box and to the edge of the table over which the box will be pushed as well as the force acting on the EEF. The latter two features recorded during the demonstration can also be seen in Fig.
+6
+.
+BNG-IRL (ours)
+BNGMM
+BN-IRL
+Cartesian EEF
+Trajectory
+Distance to Edge
+Force on EEF
+Figure 6
+:
+The top row shows the segmentation result of the three compared methods BNG-IRL, BNGMM
+(
+Rasmussen, 1999
+)
+, and BN-IRL
+(
+Michini et al., 2015
+)
+, mapped onto the end-effector (EEF) trajectory of the task demonstration. The skill assignment
+z
+z
+is represented by the color of each sample. The subgoals, which are only inferred in our approach and BN-IRL, are represented by an X in the skill’s color. The next two rows show the segmentation results in feature space, where the normalized distance of the EEF to the edge of the table and the normalized force on the EEF are plotted over time. The three distinct events during the task demonstration: The start and end of the box pushing as well as the turning point after pushing are highlighted in the figures. It can be seen, that by combining the influence of subgoals and feature constraints, only our approach reliably detects the distinct phases of the task and groups them in individual skills. The sampling-based parameter inference leading to the results is shown in Extension 1.
+7.1.2
+Unsupervised Task Segmentation Baselines
+Bayesian nonparametric GMM (BNGMM)
+(
+Rasmussen, 1999
+)
+is a probabilistic approach to clustering multivariate observations. The Bayesian nonparametric formulation allows to adapt the complexity of the model, i.e. the number of clusters, to the data.
+BN-IRL
+(
+Michini et al., 2015
+)
+tries to explain a task as a sequence of subgoals, which are important states encountered during the user demonstration. BN-IRL focuses only on inferring subgoals in the state space and does not take the features
+𝓕
+\bm{\mathcal{F}}
+into account.
+Automatic Waypoint Extraction (AWE)
+(
+Shi et al., 2023
+)
+uses dynamic programming to automatically extract a demonstration’s minimal set of waypoints that approximate the demonstrated trajectory well enough when linearly interpolating between them such that the reconstruction error lies below a predefined error threshold. The reconstruction error is defined as the maximum over the shortest distances of any point on the original trajectory to the reconstructed trajectory.
+Bayesian Online Changepoint Detection (BOCPD)
+Sugawara et al. (2023)
+apply BOCPD to the time derivative of measured force and torque signals to detect characteristic changes in the contact situation between a robot with its environment.
+7.1.3
+Metrics
+To evaluate the segmentation performance of the different methods, we compute the frame-wise accuracy (Acc), the edit score (Edit), and F1 scores at overlap thresholds of 10%, 25%, and 50% (F1@10, 25, 50). The accuracy evaluates performance at the frame level, while the edit score and F1 scores assess segmentation quality at the segment level
+(
+Liu et al., 2023
+)
+. We calculate the overlap between each detected segment and the ground truth segments and assign ground truth labels to maximize the overall intersection rate across the entire task.
+7.1.4
+Results and Discussion
+The most likely segmentation results for BNG-IRL, BNGMM, and BN-IRL after 1000 Gibbs sampling steps are shown in Fig.
+6
+. BNG-IRL is the only implementation to reliably identify the different skills of the task, which are represented by the different colors and corresponding subgoals marked as
+X
+. The task consists of four phases: 1) approaching the box and aligning the EEF, 2) pushing the box from the table, 3) moving forward to the turning point without load, and 4) retracting back towards the table. As reported in Table
+1
+, BNG-IRL achieves the highest frame-wise accuracy. While all ground truth segments are correctly detected, false positive segmentations before the pushing phase slightly lower the edit and F1 scores. Nevertheless, BNG-IRL still outperforms all baselines in average segment-level evaluation metrics.
+Due to the similarity in the force domain, BNGMM groups the samples before and after pushing the box in one cluster, see red samples in the center column of Fig.
+6
+. The turning point is also not identified with this approach, since without considering the intent of the actions, the black samples appear close in feature space. However, this method reliably detects the approach and the push phase, which leads to the second-highest quantitative evaluation results after BNG-IRL reported in Table
+1
+.
+Table 1
+:
+Quantitative evaluation of our BNG-IRL segmentation approach against the four baselines for the box-pushing task. The accuracy measures the performance at the sample level, while the edit and F1 scores assess the performance at the segment level.
+Method
+Acc
+Edit
+F1@{10, 25, 50}
+Avg
+BNG-IRL
+(our)
+89.3
+66.7
+80.0 / 80.0 / 80.0
+79.2
+BNGMM
+79.5
+57.1
+100 / 75.0 / 75.0
+77.3
+BN-IRL
+41.8
+4.7
+85.7 / 57.1 / 0.00
+37.9
+BOCPD
+77.0
+80.0
+66.7 / 66.7 / 66.7
+71.4
+AWE
+73.0
+50.0
+75.0 / 75.0 / 75.0
+69.6
+BN-IRL, on the other hand, which solely considers the subgoal’s influence on the actions when subdividing the demonstration has difficulties inferring coherent skills in this setup, leading to both the lowest frame-wise and segment-wise performance scores. The majority of observations (blue samples in the right column of Fig.
+6
+) are assigned to the same skill, whose subgoal is the last state of the demonstration. With the proposed observation likelihood in
+Michini et al. (2015)
+p
+⁡
+(
+𝒐
+i
+|
+z
+,
+𝒈
+k
+)
+=
+e
+α
+​
+Q
+∗
+​
+(
+𝒔
+i
+,
+𝒂
+i
+,
+𝒈
+k
+)
+∑
+a
+e
+Q
+∗
+​
+(
+𝒔
+i
+,
+a
+,
+𝒈
+k
+)
+p(\bm{o}_{i}|z,\bm{g}_{k})=\frac{e^{\alpha Q^{*}(\bm{s}_{i},\bm{a}_{i},\bm{g}_{k})}}{\sum_{a}e^{Q^{*}(\bm{s}_{i},a,\bm{g}_{k})}}
+, that only considers the observed action
+𝒂
+i
+\bm{a}_{i}
+with respect to the optimal policy to reach
+𝒈
+k
+\bm{g}_{k}
+, the actions of the blue samples indeed appear to be directed towards reaching the blue subgoal. As mentioned in Sec.
+3
+, our proposed optimality criterion for action
+𝒂
+i
+\bm{a}_{i}
+and subgoal
+𝒈
+k
+\bm{g}_{k}
+also considers the actions after
+𝒂
+i
+\bm{a}_{i}
+and can therefore exclude the possibility that the actions before reaching the turning point are targeted towards the blue subgoal. Since we aim to find a sequence of separable skills, our observation likelihood is advantageous in this case over the one proposed in BN-IRL. Since AWE does not consider the force signals, the box-pushing phase can not be correctly distinguished from the phases 1) and 3). BOCPD correctly detects the start and end of the pushing phase but suffers from over-segmentation in the end of phase 2 and fails to detect the turning point.
+7.2
+Manipulation Task with DLR LWR IV
+7.2.1
+Experimental Setup
+Figure 7
+:
+The task graph structures the low-level skills on a higher level of abstraction. The green sequence of skills represents the intended task flow from the initial demonstration. The recovery behavior in red restores a situation from which the robot can continue with the intended task flow. The monitored execution of the ’Approach Object 1’ skill is shown on the right.
+As seen in Fig.
+7
+, a DLR LWR IV robot
+(
+Albu-Schäffer et al., 2007
+)
+, equipped with a 2-finger gripper and a force-torque (FT) sensor, is mounted on a linear axis. The FT sensor measures the forces and torques acting on the end-effector. An Intel Realsense camera tracks the 6D poses of objects. Two pedals near the workspace allow the user to start and stop the demonstration and operate the gripper. When the demonstration mode is activated, the robot compensates for its own weight, enabling kinesthetic teaching. The task for the robot is to pick up object 1 and to place it on top of object 2 such that their edges are aligned. Both objects can have arbitrary initial 6D poses. Additionally, the robot should detect and recover from a task anomaly, where the robot loses the object during transport. A video of the experiment setup, as well as the task learning procedure and autonomous error recovery, are provided in Extension 2. The feature space
+𝓕
+\bm{\mathcal{F}}
+for this task includes the following seven features: the Euclidean distance between the robot’s end-effector and objects 1 and 2, the relative orientation between the end-effector and objects 1 and 2, the force acting on the end-effector, the gripper finger distance, and the gripper’s grasp status
+∈
+{
+−
+1
+,
+0
+,
+1
+}
+\in\{-1,0,1\}
+.
+7.2.2
+Incremental Task Learning Procedure
+The teaching procedure starts with an initial demonstration of the task, where the user picks up object 1 with the robot and places it on top of object 2 in the desired goal configuration. The segmentation result can be seen in Fig.
+8
+, where the important subgoals of the task are correctly identified. The inferred sequence of skills is then used to construct an initial task graph (see the green sequence in Fig.
+7
+and Extension 2), where the skills are encoded as DMPs.
+Figure 8
+:
+The Cartesian end-effector trajectory during the user demonstration of the manipulation task. Samples with the same color are assigned to the same skill. The state subgoals of all six skills are depicted with an X. Several subgoals are inferred in the vicinity of the objects, as objects are grasped or released here. The features between the skills therefore only differ in the gripper finger distance and grasp status.
+Figure 9
+:
+Anomaly detection mechanism illustrated with the expected force during the transportation skill. In blue are the samples collected during the user demonstration
+\raisebox{-.9pt} {1}⃝
+-
+\raisebox{-.9pt} {2}⃝
+which were used to infer the skill’s expected feature region, represented by a 2D Gaussian (light blue area). The green and red samples are recorded during the robot execution
+\raisebox{-.9pt} {3}⃝
+,
+\raisebox{-.9pt} {4}⃝
+. First, the features lie within the expected region (green samples) but as soon as the object falls out of the gripper and the force on the end-effector suddenly decreases, the samples are classified as anomolous (red samples) which eventually triggers an anomaly.
+The system then switches to the autonomous execution phase, in which the robot performs the skills from the initial task graph. Using the skills’ DMPs, the robot’s EEF trajectories can be generalized to varying subgoal configurations. In case a task anomaly occurs, like losing the object during manipulation, the anomaly detection component automatically registers a deviation of the features from their expected region. The anomaly detection mechanism is visualized for the measured end-effector force in Fig.
+9
+. It can be seen that the measured samples before the task anomaly (green) were confidently classified with the two-step anomaly detection approach as belonging to the executed skill. As soon as the measured force leaves the expected constraint region, the Mahalanobis distance exceeds the anomaly threshold (
+16
+). After 300 ms, an anomaly is confidently detected and the robot stops. Since no recovery behavior is available in the task graph, the robot requests a user demonstration to resolve the anomaly.
+Figure 10
+:
+The mean EEF poses
+𝝁
+G
+,
+k
+\bm{\mu}_{G,k}
+of the skills’ subgoals in the sequence of occurrence during the task. The subgoals are defined as regions of 6D EEF poses. If the robot reaches the subgoal region of a skill, the next intended task flow skill with a new subgoal is scheduled.
+The demonstrated recovery behavior is segmented, encoded analog to the initial demonstration, and appended to the skill in the task graph during which the anomaly was detected (see sequence connected with red arrows in Fig.
+7
+). The robot can now leverage this recovery behavior to automatically resolve similar situations occurring at any phase of the transportation skill.
+7.3
+Box Grasping and Locking with DLR SARA
+This task stands for a variety of specialized contact tasks that require precise coordination of end-effector pose and applied force in the different phases. The phases that make up this task cannot be described by common robot skills, but require precise coordination of end-effector pose and applied force and therefore must be learned through demonstration on the real system. We utilize this task to demonstrate the different capabilities of our proposed framework, which include A) the three variants of teaching sequences, B) the hierarchical task decomposition based on a few user demonstrations, and C) the autonomous task execution, where new anomalies can be detected and autonomously resolved after a recovery behavior has been learned. A video showcasing these capabilities is provided in Extension 3.
+7.3.1
+Experimental Setup
+The DLR SARA robot
+(
+Iskandar et al., 2020
+)
+, is equipped with a 6-DOF FT sensor in the wrist that can measure task forces and torques during kinesthetic demonstration which need to be reproduced during the execution
+(
+Iskandar et al., 2021
+)
+. On the last robot link are buttons and a display that the user can interact with during the demonstrations. The display provides the user with information about the robot’s status and informs which buttons to press to navigate the desired teaching sequence. As shown in Fig.
+1
+and Fig.
+11
+, a passive gripper is mounted on the robot which is designed to pick and lock the standardized euro boxes using a sequence of specific motions with the robot. A euro box with a known pose relative to the robot’s base coordinate frame is located in the robot’s workspace.
+7.3.2
+Recorded Data
+The state vector
+𝒔
+∈
+𝑺
+\bm{s}\in\bm{S}
+for this task is defined by the 6D robot end-effector pose in the box coordinate frame
+𝒔
+=
+[
+𝒑
+EEF
+,
+𝒒
+EEF
+]
+\bm{s}=[\bm{p}_{\mathrm{EEF}},\bm{q}_{\mathrm{EEF}}]
+represented by the Cartesian position
+𝒑
+EEF
+=
+[
+x
+,
+y
+,
+z
+]
+\bm{p}_{\mathrm{EEF}}=[x,y,z]
+and orientation in unit quaternions
+𝒒
+EEF
+=
+[
+q
+w
+,
+q
+x
+,
+q
+y
+,
+q
+z
+]
+\bm{q}_{\mathrm{EEF}}=[q_{w},q_{x},q_{y},q_{z}]
+. The considered features
+𝓕
+\bm{\mathcal{F}}
+are the measured external forces
+𝑭
+ext
+=
+[
+f
+x
+,
+f
+y
+,
+f
+z
+]
+\bm{F}_{\mathrm{ext}}=[f_{x},f_{y},f_{z}]
+, the torques at the wrist
+𝑻
+wrist
+=
+[
+t
+x
+,
+t
+y
+,
+t
+z
+]
+\bm{T}_{\mathrm{wrist}}=[t_{x},t_{y},t_{z}]
+, the distance
+𝑫
+EEF
+=
+[
+d
+x
+,
+d
+y
+,
+d
+z
+]
+\bm{D}_{\mathrm{EEF}}=[d_{x},d_{y},d_{z}]
+and the orientation in Euler angles
+𝑶
+EEF
+=
+[
+α
+,
+β
+,
+γ
+]
+X
+​
+Y
+​
+Z
+\bm{O}_{\mathrm{EEF}}=[\alpha,\beta,\gamma]_{XYZ}
+of the EEF relative to the box to pick. To preprocess the recorded data for learning, the features are normalized with element-wise mean normalization
+f
+norm
+=
+f
+−
+μ
+f
+m
+​
+a
+​
+x
+​
+(
+f
+)
+−
+m
+​
+i
+​
+n
+​
+(
+f
+)
+f_{\mathrm{norm}}=\frac{f-\mu_{f}}{max(f)-min(f)}
+. Using Riemannian geometry, unit quaternions
+𝒒
+∈
+𝓢
+3
+\bm{q}\in\bm{\mathcal{S}}^{3}
+can be mapped into a tangent space that locally linearizes the manifold
+𝓢
+3
+\bm{\mathcal{S}}^{3}
+. We follow the proposed formulation of
+Simo-Serra et al. (2017)
+and
+Calinon (2020)
+that leverages Riemannian geometry to extend GMMs to non-Euclidean data. That allows us to encode the 6D end-effector pose and velocity as well as the contact force in one GMM for learning motion primitives and constraints as described in Sec.
+6.1
+.
+7.3.3
+Task Description
+To better understand how the grasping and locking mechanism of the box gripper works, which has to be learned from demonstration, we first describe the gripper hardware and functionality before explaining the sequence of motions and difficulties during the task.
+Gripper Design
+Figure 11
+:
+Passive box gripper design with movable linear slides to grasp and lock a euro box.
+The gripper
+(
+Eiberger, 2022
+)
+, as depicted in Fig.
+11
+, has two movable linear slides. When moving the linear slides up, springs 1 are tensioned and pull the slides back into the neutral configuration if the slides are released. When the locking pin in the linear slides is pushed, a latch at the back of the slides retracts and engages in one of the slide locks. This blocks the linear movement of the slides, which enables the grasping of boxes of different heights. To fixate a box inside the gripper, springs 2 are compressed to maintain a constant force between the linear slides and the box locks. The box locks engage at its counterpart at the bottom of the box and prevent movement perpendicular to the linear motion of the slides.
+Kinematic Sequence to Grasp and Lock the Box
+The task, as depicted in Fig.
+1
+and Fig.
+10
+, consists of five different phases. In the first phase, the robot moves from a start configuration closer to the box, while slightly tilting the end-effector to avoid contact between the box locks of the gripper and the box. In the second phase, the gripper moves closer to the box until both linear slides evenly contact the side wall of the box (see column 2 of Fig.
+1
+). After that, while maintaining contact between the slides and the box, the gripper is pushed down along the side wall of the box, tensioning springs 1 until the third configuration in the upper row of Fig.
+1
+is reached. In the next phase, the box gripper is moved closer to the box, such that the locking pins in the slides are pushed and the linear movement of the slides is blocked. In the final phase, springs 2 are compressed, while rotating the box gripper into a vertical configuration, such that the box locks can engage at the bottom of the box.
+Constraint Regions
+𝒩
+⁡
+(
+𝜽
+C
+,
+k
+)
+\mathcal{N}(\bm{\theta}_{C,k})
+Subgoal Regions
+𝒩
+⁡
+(
+𝜽
+G
+,
+k
+)
+\mathcal{N}(\bm{\theta}_{G,k})
+Figure 12
+:
+Position part of the subgoal and constraint regions inferred with BNG-IRL. The constraint regions
+𝑪
+k
+\bm{C}_{k}
+and the subgoal regions
+𝑮
+k
+\bm{G}_{k}
+are both defined as multivariate Gaussian distributions with parameters
+𝜽
+C
+,
+k
+\bm{\theta}_{C,k}
+and
+𝜽
+G
+,
+k
+\bm{\theta}_{G,k}
+, respectively. However, the constraints are defined in feature space
+𝓕
+\bm{\mathcal{F}}
+and need to be met during the execution of a skill, while the subgoal regions are defined in state space
+𝑺
+\bm{S}
+and are postconditions that must be reached for successful skill termination. The ellipsoids represent the observed correlation and variation of the training data of each skill. An EEF pose within the constraint region of skill 2 is depicted in the lower left image, while the lower right image shows an EEF pose in the subgoal region of skill 1. The corresponding mean EEF poses
+𝝁
+G
+,
+k
+\bm{\mu}_{G,k}
+of all subgoal regions are depicted in Fig.
+10
+. The characteristic features that define the constraints of each skill can be seen in Fig.
+13
+.
+Difficulties
+The task poses several difficulties that can prevent successful grasping and locking of the box. The challenges of every phase are depicted in the bottom row of Fig.
+1
+. In the first phase, the box locks of the gripper must not collide with the box, while the slides are already located over the wall of the box so that in phase 2, only the front part of the slides contact the wall of the box. If the gripper moves too close to the box in phases 2 or 3, the locking pin is pushed too early and the sliding mechanism is blocked. If the gripper moves too far away from the box and the slides lose contact with the wall, the springs 1 pull the slides into the neutral configuration. In both cases, configuration 3 can not be reached. If configuration 3 has been reached, the gripper can move closer to the box, such that the locking pins are pushed and the springs 2 can be compressed. Before rotating into the vertical configuration, the robot must push the gripper further down to avoid a collision between the box locks and the lower part of the box. Precise coordination of applied force in the direction of spring 2 and rotation of the gripper is required during this phase since there is only a very small clearing between the gripper and the box. If the robot does not exert enough force or rotates too early, the box locks collide with the box and the final configuration can not be reached.
+7.3.4
+Initial Teaching Sequence
+To learn an initial model of the task of grasping and locking the box with the gripper, a user provides three demonstrations using kinesthetic teaching. These demonstrations are then segmented with our BNG-IRL approach. The results of the sampling procedure with the highest MAP likelihood are shown in Fig.
+12
+and Fig.
+13
+. The results indicate a segmentation of the task into the five skills, which were described above. As shown in Fig.
+12
+, the further the task progresses, the more restricted the subgoal (right) and constraint regions (left) become, because the process requires more precision once contact between the robot and the box is established. As expected, the subgoal regions are located at the end of each skill. The skills’ actions are targeted toward reaching its subgoal configuration. In the upper two rows of Fig.
+12
+, only the 3D position component of the subgoal region is depicted, however, the subgoal regions are defined in state space, which also includes a 3D orientation component. To illustrate this, Fig.
+10
+depicts the mean 6D EEF pose
+𝝁
+G
+,
+k
+\bm{\mu}_{G,k}
+of every subgoal region. The first row of Fig.
+1
+shows the EEF poses during execution of the task that fulfill condition (
+19
+), which trigger a transition to the next intended task flow skill in the task graph. Fig.
+13
+shows that the similarities and correlations among the features are considered in the segmentation process as well. Skill 3 (orange) encodes the linear correlation between force and position in z-direction, caused by springs 1. As seen in the first two rows of Fig.
+13
+, a deflection in z from the neutral configuration at 0.1 m causes a linear increase of force in z-direction. In the last skill (light green), a significant reduction of force in the z-direction is correlated with a rotation around the y-axis and a motion in the negative x-direction. This motion causes the box locks to engage, which compensates for the force of the compressed springs 2.
+demo 1
+demo 2
+demo 3
+pos z (m)
+force z (N)
+ang y (rad)
+pos x (m)
+force x (N)
+Figure 13
+:
+Characteristic features during the initial task demonstrations, which are utilized to segment the task into skills based on consistent correlations among the demonstrations. The features define the constraint regions
+𝑪
+k
+\bm{C}_{k}
+of each skill. The colors represent the different skills.
+Quantitative Evaluation of Unsupervised Segmentation
+We evaluate the task segmentation performance of BNG-IRL against the two baseline approaches AWE
+(
+Shi et al., 2023
+)
+and BOCPD
+Sugawara et al. (2023)
+described in Sec.
+7.1.2
+. We compute accuracy, edit and F1@10, 25, 50 scores, as explained in Sec.
+7.1.3
+.
+Results
+Table
+2
+shows that BNG-IRL outperforms both baselines in frame- and segment-level metrics averaged over three task demonstrations. As illustrated in Fig.
+14
+, AWE’s chosen error threshold of 10 mm, necessary for accuracy during the contact phase, causes over-segmentation at the beginning of the task. Because the robot does not approach the box along a linear path, the trajectory is unnecessarily subdivided, although this is not relevant for the task. In contrast, BNG-IRL does not segment each task demonstration individually but finds a combined segmentation result for all demonstrations. It leverages the similarities across different demonstrations, which leads to a more consistent result. BOCPD, however, suffers from over-segmentation during the contact phase while failing to detect the transition from free space to contact. This occurs because the contact force only increases slowly during the first contact skill but exhibits larger fluctuations in later stages due to higher impact forces. Consequently, applying BOCPD to the time derivative of force and torque measurements leads to this segmentation result.
+Figure 14
+:
+Comparison of the ground truth segmentation of demonstration 1 with the task segmentation results of BNG-IRL, BOCPD, and AWE. BOCPD suffers from over segmentation in the final phase of the task, while AWE detects too many segments in the beginning.
+Table 2
+:
+Quantitative evaluation of our BNG-IRL segmentation approach and the two baselines BOCPD
+(
+Sugawara et al., 2023
+)
+and AWE
+(
+Shi et al., 2023
+)
+for the box-grasping task. The accuracy measures the performance at the sample level, while the edit and F1 scores assess the performance at the segment level.
+Method
+Acc
+Edit
+F1@{10, 25, 50}
+Avg
+BNG-IRL
+(our)
+74.9
+67.9
+88.9 / 88.9 / 74.1
+78.9
+BOCPD
+61.5
+46.8
+58.8 / 44.1 / 34.5
+49.1
+AWE
+55.6
+44.8
+64.2 / 64.2 / 32.1
+52.2
+7.3.5
+Skill Refinement Teaching Sequence
+The inferred skills from the previous teaching sequence are encoded as dynamical systems for motion generation and anomaly detection as described in Sec.
+6.1
+, where we set the number of mixture components per skill equal to two. The robot is already capable of autonomously executing the learned skills, however, incremental refinements in the force domain might still be required to complete the task successfully. We additionally utilize the refinement sequence to increase the variation in the training data for each skill’s low-level model in a combined robot execution and user support phase. Since the autonomous execution does not simply replicate the demonstration, the contact forces during autonomous execution typically differ slightly from the ones recorded during the user demonstrations. As seen in the upper right graph of Fig.
+15
+, the commanded force in the last part of the skill 4 is not enough to fully compress springs 2 in the commanded EEF configuration. That is why a user supports during this phase by applying additional force in z-direction so that the task can be successfully completed. As seen in the lower row of Fig.
+15
+, the recorded force is used to update the low-level model, which results in a higher commanded force for that EEF configuration in the next autonomous execution.
+Skill 4 Model
+Forces in z
+Figure 15
+:
+Force Refinement of skill 4. The relation between z-position and commanded force in z-direction for skill 4, is illustrated by the 2D excerpt of the GMM for motion- and force generation (left). The measured and commanded forces in z-direction during the entire task are depicted on the right. As shown in the upper row, the low-level skill model from the initial user demonstrations generates a force command in z-direction, which is not enough to fully compress springs 2. After collecting new user support training data, the low-level skill model is updated, which results in a higher commanded force during skill 4 for the same EEF configuration.
+Skill 3 Model
+Anomaly Detection
+Figure 16
+:
+Nominal execution of skill 3. The relation between
+f
+x
+f_{x}
+and
+x
+x
+, as well as
+f
+z
+f_{z}
+and
+z
+z
+for skill 3, is illustrated by the 2D excerpts of the GMM for motion- and force generation (left). As seen on the left, the measured forces during the execution
+f
+x
+f_{x}
+and
+f
+z
+f_{z}
+are within the expected constraint region for the measured EEF pose. The deviation between the commanded- and measured forces (upper right) is in a tolerable region, which is why the computed Mahalanobis distance
+D
+M
+​
+(
+𝝃
+n
+)
+D_{\mathrm{M}}(\bm{\xi}_{n})
+does not exceed the upper boundary
+D
+M
+,
+max
+D_{\mathrm{M,max}}
+. Since the robot operates in a region of the training data with low epistemic uncertainty, the approach can confidently predict anomalies (see (
+17
+) and lower right figure).
+7.3.6
+Unsupervised Anomaly Detection
+The refined skill sequence can now be executed on the robot with active anomaly detection. To test the anomaly detection and recovery capability of our approach, we simulate four different anomalies during the third skill of the task, depicted in Fig.
+17
+. The anomalies are I) pushing against the end-effector before tensioning springs 1, II) prematurely locked linear slides, III) pulling the gripper away from the box during tensioning springs 1, and IV) missed contact between the slides and the box. Anomalies I) and III) simulate user interference with the task, II) simulates a hardware defect, and IV) a perception error, that causes a wrongly predicted box configuration resulting in a gripper offset relative to the box.
+As shown in Fig.
+17
+, our approach successfully detects all anomalies before a potentially dangerous situation can occur. The second and third row of Fig.
+17
+show the measured force in x and z-direction over the EEF position in the same direction as well as the corresponding training data for the skill. The expected force region with respect to the EEF pose is depicted by the ellipsoids representing the covariance of the training data. As shown on the left in Fig
+16
+, the measured forces during the execution are expected to lie within the region of the training data. If the measured and commanded forces do not deviate more than expected, the Mahalanobis distance computed with (
+15
+) stays below the skill’s anomaly threshold (see right side of Fig.
+16
+). However, if the measured forces deviate from their expected region, and the Mahalanobis distance successively exceeds the threshold for more than 300 ms, an anomaly is triggered (see second last row in Fig.
+17
+). Since the variation in the training data is smaller in the first part of the skill, represented by the purple ellipsoids, the anomaly detection is more sensitive to deviations in that phase. As shown in the bottom row of Fig.
+17
+, the model can confidently predict anomalies for the measured EEF poses, since condition (
+17
+) is continuously met.
+Quantitative Evaluation
+We evaluate the performance of our anomaly detection against several state-of-the-art baselines. The characteristics of the compared approaches are summarized in Table
+3
+. ConditionNET
+(
+Sliwowski and Lee, 2024
+)
+and FinoNET
+(
+Inceoglu et al., 2021
+)
+are supervised anomaly detection approaches, trained on successful and unsuccessful videos of the task execution, whereas our unsupervised anomaly detection approach is only trained on the end-effector poses and contact forces recorded from three successful user demonstrations and three successful robot executions of the task.
+ConditionNET
+(
+Sliwowski and Lee, 2024
+)
+is a vision-language model designed to learn the preconditions and effects of skills. It frames anomaly detection as a state prediction problem, where given an image and a natural language description of the skill, the model classifies whether the image represents a precondition, effect, or neither. An anomaly is detected if the predicted state does not match the actual state of the skill.
+Table 3
+:
+Characteristics of the compared anomaly detection approaches during the training and prediction phase.
+Training
+Prediction
+Method
+Setting
+Data
+Examples
+Data
+Evaluation
+Resp t
+GMR
+(our)
+unsupervised
+𝒑
+EEF
+,
+𝒒
+EEF
+,
+𝑭
+ext
+\bm{p}_{\mathrm{EEF}},\bm{q}_{\mathrm{EEF}},\bm{F}_{\mathrm{ext}}
+6 success examples
+skill + meas.
+𝒑
+,
+𝒒
+,
+𝑭
+\bm{p},\bm{q},\bm{F}
+per frame
+5ms
+GMRwo
+unsupervised
+𝒑
+EEF
+,
+𝒒
+EEF
+,
+𝑭
+ext
+\bm{p}_{\mathrm{EEF}},\bm{q}_{\mathrm{EEF}},\bm{F}_{\mathrm{ext}}
+6 success examples
+meas.
+𝒑
+,
+𝒒
+,
+𝑭
+\bm{p},\bm{q},\bm{F}
+per frame
+5ms
+VLM QA
+pretrained
+-
+-
+nl prompt, latest frames
+per frame
+10-15s
+CondNET
+supervised
+annot video frames
+30 success, 49 anom
+video frame, skill phase
+per frame
+20ms
+FINO
+supervised
+annot video frames
+30 success, 49 anom
+8 video frames (skill)
+per skill
+40ms
+Table 4
+:
+Evaluation of the frame-wise detection performance of our GMR-based anomaly detection approach against the baselines ConditionNET
+(
+Sliwowski and Lee, 2024
+)
+, VLM-based CoT-QA
+(
+Agia et al., 2024
+)
+, GMR without segmentation. For all cases except the ”box missed” anomaly, our approach shows the best detection performance.
+push against EEF
+slide locked
+pull away during contact
+box missed
+Method
+Acc
+Pre
+Rec
+F1
+Del
+Acc
+Pre
+Rec
+F1
+Del
+Acc
+Pre
+Rec
+F1
+Del
+Acc
+Pre
+Rec
+F1
+Del
+GMR
+(our)
+97.6
+100
+96.6
+98.3
+0.2
+97.6
+100
+96.0
+98.0
+0.3
+98.5
+97.4
+99.5
+98.4
+0.04
+60.0
+100
+34.6
+51.5
+4.3
+CondNET
+68.6
+98.9
+55.1
+70.8
+1.2
+64.4
+98.6
+50.2
+66.5
+3.0
+94.0
+88.8
+94.3
+91.5
+0.2
+66.9
+95.3
+53.8
+68.8
+2.2
+VLM QA
+38.0
+85.7
+11.2
+19.9
+3.4
+64.0
+91.7
+53.2
+67.3
+5.7
+75.0
+72.4
+38.9
+50.6
+2.7
+53.9
+100
+31.2
+47.5
+2.3
+GMRwo
+50.8
+100
+29.5
+45.5
+3.4
+41.2
+0
+0
+0
+8.3
+61.9
+95.5
+17.7
+29.8
+0.1
+38.8
+0
+0
+0
+6.6
+I) push against EEF
+II) slide locked
+III) pull away during contact
+IV) box missed
+Figure 17
+:
+When interfering with the task, our method consistently detects anomalies before potentially dangerous situations can occur. As shown in rows 2 and 3, when the measured forces
+f
+x
+f_{x}
+and
+f
+z
+f_{z}
+are outside the expected range with respect to the measured EEF pose, our unsupervised anomaly detection approach classifies the measurements as anomalous (red samples). As more variance in the force
+f
+z
+f_{z}
+is present in the training data for the phase where the robot tensions springs 1 (turquoise region), the anomaly detection is less sensitive towards deviations in
+f
+z
+f_{z}
+in that phase during the execution. If the computed Mahalanobis distance
+D
+M
+​
+(
+𝝃
+n
+)
+D_{\mathrm{M}}(\bm{\xi}_{n})
+exceeds the upper boundary
+D
+M
+,
+max
+D_{\mathrm{M,max}}
+for more that 300 ms and the robot is within the training region with low epistemic uncertainty (lower two rows), an anomaly is confidently detected. Detailed videos of all anomaly cases are provided in Extension 3.
+FinoNET
+(
+Inceoglu et al., 2021
+)
+is a deep-neural network-based model to detect manipulation failures by classifying an observed skill recording as
+success
+or
+failure
+. Four frames from the beginning and four frames from the end phase of the skill are randomly sampled and used as input for the classification. The model provides a success assessment after observing the complete skill.
+VLM CoT-QA
+A LVLM (Pixtral-12B-2409)
+(
+Agrawal et al., 2024
+)
+is queried to assess the task progress and detect anomalies based on the skill’s video frames up to the current time step and a natural language prompt. The anomaly detection problem is framed as a chain-of-thought (CoT), video question answering (QA) task. We reduce the time horizon of the anomaly detection to the performed skill and design the VLM prompts according to
+Agia et al. (2024)
+, which include a comprehensive description of the current skill, an explanation of the VLM’s role as an anomalies detector, and the remaining time until expected skill completion.
+GMR without segmentation
+We use the same GMR-based probabilistic anomaly detection mechanism as in our proposed approach. However, the task is not segmented into skills, and the entire training data is encoded as one GMM.
+Dataset and Metrics
+We collected a dataset that contains videos, robot end-effector trajectories, and contact forces from 22 successful and 40 unsuccessful executions of the box grasping task. The unsuccessful executions contain 10 instances for each anomaly type. For ConditionNET and FinoNet, the video frames corresponding to each skill are segmented into pre-, core-, and effect phases. Each video is annotated with natural language descriptions of the performed skills, a temporal segmentation mask for the three phases of every skill, and a success label. We partition the dataset into training (70%) and validation (30%) sets while preserving the distribution of successful and unsuccessful executions. We report frame-wise accuracy, precision, recall, F1 scores, and mean anomaly detection delay for the models performing online anomaly detection at each time step (Table
+4
+). The mean detection delay is the average time in seconds between the first occurrence of an anomaly and its detection by a given approach. This metric does not include model response time, which varies significantly across models (see Table
+3
+). Table
+5
+shows the average task assessment accuracy over executions, indicating whether a model correctly detected an anomaly at any point during the complete execution.
+Table 5
+:
+Average prediction accuracy over complete task executions for the four anomaly cases and the successful case.
+Prediction Accuracy
+Method
+I
+II
+III
+IV
+no
+GMR
+(our)
+100
+100
+100
+100
+100
+GMRwo
+100
+0
+100
+0
+0
+VLM QA
+50.0
+66.7
+75.0
+66.7
+44.4
+CondNET
+100
+100
+100
+100
+33.3
+FINO
+100
+100
+80.0
+100
+66.7
+Results
+As shown in Table
+4
+, our approach outperforms all other online detection baselines in frame-wise prediction performance and detection delay for anomaly cases I–III. Unlike other methods, our detector identifies subtle force deviations before anomalies become visually observable. For the ”box missed” case, ConditionNET achieves better detection performance, as this anomaly is visually observable before anomalous force readings occur. Table
+5
+further demonstrates that our approach is the only one that confidently detects all anomalies without triggering false positives during successful executions. Methods relying on vision are sensitive to camera viewpoints and degrade in performance under occlusions. GMR without segmentation performs the worst in this setting, as its mixture components are unevenly distributed across skills, and the anomaly detection threshold in (
+16
+) remains fixed throughout the task, reducing the overall sensitivity to deviations. The VLM CoT-QA baseline correctly describes observed video frames and focuses on relevant questions for anomaly detection. However, it often struggles to determine whether a described situation constitutes an anomaly. Most detected anomalies with this method result from exceeding the skill’s time limit. Even in such cases, the VLM fails to maintain consistent predictions across multiple time steps.
+7.3.7
+Task Decision Teaching Sequence
+Finally, to autonomously recover from the detected anomalies, the anomaly cases need to be classified to select the appropriate recovery behaviors. For this, we utilize the anomalous observations
+{
+𝝃
+n
+}
+n
+=
+1
+ϵ
+\{\bm{\xi}_{n}\}_{n=1}^{\epsilon}
+of EEF velocities and contact forces (red samples in Fig.
+17
+) of each anomaly case to learn a Support Vector Machine with a sliding time window of length 100. We constantly update the supervised anomaly classifier with new training data to improve the classification of known anomalies and to extend the model with new anomaly classes as they occur.
+Figure 18
+:
+The Task Graph for the box grasping and locking task, including recovery behaviors for the different anomalies I) - IV) of skill 3. After the initial demos, the TG consists of the intended task flow skills in green. As new anomalies are identified, the TG can be incrementally extended with recovery behaviors. They recover from anomalies, such that the robot can continue with the intended task flow.
+If a new anomaly is detected with Algorithm
+2
+, the task graph in Fig.
+18
+is extended with a new recovery behavior. Just like the initial task flow skills, recovery behaviors are learned from demonstration, however, they are appended to the skill in the task graph during which the anomaly was detected. If, during the execution, the recovery behavior’s final subgoal is reached, we assume that the robot can continue with the nominal execution of the task (green skills in Fig.
+18
+). To choose the next skill after a recovery behavior, we select the nominal skill whose low-level motion model according to Sec.
+6.1
+maximizes
+P
+⁡
+(
+𝒔
+n
+)
+=
+∑
+e
+=
+1
+E
+π
+e
+​
+𝒩
+​
+(
+𝒔
+n
+|
+𝝁
+e
+s
+,
+𝚺
+e
+s
+​
+s
+)
+P(\bm{s}_{n})=\sum_{e=1}^{E}\pi_{e}\mathcal{N}(\bm{s}_{n}|\bm{\mu}_{e}^{s},\bm{\Sigma}_{e}^{ss})
+for the measured EEF pose
+𝒔
+n
+\bm{s}_{n}
+, i.e. the skill with the lowest epistemic uncertainty for generating an action. This skill is best suited to continue with the execution from the current robot configuration.
+7.4
+Discussion and Limitations
+For input far away from the training data, the GMM/GMR-based motion generation approach struggles to produce meaningful output commands, which may instead converge to spurious attractors. To increase the generalization capabilities of our framework in areas beyond the observed EEF poses during the demonstration, we propose to distinguish the skills in contact and free-space motion skills using e.g. the classification proposed in
+Eiband et al. (2023a)
+. For free-space motion skills, the only aim is to reach their subgoal configurations, which are by design within the training region of the next skill. A motion planner can thus be used to generate a collision-free trajectory to the subgoal region, from which a contact skill can continue with the execution. Dynamical Systems learned from user demonstrations can furthermore suffer from local minima in absolute velocity in the training data, which can cause the robot to get stuck in these regions during the execution. States during the demonstration, where low EEF velocities close or equal to zero are recorded, are more likely to be important states where high precision in the EEF configuration is required. Our approach can identify these states as subgoals. If such a subgoal is reached during the execution, our system transitions to the next skill in the task graph, using a new low-level skill model that can escape from the local minimum of the previous skill.
+Another advantage when distinguishing between contact and free-space motions concerns safety during the execution. Since unintended contacts with the environment usually trigger a collision stop of the robot, this safety feature needs to be deactivated during contact tasks to avoid false positive collision detection. However, our anomaly detection approach still registers unintended forces that exceed the expected process forces and thus increases user safety in contact situations. When commanding a robot using impedance control, the presence of unmodelled contact forces and torques causes a stiffness-dependent offset between the commanded and measured EEF pose of the robot. However, the box-grasping mechanism requires precise EEF configurations to complete the task. To compensate for this offset, we actively command the configuration-dependent force in every cycle needed to counteract the force resulting from the springs of the gripper.
+Since we assume, that the features of every skill follow a multivariate Gaussian distribution, we are limited to inferring linear correlations between the features when segmenting skills with our BNG-IRL approach. We demonstrated that we can solve challenging tasks with this approach, however, there may exist tasks, where nonlinear relations between the features play an important role. Additionally, when computing the epistemic uncertainty for step 1 of the anomaly detection, the likelihood for states in the beginning and end of the skills that lie closer to the boundary of the training data are closer to the confidence threshold (
+17
+). This means that the anomaly detection is by design less confident for states in the beginning and the end of the skill. Lastly, the selection of a nominal skill after a recovery behavior does not consider high-level or semantic task information. Instead, the skill best suited to generate a motion based on the current EEF configuration is chosen. However, incorporating semantic information could be beneficial in narrowing down candidate skills for transitions. Similarly, augmenting recovery behaviors with semantic information could enable their reuse across different skills, allowing for automatic recovery from similar anomalies without explicitly demonstrating the recovery behavior. An automatic evaluation of whether the current situation meets the precondition of another skill is proposed by
+Sliwowski and Lee (2024)
+to select an appropriate recovery behavior from known skills. Instead of demonstrating a new recovery behavior, users could assess whether an existing skill in the task graph is suitable for recovery and select it via a user interface, similar to the proposed approach in our previous works
+(
+Willibald et al., 2020
+;
+Eiband et al., 2023b
+)
+. This would allow the system to gradually add new connections between existing skills, without the need for semantic annotation. Future research could explore those ideas to reuse existing skills to improve automatic recovery from anomalies.
+8
+Conclusion
+We introduced a novel incremental learning framework designed for complex contact-based tasks composed of multiple sequential sub-steps, which are challenging to learn with existing LfD methods. The initial task demonstrations are segmented using our unsupervised BNG-IRL segmentation approach to learn a nominal task model. Our framework facilitates incremental learning at both high and low levels, simplifying the teaching process for users by eliminating the need to anticipate anomalies or new scenarios. Our unsupervised anomaly detection technique identifies deviations from the intended task execution without prior knowledge of potential anomaly cases. Only if the approach detects a new anomaly, the user is queried to provide a recovery behavior, which can then be used to automatically recover from that anomaly in the future. Additionally, the low-level model is updated with new training data collected during execution to continuously refine the existing skills.
+Our segmentation approach shows improved performance over four baseline methods by combining the advantages of subgoal-based inverse reinforcement learning with probabilistic feature clustering in one model. Furthermore, we demonstrated the applicability of the framework with delicate tasks performed on two robotic systems. Notably, only three demonstrations were needed to learn a robust initial model of the box grasping task, capable of identifying several different anomaly cases based on the expected contact force depending on the robot-environment interaction. Our unsupervised anomaly detection approach outperforms all other supervised visual anomaly detection baselines in three out of four anomaly detection cases and is the only one to confidently detect all anomalies, while not triggering any false positive detection during successful executions.
+This work has been supported by Helmholtz Association and by the DLR internal projects ”Factory of the Future Extended” and ASPIRO. The authors would like to thank Daniel Sliwowski for his support with the experimental evaluation.
+dci.
+The authors declared no potential conflicts of interest with respect to the research, authorship, and/or publication of this article
+funding.
+The authors received no financial support for the research, authorship, and/or publication of this article.
+{sm}
+Index to Multimedia Extensions
+1
+Video
+Video to experiment in Sec.
+7.1
+2
+Video
+Video to experiment in Sec.
+7.2
+3
+Video
+Video to experiment in Sec.
+7.3
+References
+Adams and MacKay (2007)
+Adams RP and MacKay DJ (2007) Bayesian online changepoint detection.
+arXiv preprint arXiv:0710.3742
+.
+Agia et al. (2024)
+Agia C, Sinha R, Yang J, Cao Za, Antonova R, Pavone M and Bohg J (2024) Unpacking failure modes of generative policies: Runtime monitoring of consistency and progress.
+arXiv preprint arXiv:2410.04640
+.
+Agrawal et al. (2024)
+Agrawal P, Antoniak S, Hanna EB, Bout B, Chaplot D, Chudnovsky J, Costa D, De Monicault B, Garg S, Gervet T et al. (2024) Pixtral 12b.
+arXiv preprint arXiv:2410.07073
+.
+Albu-Schäffer et al. (2007)
+Albu-Schäffer A, Haddadin S, Ott C, Stemmer A, Wimböck T and Hirzinger G (2007) The dlr lightweight robot: design and control concepts for robots in human environments.
+Industrial Robot: an international journal
+34: 376–385.
+Altan and Sariel (2022)
+Altan D and Sariel S (2022) Clue-ai: A convolutional three-stream anomaly identification framework for robot manipulation.
+IEEE Access
+11: 48347–48357.
+URL
+https://api.semanticscholar.org/CorpusID:247476170
+.
+Azzalini et al. (2021)
+Azzalini D, Bonali L and Amigoni F (2021) A minimally supervised approach based on variational autoencoders for anomaly detection in autonomous robots.
+IEEE Robotics and Automation Letters
+6(2): 2985–2992.
+Azzalini et al. (2020)
+Azzalini D, Castellini A, Luperto M, Farinelli A and Amigoni F (2020) Hmms for anomaly detection in autonomous robots.
+In:
+Int. Conf. on Autonomous Agents and MultiAgent Systems
+. pp. 105–113.
+Caccavale et al. (2019)
+Caccavale R, Saveriano M, Finzi A and Lee D (2019) Kinesthetic teaching and attentional supervision of structured tasks in human–robot interaction.
+Autonomous Robots
+43(6): 1291–1307.
+Calinon (2016)
+Calinon S (2016) A tutorial on task-parameterized movement learning and retrieval.
+Intelligent service robotics
+9: 1–29.
+Calinon (2020)
+Calinon S (2020) Gaussians on riemannian manifolds: Applications for robot learning and adaptive control.
+IEEE Robotics & Automation Magazine
+27(2): 33–45.
+Chernova and Veloso (2007)
+Chernova S and Veloso M (2007) Confidence-based policy learning from demonstration using gaussian mixture models.
+In:
+Proceedings of the 6th international joint conference on Autonomous agents and multiagent systems
+. pp. 1–8.
+Chi et al. (2017)
+Chi M, Yao Y, Liu Y, Teng Y and Zhong M (2017) Learning motion primitives from demonstration.
+Advances in Mechanical Engineering
+9(12): 1687814017737260.
+De Luca et al. (2023)
+De Luca A, Muratore L and Tsagarakis NG (2023) Autonomous navigation with online replanning and recovery behaviors for wheeled-legged robots using behavior trees.
+IEEE Robotics and Automation Letters
+.
+Deniša and Ude (2015)
+Deniša M and Ude A (2015) Synthesis of new dynamic movement primitives through search in a hierarchical database of example movements.
+International Journal of Advanced Robotic Systems
+12(10): 137.
+Der Kiureghian and Ditlevsen (2009)
+Der Kiureghian A and Ditlevsen O (2009) Aleatory or epistemic? does it matter?
+Structural Safety
+31: 105–112.
+10.1016/j.strusafe.2008.06.020
+.
+Driess et al. (2023)
+Driess D, Xia F, Sajjadi MS, Lynch C, Chowdhery A, Ichter B, Wahid A, Tompson J, Vuong Q, Yu T et al. (2023) Palm-e: An embodied multimodal language model.
+arXiv preprint arXiv:2303.03378
+.
+Du et al. (2023)
+Du Y, Konyushkova K, Denil M, Raju A, Landon J, Hill F, de Freitas N and Cabi S (2023) Vision-language models as success detectors.
+In:
+Proceedings of The 2nd Conference on Lifelong Learning Agents
+,
+Proceedings of Machine Learning Research
+, volume 232. PMLR, pp. 120–136.
+Eiband et al. (2023a)
+Eiband T, Liebl J, Willibald C and Lee D (2023a) Online task segmentation by merging symbolic and data-driven skill recognition during kinesthetic teaching.
+Robotics and Autonomous Systems
+162: 104367.
+Eiband et al. (2019)
+Eiband T, Saveriano M and Lee D (2019) Intuitive programming of conditional tasks by demonstration of multiple solutions.
+IEEE Robotics and Automation Letters
+4(4): 4483–4490.
+Eiband et al. (2023b)
+Eiband T, Willibald C, Tannert I, Weber B and Lee D (2023b) Collaborative programming of robotic task decisions and recovery behaviors.
+Autonomous Robots
+47(2): 229–247.
+Eiberger (2022)
+Eiberger O (2022) Arbeitsplatzsystem, roboterarbeitsraumnetzwerk und verfahren zum betreiben eines arbeitsplatzsystems und/oder eines roboterarbeitsraumnetzwerks.
+German Patent DE 10 2022 102 258 A1.
+Figueroa and Billard (2018)
+Figueroa N and Billard A (2018) A physically-consistent bayesian non-parametric mixture model for dynamical system learning.
+In:
+Conference on Robot Learning
+. pp. 927–946.
+Fishman et al. (2023)
+Fishman A, Murali A, Eppner C, Peele B, Boots B and Fox D (2023) Motion policy networks.
+In:
+Conference on Robot Learning
+. PMLR, pp. 967–977.
+Fod et al. (2002)
+Fod A, Matarić MJ and Jenkins OC (2002) Automated derivation of primitives for movement classification.
+Autonomous robots
+12: 39–54.
+Fox et al. (2017)
+Fox R, Krishnan S, Stoica I and Goldberg K (2017) Multi-level discovery of deep options.
+arXiv preprint arXiv:1703.08294
+.
+Gangapurwala et al. (2022)
+Gangapurwala S, Geisert M, Orsolino R, Fallon M and Havoutis I (2022) Rloc: Terrain-aware legged locomotion using reinforcement learning and optimal control.
+IEEE Transactions on Robotics
+38(5): 2908–2927.
+Geman and Geman (1984)
+Geman S and Geman D (1984) Stochastic relaxation, gibbs distributions, and the bayesian restoration of images.
+IEEE Transactions on pattern analysis and machine intelligence
+(6): 721–741.
+Ghallab et al. (1998)
+Ghallab M, Howe A, Knoblock C, McDermott D, Ram A, Veloso M, Weld D and Wilkins D (1998) Pddl-the planning domain definition language .
+Grigore and Scassellati (2017)
+Grigore EC and Scassellati B (2017) Discovering action primitive granularity from human motion for human-robot collaboration.
+In:
+Robotics: Science and Systems
+, volume 10.
+Guerin et al. (2015)
+Guerin KR, Lea C, Paxton C and Hager GD (2015) A framework for end-user instruction of a robot assistant for manufacturing.
+In:
+2015 IEEE international conference on robotics and automation (ICRA)
+. IEEE, pp. 6167–6174.
+Hagos et al. (2018)
+Hagos TM, Suomalainen M and Kyrki V (2018) Segmenting and sequencing of compliant motions.
+In:
+2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. pp. 1–9.
+10.1109/IROS.2018.8593710
+.
+Hersch et al. (2008)
+Hersch M, Guenter F, Calinon S and Billard A (2008) Dynamical system modulation for robot learning via kinesthetic demonstrations.
+IEEE Transactions on Robotics
+24(6): 1463–1467.
+10.1109/TRO.2008.2006703
+.
+Huang et al. (2019)
+Huang Y, Rozo L, Silvério J and Caldwell DG (2019) Kernelized movement primitives.
+The International Journal of Robotics Research
+38(7): 833–852.
+Ijspeert et al. (2002)
+Ijspeert AJ, Nakanishi J and Schaal S (2002) Movement imitation with nonlinear dynamical systems in humanoid robots.
+In:
+IEEE Int. Conf. on Robotics and Automation
+. pp. 1398–1403.
+Inceoglu et al. (2021)
+Inceoglu A, Aksoy EE, Ak AC and Sariel S (2021) Fino-net: A deep multimodal sensor fusion framework for manipulation failure detection.
+In:
+2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 6841–6847.
+Inceoglu et al. (2024)
+Inceoglu A, Aksoy EE and Sariel S (2024) Multimodal detection and classification of robot manipulation failures.
+IEEE Robotics and Automation Letters
+9(2): 1396–1403.
+10.1109/LRA.2023.3346270
+.
+Iskandar et al. (2021)
+Iskandar M, Eiberger O, Albu-Schäffer A, De Luca A and Dietrich A (2021) Collision detection, identification, and localization on the dlr sara robot with sensing redundancy.
+In:
+2021 IEEE International Conference on Robotics and Automation (ICRA)
+. IEEE, pp. 3111–3117.
+Iskandar et al. (2020)
+Iskandar M, Ott C, Eiberger O, Keppler M, Albu-Schäffer A and Dietrich A (2020) Joint-level control of the dlr lightweight robot sara.
+In:
+2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 8903–8910.
+Kappler et al. (2015)
+Kappler D, Pastor P, Kalakrishnan M, Wüthrich M and Schaal S (2015) Data-driven online decision making for autonomous manipulation.
+In:
+Robotics: science and systems
+, volume 11.
+Karlsson et al. (2019)
+Karlsson M, Robertsson A and Johansson R (2019) Segmentation of robot movements using position and contact forces.
+arXiv preprint arXiv:1909.08289
+.
+Khansari-Zadeh and Billard (2011)
+Khansari-Zadeh SM and Billard A (2011) Learning stable nonlinear dynamical systems with gaussian mixture models.
+IEEE Transactions on Robotics
+27(5): 943–957.
+Konidaris et al. (2012)
+Konidaris G, Kuindersma S, Grupen R and Barto A (2012) Robot learning from demonstration by constructing skill trees.
+The International Journal of Robotics Research
+31(3): 360–375.
+Krishnan et al. (2016)
+Krishnan S, Garg A, Liaw R, Miller L, Pokorny FT and Goldberg K (2016) Hirl: Hierarchical inverse reinforcement learning for long-horizon tasks with delayed rewards.
+arXiv preprint arXiv:1604.06508
+.
+Krishnan et al. (2019)
+Krishnan S, Garg A, Liaw R, Thananjeyan B, Miller L, Pokorny FT and Goldberg K (2019) Swirl: A sequential windowed inverse reinforcement learning algorithm for robot tasks with delayed rewards.
+The international journal of robotics research
+38(2-3): 126–145.
+Krishnan et al. (2017)
+Krishnan S, Garg A, Patil S, Lea C, Hager G, Abbeel P and Goldberg K (2017) Transition state clustering: Unsupervised surgical trajectory segmentation for robot learning.
+The International journal of robotics research
+36(13-14): 1595–1618.
+Kroemer et al. (2015)
+Kroemer O, Daniel C, Neumann G, Van Hoof H and Peters J (2015) Towards learning hierarchical skills for multi-phase manipulation tasks.
+In:
+2015 IEEE international conference on robotics and automation (ICRA)
+. IEEE, pp. 1503–1510.
+Krüger et al. (2012)
+Krüger V, Tikhanoff V, Natale L and Sandini G (2012) Imitation learning of non-linear point-to-point robot motions using dirichlet processes.
+In:
+IEEE International Conference on Robotics and Automation
+. pp. 2029–2034.
+Kulić et al. (2012)
+Kulić D, Ott C, Lee D, Ishikawa J and Nakamura Y (2012) Incremental learning of full body motion primitives and their sequencing through human motion observation.
+The International Journal of Robotics Research
+31(3): 330–345.
+Lee et al. (2015)
+Lee SH, Suh IH, Calinon S and Johansson R (2015) Autonomous framework for segmenting robot trajectories of manipulation task.
+Autonomous robots
+38: 107–141.
+Lesort et al. (2020)
+Lesort T, Lomonaco V, Stoian A, Maltoni D, Filliat D and Díaz-Rodríguez N (2020) Continual learning for robotics: Definition, framework, learning strategies, opportunities and challenges.
+Information fusion
+58: 52–68.
+Liao et al. (2023)
+Liao C, Wang Y, Ding X, Ren Y, Duan X and He J (2023) Performance comparison of typical physics engines using robot models with multiple joints.
+IEEE Robotics and Automation Letters
+PP: 1–7.
+10.1109/LRA.2023.3320019
+.
+Lioutikov et al. (2017)
+Lioutikov R, Neumann G, Maeda G and Peters J (2017) Learning movement primitive libraries through probabilistic segmentation.
+The International Journal of Robotics Research
+36(8): 879–894.
+Liu et al. (2023)
+Liu D, Li Q, Dinh AD, Jiang T, Shah M and Xu C (2023) Diffusion action segmentation.
+In:
+Proceedings of the IEEE/CVF International Conference on Computer Vision
+. pp. 10139–10149.
+Maeda et al. (2017)
+Maeda G, Ewerton M, Osa T, Busch B and Peters J (2017) Active incremental learning of robot movement primitives.
+In:
+Conference on Robot Learning (CoRL)
+. pp. 37–46.
+Manschitz et al. (2020)
+Manschitz S, Gienger M, Kober J and Peters J (2020) Learning sequential force interaction skills.
+Robotics
+9(2): 45.
+Mayr et al. (2021)
+Mayr M, Chatzilygeroudis K, Ahmad F, Nardi L and Krueger V (2021) Learning of parameters in behavior trees for movement skills.
+In:
+2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 7572–7579.
+Meier et al. (2011)
+Meier F, Theodorou E, Stulp F and Schaal S (2011) Movement segmentation using a primitive library.
+In:
+2011 IEEE/RSJ International Conference on Intelligent Robots and Systems
+. IEEE, pp. 3407–3412.
+Michini and How (2012)
+Michini B and How JP (2012) Bayesian nonparametric inverse reinforcement learning.
+In:
+Joint European conference on machine learning and knowledge discovery in databases
+. Springer, pp. 148–163.
+Michini et al. (2015)
+Michini B, Walsh TJ, Agha-Mohammadi AA and How JP (2015) Bayesian nonparametric reward learning from demonstration.
+IEEE Transactions on Robotics
+31(2): 369–386.
+Murphy (2012)
+Murphy KP (2012)
+Machine learning: a probabilistic perspective
+.
+MIT press.
+Ng et al. (2000)
+Ng AY, Russell SJ et al. (2000) Algorithms for inverse reinforcement learning.
+In:
+Int. Conf. on Machine Learning
+. pp. 663––670.
+Niekum et al. (2012)
+Niekum S, Osentoski S, Konidaris G and Barto AG (2012) Learning and generalization of complex tasks from unstructured demonstrations.
+In:
+2012 IEEE/RSJ International Conference on Intelligent Robots and Systems
+. IEEE, pp. 5239–5246.
+Niekum et al. (2015)
+Niekum S, Osentoski S, Konidaris G, Chitta S, Marthi B and Barto AG (2015) Learning grounded finite-state representations from unstructured demonstrations.
+The International Journal of Robotics Research
+34(2): 131–157.
+Pacherie (2008)
+Pacherie E (2008) The phenomenology of action: A conceptual framework.
+Cognition
+107(1): 179–217.
+Padalkar and OXEC (2023)
+Padalkar A and OXEC (2023) Open x-embodiment: Robotic learning datasets and rt-x models.
+ArXiv
+.
+Park et al. (2018)
+Park D, Hoshi Y and Kemp CC (2018) A multimodal anomaly detector for robot-assisted feeding using an lstm-based variational autoencoder.
+IEEE Robotics and Automation Letters
+3(3): 1544–1551.
+Park et al. (2019)
+Park D, Kim H and Kemp CC (2019) Multimodal anomaly detection for assistive robots.
+Autonomous Robots
+43(3): 611–629.
+Park et al. (2020)
+Park D, Noseworthy M, Paul R, Roy S and Roy N (2020) Inferring task goals and constraints using bayesian nonparametric inverse reinforcement learning.
+In:
+Conference on Robot Learning
+. pp. 1005–1014.
+Pastor et al. (2011)
+Pastor P, Kalakrishnan M, Chitta S, Theodorou E and Schaal S (2011) Skill learning and task outcome prediction for manipulation.
+In:
+Int. Conf. on Robotics and Automation
+. IEEE, pp. 3828–3834.
+Pastor et al. (2012)
+Pastor P, Kalakrishnan M, Righetti L and Schaal S (2012) Towards associative skill memories.
+In:
+2012 12th IEEE-RAS International Conference on Humanoid Robots (Humanoids 2012)
+. IEEE, pp. 309–315.
+Paxton et al. (2017)
+Paxton C, Hundt A, Jonathan F, Guerin K and Hager GD (2017) Costar: Instructing collaborative robots with behavior trees and vision.
+In:
+2017 IEEE international conference on robotics and automation (ICRA)
+. IEEE, pp. 564–571.
+Pervez and Lee (2018)
+Pervez A and Lee D (2018) Learning task-parameterized dynamic movement primitives using mixture of gmms.
+Intelligent Service Robotics
+11(1): 61–78.
+Pitz et al. (2023)
+Pitz J, Röstel L, Sievers L and Bäuml B (2023) Dextrous tactile in-hand manipulation using a modular reinforcement learning architecture.
+In:
+2023 IEEE International Conference on Robotics and Automation (ICRA)
+. IEEE, pp. 1852–1858.
+Pol et al. (2019)
+Pol AA, Berger V, Germain C, Cerminara G and Pierini M (2019) Anomaly detection with conditional variational a´utoencoders.
+In:
+2019 18th IEEE international conference on machine learning and applications (ICMLA)
+. IEEE, pp. 1651–1657.
+Ramirez-Amaro et al. (2017)
+Ramirez-Amaro K, Beetz M and Cheng G (2017) Transferring skills to humanoid robots by extracting semantic representations from observations of human activities.
+Artificial Intelligence
+247: 95–118.
+Ranchod et al. (2015)
+Ranchod P, Rosman B and Konidaris G (2015) Nonparametric bayesian reward segmentation for skill discovery using inverse reinforcement learning.
+In:
+2015 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 471–477.
+Rasmussen (1999)
+Rasmussen CE (1999) The infinite gaussian mixture model.
+In:
+Advances in Neural Information Processing Systems
+. pp. 554–560.
+Reed et al. (2022)
+Reed S, Zolna K, Parisotto E, Colmenarejo SG, Novikov A, Barth-Maron G, Gimenez M, Sulsky Y, Kay J, Springenberg JT et al. (2022) A generalist agent.
+arXiv preprint arXiv:2205.06175
+.
+Romeres et al. (2019)
+Romeres D, Jha DK, Yerazunis W, Nikovski D and Dau HA (2019) Anomaly detection for insertion tasks in robotic assembly using gaussian process models.
+In:
+2019 18th European Control Conference (ECC)
+. IEEE, pp. 1017–1022.
+Rovida et al. (2018)
+Rovida F, Wuthier D, Grossmann B, Fumagalli M and Krüger V (2018) Motion generators combined with behavior trees: A novel approach to skill modelling.
+In:
+2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 5964–5971.
+Shi et al. (2023)
+Shi LX, Sharma A, Zhao TZ and Finn C (2023) Waypoint-based imitation learning for robotic manipulation.
+In:
+Conference on Robot Learning
+. PMLR, pp. 2195–2209.
+Silvério et al. (2019)
+Silvério J, Huang Y, Abu-Dakka FJ, Rozo L and Caldwell DG (2019) Uncertainty-aware imitation learning using kernelized movement primitives.
+In:
+2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 90–97.
+Simo-Serra et al. (2017)
+Simo-Serra E, Torras C and Moreno-Noguer F (2017) 3d human pose tracking priors using geodesic mixture models.
+International Journal of Computer Vision
+122: 388–408.
+Simonič et al. (2021)
+Simonič M, Petrič T, Ude A and Nemec B (2021) Analysis of methods for incremental policy refinement by kinesthetic guidance.
+Journal of Intelligent & Robotic Systems
+102(1): 5.
+Sliwowski and Lee (2024)
+Sliwowski D and Lee D (2024) Conditionnet: Learning preconditions and effects for execution monitoring.
+IEEE Robotics and Automation Letters
+.
+Steinmetz et al. (2019)
+Steinmetz F, Nitsch V and Stulp F (2019) Intuitive task-level programming by demonstration through semantic skill recognition.
+IEEE Robotics and Automation Letters
+4(4): 3742–3749.
+Su et al. (2018)
+Su Z, Kroemer O, Loeb GE, Sukhatme GS and Schaal S (2018) Learning manipulation graphs from demonstrations using multimodal sensory signals.
+In:
+2018 IEEE international conference on robotics and automation (ICRA)
+. IEEE, pp. 2758–2765.
+Sugawara et al. (2023)
+Sugawara K, Sakaino S and Tsuji T (2023) Unsupervised human motion segmentation based on characteristic force signals of contact events.
+IEEE Robotics and Automation Letters
+.
+Surana and Srivastava (2014)
+Surana A and Srivastava K (2014) Bayesian nonparametric inverse reinforcement learning for switched markov decision processes.
+In:
+2014 13th International Conference on Machine Learning and Applications
+. IEEE, pp. 47–54.
+Ureche et al. (2015)
+Ureche ALP, Umezawa K, Nakamura Y and Billard A (2015) Task parameterization using continuous constraints extracted from human demonstrations.
+IEEE Transactions on Robotics
+31(6): 1458–1471.
+Wächter and Asfour (2015)
+Wächter M and Asfour T (2015) Hierarchical segmentation of manipulation actions based on object relations and motion characteristics.
+In:
+2015 International Conference on Advanced Robotics (ICAR)
+. IEEE, pp. 549–556.
+Wächter et al. (2013)
+Wächter M, Schulz S, Asfour T, Aksoy E, Wörgötter F and Dillmann R (2013) Action sequence reproduction based on automatic segmentation and object-action complexes.
+In:
+2013 13th IEEE-RAS International Conference on Humanoid Robots
+. IEEE, pp. 189–195.
+Wang et al. (2018)
+Wang Y, Jiao Y, Xiong R, Yu H, Zhang J and Liu Y (2018) Masd: A multimodal assembly skill decoding system for robot programming by demonstration.
+IEEE Transactions on Automation Science and Engineering
+15(4): 1722–1734.
+Willibald et al. (2020)
+Willibald C, Eiband T and Lee D (2020) Collaborative programming of conditional robot tasks.
+In:
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. pp. 5402–5409.
+Willibald and Lee (2022)
+Willibald C and Lee D (2022) Multi-level task learning based on intention and constraint inference for autonomous robotic manipulation.
+In:
+2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+. IEEE, pp. 7688–7695.
+Yoo et al. (2021)
+Yoo Y, Lee CY and Zhang BT (2021) Multimodal anomaly detection based on deep auto-encoder for object slip perception of mobile manipulation robots.
+In:
+2021 IEEE International Conference on Robotics and Automation (ICRA)
+. pp. 11443–11449.
+10.1109/ICRA48506.2021.9561586
+.
+Yoon et al. (2023)
+Yoon J, Son B and Lee D (2023) Comparative study of physics engines for robot simulation with mechanical interaction.
+Applied Sciences
+13(2): 680.
+Zhang et al. (2023)
+Zhang X, Ding Y, Amiri S, Yang H, Kaminski A, Esselink C and Zhang S (2023) Grounding classical task planners via vision-language models.
+arXiv preprint arXiv:2304.08587
+.
+Ziebart et al. (2008)
+Ziebart BD, Maas AL, Bagnell JA, Dey AK et al. (2008) Maximum entropy inverse reinforcement learning.
+In:
+Aaai
+, volume 8. Chicago, IL, USA, pp. 1433–1438.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+Click the "Report Issue"
+(
+)
+button, located in the page header.
+Tip:
+You can select the relevant text first, to include it in your report.
+Our team has already identified
+the following issues
+. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a
+list of packages that need conversion
+, and welcome
+developer contributions
+.
+We gratefully acknowledge support from
+        our
+major funders
+,
+member institutions
+,
+,
+        and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status
+(opens in new tab)
+Major funding support from

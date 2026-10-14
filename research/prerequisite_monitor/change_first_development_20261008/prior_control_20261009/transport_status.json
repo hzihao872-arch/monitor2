@@ -1,0 +1,6 @@
+{
+  "command": "date -u; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv; cat /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_prior_control_20261009_v1/run/progress.json; tail -n 5 /root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_prior_control_20261009_v1/run.log",
+  "stdout": "Fri Oct  9 14:46:00 UTC 2026\npid, process_name, used_gpu_memory [MiB]\n{\"issued\":16,\"last\":\"inside_14_prior_chat_opposed\",\"parent\":188,\"total\":204}{\"alias\":\"Unknown\",\"bare\":\"Unknown\",\"id\":\"grasp_14_prior_chat_opposed\",\"issued\":12}\n{\"alias\":\"Unknown\",\"bare\":\"Unknown\",\"id\":\"inside_07_prior_chat_positive\",\"issued\":13}\n{\"alias\":\"Unknown\",\"bare\":\"Unknown\",\"id\":\"inside_07_prior_chat_opposed\",\"issued\":14}\n{\"alias\":\"Unknown\",\"bare\":\"Unknown\",\"id\":\"inside_14_prior_chat_positive\",\"issued\":15}\n{\"alias\":\"Unknown\",\"bare\":\"Unknown\",\"id\":\"inside_14_prior_chat_opposed\",\"issued\":16}\n",
+  "stderr": "",
+  "exit_code": 0
+}

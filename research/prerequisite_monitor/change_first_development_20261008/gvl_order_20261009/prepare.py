@@ -1,0 +1,11 @@
+import hashlib,json,pathlib,random,zipfile
+H=pathlib.Path(__file__).resolve().parent;S=H.parent/'author_prefix_20261009'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+queries=json.loads((H.parent/'author_context_20261009/config.json').read_text())['queries'];ids=['f0000','f0003','f0007','f0010','f0014'];shuffled=ids.copy();random.Random(1337).shuffle(shuffled);req=[]
+for q in queries:
+ for order,refs in [('chronological',ids),('shuffled',shuffled)]:req.append({'query_id':q['query_id'],'goal':q['goal'],'order':order,'ids':refs})
+cfg={'parent':{'path':'/root/autodl-tmp/monitor2/fresh_prerequisite_runs/change_first_author_prefix_20261009_v1/run/requests.jsonl','sha256':sha(S/'download/run/requests.jsonl')},'requests':req,'source_commit':'3471a27242ff06cc6d20e762b4b0d5a529ee4326','source':'https://github.com/generative-value-learning/generative-value-learning.github.io/blob/3471a27242ff06cc6d20e762b4b0d5a529ee4326/gemini.html','protocol':'initial image anchored0, five uniformly selected shown frames, remove true time/source IDs from model view, seed1337 shuffling vs chrono same prompt/pixels; Qwen8B adaptation, 5 not30 frames, no Gemini calls, no labelled demonstrations or goal image; zero floor cannot represent negative net effects from initial'}
+(H/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8');(H/'freeze.json').write_text(json.dumps({'files':{n:sha(H/n) for n in ('config.json','gvl_runner.py')}},indent=2),encoding='utf-8')
+with zipfile.ZipFile(H/'gvl_v1.zip','w') as z:
+ for n in ('config.json','freeze.json','gvl_runner.py','test_gvl.py'):z.write(H/n,n)
+t=(S/'remote_ops.py').read_text().replace('change_first_author_prefix_20261009_v1','change_first_gvl_order_20261009_v1').replace('prefix_v1.zip','gvl_v1.zip').replace('test_prefix.py','test_gvl.py').replace('prefix_runner.py','gvl_runner.py').replace('prefix_FINAL.tar.gz','gvl_FINAL.tar.gz');(H/'remote_ops.py').write_text(t,encoding='utf-8');t=(S/'seal_remote.py').read_text().replace('prefix_runner.py','gvl_runner.py').replace('prefix_FINAL.tar.gz','gvl_FINAL.tar.gz');(H/'seal_remote.py').write_text(t,encoding='utf-8');print(json.dumps({'requests':16,'shuffle':shuffled,'zip_sha256':sha(H/'gvl_v1.zip')}))
